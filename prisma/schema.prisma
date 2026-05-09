@@ -1,4 +1,4 @@
-// Modelo de datos Palex Medical — Fase 1: Autenticación y roles
+// Modelo de datos Palex Medical — Fase 2: Hospitales, Zonas y Visitas
 
 datasource db {
   provider = "postgresql"
@@ -8,11 +8,36 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── ENUMS ────────────────────────────────────────────────
+
 enum Rol {
   ADMIN
   VENTAS
   PROYECTOS
 }
+
+enum TipoHospital {
+  HOSPITAL_PUBLICO
+  HOSPITAL_PRIVADO
+  CLINICA_PRIVADA
+  LABORATORIO
+  CENTRO_SALUD
+  UNIVERSIDAD
+  OTRO
+}
+
+enum TipoVisita {
+  PROYECTOS
+  VENTAS
+}
+
+enum EstadoVisita {
+  BORRADOR
+  COMPLETADA
+  ARCHIVADA
+}
+
+// ─── USUARIOS ─────────────────────────────────────────────
 
 model Usuario {
   id        String   @id @default(cuid())
@@ -24,5 +49,94 @@ model Usuario {
   creadoEn  DateTime @default(now())
   editadoEn DateTime @updatedAt
 
+  zonas   UsuarioZona[]
+  visitas Visita[]
+
   @@map("usuarios")
+}
+
+// ─── ZONAS ────────────────────────────────────────────────
+
+model Zona {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?
+  activo      Boolean  @default(true)
+  creadoEn    DateTime @default(now())
+
+  hospitales Hospital[]
+  usuarios   UsuarioZona[]
+
+  @@map("zonas")
+}
+
+// Tabla pivot usuario ↔ zona (un usuario puede tener varias zonas)
+model UsuarioZona {
+  usuarioId String
+  zonaId    String
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  zona    Zona    @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, zonaId])
+  @@map("usuarios_zonas")
+}
+
+// ─── HOSPITALES ───────────────────────────────────────────
+
+model Hospital {
+  id        String       @id @default(cuid())
+  nombre    String
+  ciudad    String
+  provincia String?
+  pais      String       @default("España")
+  tipo      TipoHospital @default(HOSPITAL_PUBLICO)
+  camas     Int?
+  direccion String?
+  activo    Boolean      @default(true)
+  zonaId    String
+  creadoEn  DateTime     @default(now())
+  editadoEn DateTime     @updatedAt
+
+  zona      Zona       @relation(fields: [zonaId], references: [id])
+  contactos Contacto[]
+  visitas   Visita[]
+
+  @@map("hospitales")
+}
+
+// Contactos clave del hospital (médicos, supervisores, TI…)
+model Contacto {
+  id         String   @id @default(cuid())
+  hospitalId String
+  nombre     String
+  cargo      String?
+  email      String?
+  telefono   String?
+  principal  Boolean  @default(false)
+  creadoEn   DateTime @default(now())
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@map("contactos")
+}
+
+// ─── VISITAS ──────────────────────────────────────────────
+
+model Visita {
+  id         String       @id @default(cuid())
+  hospitalId String
+  usuarioId  String
+  tipo       TipoVisita
+  estado     EstadoVisita @default(BORRADOR)
+  fecha      DateTime     @default(now())
+  datos      Json         @default("{}")  // Formulario serializado
+  fotos      Json         @default("[]")  // URLs de fotos subidas
+  creadoEn   DateTime     @default(now())
+  editadoEn  DateTime     @updatedAt
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id])
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("visitas")
 }
