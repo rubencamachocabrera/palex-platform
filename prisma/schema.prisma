@@ -1,0 +1,28 @@
+// Modelo de datos Palex Medical — Fase 1: Autenticación y roles
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Rol {
+  ADMIN
+  VENTAS
+  PROYECTOS
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       Rol      @default(VENTAS)
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  @@map("usuarios")
+}
