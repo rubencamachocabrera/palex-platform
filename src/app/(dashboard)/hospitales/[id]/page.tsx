@@ -234,22 +234,23 @@ export default function HospitalDetailPage() {
             )
           })()}
           {/* Detalle */}
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-          {[
-            { label: "Tipo",      value: TIPO_LABELS[hospital.tipo] ?? hospital.tipo },
-            { label: "Zona",      value: hospital.zona.nombre },
-            { label: "Ciudad",    value: hospital.ciudad },
-            { label: "Provincia", value: hospital.provincia ?? "—" },
-            { label: "Pais",      value: hospital.pais },
-            { label: "Camas",     value: hospital.camas?.toString() ?? "—" },
-            { label: "Direccion", value: hospital.direccion ?? "—" },
-            { label: "Estado",    value: hospital.activo ? "Activo" : "Inactivo" },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</span>
-              <span className="text-sm text-gray-700 text-right max-w-[60%]">{value}</span>
-            </div>
-          ))}
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+            {[
+              { label: "Tipo",      value: TIPO_LABELS[hospital.tipo] ?? hospital.tipo },
+              { label: "Zona",      value: hospital.zona.nombre },
+              { label: "Ciudad",    value: hospital.ciudad },
+              { label: "Provincia", value: hospital.provincia ?? "—" },
+              { label: "Pais",      value: hospital.pais },
+              { label: "Camas",     value: hospital.camas?.toString() ?? "—" },
+              { label: "Direccion", value: hospital.direccion ?? "—" },
+              { label: "Estado",    value: hospital.activo ? "Activo" : "Inactivo" },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between px-5 py-3.5">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</span>
+                <span className="text-sm text-gray-700 text-right max-w-[60%]">{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
