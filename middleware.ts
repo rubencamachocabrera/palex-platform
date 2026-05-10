@@ -34,5 +34,9 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|logo-palex.png).*)"],
+  // Solo rutas de pagina — excluye /api/, archivos estaticos y assets
+  // Las rutas /api/ protegen sus propios endpoints verificando la sesion con auth()
+  matcher: [
+    "/((?!api/|_next/static|_next/image|favicon.ico|logo-palex.png|icon-|manifest.json|sw.js).*)",
+  ],
 }

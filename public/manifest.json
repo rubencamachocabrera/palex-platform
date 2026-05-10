@@ -1,0 +1,20 @@
+{
+  "name": "Palex Medical — Plataforma",
+  "short_name": "Palex",
+  "description": "Backoffice interno Palex Medical — gestión de visitas, hospitales y proyectos",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#00A99D",
+  "icons": [
+    { "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es",
+  "shortcuts": [
+    { "name": "Mis hospitales", "url": "/hospitales", "description": "Ver hospitales asignados" },
+    { "name": "Nueva visita", "url": "/hospitales", "description": "Iniciar visita preproyecto" }
+  ]
+}

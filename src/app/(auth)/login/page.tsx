@@ -31,7 +31,6 @@ export default function LoginPage() {
     }
 
     router.push("/dashboard")
-    router.refresh()
   }
 
   const inputClass = "w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition placeholder-gray-300"

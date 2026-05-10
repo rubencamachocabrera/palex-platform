@@ -1,10 +1,30 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { getSections } from "@/lib/form-schema"
 import type { FormField, FormSection } from "@/lib/form-schema"
 import { comprimirImagen } from "@/lib/img-compress"
+import { TodoChecklist } from "@/components/visitas/TodoChecklist"
+import type { TodoItem } from "@/components/visitas/TodoChecklist"
+import { VoiceNotes } from "@/components/visitas/VoiceNotes"
+import type { AudioNota } from "@/components/visitas/VoiceNotes"
+import { useOfflineSync } from "@/hooks/useOfflineSync"
+import { AnalisisPanel } from "@/components/visitas/AnalisisPanel"
+
+// Dynamic import — PrintView sólo se carga cuando el usuario pulsa "Imprimir"
+const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
+  loading: () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center gap-3 text-gray-400">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-500 rounded-full animate-spin" />
+        <span className="text-sm">Preparando documento...</span>
+      </div>
+    </div>
+  ),
+  ssr: false,
+})
 
 const TEAL = "#00A99D"
 const TEAL_DARK = "#007A72"
@@ -277,9 +297,19 @@ function exportarJSON(visita: VisitaData, datos: Record<string, unknown>, sectio
       fotos: ((datos.fotos as FotosMap)?.[s.id] ?? []).map(f => ({
         nombre: f.name,
         caption: f.caption,
-        // Incluimos data para que el fichero sea autocontenido
         data: f.data,
       })),
+    })),
+    pendientes: ((datos.todos as TodoItem[]) ?? []).map(t => ({
+      texto: t.text,
+      hecho: t.done,
+    })),
+    notasDeVoz: ((datos.audioNotas as AudioNota[]) ?? []).map(n => ({
+      duracion: n.duration,
+      transcripcion: n.transcripcion ?? null,
+      creado: new Date(n.createdAt).toISOString(),
+      // audio base64 incluido para que el fichero sea autocontenido
+      audio: n.blob,
     })),
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
@@ -290,172 +320,6 @@ function exportarJSON(visita: VisitaData, datos: Record<string, unknown>, sectio
   a.download = `visita-${visita.hospital.nombre.replace(/\s+/g, "-").toLowerCase()}-${fecha}.json`
   a.click()
   URL.revokeObjectURL(url)
-}
-
-// ─── VISTA IMPRESIÓN ───────────────────────────────────────────────────────────
-function PrintView({ visita, datos, sections }: {
-  visita: VisitaData; datos: Record<string, unknown>; sections: FormSection[]
-}) {
-  const fotos = (datos.fotos as FotosMap) ?? {}
-  const completadas = sections.filter(s => calcProgress(s, datos) === 100).length
-  const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
-  const fechaLarga = new Date(visita.fecha).toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
-  const fechaCorta = new Date().toLocaleDateString("es-ES")
-
-  return (
-    <div className="print-doc">
-      <style>{`
-        @page { margin: 20mm 15mm; }
-        @media print {
-          body, html { margin: 0; padding: 0; background: white !important; }
-          .no-print { display: none !important; }
-          .print-doc { font-family: 'Helvetica Neue', Arial, sans-serif; color: #111; }
-          .cover-page { page-break-after: always; min-height: 100vh; display: flex; flex-direction: column; }
-          .section-block { page-break-inside: avoid; margin-bottom: 24px; }
-          .section-block-large { page-break-before: auto; }
-          .foto-grid { page-break-inside: avoid; }
-          .page-footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 9px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding: 6px 15mm; display: flex; justify-content: space-between; }
-        }
-        @media screen {
-          .print-doc { max-width: 800px; margin: 0 auto; padding: 20px; background: white; }
-          .cover-page { min-height: 90vh; border-bottom: 3px solid #e5e7eb; margin-bottom: 40px; padding-bottom: 40px; }
-        }
-      `}</style>
-
-      {/* ── PORTADA ── */}
-      <div className="cover-page" style={{ display: "flex", flexDirection: "column" }}>
-        {/* Header branding */}
-        <div style={{ backgroundColor: TEAL, color: "white", padding: "32px 40px", borderRadius: "0 0 24px 24px", marginBottom: "auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Palex Medical</div>
-              <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>Soluciones Preanalíticas</div>
-            </div>
-            <div style={{ textAlign: "right", fontSize: 11, opacity: 0.7 }}>
-              <div>Informe de visita</div>
-              <div style={{ fontWeight: 600 }}>{visita.tipo}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenido portada */}
-        <div style={{ padding: "48px 40px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ borderLeft: `5px solid ${TEAL}`, paddingLeft: 24, marginBottom: 40 }}>
-            <div style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Hospital / Centro</div>
-            <h1 style={{ fontSize: 32, fontWeight: 800, color: "#111", margin: 0, lineHeight: 1.1 }}>{visita.hospital.nombre}</h1>
-            <p style={{ fontSize: 16, color: "#6b7280", marginTop: 8 }}>
-              {visita.hospital.ciudad}{visita.hospital.provincia ? `, ${visita.hospital.provincia}` : ""}
-            </p>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 40 }}>
-            {[
-              { label: "Fecha de visita", value: fechaLarga },
-              { label: "Técnico Palex", value: visita.usuario.nombre },
-              { label: "Tipo de visita", value: visita.tipo },
-              { label: "Estado", value: ESTADO_LABEL[visita.estado] },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ background: "#f9fafb", borderRadius: 12, padding: "16px 20px" }}>
-                <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Barra de progreso */}
-          <div style={{ background: "#f3f4f6", borderRadius: 12, padding: "20px 24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Completitud del formulario</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: progreso === 100 ? "#10b981" : TEAL }}>{progreso}%</span>
-            </div>
-            <div style={{ height: 8, background: "#e5e7eb", borderRadius: 4, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL, borderRadius: 4 }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
-              {completadas} de {sections.length} secciones completas
-            </div>
-          </div>
-        </div>
-
-        {/* Footer portada */}
-        <div style={{ padding: "20px 40px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af" }}>
-          <span>Documento confidencial — Uso interno Palex Medical</span>
-          <span>Generado el {fechaCorta}</span>
-        </div>
-      </div>
-
-      {/* ── SECCIONES ── */}
-      {sections.map((section, idx) => {
-        const camposRellenos = section.fields.filter(f => {
-          const v = datos[f.id]
-          if (Array.isArray(v)) return v.length > 0
-          if (typeof v === "number") return v > 0
-          return v !== undefined && v !== null && v !== ""
-        })
-        const fotosSeccion = fotos[section.id] ?? []
-        if (camposRellenos.length === 0 && fotosSeccion.length === 0) return null
-
-        return (
-          <div key={section.id} className="section-block" style={{ marginBottom: 32, pageBreakInside: idx > 3 ? "auto" : "avoid" }}>
-            {/* Header sección */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 10, borderBottom: `2px solid ${TEAL}` }}>
-              <span style={{ fontSize: 20 }}>{section.icon}</span>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111", margin: 0 }}>{section.title}</h2>
-              <span style={{ marginLeft: "auto", fontSize: 10, color: "#9ca3af" }}>{idx + 1}/{sections.length}</span>
-            </div>
-
-            {/* Campos */}
-            {camposRellenos.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {camposRellenos.map((f, fi) => {
-                  const v = datos[f.id]
-                  const display = Array.isArray(v) ? (v as string[]).join(" · ") : String(v)
-                  return (
-                    <div key={f.id} style={{
-                      display: "flex", gap: 16, padding: "10px 12px",
-                      background: fi % 2 === 0 ? "#f9fafb" : "white",
-                      borderRadius: fi === 0 ? "8px 8px 0 0" : fi === camposRellenos.length - 1 ? "0 0 8px 8px" : "0",
-                    }}>
-                      <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, width: 200, flexShrink: 0, paddingTop: 1 }}>{f.label}</span>
-                      <span style={{ fontSize: 12, color: "#111", flex: 1 }}>{display}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Fotos de la sección */}
-            {fotosSeccion.length > 0 && (
-              <div className="foto-grid" style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>
-                  Fotografías ({fotosSeccion.length})
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {fotosSeccion.map(foto => (
-                    <div key={foto.id}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={foto.data} alt={foto.caption || foto.name}
-                        style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #e5e7eb" }}
-                      />
-                      {foto.caption && (
-                        <p style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontStyle: "italic" }}>{foto.caption}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
-
-      {/* Footer fijo en impresión */}
-      <div className="page-footer">
-        <span>Palex Medical · Informe de visita preproyecto · {visita.hospital.nombre}</span>
-        <span>Generado el {fechaCorta}</span>
-      </div>
-    </div>
-  )
 }
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
@@ -477,18 +341,33 @@ export default function VisitaPage() {
   const visitaRef = useRef<VisitaData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Offline sync: auto-saves to IndexedDB + queues failed server requests
+  const { online, loadDraft } = useOfflineSync({
+    visitaId: id,
+    hospitalNombre: visitaRef.current?.hospital.nombre ?? "",
+    datos,
+  })
+
+  // useMemo MUST be before early returns to avoid Rules of Hooks violation
+  const tipo = (visita?.tipo ?? "PROYECTOS") as "PROYECTOS" | "VENTAS"
+  const sections = useMemo(() => getSections(tipo), [tipo])
+
   useEffect(() => {
     fetch(`/api/visitas/${id}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
+      .then(async data => {
         if (data) {
           setVisita(data); visitaRef.current = data
           const d = typeof data.datos === "object" && data.datos !== null ? (data.datos as Record<string, unknown>) : {}
-          setDatos(d); datosRef.current = d
+          // Restore local draft if it has more data (offline recovery)
+          const localDraft = await loadDraft()
+          const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
+          setDatos(resolved); datosRef.current = resolved
         }
         setLoading(false)
       })
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const guardar = useCallback(async (nuevoEstado?: string) => {
@@ -518,7 +397,7 @@ export default function VisitaPage() {
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
-  function setFotos(sectionId: string, fotos: Foto[]) {
+  const setFotos = useCallback((sectionId: string, fotos: Foto[]) => {
     setDatos(prev => {
       const fotosMap = ((prev.fotos as FotosMap) ?? {})
       const next = { ...prev, fotos: { ...fotosMap, [sectionId]: fotos } }
@@ -528,11 +407,45 @@ export default function VisitaPage() {
     setPendiente(true); setSavedAt(null)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
+  }, [])
+
+  function setTodos(todos: TodoItem[]) {
+    setDatos(prev => {
+      const next = { ...prev, todos }
+      datosRef.current = next
+      return next
+    })
+    setPendiente(true); setSavedAt(null)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
-  async function cambiarEstado(estado: string) {
-    setCambiandoEstado(true); await guardar(estado); setCambiandoEstado(false)
+  function setAudioNotas(audioNotas: AudioNota[]) {
+    setDatos(prev => {
+      const next = { ...prev, audioNotas }
+      datosRef.current = next
+      return next
+    })
+    setPendiente(true); setSavedAt(null)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
+
+  function setNotasLibres(notasLibres: string) {
+    setDatos(prev => {
+      const next = { ...prev, notasLibres }
+      datosRef.current = next
+      return next
+    })
+    setPendiente(true); setSavedAt(null)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => guardarRef.current(), 2000)
+  }
+
+  const cambiarEstado = useCallback(async (estado: string) => {
+    setCambiandoEstado(true); await guardar(estado); setCambiandoEstado(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function tiempoGuardado() {
     if (!savedAt) return ""
@@ -540,12 +453,21 @@ export default function VisitaPage() {
     return s < 5 ? "ahora mismo" : s < 60 ? `hace ${s}s` : `hace ${Math.round(s / 60)}min`
   }
 
+  // Derived values - computed before returns so hooks order is stable
+  const readOnly = visita?.estado === "ARCHIVADA"
+  const completadas = sections.filter(s => calcProgress(s, datos) === 100).length
+  const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
+  const fotosMap = (datos.fotos as FotosMap) ?? {}
+  const totalFotos = Object.values(fotosMap).reduce((acc, arr) => acc + arr.length, 0)
+
+  // Loading state
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: TEAL }} />
     </div>
   )
 
+  // Not found state
   if (!visita) return (
     <div className="text-center py-24">
       <p className="text-3xl mb-3">🔍</p>
@@ -554,16 +476,7 @@ export default function VisitaPage() {
     </div>
   )
 
-  const tipo = visita.tipo as "PROYECTOS" | "VENTAS"
-  const sections = getSections(tipo)
-  const readOnly = visita.estado === "ARCHIVADA"
-  const completadas = sections.filter(s => calcProgress(s, datos) === 100).length
-  const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
-  const fotosMap = (datos.fotos as FotosMap) ?? {}
-  const totalFotos = Object.values(fotosMap).reduce((acc, arr) => acc + arr.length, 0)
-
-  // ─ Vista impresión ─
-  if (showPrint) {
+    if (showPrint) {
     return (
       <>
         <div className="no-print fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
@@ -726,9 +639,55 @@ export default function VisitaPage() {
           })}
         </div>
 
+        {/* ─ TO-DO: proximas acciones ─ */}
+        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-5">
+            <TodoChecklist
+              items={(datos.todos as TodoItem[]) ?? []}
+              onChange={setTodos}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+
+        {/* ─ Notas libres ─ */}
+        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-base">📝</span>
+              <h3 className="text-sm font-semibold text-gray-700">Notas libres</h3>
+            </div>
+            <textarea
+              value={(datos.notasLibres as string) ?? ""}
+              onChange={e => setNotasLibres(e.target.value)}
+              disabled={readOnly}
+              rows={5}
+              placeholder="Escribe aqui cualquier observacion, comentario o informacion adicional de la visita..."
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 bg-white resize-none placeholder-gray-300"
+              style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+            />
+          </div>
+        </div>
+
+        {/* ─ Notas de voz ─ */}
+        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-5">
+            <VoiceNotes
+              notas={(datos.audioNotas as AudioNota[]) ?? []}
+              onChange={setAudioNotas}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+
+        {/* ─ Panel de analisis ─ */}
+        <div className="mt-4">
+          <AnalisisPanel datos={datos} />
+        </div>
+
         {readOnly && (
           <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 text-center">
-            <p className="text-sm text-gray-400">Esta visita está archivada.</p>
+            <p className="text-sm text-gray-400">Esta visita esta archivada.</p>
           </div>
         )}
       </div>
@@ -742,6 +701,12 @@ export default function VisitaPage() {
                 <div className="h-full rounded-full transition-all" style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
               </div>
               <span className="text-xs text-gray-400 shrink-0">{progreso}%</span>
+              {!online && (
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+                  Offline
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               <button onClick={() => guardar()} disabled={saving || !pendiente}
@@ -764,10 +729,17 @@ export default function VisitaPage() {
       {!readOnly && (
         <div className="hidden sm:block fixed bottom-6 right-6 z-40">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg px-4 py-3 flex items-center gap-3">
+            {!online && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+                Sin conexion
+              </span>
+            )}
             <div className="text-xs text-gray-400">
-              {saving ? <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin inline-block" />Guardando…</span>
-                : pendiente ? <span className="text-amber-500 font-medium">● Sin guardar</span>
-                : savedAt ? <span className="text-green-500 font-medium">✓ Guardado {tiempoGuardado()}</span>
+              {saving
+                ? <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin inline-block" />Guardando...</span>
+                : pendiente ? <span className="text-amber-500 font-medium">Sin guardar</span>
+                : savedAt ? <span className="text-green-500 font-medium">Guardado {tiempoGuardado()}</span>
                 : <span>Sin cambios</span>}
             </div>
             <button onClick={() => guardar()} disabled={saving || !pendiente}
@@ -776,18 +748,12 @@ export default function VisitaPage() {
             {visita.estado === "BORRADOR" && (
               <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado || saving}
                 className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50">
-                {cambiandoEstado ? "…" : "✓ Completar"}
-              </button>
-            )}
-            {visita.estado === "COMPLETADA" && (
-              <button onClick={() => cambiarEstado("BORRADOR")} disabled={cambiandoEstado}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 border border-gray-200 hover:border-gray-300 disabled:opacity-50">
-                Reabrir
+                {cambiandoEstado ? "..." : "Completar"}
               </button>
             )}
           </div>
         </div>
-      )}
-    </>
+    )}
+  </>
   )
 }

@@ -3,7 +3,39 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
-const TEAL = "#00A99D"
+const TEAL   = "#00A99D"
+const ORANGE = "#F7941D"
+
+function SkeletonHospitalRow() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-4">
+      <div className="w-10 h-10 rounded-xl skeleton-shimmer shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-1/2 rounded-lg skeleton-shimmer" />
+        <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
+      </div>
+      <div className="h-3 w-12 rounded skeleton-shimmer shrink-0" />
+    </div>
+  )
+}
+
+function SkeletonHospitalCard() {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl skeleton-shimmer shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-3/4 rounded-lg skeleton-shimmer" />
+          <div className="h-3 w-1/2 rounded-lg skeleton-shimmer" />
+        </div>
+      </div>
+      <div className="pt-2 border-t border-gray-100 flex justify-between">
+        <div className="h-5 w-24 rounded-md skeleton-shimmer" />
+        <div className="h-5 w-16 rounded skeleton-shimmer" />
+      </div>
+    </div>
+  )
+}
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "Hospital Público",
@@ -69,7 +101,7 @@ export default function HospitalesPage() {
   }, {})
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -162,13 +194,29 @@ export default function HospitalesPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: TEAL }} />
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {[1,2].map(g => (
+            <div key={g}>
+              <div className="h-4 w-24 rounded skeleton-shimmer mb-3" />
+              {vista === "lista" ? (
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+                  {Array.from({ length: 3 }).map((_, i) => <SkeletonHospitalRow key={i} />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: 3 }).map((_, i) => <SkeletonHospitalCard key={i} />)}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       ) : filtrados.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-          <p className="text-3xl mb-3">🏥</p>
-          <p className="text-gray-500 text-sm font-medium">No hay hospitales que coincidan</p>
+          <svg className="mx-auto mb-3 text-gray-200" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p className="text-gray-600 text-sm font-medium">No hay hospitales que coincidan</p>
           {(busqueda || filtroZona !== "TODAS") && (
             <button
               onClick={() => { setBusqueda(""); setFiltroZona("TODAS") }}

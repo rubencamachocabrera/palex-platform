@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useToast } from "@/components/Toast"
 
-const TEAL = "#00A99D"
+const TEAL   = "#00A99D"
+const ORANGE = "#F7941D"
 
 interface Zona {
   id: string
@@ -13,6 +15,7 @@ interface Zona {
 }
 
 export default function ZonasPage() {
+  const { success, error: toastError } = useToast()
   const [zonas, setZonas] = useState<Zona[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -57,8 +60,9 @@ export default function ZonasPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: form.nombre.trim(), descripcion: form.descripcion.trim() || null }),
       })
-      if (!r.ok) { const d = await r.json(); setError(d.error ?? "Error al guardar"); return }
+      if (!r.ok) { const d = await r.json(); setError(d.error ?? "Error al guardar"); toastError(d.error ?? "Error al guardar"); return }
       setModalOpen(false)
+      success(editando ? "Zona actualizada correctamente" : "Zona creada correctamente")
       await cargar()
     } finally {
       setGuardando(false)
@@ -68,6 +72,7 @@ export default function ZonasPage() {
   async function eliminar(z: Zona) {
     if (!confirm(`¿Eliminar la zona "${z.nombre}"? Esta acción no se puede deshacer.`)) return
     await fetch(`/api/zonas/${z.id}`, { method: "DELETE" })
+    success(`Zona "${z.nombre}" eliminada`)
     await cargar()
   }
 
@@ -78,7 +83,7 @@ export default function ZonasPage() {
         <button
           onClick={abrirCrear}
           className="text-sm font-medium text-white px-4 py-2 rounded-lg"
-          style={{ backgroundColor: TEAL }}
+          style={{ backgroundColor: ORANGE }}
         >
           + Nueva zona
         </button>
@@ -99,7 +104,7 @@ export default function ZonasPage() {
             {zonas.map(z => (
               <div key={z.id} className="flex items-center gap-4 px-5 py-4">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                  style={{ backgroundColor: TEAL }}>
+                  style={{ backgroundColor: ORANGE }}>
                   {z.nombre.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -168,7 +173,7 @@ export default function ZonasPage() {
                 onClick={guardar}
                 disabled={guardando}
                 className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white transition-opacity disabled:opacity-60"
-                style={{ backgroundColor: TEAL }}
+                style={{ backgroundColor: ORANGE }}
               >
                 {guardando ? "Guardando…" : "Guardar"}
               </button>

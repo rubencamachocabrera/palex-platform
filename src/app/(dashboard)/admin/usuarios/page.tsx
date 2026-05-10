@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useToast } from "@/components/Toast"
 
-const TEAL = "#00A99D"
+const TEAL   = "#00A99D"
+const ORANGE = "#F7941D"
 const ROLES = ["ADMIN", "VENTAS", "PROYECTOS"]
 
 const ROL_COLORS: Record<string, string> = {
@@ -18,6 +20,7 @@ interface Usuario {
 }
 
 export default function UsuariosPage() {
+  const { success, error: toastError } = useToast()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [zonas, setZonas] = useState<Zona[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,6 +63,7 @@ export default function UsuariosPage() {
     }
     setForm({ nombre: "", email: "", password: "", rol: "VENTAS" })
     setMostrarForm(false)
+    success("Usuario creado correctamente")
     await cargar()
     setGuardando(false)
   }
@@ -79,6 +83,7 @@ export default function UsuariosPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rol }),
     })
+    success("Rol actualizado")
     await cargar()
   }
 
@@ -99,6 +104,7 @@ export default function UsuariosPage() {
     })
     setGuardandoZonas(false)
     setZonaModal(null)
+    success("Zonas asignadas correctamente")
     await cargar()
   }
 
@@ -119,7 +125,7 @@ export default function UsuariosPage() {
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
           className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90"
-          style={{ backgroundColor: TEAL }}
+          style={{ backgroundColor: ORANGE }}
         >
           {mostrarForm ? "Cancelar" : "+ Nuevo usuario"}
         </button>
@@ -180,7 +186,7 @@ export default function UsuariosPage() {
               type="submit"
               disabled={guardando}
               className="px-6 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-60"
-              style={{ backgroundColor: TEAL }}
+              style={{ backgroundColor: ORANGE }}
             >
               {guardando ? "Creando..." : "Crear usuario"}
             </button>
@@ -271,7 +277,7 @@ export default function UsuariosPage() {
                     <div className="flex items-center gap-2">
                       <div
                         className="w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ backgroundColor: TEAL }}
+                        style={{ backgroundColor: ORANGE }}
                       >
                         {z.nombre.charAt(0).toUpperCase()}
                       </div>
@@ -293,7 +299,7 @@ export default function UsuariosPage() {
                 onClick={guardarZonas}
                 disabled={guardandoZonas}
                 className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white disabled:opacity-60"
-                style={{ backgroundColor: TEAL }}
+                style={{ backgroundColor: ORANGE }}
               >
                 {guardandoZonas ? "Guardando..." : "Guardar"}
               </button>

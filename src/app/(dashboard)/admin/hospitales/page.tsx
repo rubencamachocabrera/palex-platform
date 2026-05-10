@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { exportarCSV } from "@/lib/csv"
 
-const TEAL = "#00A99D"
+const TEAL   = "#00A99D"
+const ORANGE = "#F7941D"
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "H. Publico",
@@ -142,7 +143,7 @@ export default function HospitalesAdminPage() {
           <button
             onClick={abrirCrear}
             className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-sm"
-            style={{ backgroundColor: TEAL }}
+            style={{ backgroundColor: ORANGE }}
           >
             + Nuevo hospital
           </button>
@@ -310,7 +311,7 @@ export default function HospitalesAdminPage() {
               </button>
               <button onClick={guardar} disabled={guardando}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: TEAL }}>
+                style={{ backgroundColor: ORANGE }}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
             </div>
