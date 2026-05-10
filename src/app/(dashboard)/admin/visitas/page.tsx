@@ -29,7 +29,10 @@ export default function AdminVisitasPage() {
   const [busqueda, setBusqueda] = useState("")
 
   useEffect(() => {
-    fetch("/api/visitas").then(r => r.json()).then(data => { setVisitas(data); setLoading(false) })
+    fetch("/api/visitas")
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+      .then(data => { setVisitas(Array.isArray(data) ? data : []); setLoading(false) })
+      .catch(e => { console.error("Error cargando visitas:", e); setLoading(false) })
   }, [])
 
   const zonas = Array.from(new Set(visitas.map(v => v.hospital.zona.nombre))).sort()

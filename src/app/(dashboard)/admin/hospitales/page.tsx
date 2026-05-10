@@ -52,11 +52,18 @@ export default function HospitalesAdminPage() {
 
   const cargar = useCallback(async () => {
     setLoading(true)
-    const [rH, rZ] = await Promise.all([fetch("/api/hospitales"), fetch("/api/zonas")])
-    const [dataH, dataZ] = await Promise.all([rH.json(), rZ.json()])
-    setHospitales(dataH)
-    setZonas(dataZ)
-    setLoading(false)
+    try {
+      const [rH, rZ] = await Promise.all([fetch("/api/hospitales"), fetch("/api/zonas")])
+      if (!rH.ok || !rZ.ok) throw new Error(`HTTP ${rH.status}/${rZ.status}`)
+      const [dataH, dataZ] = await Promise.all([rH.json(), rZ.json()])
+      setHospitales(Array.isArray(dataH) ? dataH : [])
+      setZonas(Array.isArray(dataZ) ? dataZ : [])
+    } catch (e) {
+      console.error("Error cargando hospitales/zonas:", e)
+      setError("No se pudieron cargar los datos. Comprueba la conexión.")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { cargar() }, [cargar])

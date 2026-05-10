@@ -33,8 +33,9 @@ export default function HospitalesPage() {
 
   useEffect(() => {
     fetch("/api/hospitales")
-      .then(r => r.json())
-      .then(data => { setHospitales(data); setLoading(false) })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+      .then(data => { setHospitales(Array.isArray(data) ? data : []); setLoading(false) })
+      .catch(e => { console.error("Error cargando hospitales:", e); setLoading(false) })
   }, [])
 
   const filtrados = hospitales.filter(h =>
