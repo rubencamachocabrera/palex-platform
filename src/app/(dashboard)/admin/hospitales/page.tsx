@@ -203,7 +203,7 @@ export default function HospitalesAdminPage() {
                 </div>
                 <div className="col-span-2 flex gap-1.5 justify-end">
                   <Link
-                    href={`/dashboard/hospitales/${h.id}`}
+                    href={`/hospitales/${h.id}`}
                     className="text-xs text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
                   >
                     Ver

@@ -105,7 +105,7 @@ async function DashboardAdmin() {
         {/* Últimas visitas */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
-            <SectionHeader title="Últimas visitas" link="/dashboard/admin/visitas" />
+            <SectionHeader title="Últimas visitas" link="/admin/visitas" />
           </div>
           <div className="divide-y divide-gray-50">
             {ultimasVisitas.length === 0 ? (
@@ -129,10 +129,10 @@ async function DashboardAdmin() {
           <SectionHeader title="Accesos rápidos" />
           <div className="grid grid-cols-2 gap-3">
             {[
-              { href: "/dashboard/admin/usuarios",   label: "Gestionar usuarios",  icon: "👥", color: "bg-blue-50 text-blue-700" },
-              { href: "/dashboard/admin/hospitales", label: "Ver hospitales",      icon: "🏥", color: "bg-teal-50 text-teal-700" },
-              { href: "/dashboard/admin/zonas",      label: "Configurar zonas",    icon: "🗺",  color: "bg-amber-50 text-amber-700" },
-              { href: "/dashboard/ventas/pipeline",  label: "Pipeline de ventas",  icon: "📈", color: "bg-purple-50 text-purple-700" },
+              { href: "/admin/usuarios",   label: "Gestionar usuarios",  icon: "👥", color: "bg-blue-50 text-blue-700" },
+              { href: "/admin/hospitales", label: "Ver hospitales",      icon: "🏥", color: "bg-teal-50 text-teal-700" },
+              { href: "/admin/zonas",      label: "Configurar zonas",    icon: "🗺",  color: "bg-amber-50 text-amber-700" },
+              { href: "/ventas/pipeline",  label: "Pipeline de ventas",  icon: "📈", color: "bg-purple-50 text-purple-700" },
             ].map(a => (
               <Link
                 key={a.href}
@@ -196,19 +196,19 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
         {/* Mis oportunidades recientes */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
-            <SectionHeader title="Mis oportunidades" link="/dashboard/ventas/pipeline" />
+            <SectionHeader title="Mis oportunidades" link="/ventas/pipeline" />
           </div>
           <div className="divide-y divide-gray-50">
             {misOps.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-2xl mb-2">📊</p>
                 <p className="text-sm text-gray-400">Aún no tienes oportunidades</p>
-                <Link href="/dashboard/ventas/pipeline" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
+                <Link href="/ventas/pipeline" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
                   Crear la primera →
                 </Link>
               </div>
             ) : misOps.map(op => (
-              <Link key={op.id} href="/dashboard/ventas/pipeline" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+              <Link key={op.id} href="/ventas/pipeline" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{op.titulo}</p>
                   <p className="text-xs text-gray-400">{op.hospital.nombre} · {op.hospital.ciudad}</p>
@@ -229,19 +229,19 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
         {/* Mis visitas recientes */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
-            <SectionHeader title="Mis últimas visitas" link="/dashboard/visitas" />
+            <SectionHeader title="Mis últimas visitas" link="/visitas" />
           </div>
           <div className="divide-y divide-gray-50">
             {misVisitas.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-2xl mb-2">📋</p>
                 <p className="text-sm text-gray-400">Sin visitas registradas</p>
-                <Link href="/dashboard/hospitales" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
+                <Link href="/hospitales" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
                   Ver mis hospitales →
                 </Link>
               </div>
             ) : misVisitas.map(v => (
-              <Link key={v.id} href={`/dashboard/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+              <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
                   <p className="text-xs text-gray-400">{new Date(v.fecha).toLocaleDateString("es-ES")}</p>
@@ -296,7 +296,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50">
-          <SectionHeader title="Mis últimas visitas" link="/dashboard/visitas" />
+          <SectionHeader title="Mis últimas visitas" link="/visitas" />
         </div>
         <div className="divide-y divide-gray-50">
           {misVisitas.length === 0 ? (
@@ -304,12 +304,12 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
               <p className="text-3xl mb-2">📋</p>
               <p className="text-sm text-gray-500 font-medium">Aún no has registrado ninguna visita</p>
               <p className="text-xs text-gray-400 mt-1">Accede a un hospital para comenzar</p>
-              <Link href="/dashboard/hospitales" className="text-sm font-medium mt-3 inline-block" style={{ color: TEAL }}>
+              <Link href="/hospitales" className="text-sm font-medium mt-3 inline-block" style={{ color: TEAL }}>
                 Ver mis hospitales →
               </Link>
             </div>
           ) : misVisitas.map(v => (
-            <Link key={v.id} href={`/dashboard/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+            <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
                 <p className="text-xs text-gray-400">{new Date(v.fecha).toLocaleDateString("es-ES")}</p>

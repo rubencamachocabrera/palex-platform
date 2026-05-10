@@ -71,7 +71,7 @@ export default function MisVisitasPage() {
             <>
               <p className="text-gray-400 text-xs mt-1">Accede a un hospital para registrar tu primera visita.</p>
               <Link
-                href="/dashboard/hospitales"
+                href="/hospitales"
                 className="mt-3 inline-block text-sm font-medium"
                 style={{ color: TEAL }}
               >
@@ -86,7 +86,7 @@ export default function MisVisitasPage() {
             {filtradas.map(v => (
               <Link
                 key={v.id}
-                href={`/dashboard/visitas/${v.id}`}
+                href={`/visitas/${v.id}`}
                 className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
               >
                 <div className="flex-1 min-w-0">

@@ -116,7 +116,7 @@ export default function AdminVisitasPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="divide-y divide-gray-50">
             {filtradas.map(v => (
-              <Link key={v.id} href={`/dashboard/visitas/${v.id}`}
+              <Link key={v.id} href={`/visitas/${v.id}`}
                 className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>

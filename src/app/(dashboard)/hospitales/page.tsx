@@ -87,7 +87,7 @@ export default function HospitalesPage() {
                   {lista.map(h => (
                     <Link
                       key={h.id}
-                      href={`/dashboard/hospitales/${h.id}`}
+                      href={`/hospitales/${h.id}`}
                       className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
                     >
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-teal-50">

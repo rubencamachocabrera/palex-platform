@@ -74,7 +74,7 @@ export default function HospitalDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ hospitalId: id, tipo }),
     })
-    if (r.ok) { const v = await r.json(); router.push(`/dashboard/visitas/${v.id}`) }
+    if (r.ok) { const v = await r.json(); router.push(`/visitas/${v.id}`) }
     else setCreandoVisita(false)
   }
 
@@ -338,7 +338,7 @@ export default function HospitalDetailPage() {
                 {hospital.visitas.map(v => (
                   <Link
                     key={v.id}
-                    href={`/dashboard/visitas/${v.id}`}
+                    href={`/visitas/${v.id}`}
                     className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
                   >
                     <div className="flex-1 min-w-0">

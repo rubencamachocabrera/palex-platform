@@ -25,15 +25,15 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     {
       label: "Gestion",
       items: [
-        { href: "/dashboard/admin/usuarios",   label: "Usuarios" },
-        { href: "/dashboard/admin/zonas",      label: "Zonas" },
-        { href: "/dashboard/admin/hospitales", label: "Hospitales" },
-        { href: "/dashboard/admin/visitas",    label: "Todas las visitas" },
+        { href: "/admin/usuarios",   label: "Usuarios" },
+        { href: "/admin/zonas",      label: "Zonas" },
+        { href: "/admin/hospitales", label: "Hospitales" },
+        { href: "/admin/visitas",    label: "Todas las visitas" },
       ],
     },
     {
       label: "CRM",
-      items: [{ href: "/dashboard/ventas/pipeline", label: "Pipeline" }],
+      items: [{ href: "/ventas/pipeline", label: "Pipeline" }],
     },
   ],
   PROYECTOS: [
@@ -41,8 +41,8 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     {
       label: "Mi trabajo",
       items: [
-        { href: "/dashboard/hospitales", label: "Mis hospitales" },
-        { href: "/dashboard/visitas",    label: "Mis visitas" },
+        { href: "/hospitales", label: "Mis hospitales" },
+        { href: "/visitas",    label: "Mis visitas" },
       ],
     },
   ],
@@ -51,13 +51,13 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     {
       label: "Mi trabajo",
       items: [
-        { href: "/dashboard/hospitales",      label: "Mis hospitales" },
-        { href: "/dashboard/visitas",         label: "Mis visitas" },
+        { href: "/hospitales",      label: "Mis hospitales" },
+        { href: "/visitas",         label: "Mis visitas" },
       ],
     },
     {
       label: "CRM",
-      items: [{ href: "/dashboard/ventas/pipeline", label: "Pipeline" }],
+      items: [{ href: "/ventas/pipeline", label: "Pipeline" }],
     },
   ],
 }
@@ -121,7 +121,7 @@ export function Sidebar({ nombre, rol }: Props) {
       <div className="p-3 border-t border-gray-100">
         <div className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50 group">
           {/* Avatar + nombre → va al perfil */}
-          <Link href="/dashboard/perfil" className="flex items-center gap-2.5 flex-1 min-w-0">
+          <Link href="/perfil" className="flex items-center gap-2.5 flex-1 min-w-0">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 transition-opacity group-hover:opacity-80"
               style={{ backgroundColor: TEAL }}
@@ -136,7 +136,7 @@ export function Sidebar({ nombre, rol }: Props) {
 
           {/* Icono perfil */}
           <Link
-            href="/dashboard/perfil"
+            href="/perfil"
             title="Mi perfil"
             className="text-gray-300 hover:text-gray-600 transition-colors p-1 rounded shrink-0"
           >
