@@ -15,6 +15,16 @@ const TIPO_LABELS: Record<string, string> = {
   OTRO: "Otro",
 }
 
+const TIPO_ICON: Record<string, string> = {
+  HOSPITAL_PUBLICO: "🏥",
+  HOSPITAL_PRIVADO: "🏨",
+  CLINICA_PRIVADA: "🏢",
+  LABORATORIO: "🔬",
+  CENTRO_SALUD: "💊",
+  UNIVERSIDAD: "🎓",
+  OTRO: "🏗",
+}
+
 interface Hospital {
   id: string
   nombre: string
@@ -26,10 +36,14 @@ interface Hospital {
   _count: { visitas: number; contactos: number }
 }
 
+type Vista = "lista" | "grid"
+
 export default function HospitalesPage() {
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState("")
+  const [filtroZona, setFiltroZona] = useState("TODAS")
+  const [vista, setVista] = useState<Vista>("lista")
 
   useEffect(() => {
     fetch("/api/hospitales")
@@ -38,12 +52,15 @@ export default function HospitalesPage() {
       .catch(e => { console.error("Error cargando hospitales:", e); setLoading(false) })
   }, [])
 
-  const filtrados = hospitales.filter(h =>
-    h.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    h.ciudad.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  const zonas = Array.from(new Set(hospitales.map(h => h.zona.nombre))).sort()
 
-  // Agrupar por zona
+  const filtrados = hospitales.filter(h => {
+    const q = busqueda.toLowerCase()
+    const coincideQ = !q || h.nombre.toLowerCase().includes(q) || h.ciudad.toLowerCase().includes(q)
+    const coincideZ = filtroZona === "TODAS" || h.zona.nombre === filtroZona
+    return coincideQ && coincideZ
+  })
+
   const porZona = filtrados.reduce<Record<string, Hospital[]>>((acc, h) => {
     const zona = h.zona.nombre
     if (!acc[zona]) acc[zona] = []
@@ -52,30 +69,118 @@ export default function HospitalesPage() {
   }, {})
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-gray-800 mb-1">Mis hospitales</h1>
-      <p className="text-sm text-gray-400 mb-5">{hospitales.length} centros en tu zona</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Mis hospitales</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {filtrados.length} de {hospitales.length} centros
+            {filtroZona !== "TODAS" ? ` · ${filtroZona}` : ""}
+          </p>
+        </div>
+        {/* Toggle vista */}
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+          <button
+            onClick={() => setVista("lista")}
+            title="Vista lista"
+            className="p-1.5 rounded transition-colors"
+            style={vista === "lista" ? { backgroundColor: TEAL, color: "#fff" } : { color: "#9ca3af" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="2" rx="1" fill="currentColor"/>
+              <rect x="1" y="7" width="14" height="2" rx="1" fill="currentColor"/>
+              <rect x="1" y="11" width="14" height="2" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => setVista("grid")}
+            title="Vista tarjetas"
+            className="p-1.5 rounded transition-colors"
+            style={vista === "grid" ? { backgroundColor: TEAL, color: "#fff" } : { color: "#9ca3af" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+              <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+              <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+              <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </div>
 
-      <div className="mb-5">
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
         <input
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre o ciudad…"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent bg-white"
+          className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 bg-white"
+          style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
         />
+        {zonas.length > 1 && (
+          <select
+            value={filtroZona}
+            onChange={e => setFiltroZona(e.target.value)}
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 sm:w-48"
+            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+          >
+            <option value="TODAS">Todas las zonas</option>
+            {zonas.map(z => <option key={z} value={z}>{z}</option>)}
+          </select>
+        )}
       </div>
 
-      {loading ? (
-        <p className="text-sm text-gray-400">Cargando…</p>
-      ) : filtrados.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <p className="text-2xl mb-2">🏥</p>
-          <p className="text-gray-500 text-sm font-medium">No hay hospitales asignados</p>
-          <p className="text-gray-400 text-xs mt-1">
-            Contacta con el administrador para que te asigne una zona.
-          </p>
+      {/* Chips de zona rápida */}
+      {zonas.length > 1 && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={() => setFiltroZona("TODAS")}
+            className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+            style={filtroZona === "TODAS"
+              ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
+              : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
+          >
+            Todas ({hospitales.length})
+          </button>
+          {zonas.map(z => {
+            const cnt = hospitales.filter(h => h.zona.nombre === z).length
+            return (
+              <button
+                key={z}
+                onClick={() => setFiltroZona(filtroZona === z ? "TODAS" : z)}
+                className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                style={filtroZona === z
+                  ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
+                  : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
+              >
+                {z} ({cnt})
+              </button>
+            )
+          })}
         </div>
-      ) : (
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: TEAL }} />
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+          <p className="text-3xl mb-3">🏥</p>
+          <p className="text-gray-500 text-sm font-medium">No hay hospitales que coincidan</p>
+          {(busqueda || filtroZona !== "TODAS") && (
+            <button
+              onClick={() => { setBusqueda(""); setFiltroZona("TODAS") }}
+              className="mt-3 text-sm font-medium"
+              style={{ color: TEAL }}
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      ) : vista === "lista" ? (
+        /* ── VISTA LISTA ── */
         <div className="space-y-6">
           {Object.entries(porZona).map(([zona, lista]) => (
             <div key={zona}>
@@ -92,7 +197,7 @@ export default function HospitalesPage() {
                       className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
                     >
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-teal-50">
-                        🏥
+                        {TIPO_ICON[h.tipo] ?? "🏥"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
@@ -102,13 +207,57 @@ export default function HospitalesPage() {
                         </p>
                         <p className="text-xs text-gray-300 mt-0.5">{TIPO_LABELS[h.tipo] ?? h.tipo}</p>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 space-y-0.5">
                         <p className="text-xs text-gray-400">{h._count.visitas} visitas</p>
-                        <span className="text-gray-300 text-sm">›</span>
+                        <p className="text-xs text-gray-300">{h._count.contactos} contactos</p>
+                        <span className="text-gray-300 text-sm block">›</span>
                       </div>
                     </Link>
                   ))}
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* ── VISTA GRID ── */
+        <div className="space-y-6">
+          {Object.entries(porZona).map(([zona, lista]) => (
+            <div key={zona}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{zona}</span>
+                <span className="text-xs text-gray-300">({lista.length})</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {lista.map(h => (
+                  <Link
+                    key={h.id}
+                    href={`/hospitales/${h.id}`}
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm hover:border-gray-300 transition-all active:bg-gray-50"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-teal-50">
+                        {TIPO_ICON[h.tipo] ?? "🏥"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                          {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                        {TIPO_LABELS[h.tipo] ?? h.tipo}
+                      </span>
+                      <div className="text-right">
+                        <span className="text-xs font-semibold" style={{ color: TEAL }}>
+                          {h._count.visitas} visitas
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           ))}

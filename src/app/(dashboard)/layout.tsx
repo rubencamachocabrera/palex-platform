@@ -1,7 +1,8 @@
-// Layout del dashboard — protegido, con sidebar
+// Layout del dashboard — protegido, con sidebar y topbar
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
+import { TopBar } from "@/components/TopBar"
 
 export default async function DashboardLayout({
   children,
@@ -12,9 +13,12 @@ export default async function DashboardLayout({
   if (!session?.user) redirect("/login")
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   )
 }

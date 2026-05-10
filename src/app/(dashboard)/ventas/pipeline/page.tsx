@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useSession } from "next-auth/react"
 
 const TEAL = "#00A99D"
 
@@ -124,8 +123,7 @@ const FORM_VACIO: FormState = {
 // ─── Componente principal ─────────────────────────────────
 
 export default function PipelinePage() {
-  const { data: session } = useSession()
-  const rol = (session?.user as { role?: string })?.role ?? ""
+  const [rol, setRol] = useState("")
   const esAdmin = rol === "ADMIN"
 
   const [ops, setOps] = useState<Oportunidad[]>([])
@@ -152,6 +150,7 @@ export default function PipelinePage() {
 
   useEffect(() => {
     cargar()
+    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setRol(d.rol) }).catch(() => {})
     fetch("/api/hospitales").then(r => r.json()).then(d => setHospitales(Array.isArray(d) ? d : []))
   }, [cargar])
 
