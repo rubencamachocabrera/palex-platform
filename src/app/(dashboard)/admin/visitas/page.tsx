@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { exportarCSV } from "@/lib/csv"
 
 const TEAL = "#00A99D"
 
 const ESTADO_LABEL: Record<string, string> = {
-  BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada"
+  BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
 }
 const ESTADO_COLOR: Record<string, string> = {
   BORRADOR: "bg-amber-50 text-amber-600",
@@ -15,10 +16,7 @@ const ESTADO_COLOR: Record<string, string> = {
 }
 
 interface Visita {
-  id: string
-  estado: string
-  tipo: string
-  fecha: string
+  id: string; estado: string; tipo: string; fecha: string
   hospital: { id: string; nombre: string; ciudad: string; zona: { nombre: string } }
   usuario: { id: string; nombre: string; rol: string }
 }
@@ -31,9 +29,7 @@ export default function AdminVisitasPage() {
   const [busqueda, setBusqueda] = useState("")
 
   useEffect(() => {
-    fetch("/api/visitas")
-      .then(r => r.json())
-      .then(data => { setVisitas(data); setLoading(false) })
+    fetch("/api/visitas").then(r => r.json()).then(data => { setVisitas(data); setLoading(false) })
   }, [])
 
   const zonas = Array.from(new Set(visitas.map(v => v.hospital.zona.nombre))).sort()
@@ -46,47 +42,62 @@ export default function AdminVisitasPage() {
     return true
   })
 
-  const btnClass = (active: boolean) =>
+  function exportar() {
+    exportarCSV(filtradas.map(v => ({
+      Hospital: v.hospital.nombre,
+      Ciudad: v.hospital.ciudad,
+      Zona: v.hospital.zona.nombre,
+      Tecnico: v.usuario.nombre,
+      Rol: v.usuario.rol,
+      Tipo: v.tipo,
+      Estado: ESTADO_LABEL[v.estado] ?? v.estado,
+      Fecha: new Date(v.fecha).toLocaleDateString("es-ES"),
+    })), "visitas")
+  }
+
+  const btnFiltro = (active: boolean) =>
     `text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${active ? "text-white" : "text-gray-500 bg-white border border-gray-200 hover:border-gray-300"}`
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Todas las visitas</h1>
-        <span className="text-sm text-gray-400">{filtradas.length} resultados</span>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Todas las visitas</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{filtradas.length} resultados</p>
+        </div>
+        <button
+          onClick={exportar}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exportar CSV
+        </button>
       </div>
 
-      {/* Filtros */}
       <div className="space-y-3 mb-5">
         <input
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          placeholder="Buscar por hospital o técnico…"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent bg-white"
+          value={busqueda} onChange={e => setBusqueda(e.target.value)}
+          placeholder="Buscar por hospital o tecnico..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white"
         />
         <div className="flex gap-2 flex-wrap">
           {["TODOS", "BORRADOR", "COMPLETADA", "ARCHIVADA"].map(e => (
-            <button key={e}
-              onClick={() => setFiltroEstado(e)}
-              className={btnClass(filtroEstado === e)}
+            <button key={e} onClick={() => setFiltroEstado(e)}
+              className={btnFiltro(filtroEstado === e)}
               style={filtroEstado === e ? { backgroundColor: TEAL } : {}}>
-              {e === "TODOS" ? "Todos" : ESTADO_LABEL[e]}
+              {e === "TODOS" ? "Todos los estados" : ESTADO_LABEL[e]}
             </button>
           ))}
         </div>
         {zonas.length > 1 && (
           <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setFiltroZona("TODAS")}
-              className={btnClass(filtroZona === "TODAS")}
-              style={filtroZona === "TODAS" ? { backgroundColor: TEAL } : {}}>
-              Todas las zonas
-            </button>
-            {zonas.map(z => (
-              <button key={z}
-                onClick={() => setFiltroZona(z)}
-                className={btnClass(filtroZona === z)}
+            {["TODAS", ...zonas].map(z => (
+              <button key={z} onClick={() => setFiltroZona(z)}
+                className={btnFiltro(filtroZona === z)}
                 style={filtroZona === z ? { backgroundColor: TEAL } : {}}>
-                {z}
+                {z === "TODAS" ? "Todas las zonas" : z}
               </button>
             ))}
           </div>
@@ -94,20 +105,19 @@ export default function AdminVisitasPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Cargando…</p>
+        <div className="flex items-center justify-center py-20">
+          <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: TEAL }} />
+        </div>
       ) : filtradas.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center shadow-sm">
           <p className="text-gray-400 text-sm">No hay visitas que coincidan.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="divide-y divide-gray-100">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="divide-y divide-gray-50">
             {filtradas.map(v => (
-              <Link
-                key={v.id}
-                href={`/dashboard/visitas/${v.id}`}
-                className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
-              >
+              <Link key={v.id} href={`/dashboard/visitas/${v.id}`}
+                className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -115,8 +125,8 @@ export default function AdminVisitasPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-gray-400 hidden sm:block">{v.tipo}</span>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${ESTADO_COLOR[v.estado]}`}>
+                  <span className="text-xs text-gray-300 hidden sm:block">{v.tipo}</span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ESTADO_COLOR[v.estado]}`}>
                     {ESTADO_LABEL[v.estado]}
                   </span>
                 </div>

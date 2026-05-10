@@ -3,73 +3,166 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { cerrarSesion } from "@/lib/actions/auth"
 
 interface Props { nombre: string; rol: string }
 
 const TEAL = "#00A99D"
+const TEAL_LIGHT = "#E6F7F6"
 
-const NAV: Record<string, { href: string; label: string; icon: string }[]> = {
+const ROL_LABEL: Record<string, string> = {
+  ADMIN: "Administrador",
+  VENTAS: "Ventas",
+  PROYECTOS: "Proyectos",
+}
+
+interface NavItem { href: string; label: string }
+interface NavGroup { label?: string; items: NavItem[] }
+
+const NAV_GROUPS: Record<string, NavGroup[]> = {
   ADMIN: [
-    { href: "/dashboard",                   label: "Dashboard",   icon: "📊" },
-    { href: "/dashboard/admin/usuarios",    label: "Usuarios",    icon: "👥" },
-    { href: "/dashboard/admin/zonas",       label: "Zonas",       icon: "🗺" },
-    { href: "/dashboard/admin/hospitales",  label: "Hospitales",  icon: "🏥" },
-    { href: "/dashboard/admin/visitas",     label: "Todas las visitas", icon: "📋" },
+    { items: [{ href: "/dashboard", label: "Dashboard" }] },
+    {
+      label: "Gestion",
+      items: [
+        { href: "/dashboard/admin/usuarios",   label: "Usuarios" },
+        { href: "/dashboard/admin/zonas",      label: "Zonas" },
+        { href: "/dashboard/admin/hospitales", label: "Hospitales" },
+        { href: "/dashboard/admin/visitas",    label: "Todas las visitas" },
+      ],
+    },
+    {
+      label: "CRM",
+      items: [{ href: "/dashboard/ventas/pipeline", label: "Pipeline" }],
+    },
   ],
   PROYECTOS: [
-    { href: "/dashboard",              label: "Dashboard",   icon: "📊" },
-    { href: "/dashboard/hospitales",   label: "Mis hospitales", icon: "🏥" },
-    { href: "/dashboard/visitas",      label: "Mis visitas",    icon: "📋" },
+    { items: [{ href: "/dashboard", label: "Dashboard" }] },
+    {
+      label: "Mi trabajo",
+      items: [
+        { href: "/dashboard/hospitales", label: "Mis hospitales" },
+        { href: "/dashboard/visitas",    label: "Mis visitas" },
+      ],
+    },
   ],
   VENTAS: [
-    { href: "/dashboard",              label: "Dashboard",   icon: "📊" },
-    { href: "/dashboard/hospitales",   label: "Mis hospitales", icon: "🏥" },
-    { href: "/dashboard/visitas",      label: "Mis visitas",    icon: "📋" },
+    { items: [{ href: "/dashboard", label: "Dashboard" }] },
+    {
+      label: "Mi trabajo",
+      items: [
+        { href: "/dashboard/hospitales",      label: "Mis hospitales" },
+        { href: "/dashboard/visitas",         label: "Mis visitas" },
+      ],
+    },
+    {
+      label: "CRM",
+      items: [{ href: "/dashboard/ventas/pipeline", label: "Pipeline" }],
+    },
   ],
 }
 
 export function Sidebar({ nombre, rol }: Props) {
   const pathname = usePathname()
-  const items = NAV[rol] ?? NAV.VENTAS
+  const groups = NAV_GROUPS[rol] ?? NAV_GROUPS.VENTAS
+  const inicial = nombre.charAt(0).toUpperCase()
 
   return (
-    <aside className="w-56 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 shrink-0">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <Image src="/logo-palex.png" alt="Palex" width={130} height={48} priority />
+    <aside className="w-60 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shrink-0">
+
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-gray-100">
+        <Image src="/logo-palex.png" alt="Palex Medical" width={120} height={44} priority />
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {items.map(item => {
-          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-              style={active ? { backgroundColor: TEAL, color: "#fff" } : { color: "#4B5563" }}
-            >
-              <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
+      {/* Navegacion */}
+      <nav className="flex-1 p-3 overflow-y-auto">
+        {groups.map((group, gi) => (
+          <div key={gi} className="mb-5">
+            {group.label && (
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1.5">
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map(item => {
+                const active = pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href))
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-100"
+                    style={active
+                      ? { backgroundColor: TEAL, color: "#fff" }
+                      : { color: "#6b7280" }
+                    }
+                    onMouseEnter={e => {
+                      if (!active) (e.currentTarget as HTMLAnchorElement).style.backgroundColor = TEAL_LIGHT
+                    }}
+                    onMouseLeave={e => {
+                      if (!active) (e.currentTarget as HTMLAnchorElement).style.backgroundColor = ""
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: active ? "rgba(255,255,255,0.7)" : "#e5e7eb" }}
+                    />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-100 space-y-2">
-        <div>
-          <p className="text-sm font-semibold text-gray-800 truncate">{nombre}</p>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: TEAL }}>
-            {rol}
-          </span>
+      {/* Footer — usuario, perfil y logout */}
+      <div className="p-3 border-t border-gray-100">
+        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50 group">
+          {/* Avatar + nombre → va al perfil */}
+          <Link href="/dashboard/perfil" className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 transition-opacity group-hover:opacity-80"
+              style={{ backgroundColor: TEAL }}
+            >
+              {inicial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-800 truncate">{nombre}</p>
+              <p className="text-[10px] text-gray-400">{ROL_LABEL[rol] ?? rol}</p>
+            </div>
+          </Link>
+
+          {/* Icono perfil */}
+          <Link
+            href="/dashboard/perfil"
+            title="Mi perfil"
+            className="text-gray-300 hover:text-gray-600 transition-colors p-1 rounded shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </Link>
+
+          {/* Logout */}
+          <form action={cerrarSesion}>
+            <button
+              type="submit"
+              title="Cerrar sesion"
+              className="text-gray-300 hover:text-red-400 transition-colors p-1 rounded"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+          </form>
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-        >
-          Cerrar sesión →
-        </button>
       </div>
+
     </aside>
   )
 }

@@ -1,4 +1,4 @@
-// Modelo de datos Palex Medical — Fase 2: Hospitales, Zonas y Visitas
+// Modelo de datos Palex Medical -- Fase 3: CRM / Pipeline de ventas
 
 datasource db {
   provider = "postgresql"
@@ -8,7 +8,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ─── ENUMS ────────────────────────────────────────────────
+// --- ENUMS -----------------------------------------------------------
 
 enum Rol {
   ADMIN
@@ -37,7 +37,16 @@ enum EstadoVisita {
   ARCHIVADA
 }
 
-// ─── USUARIOS ─────────────────────────────────────────────
+enum EtapaPipeline {
+  IDENTIFICADO
+  PRIMERA_VISITA
+  PROPUESTA
+  NEGOCIACION
+  GANADO
+  PERDIDO
+}
+
+// --- USUARIOS --------------------------------------------------------
 
 model Usuario {
   id        String   @id @default(cuid())
@@ -49,13 +58,14 @@ model Usuario {
   creadoEn  DateTime @default(now())
   editadoEn DateTime @updatedAt
 
-  zonas   UsuarioZona[]
-  visitas Visita[]
+  zonas         UsuarioZona[]
+  visitas       Visita[]
+  oportunidades Oportunidad[]
 
   @@map("usuarios")
 }
 
-// ─── ZONAS ────────────────────────────────────────────────
+// --- ZONAS -----------------------------------------------------------
 
 model Zona {
   id          String   @id @default(cuid())
@@ -70,7 +80,7 @@ model Zona {
   @@map("zonas")
 }
 
-// Tabla pivot usuario ↔ zona (un usuario puede tener varias zonas)
+// Tabla pivot usuario <-> zona
 model UsuarioZona {
   usuarioId String
   zonaId    String
@@ -82,7 +92,7 @@ model UsuarioZona {
   @@map("usuarios_zonas")
 }
 
-// ─── HOSPITALES ───────────────────────────────────────────
+// --- HOSPITALES ------------------------------------------------------
 
 model Hospital {
   id        String       @id @default(cuid())
@@ -98,14 +108,15 @@ model Hospital {
   creadoEn  DateTime     @default(now())
   editadoEn DateTime     @updatedAt
 
-  zona      Zona       @relation(fields: [zonaId], references: [id])
-  contactos Contacto[]
-  visitas   Visita[]
+  zona          Zona          @relation(fields: [zonaId], references: [id])
+  contactos     Contacto[]
+  visitas       Visita[]
+  oportunidades Oportunidad[]
 
   @@map("hospitales")
 }
 
-// Contactos clave del hospital (médicos, supervisores, TI…)
+// Contactos clave del hospital
 model Contacto {
   id         String   @id @default(cuid())
   hospitalId String
@@ -121,7 +132,7 @@ model Contacto {
   @@map("contactos")
 }
 
-// ─── VISITAS ──────────────────────────────────────────────
+// --- VISITAS ---------------------------------------------------------
 
 model Visita {
   id         String       @id @default(cuid())
@@ -130,8 +141,8 @@ model Visita {
   tipo       TipoVisita
   estado     EstadoVisita @default(BORRADOR)
   fecha      DateTime     @default(now())
-  datos      Json         @default("{}")  // Formulario serializado
-  fotos      Json         @default("[]")  // URLs de fotos subidas
+  datos      Json         @default("{}")
+  fotos      Json         @default("[]")
   creadoEn   DateTime     @default(now())
   editadoEn  DateTime     @updatedAt
 
@@ -139,4 +150,27 @@ model Visita {
   usuario  Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@map("visitas")
+}
+
+// --- CRM / PIPELINE --------------------------------------------------
+
+model Oportunidad {
+  id            String        @id @default(cuid())
+  hospitalId    String
+  usuarioId     String
+  titulo        String
+  etapa         EtapaPipeline @default(IDENTIFICADO)
+  valorEstimado Float?
+  probabilidad  Int?
+  fechaCierre   DateTime?
+  productos     Json          @default("[]")
+  notas         String?
+  motivoPerdida String?
+  creadoEn      DateTime      @default(now())
+  editadoEn     DateTime      @updatedAt
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id])
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("oportunidades")
 }
