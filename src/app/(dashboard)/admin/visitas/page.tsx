@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { exportarCSV } from "@/lib/csv"
-
-const TEAL   = "#00A99D"
-const ORANGE = "#F7941D"
+import { TEAL, ORANGE } from "@/lib/brand"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",

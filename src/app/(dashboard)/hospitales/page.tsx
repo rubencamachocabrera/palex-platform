@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-
-const TEAL   = "#00A99D"
-const ORANGE = "#F7941D"
+import { TEAL, ORANGE } from "@/lib/brand"
+import { IconHospital, IconBuilding, IconMicroscope, IconActivity, IconGraduation } from "@/components/ui/Icons"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 function SkeletonHospitalRow() {
   return (
@@ -47,14 +48,14 @@ const TIPO_LABELS: Record<string, string> = {
   OTRO: "Otro",
 }
 
-const TIPO_ICON: Record<string, string> = {
-  HOSPITAL_PUBLICO: "🏥",
-  HOSPITAL_PRIVADO: "🏨",
-  CLINICA_PRIVADA: "🏢",
-  LABORATORIO: "🔬",
-  CENTRO_SALUD: "💊",
-  UNIVERSIDAD: "🎓",
-  OTRO: "🏗",
+const TIPO_ICON: Record<string, React.ReactNode> = {
+  HOSPITAL_PUBLICO: <IconHospital size={18} />,
+  HOSPITAL_PRIVADO: <IconHospital size={18} />,
+  CLINICA_PRIVADA:  <IconBuilding size={18} />,
+  LABORATORIO:      <IconMicroscope size={18} />,
+  CENTRO_SALUD:     <IconActivity size={18} />,
+  UNIVERSIDAD:      <IconGraduation size={18} />,
+  OTRO:             <IconBuilding size={18} />,
 }
 
 interface Hospital {
@@ -102,17 +103,12 @@ export default function HospitalesPage() {
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Mis hospitales</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {filtrados.length} de {hospitales.length} centros
-            {filtroZona !== "TODAS" ? ` · ${filtroZona}` : ""}
-          </p>
-        </div>
-        {/* Toggle vista */}
-        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+      <PageHeader
+        title="Mis hospitales"
+        subtitle={`${filtrados.length} de ${hospitales.length} centros${filtroZona !== "TODAS" ? ` · ${filtroZona}` : ""}`}
+        actions={
+          /* Toggle vista */
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
           <button
             onClick={() => setVista("lista")}
             title="Vista lista"
@@ -138,8 +134,8 @@ export default function HospitalesPage() {
               <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
             </svg>
           </button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-2 mb-5">
@@ -211,21 +207,16 @@ export default function HospitalesPage() {
           ))}
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-          <svg className="mx-auto mb-3 text-gray-200" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <p className="text-gray-600 text-sm font-medium">No hay hospitales que coincidan</p>
-          {(busqueda || filtroZona !== "TODAS") && (
-            <button
-              onClick={() => { setBusqueda(""); setFiltroZona("TODAS") }}
-              className="mt-3 text-sm font-medium"
-              style={{ color: TEAL }}
-            >
-              Limpiar filtros
-            </button>
-          )}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <EmptyState
+            icon="search"
+            title="No hay hospitales que coincidan"
+            description="Prueba con otro término o cambia los filtros de zona."
+            action={(busqueda || filtroZona !== "TODAS")
+              ? { label: "Limpiar filtros", variant: "ghost", onClick: () => { setBusqueda(""); setFiltroZona("TODAS") } }
+              : undefined
+            }
+          />
         </div>
       ) : vista === "lista" ? (
         /* ── VISTA LISTA ── */
@@ -244,8 +235,8 @@ export default function HospitalesPage() {
                       href={`/hospitales/${h.id}`}
                       className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
                     >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-teal-50">
-                        {TIPO_ICON[h.tipo] ?? "🏥"}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
+                        {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
@@ -284,8 +275,8 @@ export default function HospitalesPage() {
                     className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm hover:border-gray-300 transition-all active:bg-gray-50"
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-teal-50">
-                        {TIPO_ICON[h.tipo] ?? "🏥"}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
+                        {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>

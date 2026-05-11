@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
-
-const TEAL   = "#00A99D"
-const ORANGE = "#F7941D"
+import { TEAL } from "@/lib/brand"
 
 interface Zona {
   id: string

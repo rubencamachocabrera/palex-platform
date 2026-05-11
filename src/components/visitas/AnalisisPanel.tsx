@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react"
 import { analizarVisita } from "@/lib/visita-analysis"
 import type { Riesgo } from "@/lib/visita-analysis"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 const NIVEL_CONFIG = {
   alto:  { bg: "bg-red-50",    border: "border-red-200",    text: "text-red-700",    icon: "🔴", label: "Alto" },

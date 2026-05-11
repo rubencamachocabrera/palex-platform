@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 // ─── Tipos ────────────────────────────────────────────────
 

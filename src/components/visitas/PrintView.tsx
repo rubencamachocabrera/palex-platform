@@ -2,8 +2,7 @@
 
 import type { FormSection } from "@/lib/form-schema"
 import type { TodoItem } from "@/components/visitas/TodoChecklist"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",

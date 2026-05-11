@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 export interface AudioNota {
   id: string

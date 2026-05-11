@@ -4,8 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import { useSidebarToggle } from "@/components/Sidebar"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 interface Resultado {
   tipo: "hospital" | "visita"

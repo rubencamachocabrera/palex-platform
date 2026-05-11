@@ -1,8 +1,13 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
+import {
+  IconHospital, IconUsers, IconClipboard, IconTrendingUp,
+  IconCheckCircle, IconFileText, IconMap,
+} from "@/components/ui/Icons"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -32,11 +37,13 @@ function fmtEuros(n: number): string {
 
 // ── Subcomponentes ──────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, icon }: { label: string; value: string | number; sub?: string; icon: string }) {
+function KpiCard({ label, value, sub, icon }: { label: string; value: string | number; sub?: string; icon: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
+        <span className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+          {icon}
+        </span>
       </div>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       <p className="text-xs font-medium text-gray-500 mt-1">{label}</p>
@@ -89,16 +96,13 @@ async function DashboardAdmin() {
 
   return (
     <div>
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Visión general del sistema</p>
-      </div>
+      <PageHeader title="Dashboard" subtitle="Visión general del sistema" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard label="Hospitales activos"  value={totalHospitales} icon="🏥" />
-        <KpiCard label="Usuarios activos"    value={totalUsuarios}   icon="👥" />
-        <KpiCard label="Visitas este mes"    value={visitasMes}      icon="📋" />
-        <KpiCard label="Pipeline activo"     value={fmtEuros(valorPipeline._sum.valorEstimado ?? 0)} sub={`${totalOportunidades} oportunidades`} icon="📈" />
+        <KpiCard label="Hospitales activos"  value={totalHospitales} icon={<IconHospital size={18} />} />
+        <KpiCard label="Usuarios activos"    value={totalUsuarios}   icon={<IconUsers size={18} />} />
+        <KpiCard label="Visitas este mes"    value={visitasMes}      icon={<IconClipboard size={18} />} />
+        <KpiCard label="Pipeline activo"     value={fmtEuros(valorPipeline._sum.valorEstimado ?? 0)} sub={`${totalOportunidades} oportunidades`} icon={<IconTrendingUp size={18} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -129,17 +133,17 @@ async function DashboardAdmin() {
           <SectionHeader title="Accesos rápidos" />
           <div className="grid grid-cols-2 gap-3">
             {[
-              { href: "/admin/usuarios",   label: "Gestionar usuarios",  icon: "👥", color: "bg-blue-50 text-blue-700" },
-              { href: "/admin/hospitales", label: "Ver hospitales",      icon: "🏥", color: "bg-teal-50 text-teal-700" },
-              { href: "/admin/zonas",      label: "Configurar zonas",    icon: "🗺",  color: "bg-amber-50 text-amber-700" },
-              { href: "/ventas/pipeline",  label: "Pipeline de ventas",  icon: "📈", color: "bg-purple-50 text-purple-700" },
-            ].map(a => (
+              { href: "/admin/usuarios",   label: "Gestionar usuarios",  icon: <IconUsers size={18} />,       color: "bg-blue-50 text-blue-700" },
+              { href: "/admin/hospitales", label: "Ver hospitales",      icon: <IconHospital size={18} />,    color: "bg-teal-50 text-teal-700" },
+              { href: "/admin/zonas",      label: "Configurar zonas",    icon: <IconMap size={18} />,         color: "bg-amber-50 text-amber-700" },
+              { href: "/ventas/pipeline",  label: "Pipeline de ventas",  icon: <IconTrendingUp size={18} />,  color: "bg-purple-50 text-purple-700" },
+            ].map((a, i) => (
               <Link
-                key={a.href}
+                key={i}
                 href={a.href}
                 className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group"
               >
-                <span className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.color}`}>{a.icon}</span>
+                <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.color}`}>{a.icon}</span>
                 <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors leading-tight">{a.label}</span>
               </Link>
             ))}
@@ -180,16 +184,13 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
 
   return (
     <div>
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-gray-900">Hola, {nombre.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Aquí está tu resumen de hoy</p>
-      </div>
+      <PageHeader title={`Hola, ${nombre.split(" ")[0]} 👋`} subtitle="Aquí está tu resumen de hoy" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard label="Pipeline activo"      value={fmtEuros(totalPipeline)} sub={`${opsActivas.length} oportunidades`} icon="📈" />
-        <KpiCard label="Contratos ganados"    value={ganadas.length}           sub="en total"           icon="✅" />
-        <KpiCard label="Hospitales en mi zona" value={misHospitales}           icon="🏥" />
-        <KpiCard label="Visitas este mes"     value={visitasMes}               icon="📋" />
+        <KpiCard label="Pipeline activo"       value={fmtEuros(totalPipeline)} sub={`${opsActivas.length} oportunidades`} icon={<IconTrendingUp size={18} />} />
+        <KpiCard label="Contratos ganados"     value={ganadas.length}           sub="en total"           icon={<IconCheckCircle size={18} />} />
+        <KpiCard label="Hospitales en mi zona" value={misHospitales}           icon={<IconHospital size={18} />} />
+        <KpiCard label="Visitas este mes"      value={visitasMes}               icon={<IconClipboard size={18} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -200,13 +201,11 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
           </div>
           <div className="divide-y divide-gray-50">
             {misOps.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-2xl mb-2">📊</p>
-                <p className="text-sm text-gray-400">Aún no tienes oportunidades</p>
-                <Link href="/ventas/pipeline" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
-                  Crear la primera →
-                </Link>
-              </div>
+              <EmptyState
+                icon="pipeline"
+                title="Aún no tienes oportunidades"
+                action={{ label: "Crear la primera", href: "/ventas/pipeline", variant: "ghost" }}
+              />
             ) : misOps.map(op => (
               <Link key={op.id} href="/ventas/pipeline" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
@@ -233,13 +232,11 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
           </div>
           <div className="divide-y divide-gray-50">
             {misVisitas.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-2xl mb-2">📋</p>
-                <p className="text-sm text-gray-400">Sin visitas registradas</p>
-                <Link href="/hospitales" className="text-xs font-medium mt-2 inline-block" style={{ color: TEAL }}>
-                  Ver mis hospitales →
-                </Link>
-              </div>
+              <EmptyState
+                icon="document"
+                title="Sin visitas registradas"
+                action={{ label: "Ver mis hospitales", href: "/hospitales", variant: "ghost" }}
+              />
             ) : misVisitas.map(v => (
               <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
@@ -282,16 +279,13 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
 
   return (
     <div>
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-gray-900">Hola, {nombre.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Tu actividad de campo</p>
-      </div>
+      <PageHeader title={`Hola, ${nombre.split(" ")[0]} 👋`} subtitle="Tu actividad de campo" />
 
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <KpiCard label="Hospitales en mi zona" value={misHospitales} icon="🏥" />
-        <KpiCard label="Visitas este mes"       value={visitasMes}   icon="📋" />
-        <KpiCard label="Total de mis visitas"   value={misVisitas.length} icon="📝" />
-        <KpiCard label="Visitas completadas"    value={completadas}  sub="de las últimas 6" icon="✅" />
+        <KpiCard label="Hospitales en mi zona" value={misHospitales}      icon={<IconHospital size={18} />} />
+        <KpiCard label="Visitas este mes"       value={visitasMes}        icon={<IconClipboard size={18} />} />
+        <KpiCard label="Total de mis visitas"   value={misVisitas.length} icon={<IconFileText size={18} />} />
+        <KpiCard label="Visitas completadas"    value={completadas}  sub="de las últimas 6" icon={<IconCheckCircle size={18} />} />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -300,14 +294,12 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
         </div>
         <div className="divide-y divide-gray-50">
           {misVisitas.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-3xl mb-2">📋</p>
-              <p className="text-sm text-gray-500 font-medium">Aún no has registrado ninguna visita</p>
-              <p className="text-xs text-gray-400 mt-1">Accede a un hospital para comenzar</p>
-              <Link href="/hospitales" className="text-sm font-medium mt-3 inline-block" style={{ color: TEAL }}>
-                Ver mis hospitales →
-              </Link>
-            </div>
+            <EmptyState
+              icon="hospital"
+              title="Aún no has registrado ninguna visita"
+              description="Accede a un hospital para comenzar."
+              action={{ label: "Ver mis hospitales", href: "/hospitales" }}
+            />
           ) : misVisitas.map(v => (
             <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div className="flex-1 min-w-0">

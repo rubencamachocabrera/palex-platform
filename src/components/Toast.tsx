@@ -52,7 +52,7 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
     success: { bg: "bg-white",         border: "border-l-4 border-l-emerald-500", icon: checkIcon,   iconColor: "text-emerald-500" },
     error:   { bg: "bg-white",         border: "border-l-4 border-l-red-500",     icon: xIcon,       iconColor: "text-red-500" },
     warning: { bg: "bg-white",         border: "border-l-4 border-l-amber-500",   icon: warnIcon,    iconColor: "text-amber-500" },
-    info:    { bg: "bg-white",         border: "border-l-4 border-l-[#00A99D]",   icon: infoIcon,    iconColor: "text-[#00A99D]" },
+    info:    { bg: "bg-white",         border: "border-l-4 border-l-teal-500",    icon: infoIcon,    iconColor: "text-teal-600" },
   }
 
   const s = STYLES[t.type]

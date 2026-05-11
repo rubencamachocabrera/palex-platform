@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-
-const TEAL   = "#00A99D"
-const ORANGE = "#F7941D"
+import { TEAL, ORANGE } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -66,13 +66,10 @@ export default function MisVisitasPage() {
 
   return (
     <div className="animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-semibold text-gray-800">Mis visitas</h1>
-      </div>
-      <p className="text-sm text-gray-400 mb-5">
-        {loading ? "Cargando..." : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""} en total`}
-      </p>
+      <PageHeader
+        title="Mis visitas"
+        subtitle={loading ? "Cargando…" : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""} en total`}
+      />
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap mb-5">
@@ -100,29 +97,12 @@ export default function MisVisitasPage() {
             {Array.from({ length: 5 }).map((_, i) => <SkeletonVisita key={i} />)}
           </div>
         ) : filtradas.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="flex justify-center mb-3 opacity-40">
-              <DocumentIcon />
-            </div>
-            <p className="text-gray-600 text-sm font-medium mb-1">
-              {filtro === "TODOS" ? "No tienes visitas registradas" : `No hay visitas "${ESTADO_LABEL[filtro]}"`}
-            </p>
-            {filtro === "TODOS" && (
-              <>
-                <p className="text-gray-400 text-xs">Accede a un hospital para registrar tu primera visita.</p>
-                <Link
-                  href="/hospitales"
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: ORANGE }}
-                >
-                  Ver mis hospitales
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                  </svg>
-                </Link>
-              </>
-            )}
-          </div>
+          <EmptyState
+            icon="document"
+            title={filtro === "TODOS" ? "No tienes visitas registradas" : `No hay visitas "${ESTADO_LABEL[filtro]}"`}
+            description={filtro === "TODOS" ? "Accede a un hospital para registrar tu primera visita." : undefined}
+            action={filtro === "TODOS" ? { label: "Ver mis hospitales", href: "/hospitales" } : undefined}
+          />
         ) : (
           <div className="divide-y divide-gray-100">
             {filtradas.map((v, i) => (

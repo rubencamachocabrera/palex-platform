@@ -1,3 +1,5 @@
+import { TEAL } from "@/lib/brand"
+
 // Layout para rutas de autenticación — split screen con branding
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -5,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Panel izquierdo — branding */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12"
-        style={{ backgroundColor: "#00A99D" }}
+        style={{ backgroundColor: TEAL }}
       >
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.2)" }}>

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { TEAL } from "@/lib/brand"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -114,7 +115,7 @@ export default function LoginPage() {
           type="submit"
           disabled={loading}
           className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-60 mt-2 shadow-sm"
-          style={{ backgroundColor: "#00A99D" }}
+          style={{ backgroundColor: TEAL }}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
+import { TEAL, ORANGE } from "@/lib/brand"
 
-const TEAL   = "#00A99D"
-const ORANGE = "#F7941D"
 const ROLES = ["ADMIN", "VENTAS", "PROYECTOS"]
 
 const ROL_COLORS: Record<string, string> = {

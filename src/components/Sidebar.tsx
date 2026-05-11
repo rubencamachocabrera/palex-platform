@@ -5,12 +5,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { signOut } from "next-auth/react"
+import { TEAL, TEAL_LIGHT, ORANGE } from "@/lib/brand"
 
 interface Props { nombre: string; rol: string }
-
-const TEAL        = "#00A99D"
-const TEAL_LIGHT  = "#E6F7F6"
-const ORANGE      = "#F7941D"
 
 const ROL_LABEL: Record<string, string> = {
   ADMIN:     "Administrador",

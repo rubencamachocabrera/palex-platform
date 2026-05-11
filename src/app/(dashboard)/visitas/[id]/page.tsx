@@ -26,8 +26,7 @@ const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
   ssr: false,
 })
 
-const TEAL = "#00A99D"
-const TEAL_DARK = "#007A72"
+import { TEAL, TEAL_DARK } from "@/lib/brand"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -664,7 +663,7 @@ export default function VisitaPage() {
               rows={5}
               placeholder="Escribe aqui cualquier observacion, comentario o informacion adicional de la visita..."
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 bg-white resize-none placeholder-gray-300"
-              style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+              style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
             />
           </div>
         </div>

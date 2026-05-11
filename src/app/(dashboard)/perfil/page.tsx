@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 const ROL_LABEL: Record<string, string> = {
   ADMIN: "Administrador", VENTAS: "Ventas", PROYECTOS: "Proyectos",

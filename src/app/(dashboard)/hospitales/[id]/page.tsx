@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-
-const TEAL = "#00A99D"
+import { TEAL } from "@/lib/brand"
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "Hospital Publico", HOSPITAL_PRIVADO: "Hospital Privado",
@@ -222,7 +221,7 @@ export default function HospitalDetailPage() {
             const cp = hospital.contactos.find(c => c.principal)!
             return (
               <div className="bg-teal-50 rounded-xl border border-teal-100 px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0" style={{ backgroundColor: "#00A99D" }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0" style={{ backgroundColor: TEAL }}>
                   {cp.nombre.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
