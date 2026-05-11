@@ -14,6 +14,8 @@ export interface FormField {
   ph?: string
   hint?: string
   opts?: string[]
+  // Muestra el campo solo cuando otro campo tiene uno de los valores indicados
+  showIf?: { field: string; values: string[] }
 }
 
 export interface FormSection {
@@ -60,9 +62,9 @@ export const FORM_SCHEMA: FormSection[] = [
       { id: 'hora_ini',      label: 'Hora de apertura al público',          type: 'time' },
       { id: 'hora_fin',      label: 'Hora de cierre al público',            type: 'time' },
       { id: 'turno_tarde',   label: '¿Hay turno de tarde?',                 type: 'radio',  opts: ['Sí', 'No'] },
-      { id: 'hora_tarde',    label: 'Horario de tarde (si aplica)',         type: 'text',   ph: 'Ej: 15:00 – 18:00' },
+      { id: 'hora_tarde',    label: 'Horario de tarde (si aplica)',         type: 'text',   ph: 'Ej: 15:00 – 18:00', showIf: { field: 'turno_tarde', values: ['Sí'] } },
       { id: 'gestion_colas', label: '¿Sistema de gestión de turnos/colas?', type: 'radio',  opts: ['Sí', 'No', 'En estudio'] },
-      { id: 'sistema_colas', label: 'Sistema de colas: marca/modelo',       type: 'text',   ph: 'Ej: Q-Matic, tótem propio...' },
+      { id: 'sistema_colas', label: 'Sistema de colas: marca/modelo',       type: 'text',   ph: 'Ej: Q-Matic, tótem propio...', showIf: { field: 'gestion_colas', values: ['Sí'] } },
       { id: 'id_recepcion',  label: 'Identificación en tótem/recepción',   type: 'checks', opts: ['NSS / CIP', 'Tarjeta sanitaria', 'DNI / NIF', 'Nombre', 'Código QR', 'Chip NFC', 'Otro'] },
       { id: 'id_extraccion', label: 'Identificación en punto de extracción', type: 'checks', opts: ['NSS / CIP', 'Tarjeta sanitaria', 'DNI / NIF', 'Nombre', 'Etiqueta previa', 'Volante', 'Otro'] },
     ]
@@ -75,7 +77,7 @@ export const FORM_SCHEMA: FormSection[] = [
       { id: 'tipos_solicitud', label: 'Tipos de solicitudes que llegan',    type: 'checks',   opts: ['Atención Primaria', 'Especializada', 'Urgencias', 'Pediatría', 'Domicilio', 'Empresa / mutua', 'Centros externos', 'Otro'] },
       { id: 'vol_peticiones',  label: 'Volumen de peticiones por tipo',     type: 'textarea', ph: 'Ej: 70% primaria, 20% especializada...' },
       { id: 'solicitud_elec',  label: '¿Petición electrónica?',             type: 'radio',    opts: ['Sí', 'No', 'Parcialmente'] },
-      { id: 'sistema_elec',    label: 'Sistema de petición electrónica',    type: 'text',     ph: 'Nombre del sistema, versión...' },
+      { id: 'sistema_elec',    label: 'Sistema de petición electrónica',    type: 'text',     ph: 'Nombre del sistema, versión...', showIf: { field: 'solicitud_elec', values: ['Sí', 'Parcialmente'] } },
       { id: 'volantes_papel',  label: '¿Se siguen usando volantes en papel?', type: 'radio',  opts: ['Sí, mayoritariamente', 'Sí, ocasionalmente', 'No'] },
     ]
   },
@@ -87,14 +89,14 @@ export const FORM_SCHEMA: FormSection[] = [
       { id: 'estadistico',        label: '¿Disponen de estadístico?',            type: 'radio',    opts: ['Sí', 'No'] },
       { id: 'proceso_incidencia', label: 'Proceso de gestión de incidencias',    type: 'textarea', ph: 'Cómo se registran, comunican y resuelven...' },
       { id: 'sistema_registro',   label: '¿Sistema de registro de incidencias?', type: 'radio',    opts: ['Sí', 'No'] },
-      { id: 'cual_registro',      label: '¿Cuál? (si aplica)',                   type: 'text',     ph: 'Nombre del sistema' },
+      { id: 'cual_registro',      label: '¿Cuál? (si aplica)',                   type: 'text',     ph: 'Nombre del sistema', showIf: { field: 'sistema_registro', values: ['Sí'] } },
     ]
   },
   {
     id: 's5', title: 'Aplicación Inlab', icon: '💻',
     fields: [
       { id: 'inlab_actual',    label: '¿Tienen Inlab actualmente?',             type: 'radio',  opts: ['Sí', 'No', 'Tienen Tubeti'] },
-      { id: 'version_inlab',   label: 'Versión actual (si aplica)',             type: 'text',   ph: 'Ej: Inlab 5.x' },
+      { id: 'version_inlab',   label: 'Versión actual (si aplica)',             type: 'text',   ph: 'Ej: Inlab 5.x', showIf: { field: 'inlab_actual', values: ['Sí', 'Tienen Tubeti'] } },
       { id: 'acceso_mostrador',label: '¿Acceso a Inlab desde mostrador?',      type: 'radio',  opts: ['Sí', 'No', 'Solo muestras'] },
       { id: 'acceso_boxes',    label: '¿Acceso desde boxes de extracción?',    type: 'radio',  opts: ['Sí', 'No', 'Parcialmente'] },
       { id: 'lector_cb',       label: '¿Necesitan lector de código de barras?', type: 'radio', opts: ['Sí', 'No', 'Posiblemente'] },
@@ -122,7 +124,7 @@ export const FORM_SCHEMA: FormSection[] = [
     id: 's7', title: 'Impresoras Zebra', icon: '🖨',
     fields: [
       { id: 'zebra_actual',  label: '¿Tienen impresoras Zebra actualmente?',      type: 'radio',    opts: ['Sí', 'No'] },
-      { id: 'modelo_zebra',  label: 'Modelos actuales (si aplica)',               type: 'text',     ph: 'Ej: ZD420, ZD620...' },
+      { id: 'modelo_zebra',  label: 'Modelos actuales (si aplica)',               type: 'text',     ph: 'Ej: ZD420, ZD620...', showIf: { field: 'zebra_actual', values: ['Sí'] } },
       { id: 'n_zebra',       label: 'Nº de impresoras Zebra necesarias',          type: 'number',   ph: '0' },
       { id: 'dist_zebra',    label: 'Distribución prevista',                      type: 'textarea', ph: 'Ej: 1 en mostrador, 1 en cada box...' },
       { id: 'red_zebra',     label: '¿Conexión de red en cada punto?',            type: 'radio',    opts: ['Sí, todos', 'Parcialmente', 'No'] },
@@ -152,17 +154,17 @@ export const FORM_SCHEMA: FormSection[] = [
       { id: 'info_etiq',       label: 'Información en la etiqueta',        type: 'checks', opts: ['Nombre del paciente', 'Fecha nacimiento', 'NSS / CIP', 'Nº Historia Clínica', 'Fecha y hora', 'Tipo de muestra', 'Nº de Lab', 'Origen/Destino', 'Nº de petición', 'Hab/Cama'] },
       { id: 'tam_etiq',        label: 'Tamaño actual de etiqueta',         type: 'text',   ph: 'Ej: 25×10 mm, 40×25 mm…' },
       { id: 'etiq_especiales', label: '¿Etiquetas especiales?',            type: 'radio',  opts: ['Sí', 'No'] },
-      { id: 'desc_etiq_esp',   label: 'Descripción etiquetas especiales',  type: 'textarea', ph: 'Peligroso, cadena de frío, urgente...' },
+      { id: 'desc_etiq_esp',   label: 'Descripción etiquetas especiales',  type: 'textarea', ph: 'Peligroso, cadena de frío, urgente...', showIf: { field: 'etiq_especiales', values: ['Sí'] } },
     ]
   },
   {
     id: 's10', title: 'Casos Especiales', icon: '🔴',
     fields: [
       { id: 'pacientes_esp',   label: '¿Áreas con pacientes especiales?',  type: 'radio',    opts: ['Sí', 'No'] },
-      { id: 'tipos_esp',       label: 'Tipos de pacientes especiales',      type: 'checks',   opts: ['Infecciosos (aislamiento)', 'Sepsis', 'Oncología', 'Pediatría', 'Inmunodeprimidos', 'Trasplantados', 'Neonatos', 'Lactantes', 'Otro'] },
-      { id: 'desc_areas_esp',  label: 'Descripción de las áreas especiales', type: 'textarea', ph: 'Ubicación, flujos específicos, personal...' },
-      { id: 'protocolos_seg',  label: '¿Protocolos especiales de seguridad?', type: 'radio',  opts: ['Sí', 'No'] },
-      { id: 'desc_protocolos', label: 'Descripción de protocolos',          type: 'textarea', ph: 'EPI requerido, flujos especiales...' },
+      { id: 'tipos_esp',       label: 'Tipos de pacientes especiales',      type: 'checks',   opts: ['Infecciosos (aislamiento)', 'Sepsis', 'Oncología', 'Pediatría', 'Inmunodeprimidos', 'Trasplantados', 'Neonatos', 'Lactantes', 'Otro'], showIf: { field: 'pacientes_esp', values: ['Sí'] } },
+      { id: 'desc_areas_esp',  label: 'Descripción de las áreas especiales', type: 'textarea', ph: 'Ubicación, flujos específicos, personal...', showIf: { field: 'pacientes_esp', values: ['Sí'] } },
+      { id: 'protocolos_seg',  label: '¿Protocolos especiales de seguridad?', type: 'radio',  opts: ['Sí', 'No'], showIf: { field: 'pacientes_esp', values: ['Sí'] } },
+      { id: 'desc_protocolos', label: 'Descripción de protocolos',          type: 'textarea', ph: 'EPI requerido, flujos especiales...', showIf: { field: 'protocolos_seg', values: ['Sí'] } },
     ]
   },
   {
@@ -208,7 +210,7 @@ export const FORM_SCHEMA: FormSection[] = [
     id: 's14', title: 'Solicitudes del Cliente', icon: '📝', soloVentas: true,
     fields: [
       { id: 'tiene_proyecto',    label: '¿Hay proyecto activo en este centro?', type: 'radio',    opts: ['Sí', 'No'] },
-      { id: 'proyecto_detalle',  label: 'Detalle del proyecto activo',          type: 'textarea', ph: 'Nombre del proyecto, estado, productos instalados...' },
+      { id: 'proyecto_detalle',  label: 'Detalle del proyecto activo',          type: 'textarea', ph: 'Nombre del proyecto, estado, productos instalados...', showIf: { field: 'tiene_proyecto', values: ['Sí'] } },
       { id: 'solicitudes',       label: 'Solicitudes del cliente',              type: 'textarea', ph: 'Qué pide exactamente el cliente...' },
       { id: 'tipo_solicitud',    label: 'Tipo de solicitud',                    type: 'checks',   opts: ['Nueva instalación', 'Modificación', 'Ampliación', 'Soporte técnico', 'Formación', 'Presupuesto', 'Demo', 'Otro'] },
       { id: 'urgencia',          label: 'Urgencia',                             type: 'radio',    opts: ['Alta', 'Media', 'Baja'] },

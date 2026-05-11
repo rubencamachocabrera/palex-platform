@@ -47,6 +47,24 @@ interface VisitaData {
   usuario: { id: string; nombre: string }
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Evalúa si un campo debe mostrarse dado el estado actual del formulario
+function shouldShowField(field: FormField, datos: Record<string, unknown>): boolean {
+  if (!field.showIf) return true
+  const val = datos[field.showIf.field]
+  return field.showIf.values.includes(val as string)
+}
+
+// Valida un campo requerido y devuelve el mensaje de error (o "")
+function validateField(field: FormField, value: unknown): string {
+  if (!field.req) return ""
+  if (Array.isArray(value) && value.length === 0) return "Este campo es obligatorio"
+  if (typeof value === "number" && value === 0) return "Este campo es obligatorio"
+  if (!value) return "Este campo es obligatorio"
+  return ""
+}
+
 // ─── Compresión + upload fotos ────────────────────────────────────────────────
 function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
   sectionId: string
@@ -167,16 +185,17 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
 }
 
 // ─── Radio pills ───────────────────────────────────────────────────────────────
-function RadioPills({ field, value, onChange, readOnly }: {
-  field: FormField; value: unknown; onChange: (v: unknown) => void; readOnly: boolean
+function RadioPills({ field, value, onChange, onBlur, readOnly }: {
+  field: FormField; value: unknown; onChange: (v: unknown) => void
+  onBlur?: () => void; readOnly: boolean
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" onBlur={onBlur}>
       {field.opts?.map(o => {
         const active = value === o
         return (
           <button key={o} type="button" disabled={readOnly}
-            onClick={() => !readOnly && onChange(active ? "" : o)}
+            onClick={() => { if (!readOnly) { onChange(active ? "" : o); onBlur?.() } }}
             className="px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] disabled:cursor-default"
             style={active ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
               : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
@@ -188,8 +207,9 @@ function RadioPills({ field, value, onChange, readOnly }: {
 }
 
 // ─── Checkbox pills ────────────────────────────────────────────────────────────
-function CheckPills({ field, value, onChange, readOnly }: {
-  field: FormField; value: unknown; onChange: (v: unknown) => void; readOnly: boolean
+function CheckPills({ field, value, onChange, onBlur, readOnly }: {
+  field: FormField; value: unknown; onChange: (v: unknown) => void
+  onBlur?: () => void; readOnly: boolean
 }) {
   const arr = (value as string[] | undefined) ?? []
   return (
@@ -198,7 +218,9 @@ function CheckPills({ field, value, onChange, readOnly }: {
         const active = arr.includes(o)
         return (
           <button key={o} type="button" disabled={readOnly}
-            onClick={() => { if (!readOnly) onChange(active ? arr.filter(x => x !== o) : [...arr, o]) }}
+            onClick={() => {
+              if (!readOnly) { onChange(active ? arr.filter(x => x !== o) : [...arr, o]); onBlur?.() }
+            }}
             className="px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default"
             style={active ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
               : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
@@ -210,8 +232,8 @@ function CheckPills({ field, value, onChange, readOnly }: {
 }
 
 // ─── Rating ────────────────────────────────────────────────────────────────────
-function RatingField({ value, onChange, readOnly }: {
-  value: unknown; onChange: (v: unknown) => void; readOnly: boolean
+function RatingField({ value, onChange, onBlur, readOnly }: {
+  value: unknown; onChange: (v: unknown) => void; onBlur?: () => void; readOnly: boolean
 }) {
   const v = (value as number | undefined) ?? 0
   const [hover, setHover] = useState(0)
@@ -221,7 +243,7 @@ function RatingField({ value, onChange, readOnly }: {
       <div className="flex gap-2">
         {[1,2,3,4,5].map(n => (
           <button key={n} type="button" disabled={readOnly}
-            onClick={() => !readOnly && onChange(v === n ? 0 : n)}
+            onClick={() => { if (!readOnly) { onChange(v === n ? 0 : n); onBlur?.() } }}
             onMouseEnter={() => !readOnly && setHover(n)}
             onMouseLeave={() => setHover(0)}
             className="text-3xl sm:text-4xl transition-transform hover:scale-110 disabled:cursor-default min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -234,33 +256,41 @@ function RatingField({ value, onChange, readOnly }: {
 }
 
 // ─── Campo genérico ────────────────────────────────────────────────────────────
-function CampoField({ field, value, onChange, readOnly }: {
-  field: FormField; value: unknown; onChange: (v: unknown) => void; readOnly: boolean
+function CampoField({ field, value, onChange, onBlur, error, readOnly }: {
+  field: FormField; value: unknown; onChange: (v: unknown) => void
+  onBlur?: () => void; error?: string; readOnly: boolean
 }) {
-  const base = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 bg-white min-h-[44px]"
-  if (field.type === "radio") return <RadioPills field={field} value={value} onChange={onChange} readOnly={readOnly} />
-  if (field.type === "checks") return <CheckPills field={field} value={value} onChange={onChange} readOnly={readOnly} />
-  if (field.type === "rating") return <RatingField value={value} onChange={onChange} readOnly={readOnly} />
+  const base = [
+    "w-full border rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent",
+    "disabled:bg-gray-50 disabled:text-gray-500 bg-white min-h-[44px] transition-colors",
+    error ? "border-red-300 focus:ring-red-300" : "border-gray-200 focus:ring-teal-300",
+  ].join(" ")
+
+  if (field.type === "radio") return <RadioPills field={field} value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
+  if (field.type === "checks") return <CheckPills field={field} value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
+  if (field.type === "rating") return <RatingField value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
   if (field.type === "textarea") return (
-    <textarea value={(value as string) ?? ""} onChange={e => onChange(e.target.value)}
+    <textarea value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
       placeholder={field.ph} disabled={readOnly} rows={4} className={`${base} resize-none`} />
   )
   if (field.type === "select") return (
-    <select value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} disabled={readOnly} className={base}>
+    <select value={(value as string) ?? ""} onChange={e => { onChange(e.target.value); onBlur?.() }} disabled={readOnly} className={base}>
       <option value="">— Seleccionar —</option>
       {field.opts?.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
   )
   return (
-    <input type={field.type} value={(value as string) ?? ""} onChange={e => onChange(e.target.value)}
+    <input type={field.type} value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
       placeholder={field.ph} disabled={readOnly} className={base} />
   )
 }
 
 // ─── Progreso ──────────────────────────────────────────────────────────────────
 function calcProgress(section: FormSection, datos: Record<string, unknown>): number {
-  const reqFields = section.fields.filter(f => f.req)
-  const toCheck = reqFields.length > 0 ? reqFields : section.fields
+  // Solo contar campos visibles (respetando showIf)
+  const visibleFields = section.fields.filter(f => shouldShowField(f, datos))
+  const reqFields = visibleFields.filter(f => f.req)
+  const toCheck = reqFields.length > 0 ? reqFields : visibleFields
   if (toCheck.length === 0) return 100
   const filled = toCheck.filter(f => {
     const v = datos[f.id]
@@ -307,7 +337,6 @@ function exportarJSON(visita: VisitaData, datos: Record<string, unknown>, sectio
       duracion: n.duration,
       transcripcion: n.transcripcion ?? null,
       creado: new Date(n.createdAt).toISOString(),
-      // audio base64 incluido para que el fichero sea autocontenido
       audio: n.blob,
     })),
   }
@@ -319,6 +348,104 @@ function exportarJSON(visita: VisitaData, datos: Record<string, unknown>, sectio
   a.download = `visita-${visita.hospital.nombre.replace(/\s+/g, "-").toLowerCase()}-${fecha}.json`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// ─── Icono de guardado estilo Google Docs ─────────────────────────────────────
+function SaveIndicator({ saving, pendiente, savedAt }: {
+  saving: boolean; pendiente: boolean; savedAt: Date | null
+}) {
+  const [, tick] = useState(0)
+
+  // Re-renderiza cada 15s para actualizar el tiempo relativo
+  useEffect(() => {
+    if (!savedAt) return
+    const t = setInterval(() => tick(n => n + 1), 15_000)
+    return () => clearInterval(t)
+  }, [savedAt])
+
+  function tiempoRelativo() {
+    if (!savedAt) return ""
+    const s = Math.round((Date.now() - savedAt.getTime()) / 1000)
+    if (s < 5)  return "ahora mismo"
+    if (s < 60) return `hace ${s}s`
+    const m = Math.round(s / 60)
+    return m === 1 ? "hace 1 min" : `hace ${m} min`
+  }
+
+  if (saving) return (
+    <span className="flex items-center gap-1.5 text-gray-400">
+      <span className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin inline-block" />
+      <span className="hidden sm:inline">Guardando</span>
+    </span>
+  )
+  if (pendiente) return <span className="text-amber-500 font-medium">Sin guardar</span>
+  if (savedAt) return (
+    <span className="flex items-center gap-1 text-green-500 font-medium">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span className="hidden sm:inline">Guardado {tiempoRelativo()}</span>
+      <span className="sm:hidden">Guardado</span>
+    </span>
+  )
+  return <span className="text-gray-300">Sin cambios</span>
+}
+
+// ─── Navegación lateral de secciones ─────────────────────────────────────────
+function SectionNav({ sections, datos, openSection, onSelect, fotosMap }: {
+  sections: FormSection[]
+  datos: Record<string, unknown>
+  openSection: string
+  onSelect: (id: string) => void
+  fotosMap: FotosMap
+}) {
+  return (
+    <nav className="space-y-0.5">
+      {sections.map((s, i) => {
+        const pct = calcProgress(s, datos)
+        const isActive = openSection === s.id
+        const nFotos = (fotosMap[s.id] ?? []).length
+        return (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onSelect(s.id)}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all text-sm"
+            style={isActive
+              ? { backgroundColor: "#E6F7F6", color: TEAL_DARK }
+              : { color: "#6b7280" }}
+          >
+            {/* Mini progress ring */}
+            <span className="shrink-0 relative w-5 h-5">
+              <svg width="20" height="20" viewBox="0 0 20 20" className="rotate-[-90deg]">
+                <circle cx="10" cy="10" r="8" fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
+                <circle cx="10" cy="10" r="8" fill="none"
+                  stroke={pct === 100 ? "#10b981" : isActive ? TEAL : "#d1d5db"}
+                  strokeWidth="2.5"
+                  strokeDasharray={`${(pct / 100) * 50.27} 50.27`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              {pct === 100 && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </span>
+              )}
+            </span>
+            <span className="flex-1 min-w-0 truncate font-medium text-xs leading-tight">
+              <span className="mr-1 opacity-60">{i + 1}.</span>
+              {s.title}
+            </span>
+            {nFotos > 0 && (
+              <span className="text-xs text-gray-300 shrink-0">📷{nFotos}</span>
+            )}
+          </button>
+        )
+      })}
+    </nav>
+  )
 }
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
@@ -335,19 +462,21 @@ export default function VisitaPage() {
   const [openSection, setOpenSection] = useState<string>("s0")
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
+  // Errores de validación inline por campo
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  // Panel lateral de navegación (mobile: colapsable)
+  const [navOpen, setNavOpen] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Offline sync: auto-saves to IndexedDB + queues failed server requests
   const { online, loadDraft } = useOfflineSync({
     visitaId: id,
     hospitalNombre: visitaRef.current?.hospital.nombre ?? "",
     datos,
   })
 
-  // useMemo MUST be before early returns to avoid Rules of Hooks violation
   const tipo = (visita?.tipo ?? "PROYECTOS") as "PROYECTOS" | "VENTAS"
   const sections = useMemo(() => getSections(tipo), [tipo])
 
@@ -358,7 +487,6 @@ export default function VisitaPage() {
         if (data) {
           setVisita(data); visitaRef.current = data
           const d = typeof data.datos === "object" && data.datos !== null ? (data.datos as Record<string, unknown>) : {}
-          // Restore local draft if it has more data (offline recovery)
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
@@ -394,6 +522,16 @@ export default function VisitaPage() {
     setPendiente(true); setSavedAt(null)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
+    // Limpiar error cuando el usuario empieza a rellenar
+    if (fieldErrors[fieldId]) setFieldErrors(prev => { const n = { ...prev }; delete n[fieldId]; return n })
+  }
+
+  // Validación en blur — solo para campos req visibles
+  function handleBlur(field: FormField) {
+    if (!field.req) return
+    const err = validateField(field, datosRef.current[field.id])
+    if (err) setFieldErrors(prev => ({ ...prev, [field.id]: err }))
+    else setFieldErrors(prev => { const n = { ...prev }; delete n[field.id]; return n })
   }
 
   const setFotos = useCallback((sectionId: string, fotos: Foto[]) => {
@@ -409,33 +547,21 @@ export default function VisitaPage() {
   }, [])
 
   function setTodos(todos: TodoItem[]) {
-    setDatos(prev => {
-      const next = { ...prev, todos }
-      datosRef.current = next
-      return next
-    })
+    setDatos(prev => { const next = { ...prev, todos }; datosRef.current = next; return next })
     setPendiente(true); setSavedAt(null)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
   function setAudioNotas(audioNotas: AudioNota[]) {
-    setDatos(prev => {
-      const next = { ...prev, audioNotas }
-      datosRef.current = next
-      return next
-    })
+    setDatos(prev => { const next = { ...prev, audioNotas }; datosRef.current = next; return next })
     setPendiente(true); setSavedAt(null)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
   function setNotasLibres(notasLibres: string) {
-    setDatos(prev => {
-      const next = { ...prev, notasLibres }
-      datosRef.current = next
-      return next
-    })
+    setDatos(prev => { const next = { ...prev, notasLibres }; datosRef.current = next; return next })
     setPendiente(true); setSavedAt(null)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
@@ -446,27 +572,30 @@ export default function VisitaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function tiempoGuardado() {
-    if (!savedAt) return ""
-    const s = Math.round((Date.now() - savedAt.getTime()) / 1000)
-    return s < 5 ? "ahora mismo" : s < 60 ? `hace ${s}s` : `hace ${Math.round(s / 60)}min`
+  // Navega a sección y hace scroll
+  function goToSection(sectionId: string) {
+    setOpenSection(sectionId)
+    setNavOpen(false)
+    setTimeout(() => {
+      document.getElementById(`sec-${sectionId}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 50)
   }
 
-  // Derived values - computed before returns so hooks order is stable
+  // Derived values
   const readOnly = visita?.estado === "ARCHIVADA"
   const completadas = sections.filter(s => calcProgress(s, datos) === 100).length
   const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
   const fotosMap = (datos.fotos as FotosMap) ?? {}
   const totalFotos = Object.values(fotosMap).reduce((acc, arr) => acc + arr.length, 0)
 
-  // Loading state
+  // ─ Loading ─
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: TEAL }} />
     </div>
   )
 
-  // Not found state
+  // ─ Not found ─
   if (!visita) return (
     <div className="text-center py-24">
       <p className="text-3xl mb-3">🔍</p>
@@ -475,7 +604,8 @@ export default function VisitaPage() {
     </div>
   )
 
-    if (showPrint) {
+  // ─ Vista de impresión ─
+  if (showPrint) {
     return (
       <>
         <div className="no-print fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
@@ -501,217 +631,307 @@ export default function VisitaPage() {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto pb-32 sm:pb-8">
+      {/* ═══════════════════════════════════════════════════════════════════════
+          Barra sticky de progreso + indicador de guardado (Google Docs style)
+      ══════════════════════════════════════════════════════════════════════════ */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 mb-4">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
 
-        {/* ─ Cabecera ─ */}
-        <div className="flex items-start gap-2 mb-4">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-2xl shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">‹</button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-800 leading-tight truncate">{visita.hospital.nombre}</h1>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {visita.hospital.ciudad} · {new Date(visita.fecha).toLocaleDateString("es-ES")} · {tipo}
-              {totalFotos > 0 && <span className="ml-2">· 📷 {totalFotos} fotos</span>}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${ESTADO_COLOR[visita.estado]}`}>
-              {ESTADO_LABEL[visita.estado]}
+          {/* Botón nav lateral — visible siempre pero más prominente en mobile */}
+          <button
+            type="button"
+            onClick={() => setNavOpen(o => !o)}
+            title="Navegación de secciones"
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors lg:hidden"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+
+          {/* Barra de progreso */}
+          <div className="flex-1 flex items-center gap-2.5">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }}
+              />
+            </div>
+            <span className="text-xs text-gray-400 tabular-nums shrink-0">
+              {completadas}/{sections.length}
             </span>
-            {/* Imprimir */}
+          </div>
+
+          {/* Indicador de guardado */}
+          <div className="text-xs shrink-0">
+            <SaveIndicator saving={saving} pendiente={pendiente} savedAt={savedAt} />
+          </div>
+
+          {/* Acciones rápidas */}
+          <div className="flex items-center gap-1 shrink-0">
+            {!online && (
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+                <span className="hidden sm:inline">Offline</span>
+              </span>
+            )}
             <button onClick={() => setShowPrint(true)} title="Vista previa PDF"
-              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
               </svg>
             </button>
-            {/* Exportar */}
-            <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar a fichero JSON"
-              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar JSON"
+              className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
             </button>
           </div>
         </div>
-
-        {/* ─ Selector sección ─ */}
-        <div className="mb-4">
-          <select value={openSection}
-            onChange={e => { setOpenSection(e.target.value); setTimeout(() => document.getElementById(`sec-${e.target.value}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50) }}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2"
-            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-          >
-            {sections.map((s, i) => {
-              const pct = calcProgress(s, datos)
-              const nFotos = (fotosMap[s.id] ?? []).length
-              return (
-                <option key={s.id} value={s.id}>
-                  {pct === 100 ? "✓ " : `${i + 1}. `}{s.icon} {s.title}
-                  {nFotos > 0 ? ` 📷${nFotos}` : ""}
-                  {pct > 0 && pct < 100 ? ` (${pct}%)` : ""}
-                </option>
-              )
-            })}
-          </select>
-        </div>
-
-        {/* ─ Progreso global ─ */}
-        <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-gray-500">Progreso total</p>
-            <p className="text-xs text-gray-400">{completadas}/{sections.length} secciones · {progreso}% · 📷 {totalFotos} fotos</p>
-          </div>
-          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
-          </div>
-        </div>
-
-        {/* ─ Acordeón secciones ─ */}
-        <div className="space-y-2">
-          {sections.map((section, idx) => {
-            const pct = calcProgress(section, datos)
-            const isOpen = openSection === section.id
-            const nFotos = (fotosMap[section.id] ?? []).length
-
-            return (
-              <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <button onClick={() => setOpenSection(isOpen ? "" : section.id)}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[60px]">
-                  <span className="text-xl sm:text-2xl shrink-0 w-8 text-center">{section.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-800">{section.title}</p>
-                      {pct === 100 && <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">✓</span>}
-                      {nFotos > 0 && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">📷 {nFotos}</span>}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#10b981" : TEAL }} />
-                      </div>
-                      <span className="text-xs text-gray-400">{pct}%</span>
-                    </div>
-                  </div>
-                  <span className="text-gray-300 text-xl transition-transform duration-200 shrink-0"
-                    style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>›</span>
-                </button>
-
-                {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-5 space-y-6">
-                    {section.fields.map(field => (
-                      <div key={field.id}>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {field.label}{field.req && <span className="text-red-400 ml-1">*</span>}
-                        </label>
-                        {field.hint && <p className="text-xs text-gray-400 mb-2">{field.hint}</p>}
-                        <CampoField field={field} value={datos[field.id]} onChange={v => setField(field.id, v)} readOnly={readOnly} />
-                      </div>
-                    ))}
-
-                    {/* Fotos de esta sección */}
-                    <FotosSeccion
-                      sectionId={section.id}
-                      fotos={fotosMap[section.id] ?? []}
-                      onChange={fotos => setFotos(section.id, fotos)}
-                      readOnly={readOnly}
-                    />
-
-                    {/* Navegación */}
-                    <div className="flex justify-between pt-3 border-t border-gray-100">
-                      {idx > 0 ? (
-                        <button onClick={() => { setOpenSection(sections[idx - 1].id); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-                          className="text-sm font-medium text-gray-400 hover:text-gray-700 min-h-[44px] px-2">← Anterior</button>
-                      ) : <span />}
-                      {idx < sections.length - 1 ? (
-                        <button onClick={() => { setOpenSection(sections[idx + 1].id); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-                          className="text-sm font-medium min-h-[44px] px-2" style={{ color: TEAL }}>Siguiente →</button>
-                      ) : !readOnly && visita.estado === "BORRADOR" ? (
-                        <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
-                          className="text-sm font-medium text-green-600 disabled:opacity-50 min-h-[44px] px-2">✓ Marcar completa</button>
-                      ) : <span />}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* ─ TO-DO: proximas acciones ─ */}
-        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-5">
-            <TodoChecklist
-              items={(datos.todos as TodoItem[]) ?? []}
-              onChange={setTodos}
-              readOnly={readOnly}
-            />
-          </div>
-        </div>
-
-        {/* ─ Notas libres ─ */}
-        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">📝</span>
-              <h3 className="text-sm font-semibold text-gray-700">Notas libres</h3>
-            </div>
-            <textarea
-              value={(datos.notasLibres as string) ?? ""}
-              onChange={e => setNotasLibres(e.target.value)}
-              disabled={readOnly}
-              rows={5}
-              placeholder="Escribe aqui cualquier observacion, comentario o informacion adicional de la visita..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 bg-white resize-none placeholder-gray-300"
-              style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-            />
-          </div>
-        </div>
-
-        {/* ─ Notas de voz ─ */}
-        <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-5">
-            <VoiceNotes
-              notas={(datos.audioNotas as AudioNota[]) ?? []}
-              onChange={setAudioNotas}
-              readOnly={readOnly}
-            />
-          </div>
-        </div>
-
-        {/* ─ Panel de analisis ─ */}
-        <div className="mt-4">
-          <AnalisisPanel datos={datos} />
-        </div>
-
-        {readOnly && (
-          <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 text-center">
-            <p className="text-sm text-gray-400">Esta visita esta archivada.</p>
-          </div>
-        )}
       </div>
 
-      {/* ─ Barra sticky móvil ─ */}
-      {!readOnly && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
-          <div className="bg-white border-t border-gray-200 px-4 py-3">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
-              </div>
-              <span className="text-xs text-gray-400 shrink-0">{progreso}%</span>
-              {!online && (
-                <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
-                  Offline
-                </span>
-              )}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          Overlay de navegación mobile
+      ══════════════════════════════════════════════════════════════════════════ */}
+      {navOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm lg:hidden"
+            onClick={() => setNavOpen(false)}
+          />
+          <div className="fixed top-0 left-0 bottom-0 z-40 w-72 bg-white shadow-xl flex flex-col lg:hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-gray-700">Secciones</p>
+              <button onClick={() => setNavOpen(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
             </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              <SectionNav
+                sections={sections}
+                datos={datos}
+                openSection={openSection}
+                onSelect={goToSection}
+                fotosMap={fotosMap}
+              />
+            </div>
+            {/* Resumen de progreso en el panel */}
+            <div className="px-4 py-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                <span>{completadas} de {sections.length} secciones</span>
+                <span>{progreso}%</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          Layout principal: sidebar nav (lg) + contenido
+      ══════════════════════════════════════════════════════════════════════════ */}
+      <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[220px_1fr] lg:gap-5 lg:items-start pb-32 lg:pb-8">
+
+        {/* ─── Sidebar navegación desktop ─────────────────────────────────── */}
+        <aside className="hidden lg:block sticky top-16">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-3 py-2.5 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Secciones</p>
+            </div>
+            <div className="p-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+              <SectionNav
+                sections={sections}
+                datos={datos}
+                openSection={openSection}
+                onSelect={goToSection}
+                fotosMap={fotosMap}
+              />
+            </div>
+          </div>
+        </aside>
+
+        {/* ─── Contenido principal ────────────────────────────────────────── */}
+        <div className="min-w-0">
+
+          {/* Cabecera de la visita */}
+          <div className="flex items-start gap-2 mb-4">
+            <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-2xl shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">‹</button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-800 leading-tight truncate">{visita.hospital.nombre}</h1>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {visita.hospital.ciudad} · {new Date(visita.fecha).toLocaleDateString("es-ES")} · {tipo}
+                {totalFotos > 0 && <span className="ml-2">· 📷 {totalFotos} fotos</span>}
+              </p>
+            </div>
+            <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${ESTADO_COLOR[visita.estado]}`}>
+              {ESTADO_LABEL[visita.estado]}
+            </span>
+          </div>
+
+          {/* Acordeón secciones */}
+          <div className="space-y-2">
+            {sections.map((section, idx) => {
+              const pct = calcProgress(section, datos)
+              const isOpen = openSection === section.id
+              const nFotos = (fotosMap[section.id] ?? []).length
+              // Campos visibles (respetando showIf)
+              const visibleFields = section.fields.filter(f => shouldShowField(f, datos))
+
+              return (
+                <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <button onClick={() => setOpenSection(isOpen ? "" : section.id)}
+                    className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[60px]">
+                    <span className="text-xl sm:text-2xl shrink-0 w-8 text-center">{section.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-800">{section.title}</p>
+                        {pct === 100 && <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">✓</span>}
+                        {nFotos > 0 && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">📷 {nFotos}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#10b981" : TEAL }} />
+                        </div>
+                        <span className="text-xs text-gray-400">{pct}%</span>
+                      </div>
+                    </div>
+                    <span className="text-gray-300 text-xl transition-transform duration-200 shrink-0"
+                      style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>›</span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-t border-gray-100 px-4 py-5 space-y-6">
+                      {visibleFields.map(field => {
+                        const err = fieldErrors[field.id]
+                        return (
+                          <div key={field.id}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              {field.label}
+                              {field.req && <span className="text-red-400 ml-1">*</span>}
+                            </label>
+                            {field.hint && <p className="text-xs text-gray-400 mb-2">{field.hint}</p>}
+                            <CampoField
+                              field={field}
+                              value={datos[field.id]}
+                              onChange={v => setField(field.id, v)}
+                              onBlur={() => handleBlur(field)}
+                              error={err}
+                              readOnly={readOnly}
+                            />
+                            {/* Error inline */}
+                            {err && (
+                              <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                {err}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+
+                      {/* Fotos de esta sección */}
+                      <FotosSeccion
+                        sectionId={section.id}
+                        fotos={fotosMap[section.id] ?? []}
+                        onChange={fotos => setFotos(section.id, fotos)}
+                        readOnly={readOnly}
+                      />
+
+                      {/* Navegación anterior / siguiente */}
+                      <div className="flex justify-between pt-3 border-t border-gray-100">
+                        {idx > 0 ? (
+                          <button onClick={() => goToSection(sections[idx - 1].id)}
+                            className="text-sm font-medium text-gray-400 hover:text-gray-700 min-h-[44px] px-2">← Anterior</button>
+                        ) : <span />}
+                        {idx < sections.length - 1 ? (
+                          <button onClick={() => goToSection(sections[idx + 1].id)}
+                            className="text-sm font-medium min-h-[44px] px-2" style={{ color: TEAL }}>Siguiente →</button>
+                        ) : !readOnly && visita.estado === "BORRADOR" ? (
+                          <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
+                            className="text-sm font-medium text-green-600 disabled:opacity-50 min-h-[44px] px-2">✓ Marcar completa</button>
+                        ) : <span />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* TO-DO */}
+          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 py-5">
+              <TodoChecklist
+                items={(datos.todos as TodoItem[]) ?? []}
+                onChange={setTodos}
+                readOnly={readOnly}
+              />
+            </div>
+          </div>
+
+          {/* Notas libres */}
+          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 py-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-base">📝</span>
+                <h3 className="text-sm font-semibold text-gray-700">Notas libres</h3>
+              </div>
+              <textarea
+                value={(datos.notasLibres as string) ?? ""}
+                onChange={e => setNotasLibres(e.target.value)}
+                disabled={readOnly}
+                rows={5}
+                placeholder="Escribe aqui cualquier observacion, comentario o informacion adicional de la visita..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 bg-white resize-none placeholder-gray-300"
+                style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+              />
+            </div>
+          </div>
+
+          {/* Notas de voz */}
+          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 py-5">
+              <VoiceNotes
+                notas={(datos.audioNotas as AudioNota[]) ?? []}
+                onChange={setAudioNotas}
+                readOnly={readOnly}
+              />
+            </div>
+          </div>
+
+          {/* Panel de análisis */}
+          <div className="mt-4">
+            <AnalisisPanel datos={datos} />
+          </div>
+
+          {readOnly && (
+            <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 text-center">
+              <p className="text-sm text-gray-400">Esta visita esta archivada.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          Barra sticky móvil (guardar + completar)
+      ══════════════════════════════════════════════════════════════════════════ */}
+      {!readOnly && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+          <div className="bg-white border-t border-gray-200 px-4 py-3">
             <div className="flex gap-2">
               <button onClick={() => guardar()} disabled={saving || !pendiente}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
                 style={{ backgroundColor: TEAL }}>
-                {saving ? "Guardando…" : pendiente ? "Guardar" : savedAt ? `✓ ${tiempoGuardado()}` : "Sin cambios"}
+                {saving ? "Guardando…" : pendiente ? "Guardar" : savedAt ? "✓ Guardado" : "Sin cambios"}
               </button>
               {visita.estado === "BORRADOR" && !pendiente && (
                 <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
@@ -724,9 +944,9 @@ export default function VisitaPage() {
         </div>
       )}
 
-      {/* ─ Barra flotante desktop ─ */}
+      {/* ─── Barra flotante desktop ─────────────────────────────────────────── */}
       {!readOnly && (
-        <div className="hidden sm:block fixed bottom-6 right-6 z-40">
+        <div className="hidden lg:block fixed bottom-6 right-6 z-40">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg px-4 py-3 flex items-center gap-3">
             {!online && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
@@ -734,13 +954,6 @@ export default function VisitaPage() {
                 Sin conexion
               </span>
             )}
-            <div className="text-xs text-gray-400">
-              {saving
-                ? <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin inline-block" />Guardando...</span>
-                : pendiente ? <span className="text-amber-500 font-medium">Sin guardar</span>
-                : savedAt ? <span className="text-green-500 font-medium">Guardado {tiempoGuardado()}</span>
-                : <span>Sin cambios</span>}
-            </div>
             <button onClick={() => guardar()} disabled={saving || !pendiente}
               className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
               style={{ backgroundColor: TEAL }}>Guardar</button>
@@ -752,7 +965,7 @@ export default function VisitaPage() {
             )}
           </div>
         </div>
-    )}
-  </>
+      )}
+    </>
   )
 }
