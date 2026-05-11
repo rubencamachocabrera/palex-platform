@@ -126,6 +126,51 @@ button, a, input, select, textarea {
   animation: fadeIn 180ms ease-out both;
 }
 
+/* ─── Login: onda animada (panel izquierdo) ───────────────────────────────── */
+@keyframes waveFlow {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.wave-track {
+  animation: waveFlow 10s linear infinite;
+  will-change: transform;
+}
+
+/* ─── Login: shake en credenciales incorrectas ────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-7px); }
+  30%       { transform: translateX(6px); }
+  45%       { transform: translateX(-5px); }
+  60%       { transform: translateX(4px); }
+  75%       { transform: translateX(-2px); }
+  90%       { transform: translateX(1px); }
+}
+
+.login-shake {
+  animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ─── Login: overlay de carga tras autenticación correcta ─────────────────── */
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes logoPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(0.97); }
+}
+
+.login-overlay {
+  animation: overlayIn 200ms ease-out both;
+}
+
+.login-overlay-logo {
+  animation: logoPulse 1.4s ease-in-out infinite;
+}
+
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
