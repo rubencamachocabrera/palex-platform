@@ -4,6 +4,11 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
+import {
+  IconArrowLeft, IconMail, IconPhone, IconUser,
+  IconFileText, IconPlus, IconX,
+} from "@/components/ui/Icons"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "Hospital Publico", HOSPITAL_PRIVADO: "Hospital Privado",
@@ -135,13 +140,36 @@ export default function HospitalDetailPage() {
 
   // --- Render ---
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <p className="text-sm text-gray-400">Cargando...</p>
+    <div className="max-w-2xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-8 h-8 rounded-lg skeleton-shimmer shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-5 w-2/3 rounded-lg skeleton-shimmer" />
+          <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
+        </div>
+        <div className="w-24 h-9 rounded-lg skeleton-shimmer shrink-0" />
+      </div>
+      <div className="flex gap-1 border-b border-gray-200 mb-5">
+        {[80, 110, 90].map(w => (
+          <div key={w} className={`h-10 rounded-t-lg skeleton-shimmer mb-0`} style={{ width: w }} />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[1,2,3].map(i => <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 h-20 skeleton-shimmer" />)}
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {[1,2,3,4,5,6].map(i => (
+          <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 last:border-0">
+            <div className="h-3 w-20 rounded skeleton-shimmer" />
+            <div className="h-3 w-32 rounded skeleton-shimmer" />
+          </div>
+        ))}
+      </div>
     </div>
   )
   if (!hospital) return (
-    <div className="text-center py-20">
-      <p className="text-sm text-gray-400">Hospital no encontrado.</p>
+    <div className="max-w-2xl mx-auto py-20">
+      <EmptyState icon="search" title="Hospital no encontrado" description="El hospital que buscas no existe o no tienes acceso." action={{ label: "Volver a hospitales", href: "/hospitales" }} />
     </div>
   )
 
@@ -150,8 +178,8 @@ export default function HospitalDetailPage() {
 
       {/* Cabecera */}
       <div className="flex items-start gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 mt-1 text-xl leading-none shrink-0">
-          &#8249;
+        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 mt-0.5">
+          <IconArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-gray-800 leading-tight">{hospital.nombre}</h1>
@@ -260,24 +288,21 @@ export default function HospitalDetailPage() {
             <div className="flex justify-end mb-3">
               <button
                 onClick={abrirCrearContacto}
-                className="text-sm font-medium text-white px-4 py-2 rounded-lg"
+                className="flex items-center gap-1.5 text-sm font-medium text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
                 style={{ backgroundColor: TEAL }}
               >
-                + Nuevo contacto
+                <IconPlus size={15} /> Nuevo contacto
               </button>
             </div>
           )}
 
           {hospital.contactos.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <p className="text-3xl mb-3">👤</p>
-              <p className="text-gray-500 text-sm font-medium">Sin contactos registrados</p>
-              {isAdmin && (
-                <button onClick={abrirCrearContacto} className="mt-3 text-sm font-medium" style={{ color: TEAL }}>
-                  Añadir primer contacto →
-                </button>
-              )}
-            </div>
+            <EmptyState
+              icon="document"
+              title="Sin contactos registrados"
+              description={isAdmin ? "Añade el primer contacto de este centro." : "El administrador puede añadir contactos."}
+              action={isAdmin ? { label: "Añadir contacto", onClick: abrirCrearContacto } : undefined}
+            />
           ) : (
             <div className="space-y-3">
               {hospital.contactos.map(c => (
@@ -302,14 +327,14 @@ export default function HospitalDetailPage() {
                         {c.cargo && <p className="text-xs text-gray-400 mt-0.5">{c.cargo}</p>}
                         <div className="flex flex-col gap-1 mt-2">
                           {c.email && (
-                            <a href={`mailto:${c.email}`} className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1.5">
-                              <span className="text-base">✉️</span>
+                            <a href={`mailto:${c.email}`} className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1.5 group/mail">
+                              <IconMail size={13} className="text-gray-400 group-hover/mail:text-gray-600 shrink-0" />
                               <span className="truncate">{c.email}</span>
                             </a>
                           )}
                           {c.telefono && (
-                            <a href={`tel:${c.telefono}`} className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1.5">
-                              <span className="text-base">📞</span>
+                            <a href={`tel:${c.telefono}`} className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1.5 group/tel">
+                              <IconPhone size={13} className="text-gray-400 group-hover/tel:text-gray-600 shrink-0" />
                               {c.telefono}
                             </a>
                           )}
@@ -344,13 +369,12 @@ export default function HospitalDetailPage() {
       {tab === "visitas" && (
         <div>
           {hospital.visitas.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <p className="text-3xl mb-3">📋</p>
-              <p className="text-gray-500 text-sm font-medium">Sin visitas registradas</p>
-              <button onClick={nuevaVisita} disabled={creandoVisita} className="mt-3 text-sm font-medium" style={{ color: TEAL }}>
-                Registrar primera visita →
-              </button>
-            </div>
+            <EmptyState
+              icon="clipboard"
+              title="Sin visitas registradas"
+              description="Registra tu primera visita a este centro."
+              action={{ label: "Registrar primera visita", onClick: nuevaVisita }}
+            />
           ) : (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="divide-y divide-gray-100">
@@ -397,8 +421,8 @@ export default function HospitalDetailPage() {
               <h2 className="text-lg font-semibold text-gray-800">
                 {editContacto ? "Editar contacto" : "Nuevo contacto"}
               </h2>
-              <button onClick={() => setContactoModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">
-                &#215;
+              <button onClick={() => setContactoModal(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <IconX size={18} />
               </button>
             </div>
 
