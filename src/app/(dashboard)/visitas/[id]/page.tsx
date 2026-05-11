@@ -27,6 +27,32 @@ const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
 })
 
 import { TEAL, TEAL_DARK } from "@/lib/brand"
+import {
+  IconHospital, IconUsers, IconCalendar, IconAlertTriangle, IconMonitor,
+  IconServer, IconPrinter, IconCpu, IconTag, IconAlertCircle, IconLock,
+  IconAward, IconBriefcase, IconPenLine, IconDroplet, IconClipboard,
+  IconCamera, IconStar, IconArrowLeft, IconArrowRight, IconChevronRight,
+  IconCheck, IconSearch, IconPrint, IconDownload, IconMenu, IconX, IconTrash,
+} from "@/components/ui/Icons"
+
+// Mapa de iconos SVG para cada sección del formulario
+const SECTION_ICON: Record<string, React.ReactNode> = {
+  hospital:       <IconHospital size={18} />,
+  droplet:        <IconDroplet size={18} />,
+  users:          <IconUsers size={18} />,
+  calendar:       <IconCalendar size={18} />,
+  "alert-triangle": <IconAlertTriangle size={18} />,
+  monitor:        <IconMonitor size={18} />,
+  server:         <IconServer size={18} />,
+  printer:        <IconPrinter size={18} />,
+  cpu:            <IconCpu size={18} />,
+  tag:            <IconTag size={18} />,
+  "alert-circle": <IconAlertCircle size={18} />,
+  lock:           <IconLock size={18} />,
+  award:          <IconAward size={18} />,
+  "pen-line":     <IconPenLine size={18} />,
+  briefcase:      <IconBriefcase size={18} />,
+}
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -101,7 +127,7 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
     <div className="mt-6 pt-5 border-t border-gray-100">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-          <span>📷</span> Fotos de esta sección
+          <span className="text-gray-400"><IconCamera size={14} /></span> Fotos de esta sección
           {fotos.length > 0 && <span className="normal-case font-medium text-gray-400">({fotos.length})</span>}
         </p>
         {!readOnly && (
@@ -115,7 +141,7 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
             {subiendo ? (
               <><span className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin inline-block" style={{ borderColor: TEAL, borderTopColor: "transparent" }} /> Subiendo…</>
             ) : (
-              <><span className="text-sm">+</span> Añadir foto</>
+              <><IconCamera size={13} /> Añadir foto</>
             )}
           </button>
         )}
@@ -134,10 +160,12 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-gray-300 transition-colors"
+          className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-100 hover:border-teal-300 transition-colors group"
         >
-          <p className="text-2xl mb-1">📷</p>
-          <p className="text-xs text-gray-400">Toca para añadir fotos de esta sección</p>
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 group-hover:bg-teal-50 transition-colors mb-2">
+            <IconCamera size={20} className="text-gray-400 group-hover:text-teal-500 transition-colors" />
+          </span>
+          <p className="text-xs font-medium text-gray-500">Añadir fotos de esta sección</p>
           <p className="text-xs text-gray-300 mt-0.5">Cámara o galería · Se comprimen automáticamente</p>
         </button>
       )}
@@ -153,9 +181,9 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
               {!readOnly && (
                 <button
                   onClick={() => eliminar(foto.id)}
-                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
                 >
-                  ×
+                  <IconTrash size={12} />
                 </button>
               )}
               <input
@@ -172,10 +200,10 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="aspect-video border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center hover:border-gray-300 transition-colors"
+              className="aspect-video border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center hover:border-teal-300 hover:bg-teal-50 transition-colors group"
             >
-              <span className="text-2xl text-gray-300">+</span>
-              <span className="text-xs text-gray-300 mt-1">Añadir</span>
+              <IconCamera size={20} className="text-gray-300 group-hover:text-teal-400 transition-colors" />
+              <span className="text-xs text-gray-300 mt-1.5 group-hover:text-teal-400 transition-colors">Añadir</span>
             </button>
           )}
         </div>
@@ -224,7 +252,10 @@ function CheckPills({ field, value, onChange, onBlur, readOnly }: {
             className="px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default"
             style={active ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
               : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
-          >{active && <span className="mr-1.5">✓</span>}{o}</button>
+          >
+            {active && <IconCheck size={13} className="shrink-0" />}
+            {o}
+          </button>
         )
       })}
     </div>
@@ -238,19 +269,27 @@ function RatingField({ value, onChange, onBlur, readOnly }: {
   const v = (value as number | undefined) ?? 0
   const [hover, setHover] = useState(0)
   const labels = ["", "Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"]
+  const active = hover || v
   return (
     <div>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         {[1,2,3,4,5].map(n => (
           <button key={n} type="button" disabled={readOnly}
             onClick={() => { if (!readOnly) { onChange(v === n ? 0 : n); onBlur?.() } }}
             onMouseEnter={() => !readOnly && setHover(n)}
             onMouseLeave={() => setHover(0)}
-            className="text-3xl sm:text-4xl transition-transform hover:scale-110 disabled:cursor-default min-w-[44px] min-h-[44px] flex items-center justify-center"
-          >{n <= (hover || v) ? "⭐" : <span className="text-gray-200">★</span>}</button>
+            className="transition-transform hover:scale-110 disabled:cursor-default min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ color: n <= active ? "#F59E0B" : "#e5e7eb" }}
+          >
+            <IconStar size={28} filled={n <= active} />
+          </button>
         ))}
       </div>
-      {v > 0 && <p className="text-xs text-gray-400 mt-1.5">{v}/5 — {labels[v]}</p>}
+      {v > 0 && (
+        <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+          <span className="font-semibold text-amber-500">{v}/5</span> — {labels[v]}
+        </p>
+      )}
     </div>
   )
 }
@@ -439,7 +478,9 @@ function SectionNav({ sections, datos, openSection, onSelect, fotosMap }: {
               {s.title}
             </span>
             {nFotos > 0 && (
-              <span className="text-xs text-gray-300 shrink-0">📷{nFotos}</span>
+              <span className="flex items-center gap-0.5 text-xs text-gray-300 shrink-0">
+                <IconCamera size={11} />{nFotos}
+              </span>
             )}
           </button>
         )
@@ -598,9 +639,14 @@ export default function VisitaPage() {
   // ─ Not found ─
   if (!visita) return (
     <div className="text-center py-24">
-      <p className="text-3xl mb-3">🔍</p>
-      <p className="text-gray-500 text-sm">Visita no encontrada</p>
-      <button onClick={() => router.back()} className="mt-3 text-sm font-medium" style={{ color: TEAL }}>← Volver</button>
+      <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gray-100 mb-4">
+        <IconSearch size={24} className="text-gray-400" />
+      </span>
+      <p className="text-gray-700 font-semibold">Visita no encontrada</p>
+      <p className="text-gray-400 text-sm mt-1">No existe o no tienes acceso a esta visita.</p>
+      <button onClick={() => router.back()} className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: TEAL }}>
+        <IconArrowLeft size={14} /> Volver
+      </button>
     </div>
   )
 
@@ -617,7 +663,7 @@ export default function VisitaPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
               style={{ backgroundColor: TEAL }}
             >
-              🖨 Imprimir / Guardar PDF
+              <IconPrint size={15} /> Imprimir / Guardar PDF
             </button>
           </div>
         </div>
@@ -644,9 +690,7 @@ export default function VisitaPage() {
             title="Navegación de secciones"
             className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors lg:hidden"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
+            <IconMenu size={15} />
           </button>
 
           {/* Barra de progreso */}
@@ -677,15 +721,11 @@ export default function VisitaPage() {
             )}
             <button onClick={() => setShowPrint(true)} title="Vista previa PDF"
               className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
-              </svg>
+              <IconPrint size={14} />
             </button>
             <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar JSON"
               className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
+              <IconDownload size={14} />
             </button>
           </div>
         </div>
@@ -704,9 +744,7 @@ export default function VisitaPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-700">Secciones</p>
               <button onClick={() => setNavOpen(false)} className="text-gray-400 hover:text-gray-700 p-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+                <IconX size={16} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -761,12 +799,14 @@ export default function VisitaPage() {
 
           {/* Cabecera de la visita */}
           <div className="flex items-start gap-2 mb-4">
-            <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-2xl shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">‹</button>
+            <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+              <IconArrowLeft size={18} />
+            </button>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold text-gray-800 leading-tight truncate">{visita.hospital.nombre}</h1>
               <p className="text-xs text-gray-400 mt-0.5">
                 {visita.hospital.ciudad} · {new Date(visita.fecha).toLocaleDateString("es-ES")} · {tipo}
-                {totalFotos > 0 && <span className="ml-2">· 📷 {totalFotos} fotos</span>}
+                {totalFotos > 0 && <span className="ml-2 inline-flex items-center gap-1">· <IconCamera size={11} /> {totalFotos} fotos</span>}
               </p>
             </div>
             <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${ESTADO_COLOR[visita.estado]}`}>
@@ -787,23 +827,38 @@ export default function VisitaPage() {
                 <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <button onClick={() => setOpenSection(isOpen ? "" : section.id)}
                     className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[60px]">
-                    <span className="text-xl sm:text-2xl shrink-0 w-8 text-center">{section.icon}</span>
+                    {/* Icono de sección con fondo de color según estado */}
+                    <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      pct === 100 ? "bg-green-50 text-green-600" : isOpen ? "text-white" : "bg-gray-100 text-gray-500"
+                    }`} style={isOpen && pct < 100 ? { backgroundColor: TEAL } : {}}>
+                      {SECTION_ICON[section.icon] ?? <IconClipboard size={18} />}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-gray-800">{section.title}</p>
-                        {pct === 100 && <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">✓</span>}
-                        {nFotos > 0 && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">📷 {nFotos}</span>}
+                        {pct === 100 && (
+                          <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+                            <IconCheck size={10} /> Completa
+                          </span>
+                        )}
+                        {nFotos > 0 && (
+                          <span className="inline-flex items-center gap-0.5 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                            <IconCamera size={10} /> {nFotos}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all"
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="h-1 w-24 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500"
                             style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#10b981" : TEAL }} />
                         </div>
-                        <span className="text-xs text-gray-400">{pct}%</span>
+                        <span className="text-xs text-gray-400 tabular-nums">{pct}%</span>
                       </div>
                     </div>
-                    <span className="text-gray-300 text-xl transition-transform duration-200 shrink-0"
-                      style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>›</span>
+                    <span className="text-gray-300 transition-transform duration-200 shrink-0"
+                      style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>
+                      <IconChevronRight size={16} />
+                    </span>
                   </button>
 
                   {isOpen && (
@@ -850,14 +905,20 @@ export default function VisitaPage() {
                       <div className="flex justify-between pt-3 border-t border-gray-100">
                         {idx > 0 ? (
                           <button onClick={() => goToSection(sections[idx - 1].id)}
-                            className="text-sm font-medium text-gray-400 hover:text-gray-700 min-h-[44px] px-2">← Anterior</button>
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-gray-700 min-h-[44px] px-2 transition-colors">
+                            <IconArrowLeft size={14} /> Anterior
+                          </button>
                         ) : <span />}
                         {idx < sections.length - 1 ? (
                           <button onClick={() => goToSection(sections[idx + 1].id)}
-                            className="text-sm font-medium min-h-[44px] px-2" style={{ color: TEAL }}>Siguiente →</button>
+                            className="inline-flex items-center gap-1.5 text-sm font-medium min-h-[44px] px-2 transition-colors" style={{ color: TEAL }}>
+                            Siguiente <IconArrowRight size={14} />
+                          </button>
                         ) : !readOnly && visita.estado === "BORRADOR" ? (
                           <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
-                            className="text-sm font-medium text-green-600 disabled:opacity-50 min-h-[44px] px-2">✓ Marcar completa</button>
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 disabled:opacity-50 min-h-[44px] px-2">
+                            <IconCheck size={14} /> Marcar completa
+                          </button>
                         ) : <span />}
                       </div>
                     </div>
@@ -882,7 +943,9 @@ export default function VisitaPage() {
           <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-5">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">📝</span>
+                <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+                  <IconPenLine size={14} />
+                </span>
                 <h3 className="text-sm font-semibold text-gray-700">Notas libres</h3>
               </div>
               <textarea
@@ -921,22 +984,26 @@ export default function VisitaPage() {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          Barra sticky móvil (guardar + completar)
-      ══════════════════════════════════════════════════════════════════════════ */}
+      
+      {/* Barra sticky mobile (guardar + completar) */}
       {!readOnly && (
         <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
-          <div className="bg-white border-t border-gray-200 px-4 py-3">
+          <div className="bg-white border-t border-gray-200 px-4 py-3 safe-area-bottom">
             <div className="flex gap-2">
               <button onClick={() => guardar()} disabled={saving || !pendiente}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ backgroundColor: TEAL }}>
-                {saving ? "Guardando…" : pendiente ? "Guardar" : savedAt ? "✓ Guardado" : "Sin cambios"}
+                {saving ? (
+                  <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Guardando...</>
+                ) : pendiente ? "Guardar cambios" : savedAt ? (
+                  <><IconCheck size={14} /> Guardado</>
+                ) : "Sin cambios"}
               </button>
               {visita.estado === "BORRADOR" && !pendiente && (
                 <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50">
-                  {cambiandoEstado ? "…" : "✓ Completar"}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {cambiandoEstado ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <IconCheck size={14} />}
+                  {cambiandoEstado ? "Completando..." : "Completar visita"}
                 </button>
               )}
             </div>
@@ -944,23 +1011,30 @@ export default function VisitaPage() {
         </div>
       )}
 
-      {/* ─── Barra flotante desktop ─────────────────────────────────────────── */}
+      {/* Barra flotante desktop */}
       {!readOnly && (
         <div className="hidden lg:block fixed bottom-6 right-6 z-40">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg px-4 py-3 flex items-center gap-3">
             {!online && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
                 Sin conexion
               </span>
             )}
             <button onClick={() => guardar()} disabled={saving || !pendiente}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-              style={{ backgroundColor: TEAL }}>Guardar</button>
-            {visita.estado === "BORRADOR" && (
-              <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado || saving}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50">
-                {cambiandoEstado ? "..." : "Completar"}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 flex items-center gap-2"
+              style={{ backgroundColor: saving || !pendiente ? "#9ca3af" : TEAL }}>
+              {saving ? (
+                <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Guardando...</>
+              ) : pendiente ? "Guardar" : savedAt ? (
+                <><IconCheck size={13} /> Guardado</>
+              ) : "Sin cambios"}
+            </button>
+            {visita.estado === "BORRADOR" && !pendiente && (
+              <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50 flex items-center gap-2">
+                {cambiandoEstado ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <IconCheck size={13} />}
+                {cambiandoEstado ? "Completando..." : "Completar"}
               </button>
             )}
           </div>

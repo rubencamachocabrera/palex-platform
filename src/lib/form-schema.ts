@@ -28,7 +28,7 @@ export interface FormSection {
 
 export const FORM_SCHEMA: FormSection[] = [
   {
-    id: 's0', title: 'Datos de la Visita', icon: '🏥',
+    id: 's0', title: 'Datos de la Visita', icon: 'hospital',
     fields: [
       { id: 'fecha',        label: 'Fecha de la visita',           type: 'date',     req: true },
       { id: 'tecnico',      label: 'Técnico/a responsable Palex',  type: 'text',     req: true, ph: 'Nombre y apellidos' },
@@ -42,7 +42,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's1', title: 'Extracciones y Material', icon: '🩸',
+    id: 's1', title: 'Extracciones y Material', icon: 'droplet',
     fields: [
       { id: 'pac_dia',         label: 'Pacientes por área/día (rutina)',      type: 'number',   ph: '0' },
       { id: 'picos',           label: 'Distribución de picos de actividad',   type: 'textarea', ph: 'Ej: 8h–10h pico máximo con ~80 pac/h...' },
@@ -57,7 +57,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's2', title: 'Atención y Distribución de Pacientes', icon: '👥',
+    id: 's2', title: 'Atención y Distribución de Pacientes', icon: 'users',
     fields: [
       { id: 'hora_ini',      label: 'Hora de apertura al público',          type: 'time' },
       { id: 'hora_fin',      label: 'Hora de cierre al público',            type: 'time' },
@@ -70,7 +70,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's3', title: 'Citas y Peticiones', icon: '📋',
+    id: 's3', title: 'Citas y Peticiones', icon: 'calendar',
     fields: [
       { id: 'tipo_cita',       label: 'Tipo de cita',                       type: 'radio',    opts: ['Citados', 'A demanda', 'Mixto'] },
       { id: 'origen_agenda',   label: 'Origen de la agenda de citas',       type: 'checks',   opts: ['App Atención Primaria', 'HIS', 'LIS', 'Aplicación propia', 'Papel / teléfono', 'Portal web paciente', 'Otro'] },
@@ -82,7 +82,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's4', title: 'Incidencias', icon: '⚠️',
+    id: 's4', title: 'Incidencias', icon: 'alert-triangle',
     fields: [
       { id: 'tipos_incidencia',   label: 'Tipos de incidencias más frecuentes', type: 'checks',   opts: ['Hemólisis', 'Coágulo', 'Volumen insuficiente', 'Tubo incorrecto', 'Etiqueta ilegible', 'Paciente no identificado', 'Muestra no recibida', 'Rotura de tubo', 'Otro'] },
       { id: 'frec_incidencia',    label: 'Tasa estimada de incidencias',         type: 'select',   opts: ['<1%', '1–3%', '3–5%', '>5%', 'No se mide / desconocido'] },
@@ -93,7 +93,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's5', title: 'Aplicación Inlab', icon: '💻',
+    id: 's5', title: 'Aplicación Inlab', icon: 'monitor',
     fields: [
       { id: 'inlab_actual',    label: '¿Tienen Inlab actualmente?',             type: 'radio',  opts: ['Sí', 'No', 'Tienen Tubeti'] },
       { id: 'version_inlab',   label: 'Versión actual (si aplica)',             type: 'text',   ph: 'Ej: Inlab 5.x', showIf: { field: 'inlab_actual', values: ['Sí', 'Tienen Tubeti'] } },
@@ -106,7 +106,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's6', title: 'Infraestructura TI', icon: '🖧',
+    id: 's6', title: 'Infraestructura TI', icon: 'server',
     fields: [
       { id: 'servidor_hospital', label: '¿Posibilidad de usar servidor del hospital?', type: 'radio',    opts: ['Sí', 'No', 'Posiblemente'] },
       { id: 'espacio_servidor',  label: '¿Espacio para instalar servidor Palex?',       type: 'radio',    opts: ['Sí', 'No', 'Hay que valorar'] },
@@ -121,7 +121,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's7', title: 'Impresoras Zebra', icon: '🖨',
+    id: 's7', title: 'Impresoras Zebra', icon: 'printer',
     fields: [
       { id: 'zebra_actual',  label: '¿Tienen impresoras Zebra actualmente?',      type: 'radio',    opts: ['Sí', 'No'] },
       { id: 'modelo_zebra',  label: 'Modelos actuales (si aplica)',               type: 'text',     ph: 'Ej: ZD420, ZD620...', showIf: { field: 'zebra_actual', values: ['Sí'] } },
@@ -133,7 +133,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's8', title: 'BC Robo', icon: '🤖',
+    id: 's8', title: 'BC Robo', icon: 'cpu',
     fields: [
       { id: 'bcrobo_actual',  label: '¿Tienen BC Robo actualmente?',            type: 'radio',    opts: ['Sí', 'No'] },
       { id: 'modelo_bcrobo',  label: 'Modelo sugerido según volumen',            type: 'select',   opts: ['BC Robo 900', 'BC Robo 7', 'BC Robo 8001', 'Por determinar'] },
@@ -146,7 +146,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's9', title: 'Etiquetado', icon: '🏷',
+    id: 's9', title: 'Etiquetado', icon: 'tag',
     fields: [
       { id: 'etiq_metodo',     label: 'Método actual de etiquetado',       type: 'select', opts: ['Manual (bolígrafo)', 'Impresora A4 por punto', 'Tubo preetiquetado', 'Planilla preimpresa', 'Sin sistema definido'] },
       { id: 'prefijos',        label: 'Prefijos utilizados',               type: 'text',   ph: 'Ej: LAB-, EXT-, URG-…' },
@@ -158,7 +158,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's10', title: 'Casos Especiales', icon: '🔴',
+    id: 's10', title: 'Casos Especiales', icon: 'alert-circle',
     fields: [
       { id: 'pacientes_esp',   label: '¿Áreas con pacientes especiales?',  type: 'radio',    opts: ['Sí', 'No'] },
       { id: 'tipos_esp',       label: 'Tipos de pacientes especiales',      type: 'checks',   opts: ['Infecciosos (aislamiento)', 'Sepsis', 'Oncología', 'Pediatría', 'Inmunodeprimidos', 'Trasplantados', 'Neonatos', 'Lactantes', 'Otro'], showIf: { field: 'pacientes_esp', values: ['Sí'] } },
@@ -168,7 +168,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's11', title: 'Usuarios y Accesos', icon: '🔐',
+    id: 's11', title: 'Usuarios y Accesos', icon: 'lock',
     fields: [
       { id: 'ldap',           label: '¿Inlab con Directorio Activo / LDAP?', type: 'radio',    opts: ['Sí', 'No', 'Por definir'] },
       { id: 'n_accesos',      label: 'Nº de accesos a Inlab necesarios',     type: 'number',   ph: '0' },
@@ -178,7 +178,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's12', title: 'Valoración y Próximos Pasos', icon: '⭐',
+    id: 's12', title: 'Valoración y Próximos Pasos', icon: 'award',
     fields: [
       { id: 'valoracion',     label: 'Valoración general (1–5)',            type: 'rating' },
       { id: 'interes',        label: 'Nivel de interés del cliente',        type: 'select',   opts: ['Muy alto – quieren avanzar ya', 'Alto – interés claro', 'Medio – en estudio', 'Bajo – poco interés'] },
@@ -194,7 +194,7 @@ export const FORM_SCHEMA: FormSection[] = [
   },
   // ── SECCIONES EXCLUSIVAS DE VENTAS ──────────────────────
   {
-    id: 's13', title: 'Contexto Comercial', icon: '💼', soloVentas: true,
+    id: 's13', title: 'Contexto Comercial', icon: 'briefcase', soloVentas: true,
     fields: [
       { id: 'temas_tratados',   label: 'Temas tratados en la visita',        type: 'textarea', ph: 'Productos presentados, necesidades detectadas...' },
       { id: 'productos_interes',label: 'Productos de interés para el cliente', type: 'checks',  opts: ['Inlab', 'BC Robo 900', 'BC Robo 7', 'BC Robo 8001', 'Zebra', 'Tubeti', 'Otro'] },
@@ -207,7 +207,7 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
-    id: 's14', title: 'Solicitudes del Cliente', icon: '📝', soloVentas: true,
+    id: 's14', title: 'Solicitudes del Cliente', icon: 'pen-line', soloVentas: true,
     fields: [
       { id: 'tiene_proyecto',    label: '¿Hay proyecto activo en este centro?', type: 'radio',    opts: ['Sí', 'No'] },
       { id: 'proyecto_detalle',  label: 'Detalle del proyecto activo',          type: 'textarea', ph: 'Nombre del proyecto, estado, productos instalados...', showIf: { field: 'tiene_proyecto', values: ['Sí'] } },
