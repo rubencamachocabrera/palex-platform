@@ -5,6 +5,7 @@ import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
+import { IconSearch, IconChevronRight } from "@/components/ui/Icons"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -45,10 +46,14 @@ function DocumentIcon() {
   )
 }
 
+type Orden = "fecha-desc" | "fecha-asc" | "hospital"
+
 export default function MisVisitasPage() {
   const [visitas, setVisitas] = useState<Visita[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState("TODOS")
+  const [busqueda, setBusqueda] = useState("")
+  const [orden, setOrden] = useState<Orden>("fecha-desc")
 
   useEffect(() => {
     fetch("/api/visitas")
@@ -57,7 +62,14 @@ export default function MisVisitasPage() {
       .catch(() => setLoading(false))
   }, [])
 
-  const filtradas = visitas.filter(v => filtro === "TODOS" || v.estado === filtro)
+  const filtradas = visitas
+    .filter(v => filtro === "TODOS" || v.estado === filtro)
+    .filter(v => !busqueda || v.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase()) || v.hospital.ciudad.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a, b) => {
+      if (orden === "fecha-asc") return new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+      if (orden === "hospital") return a.hospital.nombre.localeCompare(b.hospital.nombre)
+      return new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+    })
 
   const btnClass = (active: boolean) =>
     `text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
@@ -70,6 +82,31 @@ export default function MisVisitasPage() {
         title="Mis visitas"
         subtitle={loading ? "Cargando…" : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""} en total`}
       />
+
+      {/* Búsqueda + orden */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+        <div className="relative flex-1">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <IconSearch size={15} />
+          </div>
+          <input
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por hospital o ciudad…"
+            className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:border-transparent"
+            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+          />
+        </div>
+        <select
+          value={orden}
+          onChange={e => setOrden(e.target.value as Orden)}
+          className="text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none sm:w-44"
+        >
+          <option value="fecha-desc">Más recientes</option>
+          <option value="fecha-asc">Más antiguas</option>
+          <option value="hospital">Por hospital</option>
+        </select>
+      </div>
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap mb-5">
@@ -98,10 +135,22 @@ export default function MisVisitasPage() {
           </div>
         ) : filtradas.length === 0 ? (
           <EmptyState
-            icon="document"
-            title={filtro === "TODOS" ? "No tienes visitas registradas" : `No hay visitas "${ESTADO_LABEL[filtro]}"`}
-            description={filtro === "TODOS" ? "Accede a un hospital para registrar tu primera visita." : undefined}
-            action={filtro === "TODOS" ? { label: "Ver mis hospitales", href: "/hospitales" } : undefined}
+            icon={busqueda ? "search" : "document"}
+            title={
+              busqueda ? `Sin resultados para "${busqueda}"`
+              : filtro === "TODOS" ? "No tienes visitas registradas"
+              : `No hay visitas "${ESTADO_LABEL[filtro]}"`
+            }
+            description={
+              busqueda ? "Prueba con otro nombre de hospital o ciudad."
+              : filtro === "TODOS" ? "Accede a un hospital para registrar tu primera visita."
+              : undefined
+            }
+            action={
+              busqueda ? { label: "Limpiar búsqueda", variant: "ghost", onClick: () => setBusqueda("") }
+              : filtro === "TODOS" ? { label: "Ver mis hospitales", href: "/hospitales" }
+              : undefined
+            }
           />
         ) : (
           <div className="divide-y divide-gray-100">
@@ -130,9 +179,7 @@ export default function MisVisitasPage() {
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ESTADO_COLOR[v.estado]}`}>
                     {ESTADO_LABEL[v.estado]}
                   </span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-gray-400 transition-colors">
-                    <polyline points="9 18 15 12 9 6"/>
-                  </svg>
+                  <IconChevronRight size={16} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
                 </div>
               </Link>
             ))}
