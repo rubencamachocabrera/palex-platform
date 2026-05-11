@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { TEAL } from "@/lib/brand"
+import { IconX, IconCheck, IconPlus, IconSearch, IconTrendingUp } from "@/components/ui/Icons"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 // ─── Tipos ────────────────────────────────────────────────
 
@@ -266,7 +268,7 @@ export default function PipelinePage() {
               className="flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm hover:opacity-90 transition"
               style={{ backgroundColor: TEAL }}
             >
-              <span className="text-base leading-none">+</span> Nueva oportunidad
+              <IconPlus size={15} /> Nueva oportunidad
             </button>
           )}
         </div>
@@ -316,21 +318,29 @@ export default function PipelinePage() {
 
         {/* Lista */}
         {loading ? (
-          <p className="text-sm text-gray-400">Cargando…</p>
-        ) : filtradas.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-            <p className="text-3xl mb-2">📊</p>
-            <p className="text-gray-500 text-sm font-medium">No hay oportunidades{filtroEtapa !== "TODOS" ? ` en "${ETAPA_LABEL[filtroEtapa as Etapa]}"` : ""}</p>
-            {filtroEtapa === "TODOS" && rol !== "PROYECTOS" && (
-              <button
-                onClick={abrirCrear}
-                className="mt-3 text-sm font-medium"
-                style={{ color: TEAL }}
-              >
-                Añadir la primera →
-              </button>
-            )}
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div className="w-8 h-8 rounded-full skeleton-shimmer shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-2/3 rounded-lg skeleton-shimmer" />
+                  <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
+                  <div className="h-1 w-full rounded-full skeleton-shimmer mt-1" />
+                </div>
+                <div className="text-right space-y-1 shrink-0">
+                  <div className="h-4 w-20 rounded-lg skeleton-shimmer" />
+                  <div className="h-3 w-14 rounded skeleton-shimmer" />
+                </div>
+              </div>
+            ))}
           </div>
+        ) : filtradas.length === 0 ? (
+          <EmptyState
+            icon="pipeline"
+            title={filtroEtapa !== "TODOS" ? `Sin oportunidades en "${ETAPA_LABEL[filtroEtapa as Etapa]}"` : "Sin oportunidades todavía"}
+            description={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? "Crea tu primera oportunidad de venta." : undefined}
+            action={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? { label: "Nueva oportunidad", onClick: abrirCrear } : undefined}
+          />
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
             {filtradas.map(op => {
@@ -345,10 +355,14 @@ export default function PipelinePage() {
                 >
                   {/* Icono etapa */}
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${PROB_BAR_COLOR[op.etapa as Etapa]}20`, color: PROB_BAR_COLOR[op.etapa as Etapa] }}
                   >
-                    {op.etapa === "GANADO" ? "✓" : op.etapa === "PERDIDO" ? "✗" : "◎"}
+                    {op.etapa === "GANADO"
+                      ? <IconCheck size={14} />
+                      : op.etapa === "PERDIDO"
+                      ? <IconX size={14} />
+                      : <IconTrendingUp size={14} />}
                   </div>
 
                   {/* Info */}
@@ -384,7 +398,7 @@ export default function PipelinePage() {
                     )}
                   </div>
 
-                  <span className="text-gray-300 text-sm">›</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
               )
             })}
@@ -400,7 +414,7 @@ export default function PipelinePage() {
               <h2 className="text-base font-bold text-gray-800 leading-tight">{panelOp.titulo}</h2>
               <p className="text-xs text-gray-400 mt-1">{panelOp.hospital.nombre} · {panelOp.hospital.ciudad}</p>
             </div>
-            <button onClick={() => setPanelOp(null)} className="text-gray-300 hover:text-gray-500 shrink-0 text-xl leading-none">×</button>
+            <button onClick={() => setPanelOp(null)} className="text-gray-300 hover:text-gray-500 shrink-0 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
           </div>
 
           {/* Badge etapa actual */}
@@ -514,7 +528,7 @@ export default function PipelinePage() {
               <h2 className="text-base font-bold text-gray-800">
                 {editandoId ? "Editar oportunidad" : "Nueva oportunidad"}
               </h2>
-              <button onClick={() => setModalOpen(false)} className="text-gray-300 hover:text-gray-500 text-xl leading-none">×</button>
+              <button onClick={() => setModalOpen(false)} className="text-gray-300 hover:text-gray-500 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
             </div>
 
             <div className="px-6 py-5 space-y-4">
