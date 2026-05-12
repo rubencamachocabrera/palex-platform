@@ -122,16 +122,29 @@ export default function MisVisitasPage() {
           subtitle={loading ? "Cargando..." : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""} en total`}
           className="mb-0"
         />
-        <button
-          onClick={abrirModal}
-          className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl text-white shadow-sm hover:opacity-90 transition shrink-0 mt-0.5"
-          style={{ backgroundColor: TEAL }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Nueva visita
-        </button>
+        <div className="flex items-center gap-2 shrink-0 mt-0.5">
+          <Link
+            href="/visitas/calendario"
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition"
+            title="Vista calendario"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Calendario
+          </Link>
+          <button
+            onClick={abrirModal}
+            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl text-white shadow-sm hover:opacity-90 transition"
+            style={{ backgroundColor: TEAL }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nueva visita
+          </button>
+        </div>
       </div>
 
       {/* Busqueda + orden + CSV */}
