@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { TEAL } from "@/lib/brand"
 
 const ROL_LABEL: Record<string, string> = {
-  ADMIN: "Administrador", VENTAS: "Ventas", PROYECTOS: "Proyectos",
+  ADMIN: "Administrador", VENTAS: "Ventas", PROYECTOS: "Proyectos", TECNICO: "Técnico",
 }
 
 interface Toast { msg: string; tipo: "ok" | "error" }

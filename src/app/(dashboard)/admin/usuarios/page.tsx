@@ -4,12 +4,13 @@ import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
 
-const ROLES = ["ADMIN", "VENTAS", "PROYECTOS"]
+const ROLES = ["ADMIN", "VENTAS", "PROYECTOS", "TECNICO"]
 
 const ROL_COLORS: Record<string, string> = {
   ADMIN: "#6366F1",
   VENTAS: "#F7941D",
   PROYECTOS: TEAL,
+  TECNICO: "#0EA5E9",
 }
 
 interface Zona { id: string; nombre: string }

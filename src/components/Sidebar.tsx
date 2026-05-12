@@ -13,6 +13,7 @@ const ROL_LABEL: Record<string, string> = {
   ADMIN:     "Administrador",
   VENTAS:    "Comercial",
   PROYECTOS: "Proyectos",
+  TECNICO:   "Técnico",
 }
 
 // Iconos SVG (stroke 1.8, 18x18)
@@ -149,6 +150,17 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     {
       label: "CRM",
       items: [{ href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" }],
+    },
+  ],
+  TECNICO: [
+    { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
+    {
+      label: "Mi trabajo",
+      items: [
+        { href: "/hospitales", label: "Mis hospitales", icon: "Hospitales" },
+        { href: "/visitas",    label: "Mis visitas",    icon: "Visitas" },
+        { href: "/visitas/calendario", label: "Calendario", icon: "Calendar" },
+      ],
     },
   ],
 }

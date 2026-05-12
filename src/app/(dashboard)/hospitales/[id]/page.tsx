@@ -75,7 +75,7 @@ export default function HospitalDetailPage() {
   // --- Visita ---
   async function nuevaVisita() {
     setCreandoVisita(true)
-    const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
+    const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"  // TECNICO usa PROYECTOS
     const r = await fetch("/api/visitas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

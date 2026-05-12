@@ -408,5 +408,6 @@ export default async function DashboardPage() {
 
   if (rol === "ADMIN") return <DashboardAdmin />
   if (rol === "VENTAS") return <DashboardVentas userId={userId} nombre={nombre} />
+  // PROYECTOS y TECNICO comparten la misma vista
   return <DashboardProyectos userId={userId} nombre={nombre} />
 }
