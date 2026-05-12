@@ -14,15 +14,27 @@ export async function GET(req: NextRequest) {
     const rol = session.user.role
     const userId = session.user.id
 
+    const desde = req.nextUrl.searchParams.get("desde")
+    const hasta = req.nextUrl.searchParams.get("hasta")
+    const fechaFilter = desde && hasta ? {
+      fecha: { gte: new Date(desde + "T00:00:00"), lte: new Date(hasta + "T23:59:59") }
+    } : {}
+
     const visitas = await db.visita.findMany({
-      where: rol === "ADMIN" ? {} : { usuarioId: userId },
-      include: {
-        hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
+      where: {
+        ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
+        ...fechaFilter,
+      },
+      select: {
+        id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
+        hospital: { select: { id: true, nombre: true, ciudad: true } },
         usuario: { select: { id: true, nombre: true, rol: true } },
       },
       orderBy: { fecha: "desc" },
     })
-    return NextResponse.json(visitas)
+    const res = NextResponse.json(visitas)
+    res.headers.set("Cache-Control", "private, max-age=15, stale-while-revalidate=30")
+    return res
   } catch (err) {
     console.error("[GET]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })

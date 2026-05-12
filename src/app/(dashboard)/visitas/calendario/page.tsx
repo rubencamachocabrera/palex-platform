@@ -110,15 +110,17 @@ export default function CalendarioPage() {
   const [cargando, setCargando] = useState(true)
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null)
 
-  // Cargar visitas
+  // Cargar visitas — filtradas por mes visible para no traer todo
   useEffect(() => {
     setCargando(true)
-    fetch("/api/visitas")
+    const desde = new Date(year, month, 1).toISOString().slice(0, 10)
+    const hasta = new Date(year, month + 1, 0).toISOString().slice(0, 10)
+    fetch("/api/visitas?desde=" + desde + "&hasta=" + hasta)
       .then(r => r.ok ? r.json() : [])
       .then((data: Visita[]) => setVisitas(Array.isArray(data) ? data : []))
       .catch(() => setVisitas([]))
       .finally(() => setCargando(false))
-  }, [])
+  }, [year, month])
 
   // Agrupar visitas por día
   const visitasPorDia = useMemo(() => {

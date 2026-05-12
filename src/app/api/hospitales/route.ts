@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { nombre: "asc" },
     })
-    return NextResponse.json(hospitales)
+    const res = NextResponse.json(hospitales)
+    res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
+    return res
   } catch (err) {
     console.error("[GET /api/hospitales]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })

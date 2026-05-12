@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { signOut } from "next-auth/react"
 import { TEAL, TEAL_LIGHT, ORANGE } from "@/lib/brand"
 
@@ -227,6 +227,8 @@ function SidebarInner({
   const pathname = usePathname()
   const groups = NAV_GROUPS[rol] ?? NAV_GROUPS.VENTAS
   const inicial = nombre.charAt(0).toUpperCase()
+  // useMemo — evita recalcular en cada render
+  const allHrefs = useMemo(() => groups.flatMap(g => g.items.map(i => i.href)), [groups])
 
   return (
     <aside
@@ -291,13 +293,11 @@ function SidebarInner({
             )}
             <div className="space-y-0.5">
               {group.items.map(item => {
-                // Preferir el match más específico: si otro item del nav coincide mejor, este no es activo
-                const allHrefs = groups.flatMap(g => g.items.map(i => i.href))
                 const active =
                   pathname === item.href ||
                   (item.href !== "/dashboard" &&
                    pathname.startsWith(item.href + "/") &&
-                   !allHrefs.some(h => h !== item.href && pathname.startsWith(h)))
+                   !allHrefs.some((h: string) => h !== item.href && pathname.startsWith(h)))
                 return (
                   <NavLink
                     key={item.href}

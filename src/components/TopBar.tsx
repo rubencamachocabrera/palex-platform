@@ -63,39 +63,25 @@ export function TopBar() {
     if (texto.trim().length < 2) { setResultados([]); setAbierto(false); return }
     setBuscando(true)
     try {
-      const [rH, rV] = await Promise.all([
-        fetch("/api/hospitales"),
-        fetch("/api/visitas"),
-      ])
-      const [hospitales, visitas] = await Promise.all([
-        rH.ok ? rH.json() : [],
-        rV.ok ? rV.json() : [],
-      ])
-      const q2 = texto.toLowerCase()
-      const resH: Resultado[] = (Array.isArray(hospitales) ? hospitales : [])
-        .filter((h: { nombre: string; ciudad: string }) =>
-          h.nombre.toLowerCase().includes(q2) || h.ciudad.toLowerCase().includes(q2))
-        .slice(0, 4)
-        .map((h: { id: string; nombre: string; ciudad: string; zona: { nombre: string } }) => ({
-          tipo: "hospital" as const,
-          id: h.id,
-          titulo: h.nombre,
-          subtitulo: `${h.ciudad} · ${h.zona?.nombre ?? ""}`,
-          href: `/hospitales/${h.id}`,
-        }))
+      const r = await fetch("/api/search?q=" + encodeURIComponent(texto.trim()))
+      if (!r.ok) return
+      const { hospitales = [], visitas = [] } = await r.json()
 
-      const resV: Resultado[] = (Array.isArray(visitas) ? visitas : [])
-        .filter((v: { hospital: { nombre: string }; usuario: { nombre: string } }) =>
-          v.hospital?.nombre?.toLowerCase().includes(q2) ||
-          v.usuario?.nombre?.toLowerCase().includes(q2))
-        .slice(0, 3)
-        .map((v: { id: string; hospital: { nombre: string }; fecha: string; estado: string }) => ({
-          tipo: "visita" as const,
-          id: v.id,
-          titulo: v.hospital?.nombre ?? "Visita",
-          subtitulo: `${new Date(v.fecha).toLocaleDateString("es-ES")} · ${v.estado}`,
-          href: `/visitas/${v.id}`,
-        }))
+      const resH: Resultado[] = hospitales.map((h: { id: string; nombre: string; ciudad: string; zona?: { nombre: string } }) => ({
+        tipo: "hospital" as const,
+        id: h.id,
+        titulo: h.nombre,
+        subtitulo: h.ciudad + (h.zona ? " · " + h.zona.nombre : ""),
+        href: "/hospitales/" + h.id,
+      }))
+
+      const resV: Resultado[] = visitas.map((v: { id: string; hospital: { nombre: string }; fecha: string; estado: string }) => ({
+        tipo: "visita" as const,
+        id: v.id,
+        titulo: v.hospital?.nombre ?? "Visita",
+        subtitulo: new Date(v.fecha).toLocaleDateString("es-ES") + " · " + v.estado,
+        href: "/visitas/" + v.id,
+      }))
 
       setResultados([...resH, ...resV])
       setAbierto(resH.length + resV.length > 0)
