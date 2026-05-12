@@ -291,9 +291,13 @@ function SidebarInner({
             )}
             <div className="space-y-0.5">
               {group.items.map(item => {
+                // Preferir el match más específico: si otro item del nav coincide mejor, este no es activo
+                const allHrefs = groups.flatMap(g => g.items.map(i => i.href))
                 const active =
                   pathname === item.href ||
-                  (item.href !== "/dashboard" && pathname.startsWith(item.href))
+                  (item.href !== "/dashboard" &&
+                   pathname.startsWith(item.href + "/") &&
+                   !allHrefs.some(h => h !== item.href && pathname.startsWith(h)))
                 return (
                   <NavLink
                     key={item.href}

@@ -284,24 +284,22 @@ export default function HospitalDetailPage() {
       {/* ── Tab: Contactos ── */}
       {tab === "contactos" && (
         <div>
-          {isAdmin && (
-            <div className="flex justify-end mb-3">
-              <button
-                onClick={abrirCrearContacto}
-                className="flex items-center gap-1.5 text-sm font-medium text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
-                style={{ backgroundColor: TEAL }}
-              >
-                <IconPlus size={15} /> Nuevo contacto
-              </button>
-            </div>
-          )}
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={abrirCrearContacto}
+              className="flex items-center gap-1.5 text-sm font-medium text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
+              style={{ backgroundColor: TEAL }}
+            >
+              <IconPlus size={15} /> Nuevo contacto
+            </button>
+          </div>
 
           {hospital.contactos.length === 0 ? (
             <EmptyState
               icon="document"
               title="Sin contactos registrados"
               description={isAdmin ? "Añade el primer contacto de este centro." : "El administrador puede añadir contactos."}
-              action={isAdmin ? { label: "Añadir contacto", onClick: abrirCrearContacto } : undefined}
+              action={{ label: "Añadir contacto", onClick: abrirCrearContacto }}
             />
           ) : (
             <div className="space-y-3">

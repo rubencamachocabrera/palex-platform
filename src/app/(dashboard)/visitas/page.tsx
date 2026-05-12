@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -55,7 +55,10 @@ export default function MisVisitasPage() {
   const [hospitalesLista, setHospitalesLista] = useState<Hospital[]>([])
   const [hospitalId, setHospitalId] = useState("")
   const [busqHosp, setBusqHosp] = useState("")
+  const [fechaModal, setFechaModal] = useState("")
   const [creando, setCreando] = useState(false)
+  const searchParams = useSearchParams()
+  const autoAbierto = useRef(false)
 
   useEffect(() => {
     fetch("/api/visitas")
@@ -63,6 +66,18 @@ export default function MisVisitasPage() {
       .then(data => { setVisitas(data); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
+
+  // Abrir modal automáticamente si viene desde el calendario con ?abrir=1&fecha=
+  useEffect(() => {
+    if (autoAbierto.current) return
+    if (searchParams.get("abrir") === "1") {
+      autoAbierto.current = true
+      const fechaParam = searchParams.get("fecha") ?? ""
+      setFechaModal(fechaParam)
+      abrirModal()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   async function abrirModal() {
     setMostrarModal(true)
@@ -78,10 +93,12 @@ export default function MisVisitasPage() {
     if (!hospitalId) return
     setCreando(true)
     try {
+      const body: Record<string, string> = { hospitalId }
+      if (fechaModal) body.fecha = fechaModal
       const res = await fetch("/api/visitas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hospitalId }),
+        body: JSON.stringify(body),
       })
       const nueva = await res.json()
       router.push("/visitas/" + nueva.id)
@@ -319,7 +336,17 @@ export default function MisVisitasPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2 px-4 pb-4">
+            <div className="px-4 pb-2">
+              <label className="text-xs font-medium text-gray-500 block mb-1">Fecha de la visita</label>
+              <input
+                type="date"
+                value={fechaModal}
+                onChange={e => setFechaModal(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+              />
+            </div>
+            <div className="flex gap-2 px-4 pb-4 pt-2">
               <button onClick={() => setMostrarModal(false)} className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
