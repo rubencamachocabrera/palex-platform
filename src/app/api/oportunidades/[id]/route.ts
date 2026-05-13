@@ -24,7 +24,20 @@ export async function PATCH(
     const data: Record<string, unknown> = {}
 
     if (body.titulo      !== undefined) data.titulo       = body.titulo.trim()
-    if (body.etapa       !== undefined) data.etapa        = body.etapa
+    if (body.etapa !== undefined) {
+      if (body.etapa !== op.etapa) {
+        const prev = Array.isArray(op.historial) ? (op.historial as Array<Record<string, string>>) : []
+        data.historial = [...prev, {
+          etapaAnterior: op.etapa as string,
+          etapaNueva: body.etapa as string,
+          fecha: new Date().toISOString(),
+          usuario: (session.user as { name?: string; email?: string }).name
+            ?? (session.user as { name?: string; email?: string }).email
+            ?? "Usuario",
+        }]
+      }
+      data.etapa = body.etapa
+    }
     if (body.valorEstimado !== undefined) data.valorEstimado = body.valorEstimado ? parseFloat(body.valorEstimado) : null
     if (body.probabilidad  !== undefined) data.probabilidad  = body.probabilidad ? parseInt(body.probabilidad) : null
     if (body.fechaCierre   !== undefined) data.fechaCierre   = body.fechaCierre ? new Date(body.fechaCierre) : null

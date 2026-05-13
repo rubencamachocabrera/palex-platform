@@ -1,12 +1,21 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from "@dnd-kit/core"
 import { TEAL } from "@/lib/brand"
 import { IconX, IconCheck, IconPlus, IconSearch, IconTrendingUp } from "@/components/ui/Icons"
 import { exportarCSV } from "@/lib/csv"
 import { EmptyState } from "@/components/ui/EmptyState"
 
 // ─── Tipos ────────────────────────────────────────────────
+
+interface HistorialEntry {
+  etapaAnterior: string
+  etapaNueva: string
+  fecha: string
+  usuario: string
+}
 
 interface Oportunidad {
   id: string
@@ -18,6 +27,7 @@ interface Oportunidad {
   productos: string[]
   notas: string | null
   motivoPerdida: string | null
+  historial: HistorialEntry[]
   creadoEn: string
   hospital: { id: string; nombre: string; ciudad: string; zona?: { nombre: string } }
   usuario: { id: string; nombre: string }
@@ -38,7 +48,7 @@ const ETAPA_LABEL: Record<Etapa, string> = {
   IDENTIFICADO: "Identificado",
   PRIMERA_VISITA: "Primera visita",
   PROPUESTA: "Propuesta",
-  NEGOCIACION: "Negociación",
+  NEGOCIACION: "Negociacion",
   GANADO: "Ganado",
   PERDIDO: "Perdido",
 }
@@ -73,12 +83,12 @@ const PROB_BAR_COLOR: Record<Etapa, string> = {
 const PRODUCTOS_LISTA = [
   "Sistema BEXEN",
   "Tubos Vacutainer",
-  "Centrífugas",
+  "Centrifugas",
   "Racks de muestras",
   "Software LIS",
   "Etiquetadoras",
   "Neveras transporte",
-  "Formación",
+  "Formacion",
   "Mantenimiento",
   "Otro",
 ]
@@ -122,6 +132,73 @@ const FORM_VACIO: FormState = {
   motivoPerdida: "",
 }
 
+// ─── Kanban: card arrastrable ──────────────────────────────
+
+function DraggableCard({ op, onClick, activa }: { op: Oportunidad; onClick: () => void; activa: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: op.id })
+  const style = transform
+    ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)`, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.4 : 1 }
+    : {}
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className={`bg-white rounded-lg border p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all select-none ${activa ? "border-teal-400" : "border-gray-200 hover:border-gray-300"}`}
+    >
+      <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">{op.titulo}</p>
+      <p className="text-[11px] text-gray-400 mt-1 truncate">{op.hospital.nombre}</p>
+      {op.valorEstimado != null && (
+        <p className="text-xs font-bold text-gray-700 mt-2">{fmtEuros(op.valorEstimado)}</p>
+      )}
+      {op.probabilidad != null && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="flex-1 h-0.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${op.probabilidad}%`, backgroundColor: PROB_BAR_COLOR[op.etapa as Etapa] }} />
+          </div>
+          <span className="text-[10px] text-gray-400">{op.probabilidad}%</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Kanban: columna droppable ─────────────────────────────
+
+function DroppableColumn({ etapa, ops, onCardClick, panelId }: {
+  etapa: Etapa
+  ops: Oportunidad[]
+  onCardClick: (op: Oportunidad) => void
+  panelId: string | null
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: etapa })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col rounded-xl border min-w-[190px] max-w-[210px] flex-1 transition-colors ${isOver ? "border-teal-300 bg-teal-50/40" : "border-gray-200 bg-gray-50/60"}`}
+    >
+      <div className="px-3 py-2.5 border-b border-gray-200 flex items-center justify-between">
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ETAPA_COLOR[etapa]}`}>
+          {ETAPA_LABEL[etapa]}
+        </span>
+        <span className="text-xs text-gray-400 font-medium shrink-0 ml-1">{ops.length}</span>
+      </div>
+      <div className="flex-1 p-2 space-y-2 min-h-[80px]">
+        {ops.map(op => (
+          <DraggableCard
+            key={op.id}
+            op={op}
+            onClick={() => onCardClick(op)}
+            activa={panelId === op.id}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Componente principal ─────────────────────────────────
 
 export default function PipelinePage() {
@@ -133,6 +210,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [filtroEtapa, setFiltroEtapa] = useState<Etapa | "TODOS">("TODOS")
   const [busqueda, setBusqueda] = useState("")
+  const [vistaKanban, setVistaKanban] = useState(false)
 
   // Panel lateral
   const [panelOp, setPanelOp] = useState<Oportunidad | null>(null)
@@ -142,6 +220,9 @@ export default function PipelinePage() {
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(FORM_VACIO)
   const [guardando, setGuardando] = useState(false)
+
+  // DnD
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const cargar = useCallback(async () => {
     const res = await fetch("/api/oportunidades")
@@ -171,6 +252,18 @@ export default function PipelinePage() {
       o.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase())
     return coincideEtapa && coincideBusq
   })
+
+  // ── DnD handler ──
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over) return
+    const opId = active.id as string
+    const nuevaEtapa = over.id as Etapa
+    const op = ops.find(o => o.id === opId)
+    if (op && (ETAPAS as readonly string[]).includes(nuevaEtapa) && op.etapa !== nuevaEtapa) {
+      cambiarEtapa(opId, nuevaEtapa)
+    }
+  }
 
   // ── CRUD ──
   function abrirCrear() {
@@ -215,9 +308,8 @@ export default function PipelinePage() {
     if (res.ok) {
       await cargar()
       setModalOpen(false)
-      // Si estamos editando la que está en el panel, refresca el panel
       if (panelOp && editandoId === panelOp.id) {
-        const updated = await fetch(`/api/oportunidades`).then(r => r.json())
+        const updated = await fetch("/api/oportunidades").then(r => r.json())
         const found = (updated as Oportunidad[]).find(o => o.id === editandoId)
         if (found) setPanelOp(found)
       }
@@ -232,7 +324,11 @@ export default function PipelinePage() {
       body: JSON.stringify({ etapa }),
     })
     await cargar()
-    if (panelOp?.id === id) setPanelOp(prev => prev ? { ...prev, etapa } : null)
+    if (panelOp?.id === id) {
+      const updated = await fetch("/api/oportunidades").then(r => r.json())
+      const found = (updated as Oportunidad[]).find(o => o.id === id)
+      if (found) setPanelOp(found)
+    }
   }
 
   async function eliminarOportunidad(id: string) {
@@ -264,6 +360,21 @@ export default function PipelinePage() {
             <p className="text-sm text-gray-400 mt-0.5">{ops.length} oportunidad{ops.length !== 1 ? "es" : ""} en total</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Toggle vista */}
+            <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setVistaKanban(false)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${!vistaKanban ? "bg-gray-800 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                Lista
+              </button>
+              <button
+                onClick={() => setVistaKanban(true)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${vistaKanban ? "bg-gray-800 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                Kanban
+              </button>
+            </div>
             <button
               onClick={() => exportarCSV(
                 filtradas.map(o => ({
@@ -316,120 +427,140 @@ export default function PipelinePage() {
           ))}
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <input
-            type="search"
-            placeholder="Buscar oportunidad o hospital…"
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:border-transparent"
-            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-          />
-          {(["TODOS", ...ETAPAS] as const).map(e => {
-            const activo = filtroEtapa === e
-            return (
-              <button
-                key={e}
-                onClick={() => setFiltroEtapa(e as typeof filtroEtapa)}
-                className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-                style={activo
-                  ? { backgroundColor: TEAL, color: "white" }
-                  : { backgroundColor: "white", color: "#6b7280", border: "1px solid #e5e7eb" }}
-              >
-                {e === "TODOS" ? "Todas" : ETAPA_LABEL[e as Etapa]}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Lista */}
-        {loading ? (
-          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4">
-                <div className="w-8 h-8 rounded-full skeleton-shimmer shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-2/3 rounded-lg skeleton-shimmer" />
-                  <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
-                  <div className="h-1 w-full rounded-full skeleton-shimmer mt-1" />
-                </div>
-                <div className="text-right space-y-1 shrink-0">
-                  <div className="h-4 w-20 rounded-lg skeleton-shimmer" />
-                  <div className="h-3 w-14 rounded skeleton-shimmer" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filtradas.length === 0 ? (
-          <EmptyState
-            icon="pipeline"
-            title={filtroEtapa !== "TODOS" ? `Sin oportunidades en "${ETAPA_LABEL[filtroEtapa as Etapa]}"` : "Sin oportunidades todavía"}
-            description={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? "Crea tu primera oportunidad de venta." : undefined}
-            action={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? { label: "Nueva oportunidad", onClick: abrirCrear } : undefined}
-          />
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
-            {filtradas.map(op => {
-              const prob = op.probabilidad ?? PROB_DEFECTO[op.etapa as Etapa] ?? 0
-              const activa = panelOp?.id === op.id
+        {/* Filtros (solo en lista) */}
+        {!vistaKanban && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            <input
+              type="search"
+              placeholder="Buscar oportunidad o hospital..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:border-transparent"
+              style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+            />
+            {(["TODOS", ...ETAPAS] as const).map(e => {
+              const activo = filtroEtapa === e
               return (
                 <button
-                  key={op.id}
-                  onClick={() => setPanelOp(activa ? null : op)}
-                  className="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
-                  style={activa ? { backgroundColor: "#f0fafa" } : {}}
+                  key={e}
+                  onClick={() => setFiltroEtapa(e as typeof filtroEtapa)}
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+                  style={activo
+                    ? { backgroundColor: TEAL, color: "white" }
+                    : { backgroundColor: "white", color: "#6b7280", border: "1px solid #e5e7eb" }}
                 >
-                  {/* Icono etapa */}
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${PROB_BAR_COLOR[op.etapa as Etapa]}20`, color: PROB_BAR_COLOR[op.etapa as Etapa] }}
-                  >
-                    {op.etapa === "GANADO"
-                      ? <IconCheck size={14} />
-                      : op.etapa === "PERDIDO"
-                      ? <IconX size={14} />
-                      : <IconTrendingUp size={14} />}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{op.titulo}</p>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${ETAPA_COLOR[op.etapa as Etapa]}`}>
-                        {ETAPA_LABEL[op.etapa as Etapa]}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">
-                      {op.hospital.nombre} · {op.hospital.ciudad}
-                      {op.hospital.zona ? ` · ${op.hospital.zona.nombre}` : ""}
-                      {esAdmin ? ` · ${op.usuario.nombre}` : ""}
-                    </p>
-                    {/* Barra de probabilidad */}
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${prob}%`, backgroundColor: PROB_BAR_COLOR[op.etapa as Etapa] }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-400 shrink-0">{prob}%</span>
-                    </div>
-                  </div>
-
-                  {/* Valor */}
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-gray-800">{fmtEuros(op.valorEstimado)}</p>
-                    {op.valorEstimado && (
-                      <p className="text-xs text-gray-400">pond. {fmtEuros(valorPonderado(op))}</p>
-                    )}
-                  </div>
-
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  {e === "TODOS" ? "Todas" : ETAPA_LABEL[e as Etapa]}
                 </button>
               )
             })}
           </div>
+        )}
+
+        {/* ── Vista lista ── */}
+        {!vistaKanban && (
+          loading ? (
+            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-8 h-8 rounded-full skeleton-shimmer shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-2/3 rounded-lg skeleton-shimmer" />
+                    <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
+                    <div className="h-1 w-full rounded-full skeleton-shimmer mt-1" />
+                  </div>
+                  <div className="text-right space-y-1 shrink-0">
+                    <div className="h-4 w-20 rounded-lg skeleton-shimmer" />
+                    <div className="h-3 w-14 rounded skeleton-shimmer" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filtradas.length === 0 ? (
+            <EmptyState
+              icon="pipeline"
+              title={filtroEtapa !== "TODOS" ? `Sin oportunidades en "${ETAPA_LABEL[filtroEtapa as Etapa]}"` : "Sin oportunidades todavia"}
+              description={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? "Crea tu primera oportunidad de venta." : undefined}
+              action={filtroEtapa === "TODOS" && rol !== "PROYECTOS" ? { label: "Nueva oportunidad", onClick: abrirCrear } : undefined}
+            />
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+              {filtradas.map(op => {
+                const prob = op.probabilidad ?? PROB_DEFECTO[op.etapa as Etapa] ?? 0
+                const activa = panelOp?.id === op.id
+                return (
+                  <button
+                    key={op.id}
+                    onClick={() => setPanelOp(activa ? null : op)}
+                    className="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
+                    style={activa ? { backgroundColor: "#f0fafa" } : {}}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${PROB_BAR_COLOR[op.etapa as Etapa]}20`, color: PROB_BAR_COLOR[op.etapa as Etapa] }}
+                    >
+                      {op.etapa === "GANADO" ? <IconCheck size={14} /> : op.etapa === "PERDIDO" ? <IconX size={14} /> : <IconTrendingUp size={14} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{op.titulo}</p>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${ETAPA_COLOR[op.etapa as Etapa]}`}>
+                          {ETAPA_LABEL[op.etapa as Etapa]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        {op.hospital.nombre} &middot; {op.hospital.ciudad}
+                        {op.hospital.zona ? ` · ${op.hospital.zona.nombre}` : ""}
+                        {esAdmin ? ` · ${op.usuario.nombre}` : ""}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${prob}%`, backgroundColor: PROB_BAR_COLOR[op.etapa as Etapa] }} />
+                        </div>
+                        <span className="text-xs text-gray-400 shrink-0">{prob}%</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-gray-800">{fmtEuros(op.valorEstimado)}</p>
+                      {op.valorEstimado && <p className="text-xs text-gray-400">pond. {fmtEuros(valorPonderado(op))}</p>}
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                )
+              })}
+            </div>
+          )
+        )}
+
+        {/* ── Vista Kanban ── */}
+        {vistaKanban && (
+          loading ? (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {ETAPAS.map(e => (
+                <div key={e} className="flex-1 min-w-[190px] max-w-[210px] rounded-xl border border-gray-200 bg-gray-50/60">
+                  <div className="px-3 py-2.5 border-b border-gray-200">
+                    <div className="h-5 w-24 rounded-full skeleton-shimmer" />
+                  </div>
+                  <div className="p-2 space-y-2">
+                    {Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-16 rounded-lg skeleton-shimmer" />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+              <div className="flex gap-3 overflow-x-auto pb-3">
+                {ETAPAS.map(etapa => (
+                  <DroppableColumn
+                    key={etapa}
+                    etapa={etapa}
+                    ops={ops.filter(o => o.etapa === etapa)}
+                    onCardClick={op => setPanelOp(panelOp?.id === op.id ? null : op)}
+                    panelId={panelOp?.id ?? null}
+                  />
+                ))}
+              </div>
+            </DndContext>
+          )
         )}
       </div>
 
@@ -439,17 +570,16 @@ export default function PipelinePage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0 pr-2">
               <h2 className="text-base font-bold text-gray-800 leading-tight">{panelOp.titulo}</h2>
-              <p className="text-xs text-gray-400 mt-1">{panelOp.hospital.nombre} · {panelOp.hospital.ciudad}</p>
+              <p className="text-xs text-gray-400 mt-1">{panelOp.hospital.nombre} &middot; {panelOp.hospital.ciudad}</p>
             </div>
             <button onClick={() => setPanelOp(null)} className="text-gray-300 hover:text-gray-500 shrink-0 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
           </div>
 
-          {/* Badge etapa actual */}
           <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-4 ${ETAPA_COLOR[panelOp.etapa as Etapa]}`}>
             {ETAPA_LABEL[panelOp.etapa as Etapa]}
           </span>
 
-          {/* Cambio rápido de etapa */}
+          {/* Cambio rapido de etapa */}
           {(rol === "VENTAS" || esAdmin) && panelOp.etapa !== "GANADO" && panelOp.etapa !== "PERDIDO" && (
             <div className="mb-4">
               <p className="text-xs font-medium text-gray-500 mb-2">Avanzar etapa</p>
@@ -501,7 +631,7 @@ export default function PipelinePage() {
           {/* Productos */}
           {panelOp.productos.length > 0 && (
             <div className="mt-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Productos de interés</p>
+              <p className="text-xs font-medium text-gray-500 mb-2">Productos de interes</p>
               <div className="flex flex-wrap gap-1.5">
                 {panelOp.productos.map(p => (
                   <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{p}</span>
@@ -518,11 +648,30 @@ export default function PipelinePage() {
             </div>
           )}
 
-          {/* Motivo pérdida */}
+          {/* Motivo perdida */}
           {panelOp.motivoPerdida && (
             <div className="mt-4 bg-red-50 rounded-lg p-3">
-              <p className="text-xs font-medium text-red-500 mb-1">Motivo pérdida</p>
+              <p className="text-xs font-medium text-red-500 mb-1">Motivo perdida</p>
               <p className="text-sm text-red-700">{panelOp.motivoPerdida}</p>
+            </div>
+          )}
+
+          {/* Historial de etapas */}
+          {panelOp.historial && panelOp.historial.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">Historial de etapas</p>
+              <div className="space-y-1.5">
+                {[...panelOp.historial].reverse().map((h, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 shrink-0" />
+                    <div>
+                      <span className="text-gray-700 font-medium">{ETAPA_LABEL[h.etapaNueva as Etapa] ?? h.etapaNueva}</span>
+                      <span className="text-gray-400"> &middot; {new Date(h.fecha).toLocaleDateString("es-ES")}</span>
+                      {h.usuario && <span className="text-gray-300"> &middot; {h.usuario}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -530,7 +679,7 @@ export default function PipelinePage() {
           {(rol === "VENTAS" || esAdmin) && (
             <div className="mt-5 flex gap-2">
               <button
-                onClick={() => { abrirEditar(panelOp); }}
+                onClick={() => { abrirEditar(panelOp) }}
                 className="flex-1 text-sm font-medium text-white py-2 rounded-lg hover:opacity-90 transition"
                 style={{ backgroundColor: TEAL }}
               >
@@ -559,8 +708,6 @@ export default function PipelinePage() {
             </div>
 
             <div className="px-6 py-5 space-y-4">
-
-              {/* Hospital */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Hospital *</label>
                 <select
@@ -568,26 +715,24 @@ export default function PipelinePage() {
                   onChange={e => setForm(f => ({ ...f, hospitalId: e.target.value }))}
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 >
-                  <option value="">Selecciona un hospital…</option>
+                  <option value="">Selecciona un hospital...</option>
                   {hospitales.map(h => (
-                    <option key={h.id} value={h.id}>{h.nombre} — {h.ciudad}</option>
+                    <option key={h.id} value={h.id}>{h.nombre} &mdash; {h.ciudad}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Título */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Título *</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Titulo *</label>
                 <input
                   type="text"
                   value={form.titulo}
                   onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                  placeholder="Ej. Implantación sistema preanalítico planta 3"
+                  placeholder="Ej. Implantacion sistema prealitico planta 3"
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 />
               </div>
 
-              {/* Etapa */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-2">Etapa *</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -596,9 +741,7 @@ export default function PipelinePage() {
                       key={e}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, etapa: e, probabilidad: f.probabilidad || PROB_DEFECTO[e].toString() }))}
-                      className={`text-xs py-2 px-2 rounded-lg border font-medium transition-all ${
-                        form.etapa === e ? "border-transparent text-white" : "border-gray-200 text-gray-600"
-                      }`}
+                      className={`text-xs py-2 px-2 rounded-lg border font-medium transition-all ${form.etapa === e ? "border-transparent text-white" : "border-gray-200 text-gray-600"}`}
                       style={form.etapa === e ? { backgroundColor: PROB_BAR_COLOR[e] } : {}}
                     >
                       {ETAPA_LABEL[e]}
@@ -607,10 +750,9 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* Valor + Probabilidad */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Valor estimado (€)</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Valor estimado (EUR)</label>
                   <input
                     type="number"
                     min="0"
@@ -633,7 +775,6 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* Fecha cierre */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Fecha estimada de cierre</label>
                 <input
@@ -644,9 +785,8 @@ export default function PipelinePage() {
                 />
               </div>
 
-              {/* Productos */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2">Productos de interés</label>
+                <label className="block text-xs font-medium text-gray-500 mb-2">Productos de interes</label>
                 <div className="flex flex-wrap gap-2">
                   {PRODUCTOS_LISTA.map(p => (
                     <button
@@ -664,27 +804,25 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* Motivo pérdida */}
               {form.etapa === "PERDIDO" && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Motivo de pérdida</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Motivo de perdida</label>
                   <textarea
                     value={form.motivoPerdida}
                     onChange={e => setForm(f => ({ ...f, motivoPerdida: e.target.value }))}
-                    placeholder="¿Por qué se perdió esta oportunidad?"
+                    placeholder="Por que se perdio esta oportunidad?"
                     rows={2}
                     className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none resize-none"
                   />
                 </div>
               )}
 
-              {/* Notas */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Notas</label>
                 <textarea
                   value={form.notas}
                   onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-                  placeholder="Observaciones, contexto, próximos pasos…"
+                  placeholder="Observaciones, contexto, proximos pasos..."
                   rows={3}
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none resize-none"
                 />
@@ -704,7 +842,7 @@ export default function PipelinePage() {
                 className="text-sm font-medium text-white px-5 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50"
                 style={{ backgroundColor: TEAL }}
               >
-                {guardando ? "Guardando…" : editandoId ? "Guardar cambios" : "Crear oportunidad"}
+                {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Crear oportunidad"}
               </button>
             </div>
           </div>

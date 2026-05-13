@@ -167,6 +167,7 @@ model Oportunidad {
   productos     Json          @default("[]")
   notas         String?
   motivoPerdida String?
+  historial     Json          @default("[]")
   creadoEn      DateTime      @default(now())
   editadoEn     DateTime      @updatedAt
 

@@ -57,6 +57,7 @@ export default function MisVisitasPage() {
   const [busqHosp, setBusqHosp] = useState("")
   const [fechaModal, setFechaModal] = useState("")
   const [creando, setCreando] = useState(false)
+  const [userRol, setUserRol] = useState("PROYECTOS")
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
@@ -65,6 +66,10 @@ export default function MisVisitasPage() {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (Array.isArray(data)) setVisitas(data); setLoading(false) })
       .catch(() => setLoading(false))
+    fetch("/api/perfil")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.rol) setUserRol(d.rol) })
+      .catch(() => {})
   }, [])
 
   // Abrir modal automáticamente si viene desde el calendario con ?abrir=1&fecha=
@@ -94,13 +99,15 @@ export default function MisVisitasPage() {
     if (!hospitalId) return
     setCreando(true)
     try {
-      const body: Record<string, string> = { hospitalId }
+      const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
+      const body: Record<string, string> = { hospitalId, tipo }
       if (fechaModal) body.fecha = fechaModal
       const res = await fetch("/api/visitas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
+      if (!res.ok) { setCreando(false); return }
       const nueva = await res.json()
       router.push("/visitas/" + nueva.id)
     } catch {

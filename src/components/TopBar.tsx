@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import { useSidebarToggle } from "@/components/Sidebar"
 import { TEAL } from "@/lib/brand"
@@ -12,6 +13,14 @@ interface Resultado {
   titulo: string
   subtitulo: string
   href: string
+}
+
+interface Notificacion {
+  tipo: "oportunidad_inactiva" | "visita_borrador"
+  id: string
+  titulo: string
+  href: string
+  mensaje: string
 }
 
 // ─── Iconos SVG inline ────────────────────────────────────────────────────────
@@ -46,6 +55,15 @@ function MenuIcon() {
   )
 }
 
+function BellIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  )
+}
+
 // ─── TopBar ────────────────────────────────────────────────────────────────────
 
 export function TopBar() {
@@ -58,6 +76,10 @@ export function TopBar() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
   const toggleSidebar = useSidebarToggle()
+
+  const [notifs, setNotifs] = useState<Notificacion[]>([])
+  const [notifOpen, setNotifOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   const buscar = useCallback(async (texto: string) => {
     if (texto.trim().length < 2) { setResultados([]); setAbierto(false); return }
@@ -103,9 +125,19 @@ export function TopBar() {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setAbierto(false)
       }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false)
+      }
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/notificaciones")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.items) setNotifs(d.items) })
+      .catch(() => {})
   }, [])
 
   function navegar(href: string) {
@@ -190,6 +222,56 @@ export function TopBar() {
 
       {/* Indicador offline */}
       <OfflineIndicator />
+
+      {/* Campana de notificaciones */}
+      <div ref={notifRef} className="relative">
+        <button
+          onClick={() => setNotifOpen(o => !o)}
+          className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          aria-label="Notificaciones"
+        >
+          <BellIcon />
+          {notifs.length > 0 && (
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: "#ef4444" }}>
+              {notifs.length > 9 ? "9+" : notifs.length}
+            </span>
+          )}
+        </button>
+
+        {notifOpen && (
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50 animate-in fade-in scale-in duration-150">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Notificaciones</p>
+              {notifs.length > 0 && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500">{notifs.length}</span>
+              )}
+            </div>
+            {notifs.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-sm text-gray-400">Todo al dia</p>
+                <p className="text-xs text-gray-300 mt-1">Sin alertas pendientes</p>
+              </div>
+            ) : (
+              <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                {notifs.map(n => (
+                  <Link
+                    key={`${n.tipo}-${n.id}`}
+                    href={n.href}
+                    onClick={() => setNotifOpen(false)}
+                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.tipo === "oportunidad_inactiva" ? "bg-amber-400" : "bg-blue-400"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{n.titulo}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{n.mensaje}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Acceso rapido hospitales */}
       <a

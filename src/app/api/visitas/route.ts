@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const { hospitalId, tipo } = await req.json()
+    const { hospitalId, tipo, fecha } = await req.json()
     if (!hospitalId || !tipo) return NextResponse.json({ error: "Faltan campos" }, { status: 400 })
 
     const visita = await db.visita.create({
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         tipo,
         estado: "BORRADOR",
         datos: {},
+        ...(fecha ? { fecha: new Date(fecha) } : {}),
       },
     })
     return NextResponse.json(visita, { status: 201 })
