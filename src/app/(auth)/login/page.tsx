@@ -2,12 +2,10 @@
 
 import { useState, useRef } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { TEAL } from "@/lib/brand"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [error, setError]         = useState("")
   const [loading, setLoading]     = useState(false)
   const [redirecting, setRedirecting] = useState(false)   // overlay branded post-login
@@ -45,8 +43,10 @@ export default function LoginPage() {
     }
 
     // ── Login correcto: mostrar overlay de carga antes de navegar ──
+    // Hard redirect para que el servidor lea la cookie nueva y no sirva
+    // layout cacheado del App Router con el rol del usuario anterior.
     setRedirecting(true)
-    router.push("/dashboard")
+    window.location.href = "/dashboard"
   }
 
   const inputClass =
