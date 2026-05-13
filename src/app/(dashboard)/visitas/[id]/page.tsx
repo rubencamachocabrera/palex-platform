@@ -390,8 +390,8 @@ function exportarJSON(visita: VisitaData, datos: Record<string, unknown>, sectio
 }
 
 // ─── Icono de guardado estilo Google Docs ─────────────────────────────────────
-function SaveIndicator({ saving, pendiente, savedAt }: {
-  saving: boolean; pendiente: boolean; savedAt: Date | null
+function SaveIndicator({ saving, pendiente, savedAt, error }: {
+  saving: boolean; pendiente: boolean; savedAt: Date | null; error: boolean
 }) {
   const [, tick] = useState(0)
 
@@ -415,6 +415,15 @@ function SaveIndicator({ saving, pendiente, savedAt }: {
     <span className="flex items-center gap-1.5 text-gray-400">
       <span className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin inline-block" />
       <span className="hidden sm:inline">Guardando</span>
+    </span>
+  )
+  if (error) return (
+    <span className="flex items-center gap-1 text-red-500 font-medium">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span className="hidden sm:inline">Error al guardar</span>
+      <span className="sm:hidden">Error</span>
     </span>
   )
   if (pendiente) return <span className="text-amber-500 font-medium">Sin guardar</span>
@@ -507,6 +516,7 @@ export default function VisitaPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   // Panel lateral de navegación (mobile: colapsable)
   const [navOpen, setNavOpen] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
@@ -549,15 +559,23 @@ export default function VisitaPage() {
     if (nuevoEstado) body.estado = nuevoEstado
     if (!online) { await syncToServer(body); return }
     setSaving(true)
+    setSaveError(false)
     try {
       const r = await fetch(`/api/visitas/${id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
       })
       if (r.ok) {
         const updated = await r.json()
         setVisita(v => { const next = v ? { ...v, estado: updated.estado } : v; visitaRef.current = next; return next })
         setSavedAt(new Date()); setPendiente(false)
+      } else {
+        setSaveError(true)
       }
+    } catch {
+      setSaveError(true)
     } finally { setSaving(false) }
   }, [id, online, syncToServer])
 
@@ -714,7 +732,7 @@ export default function VisitaPage() {
 
           {/* Indicador de guardado */}
           <div className="text-xs shrink-0">
-            <SaveIndicator saving={saving} pendiente={pendiente} savedAt={savedAt} />
+            <SaveIndicator saving={saving} pendiente={pendiente} savedAt={savedAt} error={saveError} />
           </div>
 
           {/* Acciones rápidas */}

@@ -61,13 +61,18 @@ export default function HospitalDetailPage() {
   const isAdmin = userRol === "ADMIN"
 
   async function cargar() {
-    const [rH, rP] = await Promise.all([
-      fetch(`/api/hospitales/${id}`),
-      fetch("/api/perfil"),
-    ])
-    if (rH.ok) setHospital(await rH.json())
-    if (rP.ok) { const p = await rP.json(); setUserRol(p.rol ?? "") }
-    setLoading(false)
+    try {
+      const [rH, rP] = await Promise.all([
+        fetch(`/api/hospitales/${id}`),
+        fetch("/api/perfil"),
+      ])
+      if (rH.ok) setHospital(await rH.json())
+      if (rP.ok) { const p = await rP.json(); setUserRol(p.rol ?? "") }
+    } catch (e) {
+      console.error("[cargar hospital]", e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { cargar() }, [id])

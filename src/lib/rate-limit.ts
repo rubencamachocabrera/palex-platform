@@ -27,6 +27,13 @@ export function checkRateLimit(
   const key = ip + ":" + route
   const now = Date.now()
 
+  // Limpiar entradas expiradas ~1% de las veces para evitar fuga de memoria
+  if (Math.random() < 0.01) {
+    for (const [k, v] of store) {
+      if (now > v.resetAt) store.delete(k)
+    }
+  }
+
   const entry = store.get(key)
 
   if (!entry || now > entry.resetAt) {

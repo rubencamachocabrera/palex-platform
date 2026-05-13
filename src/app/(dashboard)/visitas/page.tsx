@@ -62,8 +62,8 @@ export default function MisVisitasPage() {
 
   useEffect(() => {
     fetch("/api/visitas")
-      .then(r => r.json())
-      .then(data => { setVisitas(data); setLoading(false) })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data)) setVisitas(data); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
@@ -84,8 +84,9 @@ export default function MisVisitasPage() {
     setHospitalId("")
     setBusqHosp("")
     if (hospitalesLista.length === 0) {
-      const data = await fetch("/api/hospitales").then(r => r.json())
-      setHospitalesLista(data)
+      const r = await fetch("/api/hospitales")
+      const data = r.ok ? await r.json() : []
+      setHospitalesLista(Array.isArray(data) ? data : [])
     }
   }
 

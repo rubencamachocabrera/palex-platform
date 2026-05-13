@@ -49,7 +49,10 @@ self.addEventListener('fetch', (event) => {
   // Solo interceptamos peticiones de nuestro origen
   if (url.origin !== location.origin) return;
 
-  // API routes → Network-first, fallback a caché
+  // Auth de NextAuth: nunca interceptar (tokens CSRF, sesion)
+  if (url.pathname.startsWith('/api/auth/')) return;
+
+  // API routes → Network-first, fallback a caché solo en GET
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstAPI(request));
     return;
@@ -92,12 +95,20 @@ async function cacheFirst(request, cacheName) {
 async function networkFirstAPI(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Solo cachear GET exitosos — nunca cachear PATCH/POST/DELETE
+    if (response.ok && request.method === 'GET') {
       const cache = await caches.open(API_CACHE);
       cache.put(request, response.clone());
     }
     return response;
   } catch {
+    // Sin conexion y metodo mutacion: devolver error directo
+    if (request.method !== 'GET') {
+      return new Response(
+        JSON.stringify({ error: 'Sin conexión', offline: true }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     const cached = await caches.match(request);
     if (cached) return cached;
     return new Response(
