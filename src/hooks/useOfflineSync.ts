@@ -150,6 +150,7 @@ export function useOfflineSync({
           });
           if (res.ok) {
             await removeSyncItem(item.id);
+            if (item.id === visitaId) onSyncSuccess?.();
           } else {
             await incrementSyncAttempt(item.id);
           }

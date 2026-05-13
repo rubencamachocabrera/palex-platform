@@ -512,10 +512,15 @@ export default function VisitaPage() {
   const visitaRef = useRef<VisitaData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { online, loadDraft } = useOfflineSync({
+  const handleSyncSuccess = useCallback(() => {
+    setSavedAt(new Date()); setPendiente(false)
+  }, [])
+
+  const { online, loadDraft, syncToServer } = useOfflineSync({
     visitaId: id,
     hospitalNombre: visitaRef.current?.hospital.nombre ?? "",
     datos,
+    onSyncSuccess: handleSyncSuccess,
   })
 
   const tipo = (visita?.tipo ?? "PROYECTOS") as "PROYECTOS" | "VENTAS"
@@ -540,9 +545,10 @@ export default function VisitaPage() {
 
   const guardar = useCallback(async (nuevoEstado?: string) => {
     if (!visitaRef.current) return
-    setSaving(true)
     const body: Record<string, unknown> = { datos: datosRef.current }
     if (nuevoEstado) body.estado = nuevoEstado
+    if (!online) { await syncToServer(body); return }
+    setSaving(true)
     try {
       const r = await fetch(`/api/visitas/${id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -553,7 +559,7 @@ export default function VisitaPage() {
         setSavedAt(new Date()); setPendiente(false)
       }
     } finally { setSaving(false) }
-  }, [id])
+  }, [id, online, syncToServer])
 
   const guardarRef = useRef(guardar)
   useEffect(() => { guardarRef.current = guardar }, [guardar])
