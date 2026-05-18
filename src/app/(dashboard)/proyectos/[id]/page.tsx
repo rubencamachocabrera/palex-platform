@@ -4,8 +4,25 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 
+type EstadoModulo = "PENDIENTE" | "EN_INSTALACION" | "INSTALADO" | "FORMACION" | "VALIDADO"
+
+const ESTADO_MODULO_LABEL: Record<EstadoModulo, string> = {
+  PENDIENTE: "Pendiente",
+  EN_INSTALACION: "En instalación",
+  INSTALADO: "Instalado",
+  FORMACION: "Formación",
+  VALIDADO: "Validado",
+}
+const ESTADO_MODULO_COLOR: Record<EstadoModulo, string> = {
+  PENDIENTE: "bg-gray-100 text-gray-500",
+  EN_INSTALACION: "bg-blue-50 text-blue-600",
+  INSTALADO: "bg-teal-50 text-teal-600",
+  FORMACION: "bg-amber-50 text-amber-600",
+  VALIDADO: "bg-emerald-50 text-emerald-600",
+}
+
 interface ModuloInlab { id: string; nombre: string; activo: boolean }
-interface ProyectoModulo { modulo: ModuloInlab }
+interface ProyectoModulo { modulo: ModuloInlab; estado: EstadoModulo }
 interface Hospital { id: string; nombre: string; ciudad: string; provincia: string | null }
 interface Proyecto {
   id: string
@@ -15,6 +32,7 @@ interface Proyecto {
   fechaFin: string | null
   refConcurso: string | null
   mapaHtml: string | null
+  mapaToken: string | null
   modulos: ProyectoModulo[]
   creadoEn: string
   actualizadoEn: string
@@ -106,6 +124,8 @@ export default function ProyectoDetallePage() {
   const [guardando, setGuardando] = useState(false)
   const [subiendoMapa, setSubiendoMapa] = useState(false)
   const [iframeHeight, setIframeHeight] = useState(600)
+  const [linkCompartir, setLinkCompartir] = useState("")
+  const [generandoLink, setGenerandoLink] = useState(false)
   const [toast, setToast] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -133,6 +153,9 @@ export default function ProyectoDetallePage() {
     ]).then(([p, m]) => {
       if (p) {
         setProyecto(p)
+        if (p.mapaToken) {
+          setLinkCompartir(`${window.location.origin}/share/${p.mapaToken}`)
+        }
         setForm({
           nombre: p.nombre,
           hospitalId: p.hospital.id,
@@ -201,6 +224,41 @@ export default function ProyectoDetallePage() {
     } catch {
       setIframeHeight(3000)
     }
+  }
+
+  async function actualizarEstadoModulo(moduloId: string, estado: EstadoModulo) {
+    await fetch(`/api/proyectos/${id}/modulos/${moduloId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado }),
+    })
+    setProyecto(prev => prev ? {
+      ...prev,
+      modulos: prev.modulos.map(pm =>
+        pm.modulo.id === moduloId ? { ...pm, estado } : pm
+      ),
+    } : prev)
+  }
+
+  async function compartirMapa() {
+    setGenerandoLink(true)
+    const r = await fetch(`/api/proyectos/${id}/mapa/compartir`, { method: "POST" })
+    setGenerandoLink(false)
+    if (r.ok) {
+      const d = await r.json()
+      setLinkCompartir(d.url)
+      navigator.clipboard.writeText(d.url).catch(() => {})
+      showToast("Enlace copiado al portapapeles")
+    } else {
+      showToast("Error al generar el enlace")
+    }
+  }
+
+  async function revocarCompartir() {
+    await fetch(`/api/proyectos/${id}/mapa/compartir`, { method: "DELETE" })
+    setLinkCompartir("")
+    setProyecto(prev => prev ? { ...prev, mapaToken: null } : prev)
+    showToast("Enlace revocado")
   }
 
   function abrirEnPestana() {
@@ -424,11 +482,20 @@ export default function ProyectoDetallePage() {
               {proyecto.modulos.map(pm => (
                 <div
                   key={pm.modulo.id}
-                  className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ backgroundColor: "#f0faf9" }}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100"
                 >
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />
-                  <span className="text-sm text-gray-800">{pm.modulo.nombre}</span>
+                  <span className="text-sm text-gray-800 flex-1">{pm.modulo.nombre}</span>
+                  <select
+                    value={pm.estado}
+                    onChange={e => actualizarEstadoModulo(pm.modulo.id, e.target.value as EstadoModulo)}
+                    className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer focus:outline-none focus:ring-2 ${ESTADO_MODULO_COLOR[pm.estado]}`}
+                    style={{ ["--tw-ring-color" as string]: TEAL }}
+                  >
+                    {(Object.keys(ESTADO_MODULO_LABEL) as EstadoModulo[]).map(e => (
+                      <option key={e} value={e}>{ESTADO_MODULO_LABEL[e]}</option>
+                    ))}
+                  </select>
                 </div>
               ))}
             </div>
@@ -466,6 +533,19 @@ export default function ProyectoDetallePage() {
                   </button>
                 </>
               )}
+              {proyecto.mapaHtml && (
+                <button
+                  onClick={compartirMapa}
+                  disabled={generandoLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                  {generandoLink ? "..." : "Compartir"}
+                </button>
+              )}
               <input
                 ref={fileRef}
                 type="file"
@@ -484,6 +564,21 @@ export default function ProyectoDetallePage() {
               </button>
             </div>
           </div>
+
+          {/* Banner enlace activo */}
+          {linkCompartir && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00A99D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span className="text-xs text-teal-700 flex-1 truncate font-mono">{linkCompartir}</span>
+              <button onClick={() => { navigator.clipboard.writeText(linkCompartir); showToast("Copiado") }}
+                className="text-xs text-teal-600 hover:text-teal-800 font-medium shrink-0">Copiar</button>
+              <button onClick={revocarCompartir}
+                className="text-xs text-red-400 hover:text-red-600 shrink-0">Revocar</button>
+            </div>
+          )}
 
           {/* Visor — auto-height al cargar el documento */}
           {proyecto.mapaHtml ? (

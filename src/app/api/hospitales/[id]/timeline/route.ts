@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+    const { id } = await params
+
+    const [visitas, oportunidades, proyectos] = await Promise.all([
+      db.visita.findMany({
+        where: { hospitalId: id },
+        select: { id: true, fecha: true, estado: true, tipo: true, usuario: { select: { nombre: true } } },
+        orderBy: { fecha: "desc" },
+      }),
+      db.oportunidad.findMany({
+        where: { hospitalId: id },
+        select: { id: true, titulo: true, etapa: true, creadoEn: true, editadoEn: true, historial: true, usuario: { select: { nombre: true } } },
+        orderBy: { creadoEn: "desc" },
+      }),
+      db.proyecto.findMany({
+        where: { hospitalId: id },
+        select: { id: true, nombre: true, creadoEn: true, fechaInicio: true },
+        orderBy: { creadoEn: "desc" },
+      }),
+    ])
+
+    type Evento = {
+      id: string; tipo: string; titulo: string
+      descripcion: string; fecha: string; href?: string
+    }
+    const eventos: Evento[] = []
+
+    for (const v of visitas) {
+      eventos.push({
+        id: `v-${v.id}`, tipo: "visita",
+        titulo: `Visita ${v.tipo === "VENTAS" ? "comercial" : "técnica"}`,
+        descripcion: `Estado: ${v.estado} · ${v.usuario.nombre}`,
+        fecha: v.fecha.toISOString(), href: `/visitas/${v.id}`,
+      })
+    }
+
+    for (const o of oportunidades) {
+      eventos.push({
+        id: `o-${o.id}`, tipo: "oportunidad",
+        titulo: o.titulo,
+        descripcion: `Etapa: ${o.etapa} · ${o.usuario.nombre}`,
+        fecha: o.creadoEn.toISOString(), href: `/ventas/pipeline`,
+      })
+      // Añadir entradas del historial de etapas
+      const hist = Array.isArray(o.historial) ? o.historial as { etapaNueva: string; fecha: string; usuario: string }[] : []
+      for (const h of hist) {
+        eventos.push({
+          id: `oh-${o.id}-${h.fecha}`, tipo: "etapa",
+          titulo: `Oportunidad: ${o.titulo}`,
+          descripcion: `Cambio a etapa ${h.etapaNueva} · ${h.usuario}`,
+          fecha: h.fecha,
+        })
+      }
+    }
+
+    for (const p of proyectos) {
+      eventos.push({
+        id: `p-${p.id}`, tipo: "proyecto",
+        titulo: `Proyecto: ${p.nombre}`,
+        descripcion: `Inicio: ${new Date(p.fechaInicio).toLocaleDateString("es-ES")}`,
+        fecha: p.creadoEn.toISOString(), href: `/proyectos/${p.id}`,
+      })
+    }
+
+    eventos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+
+    const res = NextResponse.json(eventos)
+    res.headers.set("Cache-Control", "private, max-age=30")
+    return res
+  } catch (err) {
+    console.error("[GET /api/hospitales/[id]/timeline]", err)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}

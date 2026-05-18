@@ -24,6 +24,14 @@ const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
 }
 
+interface TimelineEvento {
+  id: string; tipo: string; titulo: string; descripcion: string; fecha: string; href?: string
+}
+
+const TIPO_COLOR: Record<string, string> = {
+  visita: "bg-teal-500", oportunidad: "bg-purple-500", etapa: "bg-amber-400", proyecto: "bg-blue-500",
+}
+
 const CONTACTO_EMPTY = { nombre: "", cargo: "", email: "", telefono: "", principal: false }
 
 interface Contacto {
@@ -48,7 +56,9 @@ export default function HospitalDetailPage() {
   const [hospital, setHospital] = useState<Hospital | null>(null)
   const [userRol, setUserRol] = useState<string>("")
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"info" | "contactos" | "visitas">("info")
+  const [tab, setTab] = useState<"info" | "contactos" | "visitas" | "timeline">("info")
+  const [timeline, setTimeline] = useState<TimelineEvento[]>([])
+  const [timelineLoading, setTimelineLoading] = useState(false)
   const [creandoVisita, setCreandoVisita] = useState(false)
 
   // Estado modal contacto
@@ -139,6 +149,15 @@ export default function HospitalDetailPage() {
     setContactoModal(false)
     setGuardandoC(false)
     await cargar()
+  }
+
+  async function cargarTimeline() {
+    if (timeline.length > 0) return
+    setTimelineLoading(true)
+    fetch(`/api/hospitales/${id}/timeline`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setTimeline(d) })
+      .finally(() => setTimelineLoading(false))
   }
 
   async function eliminarContacto(contactoId: string, nombre: string) {
@@ -239,10 +258,10 @@ export default function HospitalDetailPage() {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-5 gap-1">
-        {(["info", "contactos", "visitas"] as const).map(t => (
+        {(["info", "contactos", "visitas", "timeline"] as const).map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); if (t === "timeline") cargarTimeline() }}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === t ? "border-teal-500" : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
@@ -250,7 +269,8 @@ export default function HospitalDetailPage() {
           >
             {t === "info" ? "Informacion"
               : t === "contactos" ? `Contactos (${hospital.contactos.length})`
-              : `Visitas (${hospital.visitas.length})`}
+              : t === "visitas" ? `Visitas (${hospital.visitas.length})`
+              : "Timeline"}
           </button>
         ))}
       </div>
@@ -445,6 +465,53 @@ export default function HospitalDetailPage() {
                 >
                   {creandoVisita ? "Creando..." : "+ Nueva visita"}
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Timeline ── */}
+      {tab === "timeline" && (
+        <div>
+          {timelineLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-3 animate-pulse">
+                  <div className="w-2.5 h-2.5 rounded-full bg-gray-200 mt-1.5 shrink-0" />
+                  <div className="flex-1 space-y-1.5 pb-4 border-l border-gray-100 pl-4">
+                    <div className="h-3.5 bg-gray-100 rounded w-2/3" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : timeline.length === 0 ? (
+            <EmptyState icon="document" title="Sin actividad registrada" description="Las visitas, oportunidades y proyectos de este hospital aparecerán aquí." />
+          ) : (
+            <div className="relative">
+              <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-100" />
+              <div className="space-y-0">
+                {timeline.map((ev, i) => (
+                  <div key={ev.id} className="flex gap-4" style={{ animationDelay: `${i * 20}ms` }}>
+                    <div className={`w-2.5 h-2.5 rounded-full mt-[18px] shrink-0 z-10 ${TIPO_COLOR[ev.tipo] ?? "bg-gray-300"}`} />
+                    <div className="flex-1 pb-4 pl-2">
+                      {ev.href ? (
+                        <Link href={ev.href} className="group block">
+                          <p className="text-sm font-medium text-gray-800 group-hover:text-teal-600 transition-colors">{ev.titulo}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
+                          <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </Link>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{ev.titulo}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
+                          <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

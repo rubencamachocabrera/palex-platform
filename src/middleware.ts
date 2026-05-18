@@ -37,5 +37,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|logo-palex.png).*)"],
+  matcher: ["/((?!api/auth|api/share|_next/static|_next/image|favicon.ico|logo-palex.png|share/).*)"],
 }

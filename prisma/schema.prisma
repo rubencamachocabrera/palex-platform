@@ -38,6 +38,14 @@ enum EstadoVisita {
   ARCHIVADA
 }
 
+enum EstadoModulo {
+  PENDIENTE
+  EN_INSTALACION
+  INSTALADO
+  FORMACION
+  VALIDADO
+}
+
 enum EtapaPipeline {
   IDENTIFICADO
   PRIMERA_VISITA
@@ -164,6 +172,7 @@ model Proyecto {
   fechaFin      DateTime?
   refConcurso   String?
   mapaHtml      String?   @db.Text
+  mapaToken     String?   @unique
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
 
@@ -176,6 +185,7 @@ model Proyecto {
 model ProyectoModulo {
   proyectoId String
   moduloId   String
+  estado     EstadoModulo @default(PENDIENTE)
 
   proyecto Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   modulo   ModuloInlab @relation(fields: [moduloId], references: [id])
