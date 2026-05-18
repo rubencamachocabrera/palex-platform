@@ -20,20 +20,46 @@ export async function GET(req: NextRequest) {
       fecha: { gte: new Date(desde + "T00:00:00"), lte: new Date(hasta + "T23:59:59") }
     } : {}
 
-    const visitas = await db.visita.findMany({
-      where: {
-        ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
-        ...fechaFilter,
-      },
-      select: {
-        id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
-        hospital: { select: { id: true, nombre: true, ciudad: true } },
-        usuario: { select: { id: true, nombre: true, rol: true } },
-      },
-      orderBy: { fecha: "desc" },
-    })
+    const usePagination = !desde && !hasta
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "50"), 200)
+    const page = Math.max(parseInt(req.nextUrl.searchParams.get("page") ?? "1"), 1)
+    const skip = usePagination ? (page - 1) * limit : undefined
+    const take = usePagination ? limit : undefined
+
+    const where = {
+      ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
+      ...fechaFilter,
+    }
+
+    const [visitas, total] = usePagination
+      ? await Promise.all([
+          db.visita.findMany({
+            where, take, skip,
+            select: {
+              id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
+              hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
+              usuario: { select: { id: true, nombre: true, rol: true } },
+            },
+            orderBy: { fecha: "desc" },
+          }),
+          db.visita.count({ where }),
+        ])
+      : [
+          await db.visita.findMany({
+            where,
+            select: {
+              id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
+              hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
+              usuario: { select: { id: true, nombre: true, rol: true } },
+            },
+            orderBy: { fecha: "desc" },
+          }),
+          0,
+        ]
+
     const res = NextResponse.json(visitas)
     res.headers.set("Cache-Control", "private, max-age=15, stale-while-revalidate=30")
+    if (usePagination) res.headers.set("X-Total-Count", String(total))
     return res
   } catch (err) {
     console.error("[GET]", err)

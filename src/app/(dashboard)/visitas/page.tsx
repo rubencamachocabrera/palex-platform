@@ -49,6 +49,9 @@ export default function MisVisitasPage() {
   const [filtro, setFiltro] = useState("TODOS")
   const [busqueda, setBusqueda] = useState("")
   const [orden, setOrden] = useState<Orden>("fecha-desc")
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   // Modal quick-create
   const [mostrarModal, setMostrarModal] = useState(false)
@@ -62,9 +65,18 @@ export default function MisVisitasPage() {
   const autoAbierto = useRef(false)
 
   useEffect(() => {
-    fetch("/api/visitas")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (Array.isArray(data)) setVisitas(data); setLoading(false) })
+    fetch("/api/visitas?limit=50&page=1")
+      .then(r => {
+        const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
+        return r.ok ? r.json().then((data: Visita[]) => ({ data, total })) : null
+      })
+      .then(res => {
+        if (res && Array.isArray(res.data)) {
+          setVisitas(res.data)
+          setHasMore(res.data.length < res.total)
+        }
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
     fetch("/api/perfil")
       .then(r => r.ok ? r.json() : null)
@@ -83,6 +95,23 @@ export default function MisVisitasPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
+
+  async function cargarMas() {
+    const nextPage = page + 1
+    setLoadingMore(true)
+    try {
+      const r = await fetch(`/api/visitas?limit=50&page=${nextPage}`)
+      const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
+      const data: Visita[] = r.ok ? await r.json() : []
+      if (Array.isArray(data) && data.length > 0) {
+        setVisitas(prev => [...prev, ...data])
+        setPage(nextPage)
+        setHasMore(visitas.length + data.length < total)
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   async function abrirModal() {
     setMostrarModal(true)
@@ -295,6 +324,19 @@ export default function MisVisitasPage() {
           </div>
         )}
       </div>
+
+      {/* Cargar más */}
+      {hasMore && !loading && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={cargarMas}
+            disabled={loadingMore}
+            className="text-sm font-medium px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? "Cargando..." : "Cargar más visitas"}
+          </button>
+        </div>
+      )}
 
       {/* Modal quick-create */}
       {mostrarModal && (

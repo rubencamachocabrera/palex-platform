@@ -26,13 +26,41 @@ export default function AdminVisitasPage() {
   const [filtroEstado, setFiltroEstado] = useState("TODOS")
   const [filtroZona, setFiltroZona] = useState("TODAS")
   const [busqueda, setBusqueda] = useState("")
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   useEffect(() => {
-    fetch("/api/visitas")
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
-      .then(data => { setVisitas(Array.isArray(data) ? data : []); setLoading(false) })
+    fetch("/api/visitas?limit=50&page=1")
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
+        return r.json().then((data: Visita[]) => ({ data, total }))
+      })
+      .then(({ data, total }) => {
+        setVisitas(Array.isArray(data) ? data : [])
+        setHasMore(Array.isArray(data) && data.length < total)
+        setLoading(false)
+      })
       .catch(e => { console.error("Error cargando visitas:", e); setLoading(false) })
   }, [])
+
+  async function cargarMas() {
+    const nextPage = page + 1
+    setLoadingMore(true)
+    try {
+      const r = await fetch(`/api/visitas?limit=50&page=${nextPage}`)
+      const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
+      const data: Visita[] = r.ok ? await r.json() : []
+      if (Array.isArray(data) && data.length > 0) {
+        setVisitas(prev => [...prev, ...data])
+        setPage(nextPage)
+        setHasMore(visitas.length + data.length < total)
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const zonas = Array.from(new Set(visitas.map(v => v.hospital.zona.nombre))).sort()
 
@@ -135,6 +163,19 @@ export default function AdminVisitasPage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {hasMore && !loading && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={cargarMas}
+            disabled={loadingMore}
+            className="text-sm font-medium px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            style={{ borderColor: loadingMore ? undefined : TEAL, color: loadingMore ? undefined : TEAL }}
+          >
+            {loadingMore ? "Cargando..." : "Cargar más visitas"}
+          </button>
         </div>
       )}
     </div>
