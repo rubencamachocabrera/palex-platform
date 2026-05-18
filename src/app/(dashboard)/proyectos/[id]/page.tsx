@@ -105,9 +105,10 @@ export default function ProyectoDetallePage() {
   const [editando, setEditando] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [subiendoMapa, setSubiendoMapa] = useState(false)
-  const [mapaExpandido, setMapaExpandido] = useState(false)
+  const [iframeHeight, setIframeHeight] = useState(600)
   const [toast, setToast] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Form de edición
   const [form, setForm] = useState({
@@ -181,12 +182,33 @@ export default function ProyectoDetallePage() {
     const r = await fetch(`/api/proyectos/${id}/mapa`, { method: "POST", body: fd })
     setSubiendoMapa(false)
     if (r.ok) {
+      setIframeHeight(600)
       cargar()
       showToast("Mapa importado correctamente")
     } else {
       const d = await r.json()
       showToast(d.error ?? "Error al subir el mapa")
     }
+  }
+
+  function handleIframeLoad(e: React.SyntheticEvent<HTMLIFrameElement>) {
+    try {
+      const doc = e.currentTarget.contentDocument
+      if (doc) {
+        const h = doc.documentElement.scrollHeight || doc.body?.scrollHeight || 600
+        setIframeHeight(Math.max(400, Math.min(h + 32, 10000)))
+      }
+    } catch {
+      setIframeHeight(3000)
+    }
+  }
+
+  function abrirEnPestana() {
+    if (!proyecto?.mapaHtml) return
+    const blob = new Blob([proyecto.mapaHtml], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    window.open(url, "_blank")
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
   }
 
   async function eliminarMapa() {
@@ -429,9 +451,9 @@ export default function ProyectoDetallePage() {
               {proyecto.mapaHtml && (
                 <>
                   <button
-                    onClick={() => setMapaExpandido(v => !v)}
+                    onClick={abrirEnPestana}
                     className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                    title={mapaExpandido ? "Reducir" : "Expandir"}
+                    title="Abrir en pestaña nueva (imprimir)"
                   >
                     <IconExpand />
                   </button>
@@ -463,13 +485,15 @@ export default function ProyectoDetallePage() {
             </div>
           </div>
 
-          {/* Visor */}
+          {/* Visor — auto-height al cargar el documento */}
           {proyecto.mapaHtml ? (
             <iframe
+              ref={iframeRef}
               srcDoc={proyecto.mapaHtml}
               sandbox="allow-scripts allow-same-origin"
-              className="w-full border-0 transition-all"
-              style={{ height: mapaExpandido ? "80vh" : "520px" }}
+              onLoad={handleIframeLoad}
+              className="w-full border-0"
+              style={{ height: iframeHeight }}
               title="Mapa interactivo del proyecto"
             />
           ) : (
