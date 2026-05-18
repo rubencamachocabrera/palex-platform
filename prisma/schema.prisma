@@ -113,6 +113,7 @@ model Hospital {
   contactos     Contacto[]
   visitas       Visita[]
   oportunidades Oportunidad[]
+  proyectos     Proyecto[]
 
   @@map("hospitales")
 }
@@ -151,6 +152,45 @@ model Visita {
   usuario  Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@map("visitas")
+}
+
+// --- PROYECTOS -------------------------------------------------------
+
+model Proyecto {
+  id            String    @id @default(cuid())
+  nombre        String
+  hospitalId    String
+  fechaInicio   DateTime
+  fechaFin      DateTime?
+  refConcurso   String?
+  mapaHtml      String?   @db.Text
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+
+  hospital Hospital        @relation(fields: [hospitalId], references: [id])
+  modulos  ProyectoModulo[]
+
+  @@map("proyectos")
+}
+
+model ProyectoModulo {
+  proyectoId String
+  moduloId   String
+
+  proyecto Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  modulo   ModuloInlab @relation(fields: [moduloId], references: [id])
+
+  @@id([proyectoId, moduloId])
+  @@map("proyectos_modulos")
+}
+
+model ModuloInlab {
+  id        String           @id @default(cuid())
+  nombre    String           @unique
+  activo    Boolean          @default(true)
+  proyectos ProyectoModulo[]
+
+  @@map("modulos_inlab")
 }
 
 // --- CRM / PIPELINE --------------------------------------------------

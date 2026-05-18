@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
@@ -57,6 +57,10 @@ export default function HospitalDetailPage() {
   const [formC, setFormC] = useState({ ...CONTACTO_EMPTY })
   const [guardandoC, setGuardandoC] = useState(false)
   const [errorC, setErrorC] = useState("")
+
+  // QR
+  const [showQR, setShowQR] = useState(false)
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const isAdmin = userRol === "ADMIN"
 
@@ -143,6 +147,26 @@ export default function HospitalDetailPage() {
     await cargar()
   }
 
+  // Genera el QR cuando se abre el modal
+  useEffect(() => {
+    if (!showQR || !hospital || !qrCanvasRef.current) return
+    const partes = [
+      hospital.nombre,
+      hospital.ciudad + (hospital.provincia ? `, ${hospital.provincia}` : ""),
+      hospital.pais,
+      hospital.tipo ? TIPO_LABELS[hospital.tipo] ?? hospital.tipo : "",
+      hospital.camas ? `${hospital.camas} camas` : "",
+      hospital.direccion ?? "",
+    ].filter(Boolean)
+    import("qrcode").then(QRCode => {
+      QRCode.toCanvas(qrCanvasRef.current!, partes.join("\n"), {
+        width: 240,
+        margin: 2,
+        color: { dark: "#111827", light: "#ffffff" },
+      })
+    })
+  }, [showQR, hospital])
+
   // --- Render ---
   if (loading) return (
     <div className="max-w-2xl mx-auto">
@@ -192,6 +216,17 @@ export default function HospitalDetailPage() {
             {hospital.ciudad}{hospital.provincia ? `, ${hospital.provincia}` : ""} &#183; {hospital.zona.nombre}
           </p>
         </div>
+        <button
+          onClick={() => setShowQR(true)}
+          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
+          title="Ver QR del hospital"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M14 14h1v1h-1z M17 14h1v1h-1z M14 17h1v1h-1z M17 17h3v3h-3z"/>
+          </svg>
+        </button>
         <button
           onClick={nuevaVisita}
           disabled={creandoVisita}
@@ -413,6 +448,43 @@ export default function HospitalDetailPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal QR ── */}
+      {showQR && hospital && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowQR(false) }}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <p className="font-semibold text-gray-800 text-sm">QR del hospital</p>
+              <button onClick={() => setShowQR(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <IconX size={16} />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-4 p-6">
+              <canvas ref={qrCanvasRef} className="rounded-xl" />
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-800">{hospital.nombre}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{hospital.ciudad}{hospital.provincia ? `, ${hospital.provincia}` : ""}</p>
+              </div>
+              <button
+                onClick={() => {
+                  const canvas = qrCanvasRef.current
+                  if (!canvas) return
+                  const link = document.createElement("a")
+                  link.download = `qr-${hospital.nombre.replace(/\s+/g, "-").toLowerCase()}.png`
+                  link.href = canvas.toDataURL("image/png")
+                  link.click()
+                }}
+                className="w-full py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Descargar PNG
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
