@@ -27,6 +27,18 @@ function fmtFecha(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
 }
 
+function duracionProyecto(p: Proyecto) {
+  const inicio = new Date(p.fechaInicio)
+  const fin = p.fechaFin ? new Date(p.fechaFin) : new Date()
+  const dias = Math.round((fin.getTime() - inicio.getTime()) / 86400000)
+  if (dias < 1) return "< 1 día"
+  if (dias < 30) return `${dias} día${dias !== 1 ? "s" : ""}`
+  const meses = Math.floor(dias / 30)
+  const resto = dias % 30
+  if (resto === 0) return `${meses} mes${meses !== 1 ? "es" : ""}`
+  return `${meses} mes${meses !== 1 ? "es" : ""} ${resto}d`
+}
+
 function estadoProyecto(p: Proyecto) {
   const hoy = new Date()
   const inicio = new Date(p.fechaInicio)
@@ -350,10 +362,13 @@ export default function ProyectosPage() {
                   </span>
                 </div>
 
-                {/* Fechas */}
-                <div className="text-xs text-gray-400 flex gap-1">
+                {/* Fechas + duración */}
+                <div className="text-xs text-gray-400 flex items-center gap-1.5 flex-wrap">
                   <span>{fmtFecha(p.fechaInicio)}</span>
                   {p.fechaFin && <><span>→</span><span>{fmtFecha(p.fechaFin)}</span></>}
+                  <span className="ml-auto shrink-0 font-medium" style={{ color: "#9CA3AF" }}>
+                    {duracionProyecto(p)}{!p.fechaFin ? " (en curso)" : ""}
+                  </span>
                 </div>
 
                 {/* Módulos */}

@@ -518,6 +518,25 @@ export default function ProyectoDetallePage() {
               {proyecto.mapaHtml && (
                 <>
                   <button
+                    onClick={() => {
+                      const blob = new Blob([proyecto.mapaHtml!], { type: "text/html;charset=utf-8" })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement("a")
+                      a.href = url
+                      a.download = `${proyecto.nombre.replace(/\s+/g, "_")}_mapa.html`
+                      a.click()
+                      setTimeout(() => URL.revokeObjectURL(url), 5000)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Descargar fichero HTML para compartir por WhatsApp / email"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Descargar
+                  </button>
+                  <button
                     onClick={abrirEnPestana}
                     className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                     title="Abrir en pestaña nueva (imprimir)"
