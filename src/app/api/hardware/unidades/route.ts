@@ -42,6 +42,33 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   try {
     const body = await req.json()
+
+    // Bulk creation: array of units
+    if (Array.isArray(body)) {
+      if (body.length === 0) return NextResponse.json([], { status: 201 })
+      if (!body.every((u) => u.catalogoId))
+        return NextResponse.json({ error: "catalogoId requerido en todas las unidades" }, { status: 400 })
+      const unidades = await Promise.all(
+        body.map((item) =>
+          db.hardwareUnidad.create({
+            data: {
+              catalogoId: item.catalogoId,
+              numSerie: item.numSerie || null,
+              estado: item.estado || "ASIGNADO",
+              hospitalId: item.hospitalId || null,
+              preProyectoId: item.preProyectoId || null,
+              fechaCompra: item.fechaCompra ? new Date(item.fechaCompra) : null,
+              fechaGarantia: item.fechaGarantia ? new Date(item.fechaGarantia) : null,
+              notas: item.notas || null,
+            },
+            include: { catalogo: true },
+          })
+        )
+      )
+      return NextResponse.json(unidades, { status: 201 })
+    }
+
+    // Single creation
     if (!body.catalogoId) return NextResponse.json({ error: "catalogoId requerido" }, { status: 400 })
     const unidad = await db.hardwareUnidad.create({
       data: {

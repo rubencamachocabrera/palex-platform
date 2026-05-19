@@ -619,7 +619,8 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
   // Hardware
   const [catalogo, setCatalogo] = useState<(HardwareCatalogo & { id: string })[]>([])
   const [mostrarFormHW, setMostrarFormHW] = useState(false)
-  const [formHW, setFormHW] = useState({ catalogoId: "", numSerie: "", notas: "" })
+  const [formHW, setFormHW] = useState({ catalogoId: "" })
+  const [seriesHW, setSeriesHW] = useState([{ numSerie: "", notas: "" }])
   const [guardandoHW, setGuardandoHW] = useState(false)
 
   useEffect(() => {
@@ -682,19 +683,28 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
   async function asignarHW(e: React.FormEvent) {
     e.preventDefault()
     if (!formHW.catalogoId) return
+    const payload = seriesHW.map(s => ({
+      catalogoId: formHW.catalogoId,
+      numSerie: s.numSerie.trim() || null,
+      notas: s.notas.trim() || null,
+      preProyectoId: pp.id,
+      hospitalId: pp.hospital.id,
+      estado: "ASIGNADO",
+    }))
     setGuardandoHW(true)
     try {
       const r = await fetch("/api/hardware/unidades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formHW, preProyectoId: pp.id, hospitalId: pp.hospital.id, estado: "ASIGNADO" }),
+        body: JSON.stringify(payload),
       })
       if (!r.ok) throw new Error()
-      const nueva = await r.json()
-      onUpdate({ ...pp, hardwareUnidades: [...pp.hardwareUnidades, nueva] })
-      setFormHW({ catalogoId: "", numSerie: "", notas: "" })
+      const nuevas: HardwareUnidad[] = await r.json()
+      onUpdate({ ...pp, hardwareUnidades: [...pp.hardwareUnidades, ...(Array.isArray(nuevas) ? nuevas : [nuevas])] })
+      setFormHW({ catalogoId: "" })
+      setSeriesHW([{ numSerie: "", notas: "" }])
       setMostrarFormHW(false)
-      success("Hardware asignado")
+      success(`${payload.length} unidad${payload.length !== 1 ? "es" : ""} asignada${payload.length !== 1 ? "s" : ""}`)
     } catch {
       toastError("Error al asignar")
     } finally {
@@ -892,28 +902,70 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
 
         {mostrarFormHW && (
           <form onSubmit={asignarHW} className="bg-white rounded-2xl border border-teal-200 p-5 shadow-sm">
-            <h4 className="font-semibold text-gray-900 mb-3">Asignar hardware</h4>
-            <div className="space-y-3">
-              <select value={formHW.catalogoId} onChange={e => setFormHW(p => ({ ...p, catalogoId: e.target.value }))}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
-                <option value="">Seleccionar dispositivo…</option>
-                {catalogo.map(c => (
-                  <option key={c.id} value={c.id}>{HW_TIPO_LABEL[c.tipo] ?? c.tipo} — {c.marca} {c.modelo}</option>
-                ))}
-              </select>
-              <input value={formHW.numSerie} onChange={e => setFormHW(p => ({ ...p, numSerie: e.target.value }))}
-                placeholder="Número de serie (opcional)"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-              <input value={formHW.notas} onChange={e => setFormHW(p => ({ ...p, notas: e.target.value }))}
-                placeholder="Notas (opcional)"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            <h4 className="font-semibold text-gray-900 mb-3">Añadir unidades</h4>
+            <div className="space-y-4">
+              {/* Modelo */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Modelo de dispositivo *</label>
+                <select value={formHW.catalogoId} onChange={e => setFormHW(p => ({ ...p, catalogoId: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
+                  <option value="">Seleccionar dispositivo…</option>
+                  {catalogo.map(c => (
+                    <option key={c.id} value={c.id}>{HW_TIPO_LABEL[c.tipo] ?? c.tipo} — {c.marca} {c.modelo}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filas de series */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-gray-600">Números de serie</label>
+                  <span className="text-xs text-gray-400">{seriesHW.length} unidad{seriesHW.length !== 1 ? "es" : ""}</span>
+                </div>
+                <div className="space-y-2">
+                  {seriesHW.map((s, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
+                      <input
+                        value={s.numSerie}
+                        onChange={e => setSeriesHW(p => p.map((x, j) => j === i ? { ...x, numSerie: e.target.value } : x))}
+                        placeholder="Nº serie (opcional)"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 font-mono"
+                      />
+                      <input
+                        value={s.notas}
+                        onChange={e => setSeriesHW(p => p.map((x, j) => j === i ? { ...x, notas: e.target.value } : x))}
+                        placeholder="Notas"
+                        className="w-32 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                      />
+                      {seriesHW.length > 1 && (
+                        <button type="button" onClick={() => setSeriesHW(p => p.filter((_, j) => j !== i))}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSeriesHW(p => [...p, { numSerie: "", notas: "" }])}
+                  className="mt-2 text-sm font-medium transition-colors hover:opacity-80"
+                  style={{ color: TEAL }}
+                >
+                  + Añadir nº serie
+                </button>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <button type="button" onClick={() => setMostrarFormHW(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-              <button type="submit" disabled={guardandoHW}
+              <button type="button" onClick={() => { setMostrarFormHW(false); setSeriesHW([{ numSerie: "", notas: "" }]); setFormHW({ catalogoId: "" }) }}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button type="submit" disabled={guardandoHW || !formHW.catalogoId}
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
                 style={{ backgroundColor: TEAL }}>
-                {guardandoHW ? "Asignando…" : "Asignar"}
+                {guardandoHW ? "Asignando…" : `Asignar ${seriesHW.length} unidad${seriesHW.length !== 1 ? "es" : ""}`}
               </button>
             </div>
           </form>

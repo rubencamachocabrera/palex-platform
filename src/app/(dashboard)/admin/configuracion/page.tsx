@@ -12,6 +12,7 @@ interface CatalogoItem {
   descripcion: string | null; activo: boolean
   _count?: { unidades: number }
 }
+interface ModuloItem { id: string; nombre: string; activo: boolean; _count?: { proyectos: number } }
 
 // ---- constantes ----
 
@@ -434,6 +435,188 @@ function PlantillasSection() {
   )
 }
 
+// ---- Módulos InLab ----
+
+function ModulosInlabSection() {
+  const { success, error: toastError } = useToast()
+  const [items, setItems] = useState<ModuloItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [nuevoNombre, setNuevoNombre] = useState("")
+  const [creando, setCreando] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editNombre, setEditNombre] = useState("")
+
+  useEffect(() => {
+    fetch("/api/modulos-inlab?admin=1")
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setItems(d) })
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function crear() {
+    if (!nuevoNombre.trim()) return
+    setCreando(true)
+    try {
+      const r = await fetch("/api/modulos-inlab", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nuevoNombre.trim() }),
+      })
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? "Error"); }
+      const nuevo = await r.json()
+      setItems(prev => [...prev, nuevo].sort((a, b) => a.nombre.localeCompare(b.nombre)))
+      setNuevoNombre("")
+      success("Módulo creado")
+    } catch (e: unknown) {
+      toastError(e instanceof Error ? e.message : "Error al crear")
+    } finally {
+      setCreando(false)
+    }
+  }
+
+  async function toggleActivo(item: ModuloItem) {
+    const r = await fetch(`/api/modulos-inlab/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !item.activo }),
+    })
+    if (r.ok) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, activo: !item.activo } : i))
+      success(item.activo ? "Módulo desactivado" : "Módulo activado")
+    } else {
+      toastError("Error al actualizar")
+    }
+  }
+
+  async function renombrar(id: string) {
+    if (!editNombre.trim()) return
+    const r = await fetch(`/api/modulos-inlab/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: editNombre.trim() }),
+    })
+    if (r.ok) {
+      setItems(prev => prev.map(i => i.id === id ? { ...i, nombre: editNombre.trim() } : i))
+      setEditId(null)
+      success("Renombrado")
+    } else {
+      const d = await r.json()
+      toastError(d.error ?? "Error")
+    }
+  }
+
+  async function eliminar(id: string) {
+    const r = await fetch(`/api/modulos-inlab/${id}`, { method: "DELETE" })
+    if (r.status === 204) {
+      setItems(prev => prev.filter(i => i.id !== id))
+      success("Módulo eliminado")
+    } else {
+      const d = await r.json()
+      toastError(d.error ?? "No se puede eliminar")
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-bold text-gray-900">Módulos InLab</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Módulos disponibles para asignar a proyectos</p>
+        </div>
+      </div>
+
+      {/* Formulario nuevo módulo */}
+      <div className="flex gap-2 mb-4">
+        <input
+          value={nuevoNombre}
+          onChange={e => setNuevoNombre(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && crear()}
+          placeholder="Nombre del módulo (ej: ALMACÉN, DISPENSACIÓN…)"
+          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+        <button
+          onClick={crear}
+          disabled={creando || !nuevoNombre.trim()}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90 shrink-0"
+          style={{ backgroundColor: TEAL }}
+        >
+          {creando ? "Creando…" : "Añadir"}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-8 text-sm text-gray-400 bg-gray-50 rounded-2xl">
+          Sin módulos. Añade el primero arriba.
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left">
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">Proyectos</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, i) => (
+                <tr key={item.id} className={`border-b border-gray-50 ${i % 2 === 0 ? "" : "bg-gray-50/30"}`}>
+                  <td className="px-4 py-3">
+                    {editId === item.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={editNombre}
+                          onChange={e => setEditNombre(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") renombrar(item.id); if (e.key === "Escape") setEditId(null) }}
+                          className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none"
+                        />
+                        <button onClick={() => renombrar(item.id)} className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
+                        <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditId(item.id); setEditNombre(item.nombre) }}
+                        className="text-left font-medium text-gray-900 hover:text-teal-700 transition-colors"
+                      >
+                        {item.nombre}
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: item.activo ? `${TEAL}18` : "#f3f4f6", color: item.activo ? TEAL : "#9ca3af" }}>
+                      {item.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right text-xs text-gray-400">
+                    {item._count?.proyectos ?? 0}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      <button onClick={() => toggleActivo(item)} className="text-xs text-gray-400 hover:text-gray-700 underline transition-colors">
+                        {item.activo ? "Desactivar" : "Activar"}
+                      </button>
+                      <button onClick={() => eliminar(item.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ---- página principal ----
 
 export default function ConfiguracionPage() {
@@ -517,6 +700,12 @@ export default function ConfiguracionPage() {
 
       {/* Plantillas de visita */}
       <PlantillasSection />
+
+      {/* Divider */}
+      <div className="border-t border-gray-100" />
+
+      {/* Módulos InLab */}
+      <ModulosInlabSection />
     </div>
   )
 }
