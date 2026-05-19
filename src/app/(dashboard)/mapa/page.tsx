@@ -9,6 +9,10 @@ export default async function MapaPage() {
   const role = (session.user as { role?: string }).role
   if (role !== "ADMIN" && role !== "VENTAS") redirect("/dashboard")
 
+  let config = await db.configApp.findUnique({ where: { id: 1 } })
+  if (!config) config = await db.configApp.create({ data: { id: 1, crmActivo: true } })
+  if (!config.crmActivo) redirect("/dashboard")
+
   const hospitales = await db.hospital.findMany({
     where: { activo: true },
     select: {

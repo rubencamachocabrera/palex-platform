@@ -121,90 +121,134 @@ const Icons: Record<string, () => React.ReactElement> = {
       <circle cx="12" cy="10" r="3"/>
     </svg>
   ),
+  PreProyectos: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+  ),
+  Hardware: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <rect x="9" y="9" width="6" height="6"/>
+      <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+      <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+      <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+      <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+    </svg>
+  ),
+  Configuracion: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
 }
 
 // Estructura de navegacion
 
 interface NavItem { href: string; label: string; icon: keyof typeof Icons }
-interface NavGroup { label?: string; items: NavItem[] }
+interface NavGroup { label?: string; items: NavItem[]; crmOnly?: boolean }
+
+const NAV_GROUPS_ADMIN: NavGroup[] = [
+  { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
+  {
+    label: "Gestión",
+    items: [
+      { href: "/admin/usuarios",       label: "Usuarios",          icon: "Usuarios" },
+      { href: "/admin/zonas",          label: "Zonas",             icon: "Zonas" },
+      { href: "/admin/hospitales",     label: "Hospitales",        icon: "Hospitales" },
+      { href: "/admin/visitas",        label: "Todas las visitas", icon: "TodasVisitas" },
+      { href: "/admin/modulos-inlab",  label: "Módulos INLAB",     icon: "Modulos" },
+      { href: "/admin/hardware",       label: "Hardware",          icon: "Hardware" },
+      { href: "/admin/configuracion",  label: "Configuración",     icon: "Configuracion" },
+    ],
+  },
+  {
+    label: "CRM",
+    crmOnly: true,
+    items: [
+      { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
+      { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
+    ],
+  },
+  {
+    label: "Proyectos",
+    items: [
+      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
+      { href: "/proyectos",     label: "InLab",          icon: "Proyectos" },
+      { href: "/hardware",      label: "Inventario HW",  icon: "Hardware" },
+    ],
+  },
+]
+
+const NAV_GROUPS_VENTAS: NavGroup[] = [
+  { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
+  {
+    label: "Mi trabajo",
+    items: [
+      { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
+      { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
+      { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+    ],
+  },
+  {
+    label: "CRM",
+    crmOnly: true,
+    items: [
+      { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
+      { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
+    ],
+  },
+  {
+    label: "Proyectos",
+    items: [
+      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
+      { href: "/proyectos",     label: "InLab",          icon: "Proyectos" },
+    ],
+  },
+]
+
+const NAV_GROUPS_PROYECTOS: NavGroup[] = [
+  { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
+  {
+    label: "Mi trabajo",
+    items: [
+      { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
+      { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
+      { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+    ],
+  },
+  {
+    label: "Proyectos",
+    items: [
+      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
+      { href: "/proyectos",     label: "InLab",          icon: "Proyectos" },
+    ],
+  },
+]
+
+const NAV_GROUPS_TECNICO: NavGroup[] = [
+  { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
+  {
+    label: "Mi trabajo",
+    items: [
+      { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
+      { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
+      { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+    ],
+  },
+  {
+    label: "Proyectos",
+    items: [{ href: "/proyectos", label: "InLab", icon: "Proyectos" }],
+  },
+]
 
 const NAV_GROUPS: Record<string, NavGroup[]> = {
-  ADMIN: [
-    { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
-    {
-      label: "Gestion",
-      items: [
-        { href: "/admin/usuarios",       label: "Usuarios",          icon: "Usuarios" },
-        { href: "/admin/zonas",          label: "Zonas",             icon: "Zonas" },
-        { href: "/admin/hospitales",     label: "Hospitales",        icon: "Hospitales" },
-        { href: "/admin/visitas",        label: "Todas las visitas", icon: "TodasVisitas" },
-        { href: "/admin/modulos-inlab",  label: "Módulos INLAB",     icon: "Modulos" },
-      ],
-    },
-    {
-      label: "CRM",
-      items: [
-        { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
-        { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
-      ],
-    },
-    {
-      label: "InLab",
-      items: [{ href: "/proyectos", label: "Proyectos", icon: "Proyectos" }],
-    },
-  ],
-  PROYECTOS: [
-    { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
-    {
-      label: "Mi trabajo",
-      items: [
-        { href: "/hospitales", label: "Mis hospitales", icon: "Hospitales" },
-        { href: "/visitas",    label: "Mis visitas",    icon: "Visitas" },
-        { href: "/visitas/calendario", label: "Calendario",  icon: "Calendar" },
-      ],
-    },
-    {
-      label: "InLab",
-      items: [{ href: "/proyectos", label: "Proyectos", icon: "Proyectos" }],
-    },
-  ],
-  VENTAS: [
-    { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
-    {
-      label: "Mi trabajo",
-      items: [
-        { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
-        { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
-        { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
-      ],
-    },
-    {
-      label: "CRM",
-      items: [
-        { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
-        { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
-      ],
-    },
-    {
-      label: "InLab",
-      items: [{ href: "/proyectos", label: "Proyectos", icon: "Proyectos" }],
-    },
-  ],
-  TECNICO: [
-    { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
-    {
-      label: "Mi trabajo",
-      items: [
-        { href: "/hospitales", label: "Mis hospitales", icon: "Hospitales" },
-        { href: "/visitas",    label: "Mis visitas",    icon: "Visitas" },
-        { href: "/visitas/calendario", label: "Calendario", icon: "Calendar" },
-      ],
-    },
-    {
-      label: "InLab",
-      items: [{ href: "/proyectos", label: "Proyectos", icon: "Proyectos" }],
-    },
-  ],
+  ADMIN:     NAV_GROUPS_ADMIN,
+  VENTAS:    NAV_GROUPS_VENTAS,
+  PROYECTOS: NAV_GROUPS_PROYECTOS,
+  TECNICO:   NAV_GROUPS_TECNICO,
 }
 
 // NavLink — soporta modo colapsado (solo icono + tooltip)
@@ -288,8 +332,17 @@ function SidebarInner({
   const allHrefs = useMemo(() => groups.flatMap(g => g.items.map(i => i.href)), [groups])
 
   const [pipelineBadge, setPipelineBadge] = useState<number>(0)
+  const [crmActivo, setCrmActivo] = useState<boolean>(true)
 
   useEffect(() => {
+    fetch("/api/config")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data != null) setCrmActivo(data.crmActivo) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!crmActivo) return
     if (rol !== "ADMIN" && rol !== "VENTAS") return
     fetch("/api/notificaciones")
       .then(r => r.ok ? r.json() : null)
@@ -299,7 +352,7 @@ function SidebarInner({
         setPipelineBadge(count)
       })
       .catch(() => {})
-  }, [rol])
+  }, [rol, crmActivo])
 
   return (
     <aside
@@ -352,7 +405,7 @@ function SidebarInner({
         className="flex-1 overflow-y-auto space-y-5"
         style={{ padding: collapsed ? "12px 8px" : "12px" }}
       >
-        {groups.map((group, gi) => (
+        {groups.filter(g => !g.crmOnly || crmActivo).map((group, gi) => (
           <div key={gi}>
             {group.label && !collapsed && (
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-1.5">

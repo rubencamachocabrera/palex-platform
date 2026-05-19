@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+
+export async function GET(req: Request) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const { searchParams } = new URL(req.url)
+  const tipo = searchParams.get("tipo")
+  const estado = searchParams.get("estado")
+  const hospitalId = searchParams.get("hospitalId")
+  const preProyectoId = searchParams.get("preProyectoId")
+  const q = searchParams.get("q")
+  try {
+    const unidades = await db.hardwareUnidad.findMany({
+      where: {
+        ...(estado ? { estado: estado as never } : {}),
+        ...(hospitalId ? { hospitalId } : {}),
+        ...(preProyectoId ? { preProyectoId } : {}),
+        ...(tipo ? { catalogo: { tipo: tipo as never } } : {}),
+        ...(q ? { OR: [
+          { numSerie: { contains: q, mode: "insensitive" } },
+          { catalogo: { modelo: { contains: q, mode: "insensitive" } } },
+          { catalogo: { marca: { contains: q, mode: "insensitive" } } },
+        ]} : {}),
+      },
+      include: {
+        catalogo: true,
+        hospital: { select: { id: true, nombre: true, ciudad: true } },
+        preProyecto: { select: { id: true, titulo: true } },
+      },
+      orderBy: { creadoEn: "desc" },
+    })
+    return NextResponse.json(unidades)
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+  }
+}
+
+export async function POST(req: Request) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  try {
+    const body = await req.json()
+    if (!body.catalogoId) return NextResponse.json({ error: "catalogoId requerido" }, { status: 400 })
+    const unidad = await db.hardwareUnidad.create({
+      data: {
+        catalogoId: body.catalogoId,
+        numSerie: body.numSerie || null,
+        estado: body.estado || "DISPONIBLE",
+        hospitalId: body.hospitalId || null,
+        preProyectoId: body.preProyectoId || null,
+        fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
+        fechaGarantia: body.fechaGarantia ? new Date(body.fechaGarantia) : null,
+        notas: body.notas || null,
+      },
+      include: { catalogo: true },
+    })
+    return NextResponse.json(unidad, { status: 201 })
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+  }
+}

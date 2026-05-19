@@ -1,4 +1,4 @@
-// Modelo de datos Palex Medical -- Fase 3: CRM / Pipeline de ventas
+// Modelo de datos Palex Medical -- Fase 4: Pre-Proyectos + Hardware
 
 datasource db {
   provider = "postgresql"
@@ -55,6 +55,72 @@ enum EtapaPipeline {
   PERDIDO
 }
 
+enum EstadoPreProyecto {
+  NUEVO
+  EN_CURSO
+  PAUSADO
+  COMPLETADO
+  CANCELADO
+}
+
+enum TipoFase {
+  FIRMA_CONTRATO
+  VISITA_TECNICA
+  SOLICITUD_MATERIAL
+  ENTREGA_MATERIAL
+  CONFIGURACION
+  INSTALACION
+  PUESTA_EN_MARCHA
+  FORMACION
+  VALIDACION
+  ENTREGA_PROYECTO
+  SOPORTE_POST
+}
+
+enum EstadoFase {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADO
+  BLOQUEADO
+}
+
+enum TipoHardware {
+  BC_ROBOT
+  ZEBRA_MC
+  ZEBRA_PRINTER
+  LECTOR_BARRAS
+  SERVIDOR
+  SWITCH_RED
+  TABLET
+  OTRO
+}
+
+enum EstadoHardware {
+  DISPONIBLE
+  ASIGNADO
+  EN_MANTENIMIENTO
+  RETIRADO
+  BAJA
+}
+
+enum EstadoSolicitud {
+  PENDIENTE
+  APROBADA
+  EN_PREPARACION
+  ENVIADA
+  ENTREGADA
+  CANCELADA
+}
+
+// --- CONFIG ----------------------------------------------------------
+
+model ConfigApp {
+  id        Int     @id @default(1)
+  crmActivo Boolean @default(true)
+
+  @@map("config_app")
+}
+
 // --- USUARIOS --------------------------------------------------------
 
 model Usuario {
@@ -67,9 +133,11 @@ model Usuario {
   creadoEn  DateTime @default(now())
   editadoEn DateTime @updatedAt
 
-  zonas         UsuarioZona[]
-  visitas       Visita[]
-  oportunidades Oportunidad[]
+  zonas             UsuarioZona[]
+  visitas           Visita[]
+  oportunidades     Oportunidad[]
+  preProyectos      PreProyecto[]      @relation("PreProyectoResponsable")
+  fasesResponsable  FasePreProyecto[]  @relation("FaseResponsable")
 
   @@map("usuarios")
 }
@@ -89,7 +157,6 @@ model Zona {
   @@map("zonas")
 }
 
-// Tabla pivot usuario <-> zona
 model UsuarioZona {
   usuarioId String
   zonaId    String
@@ -119,16 +186,17 @@ model Hospital {
   creadoEn  DateTime     @default(now())
   editadoEn DateTime     @updatedAt
 
-  zona          Zona          @relation(fields: [zonaId], references: [id])
-  contactos     Contacto[]
-  visitas       Visita[]
-  oportunidades Oportunidad[]
-  proyectos     Proyecto[]
+  zona             Zona             @relation(fields: [zonaId], references: [id])
+  contactos        Contacto[]
+  visitas          Visita[]
+  oportunidades    Oportunidad[]
+  proyectos        Proyecto[]
+  preProyectos     PreProyecto[]
+  hardwareUnidades HardwareUnidad[]
 
   @@map("hospitales")
 }
 
-// Contactos clave del hospital
 model Contacto {
   id         String   @id @default(cuid())
   hospitalId String
@@ -139,7 +207,8 @@ model Contacto {
   principal  Boolean  @default(false)
   creadoEn   DateTime @default(now())
 
-  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  hospital     Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  preProyectos PreProyectoContacto[]
 
   @@map("contactos")
 }
@@ -147,26 +216,28 @@ model Contacto {
 // --- VISITAS ---------------------------------------------------------
 
 model Visita {
-  id            String       @id @default(cuid())
-  hospitalId    String
-  usuarioId     String
-  oportunidadId String?
-  tipo          TipoVisita
-  estado        EstadoVisita @default(BORRADOR)
-  fecha         DateTime     @default(now())
-  datos         Json         @default("{}")
-  fotos         Json         @default("[]")
-  creadoEn      DateTime     @default(now())
-  editadoEn     DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  hospitalId      String
+  usuarioId       String
+  oportunidadId   String?
+  preProyectoId   String?
+  tipo            TipoVisita
+  estado          EstadoVisita @default(BORRADOR)
+  fecha           DateTime     @default(now())
+  datos           Json         @default("{}")
+  fotos           Json         @default("[]")
+  creadoEn        DateTime     @default(now())
+  editadoEn       DateTime     @updatedAt
 
   hospital    Hospital     @relation(fields: [hospitalId], references: [id])
   usuario     Usuario      @relation(fields: [usuarioId], references: [id])
   oportunidad Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
+  preProyecto PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
 
   @@map("visitas")
 }
 
-// --- PROYECTOS -------------------------------------------------------
+// --- PROYECTOS (InLab) -----------------------------------------------
 
 model Proyecto {
   id            String    @id @default(cuid())
@@ -230,4 +301,153 @@ model Oportunidad {
   visitas  Visita[]
 
   @@map("oportunidades")
+}
+
+// --- PRE-PROYECTOS ---------------------------------------------------
+
+model PreProyecto {
+  id            String            @id @default(cuid())
+  titulo        String
+  descripcion   String?           @db.Text
+  hospitalId    String
+  responsableId String?
+  estado        EstadoPreProyecto @default(NUEVO)
+  prioridad     Int               @default(0)
+  presupuesto   Float?
+  fechaInicio   DateTime?
+  fechaFinPlan  DateTime?
+  fechaFinReal  DateTime?
+  notas         String?           @db.Text
+  creadoEn      DateTime          @default(now())
+  editadoEn     DateTime          @updatedAt
+
+  hospital         Hospital              @relation(fields: [hospitalId], references: [id])
+  responsable      Usuario?              @relation("PreProyectoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+  fases            FasePreProyecto[]
+  hitos            Hito[]
+  solicitudes      SolicitudMaterial[]
+  hardwareUnidades HardwareUnidad[]
+  contactos        PreProyectoContacto[]
+  visitas          Visita[]
+
+  @@map("pre_proyectos")
+}
+
+model FasePreProyecto {
+  id            String     @id @default(cuid())
+  preProyectoId String
+  tipo          TipoFase
+  nombre        String
+  orden         Int
+  estado        EstadoFase @default(PENDIENTE)
+  fechaPlan     DateTime?
+  fechaReal     DateTime?
+  responsableId String?
+  notas         String?    @db.Text
+  creadoEn      DateTime   @default(now())
+  editadoEn     DateTime   @updatedAt
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  responsable Usuario?    @relation("FaseResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+
+  @@map("fases_pre_proyectos")
+}
+
+model Hito {
+  id            String   @id @default(cuid())
+  preProyectoId String
+  titulo        String
+  descripcion   String?
+  fecha         DateTime
+  fechaReal     DateTime?
+  completado    Boolean  @default(false)
+  creadoEn      DateTime @default(now())
+  editadoEn     DateTime @updatedAt
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+
+  @@map("hitos")
+}
+
+model SolicitudMaterial {
+  id               String          @id @default(cuid())
+  preProyectoId    String
+  titulo           String
+  estado           EstadoSolicitud @default(PENDIENTE)
+  fechaSolicitud   DateTime        @default(now())
+  fechaEntregaPlan DateTime?
+  fechaEntregaReal DateTime?
+  notas            String?         @db.Text
+  creadoEn         DateTime        @default(now())
+  editadoEn        DateTime        @updatedAt
+
+  preProyecto PreProyecto    @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  lineas      LineaMaterial[]
+
+  @@map("solicitudes_material")
+}
+
+model LineaMaterial {
+  id                String @id @default(cuid())
+  solicitudId       String
+  nombre            String
+  referencia        String?
+  cantidad          Int
+  cantidadEntregada Int    @default(0)
+  unidad            String @default("ud")
+  notas             String?
+
+  solicitud SolicitudMaterial @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  @@map("lineas_material")
+}
+
+// --- HARDWARE --------------------------------------------------------
+
+model HardwareCatalogo {
+  id          String       @id @default(cuid())
+  tipo        TipoHardware
+  marca       String
+  modelo      String
+  descripcion String?
+  activo      Boolean      @default(true)
+  creadoEn    DateTime     @default(now())
+  editadoEn   DateTime     @updatedAt
+
+  unidades HardwareUnidad[]
+
+  @@map("hardware_catalogo")
+}
+
+model HardwareUnidad {
+  id            String         @id @default(cuid())
+  catalogoId    String
+  numSerie      String?
+  estado        EstadoHardware @default(DISPONIBLE)
+  hospitalId    String?
+  preProyectoId String?
+  fechaCompra   DateTime?
+  fechaGarantia DateTime?
+  notas         String?
+  creadoEn      DateTime       @default(now())
+  editadoEn     DateTime       @updatedAt
+
+  catalogo    HardwareCatalogo @relation(fields: [catalogoId], references: [id])
+  hospital    Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  preProyecto PreProyecto?     @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
+
+  @@map("hardware_unidades")
+}
+
+// --- PIVOT PRE-PROYECTOS <-> CONTACTOS -------------------------------
+
+model PreProyectoContacto {
+  preProyectoId String
+  contactoId    String
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  contacto    Contacto    @relation(fields: [contactoId], references: [id], onDelete: Cascade)
+
+  @@id([preProyectoId, contactoId])
+  @@map("pre_proyectos_contactos")
 }
