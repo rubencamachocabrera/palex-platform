@@ -218,7 +218,7 @@ export default function PreProyectoDetalle() {
           >
             {t}
             {t === "Timeline" && <span className="ml-1.5 text-xs opacity-60">{pp.fases.length + pp.hitos.length}</span>}
-            {t === "Materiales" && (pp.solicitudes.length + pp.hardwareUnidades.length) > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.solicitudes.length + pp.hardwareUnidades.length}</span>}
+            {t === "Materiales" && pp.hardwareUnidades.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.hardwareUnidades.length}</span>}
             {t === "Contactos" && pp.contactos.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.contactos.length}</span>}
             {t === "Visitas" && pp.visitas.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.visitas.length}</span>}
           </button>
@@ -610,13 +610,6 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
 
 function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
   const { success, error: toastError } = useToast()
-  // Solicitudes
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [form, setForm] = useState({ titulo: "", fechaEntregaPlan: "", notas: "" })
-  const [lineas, setLineas] = useState([{ nombre: "", referencia: "", cantidad: "1", unidad: "ud" }])
-  const [guardando, setGuardando] = useState(false)
-  const [expandida, setExpandida] = useState<string | null>(null)
-  // Hardware
   const [catalogo, setCatalogo] = useState<(HardwareCatalogo & { id: string })[]>([])
   const [mostrarFormHW, setMostrarFormHW] = useState(false)
   const [formHW, setFormHW] = useState({ catalogoId: "" })
@@ -628,57 +621,6 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
       setCatalogo(Array.isArray(data) ? data : [])
     })
   }, [])
-
-  function addLinea() { setLineas(p => [...p, { nombre: "", referencia: "", cantidad: "1", unidad: "ud" }]) }
-  function removeLinea(i: number) { setLineas(p => p.filter((_, j) => j !== i)) }
-
-  async function crear(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.titulo.trim()) return
-    setGuardando(true)
-    try {
-      const r = await fetch(`/api/pre-proyectos/${pp.id}/solicitudes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, lineas: lineas.filter(l => l.nombre.trim()) }),
-      })
-      if (!r.ok) throw new Error()
-      const nueva = await r.json()
-      onUpdate({ ...pp, solicitudes: [nueva, ...pp.solicitudes] })
-      setForm({ titulo: "", fechaEntregaPlan: "", notas: "" })
-      setLineas([{ nombre: "", referencia: "", cantidad: "1", unidad: "ud" }])
-      setMostrarForm(false)
-      success("Solicitud creada")
-    } catch {
-      toastError("Error al crear solicitud")
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  async function cambiarEstado(solId: string, estado: string) {
-    try {
-      const r = await fetch(`/api/pre-proyectos/${pp.id}/solicitudes/${solId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado }),
-      })
-      if (!r.ok) throw new Error()
-      onUpdate({ ...pp, solicitudes: pp.solicitudes.map(s => s.id === solId ? { ...s, estado } : s) })
-    } catch {
-      toastError("Error")
-    }
-  }
-
-  async function eliminarSol(solId: string) {
-    try {
-      await fetch(`/api/pre-proyectos/${pp.id}/solicitudes/${solId}`, { method: "DELETE" })
-      onUpdate({ ...pp, solicitudes: pp.solicitudes.filter(s => s.id !== solId) })
-      success("Solicitud eliminada")
-    } catch {
-      toastError("Error")
-    }
-  }
 
   async function asignarHW(e: React.FormEvent) {
     e.preventDefault()
@@ -734,173 +676,20 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
   }, {})
 
   return (
-    <div className="space-y-6">
-      {/* ── Solicitudes de material ── */}
-      <div className="space-y-4">
+    <div className="space-y-4">
+      {/* ── Hardware asignado ── */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">Solicitudes de Material</h3>
-        <button onClick={() => setMostrarForm(true)}
+        <h3 className="font-semibold text-gray-900">Materiales asignados</h3>
+        <button onClick={() => setMostrarFormHW(true)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Nueva solicitud
+          Añadir
         </button>
       </div>
 
-      {mostrarForm && (
-        <form onSubmit={crear} className="bg-white rounded-2xl border border-teal-200 p-5 shadow-sm">
-          <h4 className="font-semibold text-gray-900 mb-4">Nueva solicitud de material</h4>
-          <div className="space-y-3">
-            <input value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
-              placeholder="Título de la solicitud *"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Fecha entrega planificada</label>
-                <input type="date" value={form.fechaEntregaPlan} onChange={e => setForm(p => ({ ...p, fechaEntregaPlan: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-              </div>
-            </div>
-            <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={2}
-              placeholder="Notas (opcional)"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
-
-            {/* Líneas */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-700">Líneas de material</p>
-                <button type="button" onClick={addLinea} className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Añadir línea</button>
-              </div>
-              <div className="space-y-2">
-                {lineas.map((l, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                    <input value={l.nombre} onChange={e => setLineas(p => p.map((x, j) => j === i ? { ...x, nombre: e.target.value } : x))}
-                      placeholder="Nombre del material *" className="col-span-4 px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400" />
-                    <input value={l.referencia} onChange={e => setLineas(p => p.map((x, j) => j === i ? { ...x, referencia: e.target.value } : x))}
-                      placeholder="Referencia" className="col-span-3 px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400" />
-                    <input type="number" value={l.cantidad} min="1" onChange={e => setLineas(p => p.map((x, j) => j === i ? { ...x, cantidad: e.target.value } : x))}
-                      placeholder="Cant." className="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400" />
-                    <input value={l.unidad} onChange={e => setLineas(p => p.map((x, j) => j === i ? { ...x, unidad: e.target.value } : x))}
-                      placeholder="ud" className="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400" />
-                    <button type="button" onClick={() => removeLinea(i)} className="col-span-1 flex justify-center text-red-300 hover:text-red-500">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button type="button" onClick={() => setMostrarForm(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-            <button type="submit" disabled={guardando}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-              style={{ backgroundColor: TEAL }}>
-              {guardando ? "Creando…" : "Crear solicitud"}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {pp.solicitudes.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <p className="text-sm">Sin solicitudes de material</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {pp.solicitudes.map(sol => {
-            const sInfo = SOLICITUD_ESTADO[sol.estado] ?? { label: sol.estado, color: "#6b7280", bg: "#f3f4f6" }
-            const isOpen = expandida === sol.id
-            const totalItems = sol.lineas.reduce((s, l) => s + l.cantidad, 0)
-            return (
-              <div key={sol.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-4 flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: sInfo.bg, color: sInfo.color }}>
-                        {sInfo.label}
-                      </span>
-                      <span className="text-xs text-gray-400">{fmtFecha(sol.fechaSolicitud)}</span>
-                      {sol.fechaEntregaPlan && <span className="text-xs text-gray-400">→ entrega: {fmtFecha(sol.fechaEntregaPlan)}</span>}
-                      {sol.fechaEntregaReal && <span className="text-xs text-green-600">entregado: {fmtFecha(sol.fechaEntregaReal)}</span>}
-                    </div>
-                    <h4 className="font-semibold text-gray-900">{sol.titulo}</h4>
-                    <p className="text-xs text-gray-400 mt-0.5">{sol.lineas.length} artículo{sol.lineas.length !== 1 ? "s" : ""} · {totalItems} unidades</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <select
-                      value={sol.estado}
-                      onChange={e => cambiarEstado(sol.id, e.target.value)}
-                      className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg bg-white focus:outline-none"
-                    >
-                      {Object.entries(SOLICITUD_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                    <button onClick={() => setExpandida(isOpen ? null : sol.id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                        style={{ transform: isOpen ? "rotate(180deg)" : "none" }}>
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </button>
-                    <button onClick={() => eliminarSol(sol.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                {isOpen && sol.lineas.length > 0 && (
-                  <div className="border-t border-gray-100 bg-gray-50">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="text-gray-400 border-b border-gray-100">
-                          <th className="text-left px-4 py-2.5 font-medium">Material</th>
-                          <th className="text-left px-4 py-2.5 font-medium">Referencia</th>
-                          <th className="text-right px-4 py-2.5 font-medium">Cant.</th>
-                          <th className="text-right px-4 py-2.5 font-medium">Entregado</th>
-                          <th className="text-left px-4 py-2.5 font-medium">Ud.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sol.lineas.map(l => (
-                          <tr key={l.id} className="border-b border-gray-100 last:border-0">
-                            <td className="px-4 py-2.5 font-medium text-gray-800">{l.nombre}</td>
-                            <td className="px-4 py-2.5 text-gray-400">{l.referencia ?? "—"}</td>
-                            <td className="px-4 py-2.5 text-right font-semibold text-gray-800">{l.cantidad}</td>
-                            <td className="px-4 py-2.5 text-right" style={{ color: l.cantidadEntregada >= l.cantidad ? "#16a34a" : "#d97706" }}>
-                              {l.cantidadEntregada}
-                            </td>
-                            <td className="px-4 py-2.5 text-gray-400">{l.unidad}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {sol.notas && <p className="px-4 py-2.5 text-xs text-gray-500 italic border-t border-gray-100">{sol.notas}</p>}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-      </div>
-
-      {/* ── Hardware asignado ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Hardware asignado</h3>
-          <button onClick={() => setMostrarFormHW(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Asignar
-          </button>
-        </div>
-
-        {mostrarFormHW && (
+      {mostrarFormHW && (
           <form onSubmit={asignarHW} className="bg-white rounded-2xl border border-teal-200 p-5 shadow-sm">
             <h4 className="font-semibold text-gray-900 mb-3">Añadir unidades</h4>
             <div className="space-y-4">
@@ -972,8 +761,8 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
         )}
 
         {pp.hardwareUnidades.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <p className="text-sm">Sin hardware asignado a este proyecto</p>
+          <div className="text-center py-10 text-gray-400">
+            <p className="text-sm">Sin materiales asignados a este proyecto</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -1006,7 +795,6 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
             ))}
           </div>
         )}
-      </div>
     </div>
   )
 }

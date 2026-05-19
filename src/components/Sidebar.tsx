@@ -159,7 +159,6 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/admin/zonas",          label: "Zonas",             icon: "Zonas" },
       { href: "/admin/hospitales",     label: "Hospitales",        icon: "Hospitales" },
       { href: "/admin/visitas",        label: "Todas las visitas", icon: "TodasVisitas" },
-      { href: "/admin/hardware",       label: "Materiales",        icon: "Hardware" },
       { href: "/admin/configuracion",  label: "Configuración",     icon: "Configuracion" },
     ],
   },
