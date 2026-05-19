@@ -12,7 +12,7 @@ export async function GET(
 
     const { id } = await params
 
-    const [visitas, oportunidades, proyectos] = await Promise.all([
+    const [visitas, oportunidades, proyectos, preProyectos] = await Promise.all([
       db.visita.findMany({
         where: { hospitalId: id },
         select: { id: true, fecha: true, estado: true, tipo: true, usuario: { select: { nombre: true } } },
@@ -26,6 +26,11 @@ export async function GET(
       db.proyecto.findMany({
         where: { hospitalId: id },
         select: { id: true, nombre: true, creadoEn: true, fechaInicio: true },
+        orderBy: { creadoEn: "desc" },
+      }),
+      db.preProyecto.findMany({
+        where: { hospitalId: id },
+        select: { id: true, titulo: true, estado: true, creadoEn: true, responsable: { select: { nombre: true } } },
         orderBy: { creadoEn: "desc" },
       }),
     ])
@@ -70,6 +75,18 @@ export async function GET(
         titulo: `Proyecto: ${p.nombre}`,
         descripcion: `Inicio: ${new Date(p.fechaInicio).toLocaleDateString("es-ES")}`,
         fecha: p.creadoEn.toISOString(), href: `/proyectos/${p.id}`,
+      })
+    }
+
+    const ESTADO_PP: Record<string, string> = {
+      NUEVO: "Nuevo", EN_CURSO: "En curso", PAUSADO: "Pausado", COMPLETADO: "Completado", CANCELADO: "Cancelado",
+    }
+    for (const pp of preProyectos) {
+      eventos.push({
+        id: `pp-${pp.id}`, tipo: "preproyecto",
+        titulo: pp.titulo,
+        descripcion: `Pre-proyecto · ${ESTADO_PP[pp.estado] ?? pp.estado}${pp.responsable ? ` · ${pp.responsable.nombre}` : ""}`,
+        fecha: pp.creadoEn.toISOString(), href: `/pre-proyectos/${pp.id}`,
       })
     }
 

@@ -29,7 +29,8 @@ interface TimelineEvento {
 }
 
 const TIPO_COLOR: Record<string, string> = {
-  visita: "bg-teal-500", oportunidad: "bg-purple-500", etapa: "bg-amber-400", proyecto: "bg-blue-500",
+  visita: "bg-teal-500", oportunidad: "bg-purple-500", etapa: "bg-amber-400",
+  proyecto: "bg-blue-500", preproyecto: "bg-indigo-400",
 }
 
 const CONTACTO_EMPTY = { nombre: "", cargo: "", email: "", telefono: "", principal: false }
