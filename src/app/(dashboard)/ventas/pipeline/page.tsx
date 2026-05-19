@@ -657,23 +657,55 @@ export default function PipelinePage() {
           )}
 
           {/* Historial de etapas */}
-          {panelOp.historial && panelOp.historial.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Historial de etapas</p>
-              <div className="space-y-1.5">
-                {[...panelOp.historial].reverse().map((h, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 shrink-0" />
-                    <div>
-                      <span className="text-gray-700 font-medium">{ETAPA_LABEL[h.etapaNueva as Etapa] ?? h.etapaNueva}</span>
-                      <span className="text-gray-400"> &middot; {new Date(h.fecha).toLocaleDateString("es-ES")}</span>
-                      {h.usuario && <span className="text-gray-300"> &middot; {h.usuario}</span>}
+          <div className="mt-5">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Historial</p>
+            <div className="relative pl-4">
+              {/* Línea vertical */}
+              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-100" />
+
+              {/* Entradas del historial (más reciente arriba) */}
+              {[...panelOp.historial].reverse().map((h, i) => {
+                const color = PROB_BAR_COLOR[h.etapaNueva as Etapa] ?? "#9ca3af"
+                const fecha = new Date(h.fecha)
+                const hoy = new Date()
+                const dias = Math.floor((hoy.getTime() - fecha.getTime()) / 86400000)
+                const fechaLabel = dias === 0 ? "Hoy" : dias === 1 ? "Ayer" : dias < 7 ? `Hace ${dias}d` : fecha.toLocaleDateString("es-ES", { day: "numeric", month: "short" })
+                return (
+                  <div key={i} className="relative flex gap-3 pb-4 last:pb-0">
+                    {/* Dot */}
+                    <div className="absolute left-[-10px] w-3.5 h-3.5 rounded-full border-2 border-white shrink-0 mt-0.5" style={{ backgroundColor: color }} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {h.etapaAnterior && (
+                          <>
+                            <span className="text-[11px] text-gray-400">{ETAPA_LABEL[h.etapaAnterior as Etapa] ?? h.etapaAnterior}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                          </>
+                        )}
+                        <span className="text-[11px] font-semibold" style={{ color }}>{ETAPA_LABEL[h.etapaNueva as Etapa] ?? h.etapaNueva}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {fechaLabel}
+                        {h.usuario && <span className="ml-1">· {h.usuario}</span>}
+                      </p>
                     </div>
                   </div>
-                ))}
+                )
+              })}
+
+              {/* Entrada de creación */}
+              <div className="relative flex gap-3">
+                <div className="absolute left-[-10px] w-3.5 h-3.5 rounded-full border-2 border-white bg-gray-200 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-500">Creada</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {new Date(panelOp.creadoEn).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                    <span className="ml-1">· {panelOp.usuario.nombre}</span>
+                  </p>
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Acciones */}
           {(rol === "VENTAS" || esAdmin) && (
