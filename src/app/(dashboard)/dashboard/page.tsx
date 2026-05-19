@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
-import { TEAL } from "@/lib/brand"
+import { TEAL, ORANGE } from "@/lib/brand"
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
   IconCheckCircle, IconFileText, IconMap,
@@ -30,6 +30,18 @@ const ETAPA_LABEL: Record<string, string> = {
   PROPUESTA: "Propuesta", NEGOCIACION: "Negociacion",
   GANADO: "Ganado", PERDIDO: "Perdido",
 }
+const ETAPA_BAR_COLOR: Record<string, string> = {
+  IDENTIFICADO: "#94a3b8", PRIMERA_VISITA: "#60a5fa",
+  PROPUESTA: "#f59e0b", NEGOCIACION: "#a78bfa", GANADO: "#10b981",
+}
+const ESTADO_MOD_COLOR: Record<string, string> = {
+  PENDIENTE: "#94a3b8", EN_INSTALACION: "#60a5fa",
+  INSTALADO: TEAL, FORMACION: "#f59e0b", VALIDADO: "#10b981",
+}
+const ESTADO_MOD_LABEL: Record<string, string> = {
+  PENDIENTE: "Pendiente", EN_INSTALACION: "En instalación",
+  INSTALADO: "Instalado", FORMACION: "Formación", VALIDADO: "Validado",
+}
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
 
 function fmtEuros(n: number): string {
@@ -47,6 +59,20 @@ function agruparPorMes(fechas: Date[], n: number): { mes: string; v: number }[] 
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - (n - 1 - i), 1)
     const count = fechas.filter(f => f.getFullYear() === d.getFullYear() && f.getMonth() === d.getMonth()).length
     return { mes: MESES[d.getMonth()], v: count }
+  })
+}
+
+function agruparPrevisionPorMes(
+  ops: { valorEstimado: number | null; probabilidad: number | null; fechaCierre: Date | null }[],
+  n: number
+): { mes: string; v: number }[] {
+  const ahora = new Date()
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() + i, 1)
+    const sum = ops
+      .filter(o => o.fechaCierre && o.fechaCierre.getFullYear() === d.getFullYear() && o.fechaCierre.getMonth() === d.getMonth())
+      .reduce((s, o) => s + (o.valorEstimado ?? 0) * ((o.probabilidad ?? 50) / 100), 0)
+    return { mes: MESES[d.getMonth()], v: Math.round(sum) }
   })
 }
 
@@ -81,25 +107,111 @@ function SectionHeader({ title, link, linkLabel }: { title: string; link?: strin
   )
 }
 
-function AreaChart({ data }: { data: { mes: string; v: number }[] }) {
+function BarChart({ data }: { data: { mes: string; v: number }[] }) {
   const W = 400; const H = 90
-  const PAD = { t: 10, r: 12, b: 20, l: 8 }
+  const PAD = { t: 14, r: 8, b: 20, l: 8 }
   const maxV = Math.max(...data.map(d => d.v), 1)
-  const cW = W - PAD.l - PAD.r; const cH = H - PAD.t - PAD.b
-  const pts = data.map((d, i) => ({
-    x: PAD.l + (data.length < 2 ? cW / 2 : (i / (data.length - 1)) * cW),
-    y: PAD.t + cH - (d.v / maxV) * cH,
-    ...d,
-  }))
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")
-  const area = pts.length > 1 ? `${line} L ${pts[pts.length-1].x.toFixed(1)} ${(PAD.t+cH).toFixed(1)} L ${pts[0].x.toFixed(1)} ${(PAD.t+cH).toFixed(1)} Z` : ""
+  const n = data.length
+  const slotW = (W - PAD.l - PAD.r) / n
+  const barW = Math.max(10, slotW * 0.55)
+  const cH = H - PAD.t - PAD.b
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
-      {area && <path d={area} fill={TEAL} fillOpacity={0.08} />}
-      {pts.length > 1 && <path d={line} fill="none" stroke={TEAL} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
-      {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={3} fill="white" stroke={TEAL} strokeWidth={2} />)}
-      {pts.map((p, i) => <text key={i} x={p.x} y={H - 2} textAnchor="middle" fontSize={9} fill="#9ca3af">{p.mes}</text>)}
+      {data.map((d, i) => {
+        const bH = d.v === 0 ? 2 : Math.max(4, (d.v / maxV) * cH)
+        const cx = PAD.l + slotW * i + slotW / 2
+        return (
+          <g key={i}>
+            <rect x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={3} fill={TEAL} fillOpacity={d.v === 0 ? 0.2 : 0.85} />
+            {d.v > 0 && <text x={cx} y={PAD.t + cH - bH - 3} textAnchor="middle" fontSize={9} fill="#374151" fontWeight="600">{d.v}</text>}
+            <text x={cx} y={H - 2} textAnchor="middle" fontSize={9} fill="#9ca3af">{d.mes}</text>
+          </g>
+        )
+      })}
     </svg>
+  )
+}
+
+function FunnelChart({ data }: { data: { etapa: string; label: string; count: number }[] }) {
+  const maxCount = Math.max(...data.map(d => d.count), 1)
+  return (
+    <div className="space-y-2.5">
+      {data.map(d => (
+        <div key={d.etapa} className="flex items-center gap-2 text-xs">
+          <span className="text-gray-500 w-24 shrink-0 truncate">{d.label}</span>
+          <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+            <div className="h-full rounded-full transition-all"
+              style={{ width: d.count === 0 ? "3px" : `${Math.max(6, (d.count / maxCount) * 100)}%`, backgroundColor: ETAPA_BAR_COLOR[d.etapa] ?? TEAL }} />
+          </div>
+          <span className="font-semibold text-gray-700 w-5 text-right shrink-0">{d.count}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PrediccionBars({ data }: { data: { mes: string; v: number }[] }) {
+  const W = 400; const H = 90
+  const PAD = { t: 16, r: 8, b: 20, l: 8 }
+  const maxV = Math.max(...data.map(d => d.v), 1)
+  const n = data.length
+  const slotW = (W - PAD.l - PAD.r) / n
+  const barW = Math.max(10, slotW * 0.55)
+  const cH = H - PAD.t - PAD.b
+  const fmt = (v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${Math.round(v)}`
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+      {data.map((d, i) => {
+        const bH = d.v === 0 ? 2 : Math.max(4, (d.v / maxV) * cH)
+        const cx = PAD.l + slotW * i + slotW / 2
+        return (
+          <g key={i}>
+            <rect x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={3} fill={ORANGE} fillOpacity={d.v === 0 ? 0.15 : 0.75} />
+            {d.v > 0 && <text x={cx} y={PAD.t + cH - bH - 3} textAnchor="middle" fontSize={8} fill="#92400e">€{fmt(d.v)}</text>}
+            <text x={cx} y={H - 2} textAnchor="middle" fontSize={9} fill="#9ca3af">{d.mes}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function Top5Chart({ data }: { data: { nombre: string; count: number }[] }) {
+  if (data.length === 0) return <p className="text-xs text-gray-400 py-6 text-center">Sin datos</p>
+  const maxCount = Math.max(...data.map(d => d.count), 1)
+  return (
+    <div className="space-y-2">
+      {data.map((d, i) => (
+        <div key={i} className="flex items-center gap-2 text-xs">
+          <span className="text-gray-600 w-28 truncate shrink-0" title={d.nombre}>{d.nombre}</span>
+          <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
+            <div className="h-full rounded"
+              style={{ width: `${Math.max(6, (d.count / maxCount) * 100)}%`, backgroundColor: TEAL, opacity: 0.5 + 0.5 * (1 - i / Math.max(data.length - 1, 1)) }} />
+          </div>
+          <span className="font-semibold text-gray-600 w-6 text-right shrink-0">{d.count}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function EstadoModulosChart({ data }: { data: { estado: string; count: number }[] }) {
+  const total = data.reduce((s, d) => s + d.count, 0)
+  if (total === 0) return <p className="text-xs text-gray-400 py-6 text-center">Sin módulos asignados</p>
+  const maxCount = Math.max(...data.map(d => d.count), 1)
+  return (
+    <div className="space-y-2.5">
+      {data.map(d => (
+        <div key={d.estado} className="flex items-center gap-2 text-xs">
+          <span className="text-gray-500 w-28 shrink-0 truncate">{ESTADO_MOD_LABEL[d.estado] ?? d.estado}</span>
+          <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
+            <div className="h-full rounded"
+              style={{ width: `${Math.max(4, (d.count / maxCount) * 100)}%`, backgroundColor: ESTADO_MOD_COLOR[d.estado] ?? TEAL }} />
+          </div>
+          <span className="font-semibold text-gray-700 w-6 text-right shrink-0">{d.count}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -164,8 +276,11 @@ async function DashboardAdmin() {
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
 
-  const [totalHospitales, totalUsuarios, visitasMes, visitasPrevMes, ultimasVisitas,
-    totalOportunidades, valorPipeline, visitasChart, opCalientes, proximasVisitas] = await Promise.all([
+  const [
+    totalHospitales, totalUsuarios, visitasMes, visitasPrevMes, ultimasVisitas,
+    totalOportunidades, valorPipeline, visitasChart, opCalientes, proximasVisitas,
+    funnelRaw, opsPrevRaw, top5Raw,
+  ] = await Promise.all([
     db.hospital.count({ where: { activo: true } }),
     db.usuario.count({ where: { activo: true } }),
     db.visita.count({ where: { creadoEn: { gte: inicioMes } } }),
@@ -176,30 +291,69 @@ async function DashboardAdmin() {
     db.visita.findMany({ where: { creadoEn: { gte: inicioSeisM } }, select: { creadoEn: true } }),
     db.oportunidad.findMany({ where: { etapa: { notIn: ["PERDIDO", "GANADO"] } }, orderBy: [{ valorEstimado: "desc" }], take: 8, include: { hospital: { select: { nombre: true } } } }),
     db.visita.findMany({ where: { fecha: { gte: ahora } }, orderBy: { fecha: "asc" }, take: 5, include: { hospital: { select: { nombre: true } }, usuario: { select: { nombre: true } } } }),
+    db.oportunidad.groupBy({ by: ["etapa"], where: { etapa: { notIn: ["PERDIDO"] } }, _count: { _all: true } }),
+    db.oportunidad.findMany({ where: { etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
+    db.hospital.findMany({ where: { activo: true }, orderBy: { visitas: { _count: "desc" } }, take: 5, select: { nombre: true, _count: { select: { visitas: true } } } }),
   ])
+
   const trendVisitas = calcTrend(visitasMes, visitasPrevMes)
   const chartData = agruparPorMes(visitasChart.map(v => new Date(v.creadoEn)), 6)
   const opOrdenadas = opCalientes.map(op => ({ ...op, heat: (op.valorEstimado ?? 0) * ((op.probabilidad ?? 50) / 100) })).sort((a, b) => b.heat - a.heat).slice(0, 5)
 
+  const ETAPAS_FUNNEL = ["IDENTIFICADO", "PRIMERA_VISITA", "PROPUESTA", "NEGOCIACION", "GANADO"]
+  const funnelData = ETAPAS_FUNNEL.map(etapa => ({
+    etapa, label: ETAPA_LABEL[etapa],
+    count: funnelRaw.find(r => r.etapa === etapa)?._count._all ?? 0,
+  }))
+  const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
+  const top5Data = top5Raw.map(h => ({ nombre: h.nombre, count: h._count.visitas }))
+
   return (
     <div>
       <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
+
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Hospitales activos" value={totalHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Usuarios activos" value={totalUsuarios} icon={<IconUsers size={18} />} />
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
         <KpiCard label="Pipeline activo" value={fmtEuros(valorPipeline._sum.valorEstimado ?? 0)} sub={`${totalOportunidades} oportunidades`} icon={<IconTrendingUp size={18} />} />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-bold text-gray-800">Actividad mensual</h2>
-            <p className="text-xs text-gray-400">Visitas creadas en los ultimos 6 meses</p>
+
+      {/* Fila 1: Visitas por mes + Funnel */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Visitas por mes</h2>
+              <p className="text-xs text-gray-400">Últimos 6 meses</p>
+            </div>
+            <span className="text-xs text-gray-400">{chartData.reduce((s, d) => s + d.v, 0)} total</span>
           </div>
-          <span className="text-xs text-gray-400">Total: {chartData.reduce((s, d) => s + d.v, 0)}</span>
+          <BarChart data={chartData} />
         </div>
-        <AreaChart data={chartData} />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Funnel del pipeline</h2>
+          <p className="text-xs text-gray-400 mb-4">Oportunidades activas por etapa</p>
+          <FunnelChart data={funnelData} />
+        </div>
       </div>
+
+      {/* Fila 2: Previsión + Top 5 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Previsión de cierre</h2>
+          <p className="text-xs text-gray-400 mb-4">Pipeline ponderado (valor × prob.) próximos 6 meses</p>
+          <PrediccionBars data={previsionData} />
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Top 5 hospitales</h2>
+          <p className="text-xs text-gray-400 mb-4">Por número de visitas</p>
+          <Top5Chart data={top5Data} />
+        </div>
+      </div>
+
+      {/* Listas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Ultimas visitas" link="/admin/visitas" /></div>
@@ -224,6 +378,7 @@ async function DashboardAdmin() {
           </div>
         </div>
       </div>
+
       {proximasVisitas.length > 0 && (
         <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Proximas visitas planificadas" /></div>
@@ -232,6 +387,7 @@ async function DashboardAdmin() {
           </div>
         </div>
       )}
+
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -253,13 +409,16 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
 
-  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart] = await Promise.all([
+  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw] = await Promise.all([
     db.oportunidad.findMany({ where: { usuarioId: userId }, orderBy: { editadoEn: "desc" }, take: 8, include: { hospital: { select: { nombre: true, ciudad: true } } } }),
     db.visita.findMany({ where: { usuarioId: userId }, take: 5, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
     db.visita.count({ where: { usuarioId: userId, creadoEn: { gte: inicioPrevMes, lte: finPrevMes } } }),
     db.visita.findMany({ where: { usuarioId: userId, creadoEn: { gte: inicioSeisM } }, select: { creadoEn: true } }),
+    db.oportunidad.groupBy({ by: ["etapa"], where: { usuarioId: userId, etapa: { notIn: ["PERDIDO"] } }, _count: { _all: true } }),
+    db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
   ])
+
   const opsActivas = misOps.filter(o => o.etapa !== "PERDIDO")
   const totalPipeline = opsActivas.reduce((s, o) => s + (o.valorEstimado ?? 0), 0)
   const visitasMes = misVisitas.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -270,26 +429,54 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
     .map(op => ({ ...op, heat: (op.valorEstimado ?? 0) * ((op.probabilidad ?? 50) / 100) }))
     .sort((a, b) => b.heat - a.heat).slice(0, 5)
 
+  const ETAPAS_FUNNEL = ["IDENTIFICADO", "PRIMERA_VISITA", "PROPUESTA", "NEGOCIACION", "GANADO"]
+  const funnelData = ETAPAS_FUNNEL.map(etapa => ({
+    etapa, label: ETAPA_LABEL[etapa],
+    count: funnelRaw.find(r => r.etapa === etapa)?._count._all ?? 0,
+  }))
+  const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
+  const hayPrevision = previsionData.some(d => d.v > 0)
+
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Pipeline activo" value={fmtEuros(totalPipeline)} sub={`${opsActivas.length} oportunidades`} icon={<IconTrendingUp size={18} />} />
         <KpiCard label="Contratos ganados" value={ganadas.length} sub="en total" icon={<IconCheckCircle size={18} />} />
         <KpiCard label="Hospitales en mi zona" value={misHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-bold text-gray-800">Actividad mensual</h2>
-            <p className="text-xs text-gray-400">Visitas creadas en los ultimos 6 meses</p>
+
+      {/* Fila: Visitas por mes + Funnel */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Mis visitas por mes</h2>
+              <p className="text-xs text-gray-400">Últimos 6 meses</p>
+            </div>
+            <span className="text-xs text-gray-400">{chartData.reduce((s, d) => s + d.v, 0)} total</span>
           </div>
-          <span className="text-xs text-gray-400">Total: {chartData.reduce((s, d) => s + d.v, 0)}</span>
+          <BarChart data={chartData} />
         </div>
-        <AreaChart data={chartData} />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Mi funnel</h2>
+          <p className="text-xs text-gray-400 mb-4">Mis oportunidades activas por etapa</p>
+          <FunnelChart data={funnelData} />
+        </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      {/* Previsión (solo si hay datos) */}
+      {hayPrevision && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Previsión de cierre</h2>
+          <p className="text-xs text-gray-400 mb-4">Pipeline ponderado (valor × prob.) próximos 6 meses</p>
+          <PrediccionBars data={previsionData} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis visitas recientes" link="/visitas" /></div>
           <div className="divide-y divide-gray-50">
@@ -313,6 +500,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
           </div>
         </div>
       </div>
+
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -325,6 +513,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   )
 }
 
+// ── Dashboard PROYECTOS / TECNICO ──────────────────────────────────────────────
 async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: string }) {
   const ahora = new Date()
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
@@ -332,35 +521,53 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
 
-  const [misVisitas, misHospitales, visitasPrevMes, visitasChart, proximasVisitas] = await Promise.all([
+  const [misVisitas, misHospitales, visitasPrevMes, visitasChart, proximasVisitas, estadoModulosRaw] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
     db.visita.count({ where: { usuarioId: userId, creadoEn: { gte: inicioPrevMes, lte: finPrevMes } } }),
     db.visita.findMany({ where: { usuarioId: userId, creadoEn: { gte: inicioSeisM } }, select: { creadoEn: true } }),
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: ahora } }, orderBy: { fecha: "asc" }, take: 5, include: { hospital: { select: { nombre: true } } } }),
+    db.proyectoModulo.groupBy({ by: ["estado"], _count: { _all: true } }),
   ])
+
   const visitasMes = misVisitas.filter(v => new Date(v.creadoEn) >= inicioMes).length
   const trendVisitas = calcTrend(visitasMes, visitasPrevMes)
   const chartData = agruparPorMes(visitasChart.map(v => new Date(v.creadoEn)), 6)
 
+  const ORDEN_ESTADO = ["PENDIENTE", "EN_INSTALACION", "INSTALADO", "FORMACION", "VALIDADO"]
+  const estadoModulosData = ORDEN_ESTADO
+    .map(estado => ({ estado, count: estadoModulosRaw.find(r => r.estado === estado)?._count._all ?? 0 }))
+    .filter(d => d.count > 0)
+
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
         <KpiCard label="Hospitales en mi zona" value={misHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Total visitas" value={misVisitas.length} icon={<IconFileText size={18} />} />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-bold text-gray-800">Actividad mensual</h2>
-            <p className="text-xs text-gray-400">Visitas creadas en los ultimos 6 meses</p>
+
+      {/* Fila: Visitas por mes + Estado módulos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Mis visitas por mes</h2>
+              <p className="text-xs text-gray-400">Últimos 6 meses</p>
+            </div>
+            <span className="text-xs text-gray-400">{chartData.reduce((s, d) => s + d.v, 0)} total</span>
           </div>
-          <span className="text-xs text-gray-400">Total: {chartData.reduce((s, d) => s + d.v, 0)}</span>
+          <BarChart data={chartData} />
         </div>
-        <AreaChart data={chartData} />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Proyectos activos</h2>
+          <p className="text-xs text-gray-400 mb-4">Módulos por estado de instalación</p>
+          <EstadoModulosChart data={estadoModulosData} />
+        </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis visitas recientes" link="/visitas" /></div>
@@ -387,6 +594,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
           </div>
         )}
       </div>
+
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -408,6 +616,5 @@ export default async function DashboardPage() {
 
   if (rol === "ADMIN") return <DashboardAdmin />
   if (rol === "VENTAS") return <DashboardVentas userId={userId} nombre={nombre} />
-  // PROYECTOS y TECNICO comparten la misma vista
   return <DashboardProyectos userId={userId} nombre={nombre} />
 }
