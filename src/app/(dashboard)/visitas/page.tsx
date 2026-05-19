@@ -61,6 +61,8 @@ export default function MisVisitasPage() {
   const [fechaModal, setFechaModal] = useState("")
   const [creando, setCreando] = useState(false)
   const [userRol, setUserRol] = useState("PROYECTOS")
+  const [plantillas, setPlantillas] = useState<{ id: string; nombre: string; descripcion: string | null; datos: Record<string, unknown> }[]>([])
+  const [plantillaId, setPlantillaId] = useState("")
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
@@ -117,11 +119,17 @@ export default function MisVisitasPage() {
     setMostrarModal(true)
     setHospitalId("")
     setBusqHosp("")
+    setPlantillaId("")
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
       const data = r.ok ? await r.json() : []
       setHospitalesLista(Array.isArray(data) ? data : [])
     }
+    const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
+    fetch(`/api/plantillas?tipo=${tipo}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setPlantillas(d) })
+      .catch(() => {})
   }
 
   async function crearVisita() {
@@ -129,8 +137,10 @@ export default function MisVisitasPage() {
     setCreando(true)
     try {
       const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
-      const body: Record<string, string> = { hospitalId, tipo }
+      const plantilla = plantillas.find(p => p.id === plantillaId)
+      const body: Record<string, unknown> = { hospitalId, tipo }
       if (fechaModal) body.fecha = fechaModal
+      if (plantilla) body.datos = plantilla.datos
       const res = await fetch("/api/visitas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -396,6 +406,29 @@ export default function MisVisitasPage() {
                 style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
               />
             </div>
+            {/* Selector de plantilla */}
+            {plantillas.length > 0 && (
+              <div className="px-4 pb-2">
+                <label className="text-xs font-medium text-gray-500 block mb-1">Plantilla (opcional)</label>
+                <select
+                  value={plantillaId}
+                  onChange={e => setPlantillaId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-white focus:border-transparent"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+                >
+                  <option value="">Sin plantilla — formulario en blanco</option>
+                  {plantillas.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </select>
+                {plantillaId && (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: TEAL }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    El formulario se abrirá pre-rellenado
+                  </p>
+                )}
+              </div>
+            )}
             <div className="flex gap-2 px-4 pb-4 pt-2">
               <button onClick={() => setMostrarModal(false)} className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancelar

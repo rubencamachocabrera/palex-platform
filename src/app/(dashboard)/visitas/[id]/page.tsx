@@ -528,6 +528,10 @@ export default function VisitaPage() {
   const [vinculandoOp, setVinculandoOp] = useState(false)
   const [preProyectos, setPreProyectos] = useState<PreProyectoItem[]>([])
   const [vinculandoPP, setVinculandoPP] = useState(false)
+  const [userRol, setUserRol] = useState("")
+  const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
+  const [nombrePlantilla, setNombrePlantilla] = useState("")
+  const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
@@ -557,7 +561,7 @@ export default function VisitaPage() {
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
-          // Cargar oportunidades y pre-proyectos del hospital para los pickers
+          // Cargar oportunidades, pre-proyectos y rol usuario
           fetch(`/api/oportunidades?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
             .then(ops => { if (Array.isArray(ops)) setOportunidades(ops.map((o: { id: string; titulo: string; etapa: string }) => ({ id: o.id, titulo: o.titulo, etapa: o.etapa }))) })
@@ -565,6 +569,10 @@ export default function VisitaPage() {
           fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
             .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string }) => ({ id: p.id, titulo: p.titulo }))) })
+            .catch(() => {})
+          fetch("/api/perfil")
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.rol) setUserRol(d.rol) })
             .catch(() => {})
         }
         setLoading(false)
@@ -690,6 +698,28 @@ export default function VisitaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  async function guardarComoPlantilla() {
+    if (!nombrePlantilla.trim() || !visita) return
+    setGuardandoPlantilla(true)
+    try {
+      const r = await fetch("/api/plantillas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nombrePlantilla.trim(),
+          tipo: visita.tipo,
+          datos: datosRef.current,
+        }),
+      })
+      if (r.ok) {
+        setMostrarGuardarPlantilla(false)
+        setNombrePlantilla("")
+      }
+    } finally {
+      setGuardandoPlantilla(false)
+    }
+  }
+
   const cambiarEstado = useCallback(async (estado: string) => {
     setCambiandoEstado(true); await guardar(estado); setCambiandoEstado(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -800,6 +830,17 @@ export default function VisitaPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
                 <span className="hidden sm:inline">Offline</span>
               </span>
+            )}
+            {userRol === "ADMIN" && (
+              <button
+                onClick={() => { setNombrePlantilla(""); setMostrarGuardarPlantilla(true) }}
+                title="Guardar como plantilla"
+                className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                </svg>
+              </button>
             )}
             <button onClick={() => setShowPrint(true)} title="Vista previa PDF"
               className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
@@ -1189,6 +1230,55 @@ export default function VisitaPage() {
                 {cambiandoEstado ? "Completando..." : "Completar"}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal guardar como plantilla */}
+      {mostrarGuardarPlantilla && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h2 className="text-base font-bold text-gray-900">Guardar como plantilla</h2>
+              </div>
+              <button onClick={() => setMostrarGuardarPlantilla(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-gray-500">Los datos actuales del formulario se guardarán como plantilla. Los usuarios podrán seleccionarla al crear nuevas visitas.</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre de la plantilla *</label>
+                <input
+                  autoFocus
+                  value={nombrePlantilla}
+                  onChange={e => setNombrePlantilla(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && guardarComoPlantilla()}
+                  placeholder="Ej: Implantación BC Robo estándar"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setMostrarGuardarPlantilla(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarComoPlantilla}
+                  disabled={guardandoPlantilla || !nombrePlantilla.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90"
+                  style={{ backgroundColor: TEAL }}
+                >
+                  {guardandoPlantilla ? "Guardando…" : "Guardar plantilla"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

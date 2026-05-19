@@ -451,3 +451,18 @@ model PreProyectoContacto {
   @@id([preProyectoId, contactoId])
   @@map("pre_proyectos_contactos")
 }
+
+// --- PLANTILLAS DE VISITA --------------------------------------------
+
+model PlantillaVisita {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  tipo        String   @default("PROYECTOS") // PROYECTOS | VENTAS
+  datos       Json     @default("{}")
+  activa      Boolean  @default(true)
+  creadoEn    DateTime @default(now())
+  editadoEn   DateTime @updatedAt
+
+  @@map("plantillas_visita")
+}
