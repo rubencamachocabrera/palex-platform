@@ -38,6 +38,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("marca" in body) data.marca = body.marca
     if ("modelo" in body) data.modelo = body.modelo
     if ("descripcion" in body) data.descripcion = body.descripcion
+    if ("precio" in body) data.precio = body.precio != null ? parseFloat(body.precio) : null
+    if ("fichaUrl" in body) data.fichaUrl = body.fichaUrl || null
     if ("activo" in body) data.activo = body.activo
     const updated = await db.hardwareCatalogo.update({ where: { id }, data })
     return NextResponse.json(updated)

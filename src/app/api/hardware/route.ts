@@ -15,11 +15,20 @@ export async function GET(req: Request) {
         ...(tipo ? { tipo: tipo as never } : {}),
       },
       include: {
-        _count: { select: { unidades: true } },
+        unidades: { select: { estado: true } },
       },
       orderBy: [{ tipo: "asc" }, { marca: "asc" }, { modelo: "asc" }],
     })
-    return NextResponse.json(items)
+    const result = items.map(item => ({
+      ...item,
+      _stock: {
+        total: item.unidades.length,
+        disponibles: item.unidades.filter(u => u.estado === "DISPONIBLE").length,
+        asignados: item.unidades.filter(u => u.estado === "ASIGNADO").length,
+      },
+      unidades: undefined,
+    }))
+    return NextResponse.json(result)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
@@ -38,6 +47,8 @@ export async function POST(req: Request) {
         marca: body.marca,
         modelo: body.modelo,
         descripcion: body.descripcion || null,
+        precio: body.precio ? parseFloat(body.precio) : null,
+        fichaUrl: body.fichaUrl || null,
       },
     })
     return NextResponse.json(item, { status: 201 })

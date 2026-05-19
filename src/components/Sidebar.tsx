@@ -173,9 +173,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Proyectos",
     items: [
-      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
-      { href: "/proyectos",     label: "Resumen de proyectos",          icon: "Proyectos" },
-      { href: "/hardware",      label: "Materiales",     icon: "Hardware" },
+      { href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" },
     ],
   },
 ]
@@ -201,8 +199,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
   {
     label: "Proyectos",
     items: [
-      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
-      { href: "/proyectos",     label: "Resumen de proyectos",          icon: "Proyectos" },
+      { href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" },
     ],
   },
 ]
@@ -220,8 +217,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
   {
     label: "Proyectos",
     items: [
-      { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
-      { href: "/proyectos",     label: "Resumen de proyectos",          icon: "Proyectos" },
+      { href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" },
     ],
   },
 ]
@@ -238,7 +234,7 @@ const NAV_GROUPS_TECNICO: NavGroup[] = [
   },
   {
     label: "Proyectos",
-    items: [{ href: "/proyectos", label: "Resumen de proyectos", icon: "Proyectos" }],
+    items: [{ href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" }],
   },
 ]
 

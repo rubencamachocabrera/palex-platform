@@ -254,8 +254,9 @@ model Proyecto {
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
 
-  hospital Hospital        @relation(fields: [hospitalId], references: [id])
-  modulos  ProyectoModulo[]
+  hospital     Hospital        @relation(fields: [hospitalId], references: [id])
+  modulos      ProyectoModulo[]
+  preProyectos PreProyecto[]   @relation("PreProyectoProyecto")
 
   @@map("proyectos")
 }
@@ -314,6 +315,7 @@ model PreProyecto {
   descripcion   String?           @db.Text
   hospitalId    String
   responsableId String?
+  proyectoId    String?
   estado        EstadoPreProyecto @default(NUEVO)
   prioridad     Int               @default(0)
   presupuesto   Float?
@@ -326,6 +328,7 @@ model PreProyecto {
 
   hospital         Hospital              @relation(fields: [hospitalId], references: [id])
   responsable      Usuario?              @relation("PreProyectoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+  proyecto         Proyecto?             @relation("PreProyectoProyecto", fields: [proyectoId], references: [id], onDelete: SetNull)
   fases            FasePreProyecto[]
   hitos            Hito[]
   solicitudes      SolicitudMaterial[]
@@ -413,6 +416,8 @@ model HardwareCatalogo {
   marca       String
   modelo      String
   descripcion String?
+  precio      Float?
+  fichaUrl    String?
   activo      Boolean      @default(true)
   creadoEn    DateTime     @default(now())
   editadoEn   DateTime     @updatedAt

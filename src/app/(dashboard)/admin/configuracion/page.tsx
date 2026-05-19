@@ -7,10 +7,16 @@ import { TEAL, ORANGE } from "@/lib/brand"
 // ---- tipos ----
 
 interface Config { id: number; crmActivo: boolean }
+interface StockResumen { total: number; disponibles: number; asignados: number }
+interface UnidadStock {
+  id: string; numSerie: string | null; estado: string; notas: string | null
+  fechaCompra: string | null; fechaGarantia: string | null
+  preProyecto: { id: string; titulo: string } | null
+}
 interface CatalogoItem {
   id: string; tipo: string; marca: string; modelo: string
-  descripcion: string | null; activo: boolean
-  _count?: { unidades: number }
+  descripcion: string | null; precio: number | null; fichaUrl: string | null
+  activo: boolean; _stock?: StockResumen
 }
 interface ModuloItem { id: string; nombre: string; activo: boolean; _count?: { proyectos: number } }
 
@@ -87,18 +93,27 @@ function ModuleCard({
 
 // ---- sección catálogo hardware ----
 
+const FORM_EMPTY = { tipo: "BC_ROBOT", marca: "", modelo: "", descripcion: "", precio: "", fichaUrl: "" }
+
 function CatalogoHardware() {
   const { success, error: toastError } = useToast()
   const [items, setItems] = useState<CatalogoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroTipo, setFiltroTipo] = useState("")
   const [mostrarForm, setMostrarForm] = useState(false)
-  const [form, setForm] = useState({ tipo: "BC_ROBOT", marca: "", modelo: "", descripcion: "" })
+  const [form, setForm] = useState({ ...FORM_EMPTY })
   const [guardando, setGuardando] = useState(false)
+  // Expand: unidades del modelo
+  const [expandido, setExpandido] = useState<string | null>(null)
+  const [unidadesCache, setUnidadesCache] = useState<Record<string, UnidadStock[]>>({})
+  const [loadingUnidades, setLoadingUnidades] = useState<string | null>(null)
+  // Stock form por modelo
+  const [stockForm, setStockForm] = useState<{ catalogoId: string; series: { numSerie: string; notas: string }[] } | null>(null)
+  const [guardandoStock, setGuardandoStock] = useState(false)
 
   const cargar = async () => {
     setLoading(true)
-    const params = new URLSearchParams()
+    const params = new URLSearchParams({ activo: "false" })
     if (filtroTipo) params.set("tipo", filtroTipo)
     const r = await fetch(`/api/hardware?${params}`)
     if (r.ok) setItems(await r.json())
@@ -106,6 +121,19 @@ function CatalogoHardware() {
   }
 
   useEffect(() => { cargar() }, [filtroTipo]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function toggleExpandido(id: string) {
+    if (expandido === id) { setExpandido(null); return }
+    setExpandido(id)
+    if (unidadesCache[id]) return
+    setLoadingUnidades(id)
+    const r = await fetch(`/api/hardware/${id}`)
+    if (r.ok) {
+      const data = await r.json()
+      setUnidadesCache(prev => ({ ...prev, [id]: data.unidades ?? [] }))
+    }
+    setLoadingUnidades(null)
+  }
 
   async function crear(e: React.FormEvent) {
     e.preventDefault()
@@ -119,10 +147,10 @@ function CatalogoHardware() {
       })
       if (!r.ok) throw new Error()
       const nuevo = await r.json()
-      setItems(prev => [nuevo, ...prev])
-      setForm({ tipo: "BC_ROBOT", marca: "", modelo: "", descripcion: "" })
+      setItems(prev => [...prev, { ...nuevo, _stock: { total: 0, disponibles: 0, asignados: 0 } }])
+      setForm({ ...FORM_EMPTY })
       setMostrarForm(false)
-      success("Modelo de hardware creado")
+      success("Modelo creado")
     } catch {
       toastError("Error al crear el modelo")
     } finally {
@@ -138,8 +166,49 @@ function CatalogoHardware() {
     })
     if (r.ok) {
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, activo: !i.activo } : i))
-      success(item.activo ? "Modelo desactivado" : "Modelo activado")
+      success(item.activo ? "Desactivado" : "Activado")
     }
+  }
+
+  async function añadirStock(e: React.FormEvent) {
+    e.preventDefault()
+    if (!stockForm) return
+    const series = stockForm.series.filter(s => s.numSerie.trim() || stockForm.series.length === 1)
+    setGuardandoStock(true)
+    try {
+      const payload = series.map(s => ({
+        catalogoId: stockForm.catalogoId,
+        numSerie: s.numSerie.trim() || null,
+        notas: s.notas.trim() || null,
+        estado: "DISPONIBLE",
+      }))
+      const r = await fetch("/api/hardware/unidades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!r.ok) throw new Error()
+      const nuevas: UnidadStock[] = await r.json()
+      setUnidadesCache(prev => ({ ...prev, [stockForm.catalogoId]: [...(prev[stockForm.catalogoId] ?? []), ...nuevas] }))
+      setItems(prev => prev.map(i => i.id === stockForm.catalogoId
+        ? { ...i, _stock: { ...(i._stock ?? { total: 0, disponibles: 0, asignados: 0 }), total: (i._stock?.total ?? 0) + nuevas.length, disponibles: (i._stock?.disponibles ?? 0) + nuevas.length } }
+        : i
+      ))
+      setStockForm(null)
+      success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""} al stock`)
+    } catch {
+      toastError("Error al añadir al stock")
+    } finally {
+      setGuardandoStock(false)
+    }
+  }
+
+  const HW_ESTADO_COLOR: Record<string, string> = {
+    DISPONIBLE: "bg-green-50 text-green-700",
+    ASIGNADO: `text-white`,
+    EN_MANTENIMIENTO: "bg-amber-50 text-amber-700",
+    RETIRADO: "bg-gray-100 text-gray-500",
+    BAJA: "bg-red-50 text-red-600",
   }
 
   return (
@@ -147,13 +216,11 @@ function CatalogoHardware() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-base font-bold text-gray-900">Catálogo de Materiales</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Modelos disponibles para asignar a proyectos</p>
+          <p className="text-sm text-gray-500 mt-0.5">Modelos, precios y stock disponible</p>
         </div>
-        <button
-          onClick={() => setMostrarForm(v => !v)}
+        <button onClick={() => setMostrarForm(v => !v)}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ backgroundColor: TEAL }}
-        >
+          style={{ backgroundColor: TEAL }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -186,6 +253,20 @@ function CatalogoHardware() {
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Precio unitario (€)</label>
+              <input type="number" step="0.01" min="0" value={form.precio} onChange={e => setForm(p => ({ ...p, precio: e.target.value }))}
+                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">URL ficha de producto</label>
+              <input type="url" value={form.fichaUrl} onChange={e => setForm(p => ({ ...p, fichaUrl: e.target.value }))}
+                placeholder="https://…"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            </div>
+          </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
             <input value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
@@ -194,9 +275,7 @@ function CatalogoHardware() {
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={() => setMostrarForm(false)}
-              className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors">
-              Cancelar
-            </button>
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
             <button type="submit" disabled={guardando}
               className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90"
               style={{ backgroundColor: TEAL }}>
@@ -208,27 +287,15 @@ function CatalogoHardware() {
 
       {/* Filtro tipo */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setFiltroTipo("")}
-          className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors"
-          style={{
-            backgroundColor: filtroTipo === "" ? `${TEAL}18` : "#f9fafb",
-            borderColor: filtroTipo === "" ? TEAL : "#e5e7eb",
-            color: filtroTipo === "" ? TEAL : "#374151",
-          }}
-        >
-          Todos
-        </button>
-        {HW_TIPOS.map(t => (
+        {[{ value: "", label: "Todos" }, ...HW_TIPOS].map(t => (
           <button key={t.value}
-            onClick={() => setFiltroTipo(filtroTipo === t.value ? "" : t.value)}
+            onClick={() => setFiltroTipo(t.value === filtroTipo ? "" : t.value)}
             className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors"
             style={{
               backgroundColor: filtroTipo === t.value ? `${TEAL}18` : "#f9fafb",
               borderColor: filtroTipo === t.value ? TEAL : "#e5e7eb",
               color: filtroTipo === t.value ? TEAL : "#374151",
-            }}
-          >
+            }}>
             {t.label}
           </button>
         ))}
@@ -237,57 +304,174 @@ function CatalogoHardware() {
       {/* Lista */}
       {loading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-10 text-sm text-gray-400">
-          Sin modelos en el catálogo. Crea el primero con el botón superior.
-        </div>
+        <div className="text-center py-10 text-sm text-gray-400">Sin modelos. Crea el primero con el botón superior.</div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Unidades</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => (
-                  <tr key={item.id} className={`border-b border-gray-50 ${i % 2 === 0 ? "" : "bg-gray-50/30"}`}>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
-                        {HW_TIPO_LABEL[item.tipo] ?? item.tipo}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{item.marca} {item.modelo}</p>
-                      {item.descripcion && <p className="text-xs text-gray-400 truncate max-w-[200px]">{item.descripcion}</p>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {item._count?.unidades ?? 0} uds.
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: item.activo ? `${TEAL}18` : "#f3f4f6", color: item.activo ? TEAL : "#9ca3af" }}>
-                        {item.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => toggleActivo(item)}
-                        className="text-xs text-gray-400 hover:text-gray-700 underline transition-colors">
-                        {item.activo ? "Desactivar" : "Activar"}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          {items.map(item => {
+            const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0 }
+            const isOpen = expandido === item.id
+            const unidades = unidadesCache[item.id] ?? []
+            return (
+              <div key={item.id}>
+                {/* Fila principal */}
+                <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 transition-colors">
+                  <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg shrink-0">
+                    {HW_TIPO_LABEL[item.tipo] ?? item.tipo}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-gray-900 text-sm">{item.marca} {item.modelo}</p>
+                      {item.precio != null && (
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {item.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                        </span>
+                      )}
+                      {item.fichaUrl && (
+                        <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-xs font-medium transition-colors hover:opacity-70"
+                          style={{ color: TEAL }}>
+                          Ficha
+                        </a>
+                      )}
+                    </div>
+                    {item.descripcion && <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">{item.descripcion}</p>}
+                  </div>
+                  {/* Stock resumen */}
+                  <div className="flex items-center gap-3 shrink-0 text-xs">
+                    <span className="text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-medium">{stock.disponibles} disp.</span>
+                    <span className="text-gray-400">{stock.total} total</span>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.activo ? `${TEAL}18` : "#f3f4f6", color: item.activo ? TEAL : "#9ca3af" }}>
+                    {item.activo ? "Activo" : "Inactivo"}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => toggleActivo(item)}
+                      className="text-xs text-gray-400 hover:text-gray-700 underline transition-colors px-1">
+                      {item.activo ? "Desactivar" : "Activar"}
+                    </button>
+                    <button onClick={() => toggleExpandido(item.id)}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                      title={isOpen ? "Cerrar stock" : "Ver stock"}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                        style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Panel expandido — stock */}
+                {isOpen && (
+                  <div className="bg-gray-50 border-t border-gray-100 px-4 py-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        Unidades en stock — {stock.disponibles} disponibles · {stock.asignados} asignadas · {stock.total} total
+                      </p>
+                      <button
+                        onClick={() => setStockForm(stockForm?.catalogoId === item.id ? null : { catalogoId: item.id, series: [{ numSerie: "", notas: "" }] })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
+                        style={{ backgroundColor: TEAL }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Añadir al stock
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+
+                    {/* Form añadir al stock */}
+                    {stockForm?.catalogoId === item.id && (
+                      <form onSubmit={añadirStock} className="bg-white border border-teal-100 rounded-xl p-4 mb-3 space-y-3">
+                        <p className="text-xs font-semibold text-gray-700">Añadir unidades al stock</p>
+                        <div className="space-y-2">
+                          {stockForm.series.map((s, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
+                              <input value={s.numSerie}
+                                onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, numSerie: e.target.value } : x) } : p)}
+                                placeholder="Nº serie (opcional)"
+                                className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                              <input value={s.notas}
+                                onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, notas: e.target.value } : x) } : p)}
+                                placeholder="Notas"
+                                className="w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                              {stockForm.series.length > 1 && (
+                                <button type="button"
+                                  onClick={() => setStockForm(p => p ? { ...p, series: p.series.filter((_, j) => j !== i) } : p)}
+                                  className="p-1 rounded text-red-300 hover:text-red-500 shrink-0">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button"
+                          onClick={() => setStockForm(p => p ? { ...p, series: [...p.series, { numSerie: "", notas: "" }] } : p)}
+                          className="text-xs font-medium transition-colors hover:opacity-80" style={{ color: TEAL }}>
+                          + Añadir fila
+                        </button>
+                        <div className="flex gap-2 pt-1">
+                          <button type="button" onClick={() => setStockForm(null)}
+                            className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50">Cancelar</button>
+                          <button type="submit" disabled={guardandoStock}
+                            className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+                            style={{ backgroundColor: TEAL }}>
+                            {guardandoStock ? "Guardando…" : `Añadir ${stockForm.series.length} ud.`}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Tabla de unidades */}
+                    {loadingUnidades === item.id ? (
+                      <div className="space-y-1">{[1, 2].map(i => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
+                    ) : unidades.length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center py-4">Sin unidades en stock. Añade la primera arriba.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-gray-400 border-b border-gray-200">
+                              <th className="text-left pb-2 font-medium">Nº serie</th>
+                              <th className="text-left pb-2 font-medium">Estado</th>
+                              <th className="text-left pb-2 font-medium">Proyecto</th>
+                              <th className="text-left pb-2 font-medium">Garantía</th>
+                              <th className="text-left pb-2 font-medium">Notas</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {unidades.map(u => (
+                              <tr key={u.id} className="border-b border-gray-100 last:border-0">
+                                <td className="py-2 pr-3">
+                                  {u.numSerie
+                                    ? <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{u.numSerie}</code>
+                                    : <span className="text-gray-300">—</span>}
+                                </td>
+                                <td className="py-2 pr-3">
+                                  <span className={`px-2 py-0.5 rounded-full font-semibold ${HW_ESTADO_COLOR[u.estado] ?? "bg-gray-100 text-gray-500"}`}
+                                    style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : {}}>
+                                    {u.estado === "DISPONIBLE" ? "Disponible" : u.estado === "ASIGNADO" ? "Asignado" : u.estado}
+                                  </span>
+                                </td>
+                                <td className="py-2 pr-3 text-gray-500">
+                                  {(u as unknown as { preProyecto?: { titulo: string } }).preProyecto?.titulo ?? <span className="text-gray-300">—</span>}
+                                </td>
+                                <td className="py-2 pr-3 text-gray-400">
+                                  {u.fechaGarantia ? new Date(u.fechaGarantia).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                                </td>
+                                <td className="py-2 text-gray-400 max-w-[120px] truncate">{u.notas ?? "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

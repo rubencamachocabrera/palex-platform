@@ -379,7 +379,7 @@ export default function PreProyectosPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestor de Pre-Proyectos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Proyectos</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestión completa del ciclo de vida de proyectos</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

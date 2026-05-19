@@ -10,6 +10,7 @@ export async function GET(req: Request) {
   const estado = searchParams.get("estado")
   const hospitalId = searchParams.get("hospitalId")
   const preProyectoId = searchParams.get("preProyectoId")
+  const catalogoId = searchParams.get("catalogoId")
   const q = searchParams.get("q")
   try {
     const unidades = await db.hardwareUnidad.findMany({
@@ -17,6 +18,7 @@ export async function GET(req: Request) {
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
         ...(preProyectoId ? { preProyectoId } : {}),
+        ...(catalogoId ? { catalogoId } : {}),
         ...(tipo ? { catalogo: { tipo: tipo as never } } : {}),
         ...(q ? { OR: [
           { numSerie: { contains: q, mode: "insensitive" } },
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
             data: {
               catalogoId: item.catalogoId,
               numSerie: item.numSerie || null,
-              estado: item.estado || "ASIGNADO",
+              estado: item.estado || "DISPONIBLE",
               hospitalId: item.hospitalId || null,
               preProyectoId: item.preProyectoId || null,
               fechaCompra: item.fechaCompra ? new Date(item.fechaCompra) : null,
@@ -84,6 +86,32 @@ export async function POST(req: Request) {
       include: { catalogo: true },
     })
     return NextResponse.json(unidad, { status: 201 })
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+  }
+}
+
+// Bulk assignment: assign existing units to a project
+export async function PUT(req: Request) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  try {
+    const body = await req.json()
+    const { ids, preProyectoId, hospitalId, estado } = body
+    if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ error: "ids requerido" }, { status: 400 })
+    await db.hardwareUnidad.updateMany({
+      where: { id: { in: ids } },
+      data: {
+        ...(preProyectoId !== undefined ? { preProyectoId: preProyectoId || null } : {}),
+        ...(hospitalId !== undefined ? { hospitalId: hospitalId || null } : {}),
+        ...(estado ? { estado } : {}),
+      },
+    })
+    const updated = await db.hardwareUnidad.findMany({
+      where: { id: { in: ids } },
+      include: { catalogo: true, hospital: { select: { id: true, nombre: true, ciudad: true } }, preProyecto: { select: { id: true, titulo: true } } },
+    })
+    return NextResponse.json(updated)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
