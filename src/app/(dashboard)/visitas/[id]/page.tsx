@@ -67,11 +67,14 @@ interface Foto { id: string; name: string; data: string; caption: string }
 type FotosMap = Record<string, Foto[]>
 
 interface OportunidadItem { id: string; titulo: string; etapa: string }
+interface PreProyectoItem { id: string; titulo: string }
 
 interface VisitaData {
   id: string; estado: string; tipo: string; fecha: string
   oportunidadId?: string | null
   oportunidad?: OportunidadItem | null
+  preProyectoId?: string | null
+  preProyecto?: PreProyectoItem | null
   datos: Record<string, unknown>
   hospital: { id: string; nombre: string; ciudad: string; provincia?: string | null }
   usuario: { id: string; nombre: string }
@@ -523,6 +526,8 @@ export default function VisitaPage() {
   const [saveError, setSaveError] = useState(false)
   const [oportunidades, setOportunidades] = useState<OportunidadItem[]>([])
   const [vinculandoOp, setVinculandoOp] = useState(false)
+  const [preProyectos, setPreProyectos] = useState<PreProyectoItem[]>([])
+  const [vinculandoPP, setVinculandoPP] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
@@ -552,10 +557,14 @@ export default function VisitaPage() {
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
-          // Cargar oportunidades del hospital para el picker
+          // Cargar oportunidades y pre-proyectos del hospital para los pickers
           fetch(`/api/oportunidades?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
             .then(ops => { if (Array.isArray(ops)) setOportunidades(ops.map((o: { id: string; titulo: string; etapa: string }) => ({ id: o.id, titulo: o.titulo, etapa: o.etapa }))) })
+            .catch(() => {})
+          fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
+            .then(r => r.ok ? r.json() : [])
+            .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string }) => ({ id: p.id, titulo: p.titulo }))) })
             .catch(() => {})
         }
         setLoading(false)
@@ -658,6 +667,25 @@ export default function VisitaPage() {
       }
     } catch { /* silencioso */ } finally {
       setVinculandoOp(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  const vincularPreProyecto = useCallback(async (preProyectoId: string | null) => {
+    if (!visitaRef.current) return
+    setVinculandoPP(true)
+    try {
+      const r = await fetch(`/api/visitas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preProyectoId }),
+      })
+      if (r.ok) {
+        const updated = await r.json()
+        setVisita(v => v ? { ...v, preProyectoId: updated.preProyectoId, preProyecto: updated.preProyecto ?? null } : v)
+      }
+    } catch { /* silencioso */ } finally {
+      setVinculandoPP(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -897,6 +925,41 @@ export default function VisitaPage() {
                   <option value="" disabled>Vincular a oportunidad…</option>
                   {oportunidades.map(op => (
                     <option key={op.id} value={op.id}>{op.titulo}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* Vincular pre-proyecto */}
+          {(preProyectos.length > 0 || visita.preProyecto) && (
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-400 shrink-0">Pre-Proyecto:</span>
+              {visita.preProyecto ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                  {visita.preProyecto.titulo}
+                  {!readOnly && (
+                    <button
+                      onClick={() => vincularPreProyecto(null)}
+                      disabled={vinculandoPP}
+                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
+                      title="Desvincular"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  )}
+                </span>
+              ) : (
+                <select
+                  disabled={readOnly || vinculandoPP}
+                  onChange={e => e.target.value && vincularPreProyecto(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Vincular a pre-proyecto…</option>
+                  {preProyectos.map(pp => (
+                    <option key={pp.id} value={pp.id}>{pp.titulo}</option>
                   ))}
                 </select>
               )}

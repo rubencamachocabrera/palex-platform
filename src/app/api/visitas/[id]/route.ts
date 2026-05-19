@@ -14,6 +14,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         hospital: { select: { id: true, nombre: true, ciudad: true } },
         usuario: { select: { id: true, nombre: true } },
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
+        preProyecto: { select: { id: true, titulo: true } },
       },
     })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -52,9 +53,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.estado !== undefined && { estado: body.estado }),
         ...(body.fecha !== undefined && { fecha: new Date(body.fecha) }),
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
+        ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),
       },
       include: {
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
+        preProyecto: { select: { id: true, titulo: true } },
       },
     })
     return NextResponse.json(updated)

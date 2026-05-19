@@ -16,7 +16,7 @@ interface Resultado {
 }
 
 interface Notificacion {
-  tipo: "oportunidad_inactiva" | "visita_borrador"
+  tipo: "oportunidad_inactiva" | "visita_borrador" | "fase_retrasada"
   id: string
   titulo: string
   href: string
@@ -260,7 +260,7 @@ export function TopBar() {
                     onClick={() => setNotifOpen(false)}
                     className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.tipo === "oportunidad_inactiva" ? "bg-amber-400" : "bg-blue-400"}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.tipo === "oportunidad_inactiva" ? "bg-amber-400" : n.tipo === "fase_retrasada" ? "bg-red-400" : "bg-blue-400"}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 truncate">{n.titulo}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{n.mensaje}</p>
