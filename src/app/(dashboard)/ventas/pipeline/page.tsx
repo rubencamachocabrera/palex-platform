@@ -572,7 +572,7 @@ export default function PipelinePage() {
               <h2 className="text-base font-bold text-gray-800 leading-tight">{panelOp.titulo}</h2>
               <p className="text-xs text-gray-400 mt-1">{panelOp.hospital.nombre} &middot; {panelOp.hospital.ciudad}</p>
             </div>
-            <button onClick={() => setPanelOp(null)} className="text-gray-300 hover:text-gray-500 shrink-0 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
+            <button onClick={() => setPanelOp(null)} aria-label="Cerrar panel" className="text-gray-300 hover:text-gray-500 shrink-0 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
           </div>
 
           <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-4 ${ETAPA_COLOR[panelOp.etapa as Etapa]}`}>
@@ -736,7 +736,7 @@ export default function PipelinePage() {
               <h2 className="text-base font-bold text-gray-800">
                 {editandoId ? "Editar oportunidad" : "Nueva oportunidad"}
               </h2>
-              <button onClick={() => setModalOpen(false)} className="text-gray-300 hover:text-gray-500 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
+              <button onClick={() => setModalOpen(false)} aria-label="Cerrar modal" className="text-gray-300 hover:text-gray-500 p-1 rounded-lg hover:bg-gray-100 transition-colors"><IconX size={18} /></button>
             </div>
 
             <div className="px-6 py-5 space-y-4">

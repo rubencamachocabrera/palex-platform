@@ -797,7 +797,7 @@ export default function VisitaPage() {
           <div className="fixed top-0 left-0 bottom-0 z-40 w-72 bg-white shadow-xl flex flex-col lg:hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-700">Secciones</p>
-              <button onClick={() => setNavOpen(false)} className="text-gray-400 hover:text-gray-700 p-1">
+              <button onClick={() => setNavOpen(false)} aria-label="Cerrar navegación" className="text-gray-400 hover:text-gray-700 p-1">
                 <IconX size={16} />
               </button>
             </div>

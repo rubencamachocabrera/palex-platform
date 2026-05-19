@@ -242,7 +242,7 @@ export default function HospitalesAdminPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-base font-bold text-gray-900">{editId ? "Editar hospital" : "Nuevo hospital"}</h2>
-              <button onClick={() => setModalOpen(false)} className="text-gray-300 hover:text-gray-600 text-xl leading-none">x</button>
+              <button onClick={() => setModalOpen(false)} aria-label="Cerrar" className="text-gray-300 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
 
             <div className="p-6 space-y-4">

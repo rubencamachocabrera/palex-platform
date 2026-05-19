@@ -529,7 +529,7 @@ export default function HospitalDetailPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <p className="font-semibold text-gray-800 text-sm">QR del hospital</p>
-              <button onClick={() => setShowQR(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowQR(false)} aria-label="Cerrar QR" className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                 <IconX size={16} />
               </button>
             </div>
@@ -565,7 +565,7 @@ export default function HospitalDetailPage() {
               <h2 className="text-lg font-semibold text-gray-800">
                 {editContacto ? "Editar contacto" : "Nuevo contacto"}
               </h2>
-              <button onClick={() => setContactoModal(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setContactoModal(false)} aria-label="Cerrar modal" className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                 <IconX size={18} />
               </button>
             </div>
