@@ -68,6 +68,7 @@ type FotosMap = Record<string, Foto[]>
 
 interface OportunidadItem { id: string; titulo: string; etapa: string }
 interface PreProyectoItem { id: string; titulo: string }
+interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
   id: string; estado: string; tipo: string; fecha: string
@@ -75,6 +76,8 @@ interface VisitaData {
   oportunidad?: OportunidadItem | null
   preProyectoId?: string | null
   preProyecto?: PreProyectoItem | null
+  contactoPrincipalId?: string | null
+  contactoPrincipal?: ContactoItem | null
   datos: Record<string, unknown>
   hospital: { id: string; nombre: string; ciudad: string; provincia?: string | null }
   usuario: { id: string; nombre: string }
@@ -528,6 +531,8 @@ export default function VisitaPage() {
   const [vinculandoOp, setVinculandoOp] = useState(false)
   const [preProyectos, setPreProyectos] = useState<PreProyectoItem[]>([])
   const [vinculandoPP, setVinculandoPP] = useState(false)
+  const [contactos, setContactos] = useState<ContactoItem[]>([])
+  const [vinculandoContacto, setVinculandoContacto] = useState(false)
   const [userRol, setUserRol] = useState("")
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState("")
@@ -569,6 +574,10 @@ export default function VisitaPage() {
           fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
             .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string }) => ({ id: p.id, titulo: p.titulo }))) })
+            .catch(() => {})
+          fetch(`/api/hospitales/${data.hospital.id}/contactos`)
+            .then(r => r.ok ? r.json() : [])
+            .then(cs => { if (Array.isArray(cs)) setContactos(cs.map((c: { id: string; nombre: string; cargo: string | null }) => ({ id: c.id, nombre: c.nombre, cargo: c.cargo }))) })
             .catch(() => {})
           fetch("/api/perfil")
             .then(r => r.ok ? r.json() : null)
@@ -694,6 +703,25 @@ export default function VisitaPage() {
       }
     } catch { /* silencioso */ } finally {
       setVinculandoPP(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  const vincularContacto = useCallback(async (contactoPrincipalId: string | null) => {
+    if (!visitaRef.current) return
+    setVinculandoContacto(true)
+    try {
+      const r = await fetch(`/api/visitas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactoPrincipalId }),
+      })
+      if (r.ok) {
+        const updated = await r.json()
+        setVisita(v => v ? { ...v, contactoPrincipalId: updated.contactoPrincipalId, contactoPrincipal: updated.contactoPrincipal ?? null } : v)
+      }
+    } catch { /* silencioso */ } finally {
+      setVinculandoContacto(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -1001,6 +1029,42 @@ export default function VisitaPage() {
                   <option value="" disabled>Vincular a pre-proyecto…</option>
                   {preProyectos.map(pp => (
                     <option key={pp.id} value={pp.id}>{pp.titulo}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* Vincular contacto principal */}
+          {(contactos.length > 0 || visita.contactoPrincipal) && (
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-400 shrink-0">Contacto:</span>
+              {visita.contactoPrincipal ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  {visita.contactoPrincipal.nombre}
+                  {visita.contactoPrincipal.cargo && <span className="opacity-70">· {visita.contactoPrincipal.cargo}</span>}
+                  {!readOnly && (
+                    <button
+                      onClick={() => vincularContacto(null)}
+                      disabled={vinculandoContacto}
+                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
+                      title="Desvincular"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  )}
+                </span>
+              ) : (
+                <select
+                  disabled={readOnly || vinculandoContacto}
+                  onChange={e => e.target.value && vincularContacto(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Vincular contacto principal…</option>
+                  {contactos.map(c => (
+                    <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>
                   ))}
                 </select>
               )}

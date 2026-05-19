@@ -160,7 +160,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/admin/hospitales",     label: "Hospitales",        icon: "Hospitales" },
       { href: "/admin/visitas",        label: "Todas las visitas", icon: "TodasVisitas" },
       { href: "/admin/modulos-inlab",  label: "Módulos INLAB",     icon: "Modulos" },
-      { href: "/admin/hardware",       label: "Hardware",          icon: "Hardware" },
+      { href: "/admin/hardware",       label: "Materiales",        icon: "Hardware" },
       { href: "/admin/configuracion",  label: "Configuración",     icon: "Configuracion" },
     ],
   },
@@ -177,7 +177,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
     items: [
       { href: "/pre-proyectos", label: "Pre-Proyectos", icon: "PreProyectos" },
       { href: "/proyectos",     label: "InLab",          icon: "Proyectos" },
-      { href: "/hardware",      label: "Inventario HW",  icon: "Hardware" },
+      { href: "/hardware",      label: "Materiales",     icon: "Hardware" },
     ],
   },
 ]

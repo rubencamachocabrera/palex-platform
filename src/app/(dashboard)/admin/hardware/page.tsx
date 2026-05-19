@@ -153,7 +153,7 @@ export default function AdminHardwarePage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catálogo de Hardware</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Catálogo de Materiales</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestiona los modelos de dispositivos disponibles</p>
         </div>
         <button onClick={() => setMostrarForm(true)}

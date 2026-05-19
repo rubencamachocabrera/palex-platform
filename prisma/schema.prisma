@@ -207,8 +207,9 @@ model Contacto {
   principal  Boolean  @default(false)
   creadoEn   DateTime @default(now())
 
-  hospital     Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  preProyectos PreProyectoContacto[]
+  hospital         Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  preProyectos     PreProyectoContacto[]
+  visitasPrincipal Visita[]              @relation("VisitaContactoPrincipal")
 
   @@map("contactos")
 }
@@ -216,23 +217,25 @@ model Contacto {
 // --- VISITAS ---------------------------------------------------------
 
 model Visita {
-  id              String       @id @default(cuid())
-  hospitalId      String
-  usuarioId       String
-  oportunidadId   String?
-  preProyectoId   String?
-  tipo            TipoVisita
-  estado          EstadoVisita @default(BORRADOR)
-  fecha           DateTime     @default(now())
-  datos           Json         @default("{}")
-  fotos           Json         @default("[]")
-  creadoEn        DateTime     @default(now())
-  editadoEn       DateTime     @updatedAt
+  id                   String       @id @default(cuid())
+  hospitalId           String
+  usuarioId            String
+  oportunidadId        String?
+  preProyectoId        String?
+  contactoPrincipalId  String?
+  tipo                 TipoVisita
+  estado               EstadoVisita @default(BORRADOR)
+  fecha                DateTime     @default(now())
+  datos                Json         @default("{}")
+  fotos                Json         @default("[]")
+  creadoEn             DateTime     @default(now())
+  editadoEn            DateTime     @updatedAt
 
-  hospital    Hospital     @relation(fields: [hospitalId], references: [id])
-  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
-  oportunidad Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
-  preProyecto PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
+  hospital           Hospital     @relation(fields: [hospitalId], references: [id])
+  usuario            Usuario      @relation(fields: [usuarioId], references: [id])
+  oportunidad        Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
+  preProyecto        PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
+  contactoPrincipal  Contacto?    @relation("VisitaContactoPrincipal", fields: [contactoPrincipalId], references: [id], onDelete: SetNull)
 
   @@map("visitas")
 }

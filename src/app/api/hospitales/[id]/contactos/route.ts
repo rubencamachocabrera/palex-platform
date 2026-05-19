@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
+// GET /api/hospitales/[id]/contactos — lista contactos del hospital (todos los roles)
+export async function GET(
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+    const { id: hospitalId } = await params
+    const contactos = await db.contacto.findMany({
+      where: { hospitalId },
+      orderBy: [{ principal: "desc" }, { nombre: "asc" }],
+    })
+    return NextResponse.json(contactos)
+  } catch (err) {
+    console.error("[GET]", err)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
+
 // POST /api/hospitales/[id]/contactos — crea un contacto (solo ADMIN)
 export async function POST(
   req: NextRequest,

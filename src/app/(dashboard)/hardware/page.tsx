@@ -248,7 +248,7 @@ export default function HardwarePage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventario de Hardware</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Inventario de Materiales</h1>
           <p className="text-sm text-gray-500 mt-0.5">Trazabilidad global de todos los dispositivos</p>
         </div>
         <button

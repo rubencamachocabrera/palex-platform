@@ -15,6 +15,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         usuario: { select: { id: true, nombre: true } },
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
         preProyecto: { select: { id: true, titulo: true } },
+        contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
       },
     })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -54,12 +55,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.fecha !== undefined && { fecha: new Date(body.fecha) }),
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
         ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),
+        ...("contactoPrincipalId" in body && { contactoPrincipalId: body.contactoPrincipalId ?? null }),
       },
       include: {
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
         preProyecto: { select: { id: true, titulo: true } },
+        contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
       },
     })
+
+    // Auto-vincular contacto al pre-proyecto si ambos están presentes
+    if ("contactoPrincipalId" in body && body.contactoPrincipalId && updated.preProyectoId) {
+      try {
+        await db.preProyectoContacto.upsert({
+          where: { preProyectoId_contactoId: { preProyectoId: updated.preProyectoId, contactoId: body.contactoPrincipalId } },
+          create: { preProyectoId: updated.preProyectoId, contactoId: body.contactoPrincipalId },
+          update: {},
+        })
+      } catch { /* silencioso si ya existe */ }
+    }
+
     return NextResponse.json(updated)
   } catch (err) {
     console.error("[PATCH]", err)
