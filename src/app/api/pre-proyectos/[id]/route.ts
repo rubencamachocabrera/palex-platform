@@ -10,7 +10,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const pp = await db.preProyecto.findUnique({
       where: { id },
       include: {
-        hospital: { select: { id: true, nombre: true, ciudad: true, provincia: true } },
+        hospital: {
+          select: {
+            id: true, nombre: true, ciudad: true, provincia: true,
+            tipo: true, camas: true, direccion: true, pais: true,
+            zona: { select: { nombre: true } },
+          },
+        },
         responsable: { select: { id: true, nombre: true, email: true } },
         fases: { orderBy: { orden: "asc" } },
         hitos: { orderBy: { fecha: "asc" } },
@@ -47,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const body = await req.json()
     const allowed = ["titulo", "descripcion", "estado", "prioridad", "presupuesto",
-                     "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "responsableId"]
+                     "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "responsableId", "mapaHtml"]
     const data: Record<string, unknown> = {}
     for (const key of allowed) {
       if (key in body) {

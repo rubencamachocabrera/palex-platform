@@ -323,6 +323,8 @@ model PreProyecto {
   fechaFinPlan  DateTime?
   fechaFinReal  DateTime?
   notas         String?           @db.Text
+  mapaHtml      String?           @db.Text
+  shareToken    String?           @unique
   creadoEn      DateTime          @default(now())
   editadoEn     DateTime          @updatedAt
 

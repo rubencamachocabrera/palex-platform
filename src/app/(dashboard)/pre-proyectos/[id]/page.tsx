@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
@@ -8,7 +8,11 @@ import { useToast } from "@/components/Toast"
 
 // ---- tipos ----
 
-interface Hospital { id: string; nombre: string; ciudad: string; provincia: string | null }
+interface Hospital {
+  id: string; nombre: string; ciudad: string; provincia: string | null
+  tipo?: string; camas?: number | null; direccion?: string | null; pais?: string
+  zona?: { nombre: string }
+}
 interface Responsable { id: string; nombre: string; email: string }
 interface Fase {
   id: string; tipo: string; nombre: string; orden: number; estado: string
@@ -36,7 +40,7 @@ interface Visita {
   usuario: { nombre: string }
 }
 interface HardwareCatalogo {
-  tipo: string; marca: string; modelo: string
+  tipo: string; marca: string; modelo: string; precio?: number | null
 }
 interface HardwareUnidad {
   id: string; numSerie: string | null; estado: string; notas: string | null
@@ -45,7 +49,8 @@ interface HardwareUnidad {
 interface PreProyecto {
   id: string; titulo: string; descripcion: string | null; estado: string; prioridad: number
   presupuesto: number | null; fechaInicio: string | null; fechaFinPlan: string | null; fechaFinReal: string | null
-  notas: string | null; creadoEn: string; editadoEn: string
+  notas: string | null; mapaHtml?: string | null; shareToken?: string | null
+  creadoEn: string; editadoEn: string
   hospital: Hospital; responsable: Responsable | null
   fases: Fase[]; hitos: Hito[]; solicitudes: Solicitud[]
   contactos: ContactoPivot[]; visitas: Visita[]; hardwareUnidades: HardwareUnidad[]
@@ -119,7 +124,7 @@ function relativo(s: string) {
 
 // ---- tabs ----
 
-const TABS = ["Info", "Timeline", "Materiales", "Contactos", "Visitas"] as const
+const TABS = ["Info", "Timeline", "Materiales", "Contactos", "Visitas", "Resumen"] as const
 type Tab = typeof TABS[number]
 
 // ========== COMPONENTE PRINCIPAL ==========
@@ -221,6 +226,7 @@ export default function PreProyectoDetalle() {
             {t === "Materiales" && pp.hardwareUnidades.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.hardwareUnidades.length}</span>}
             {t === "Contactos" && pp.contactos.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.contactos.length}</span>}
             {t === "Visitas" && pp.visitas.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.visitas.length}</span>}
+            {t === "Resumen" && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: TEAL }}>NEW</span>}
           </button>
         ))}
       </div>
@@ -231,6 +237,7 @@ export default function PreProyectoDetalle() {
       {tab === "Materiales" && <TabMateriales pp={pp} onUpdate={setPp} />}
       {tab === "Contactos"  && <TabContactos pp={pp} onUpdate={setPp} />}
       {tab === "Visitas"    && <TabVisitas pp={pp} onUpdate={setPp} />}
+      {tab === "Resumen"    && <TabResumen pp={pp} onUpdate={setPp} />}
     </div>
   )
 }
@@ -1039,6 +1046,550 @@ function TabVisitas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ========== TAB RESUMEN ==========
+
+const TIPO_H_LABEL: Record<string, string> = {
+  HOSPITAL_PUBLICO: "Hospital Público", HOSPITAL_PRIVADO: "Hospital Privado",
+  CLINICA_PRIVADA: "Clínica Privada", LABORATORIO: "Laboratorio",
+  CENTRO_SALUD: "Centro de Salud", UNIVERSIDAD: "Universidad", OTRO: "Otro",
+}
+
+function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
+  const { success, error: toastError } = useToast()
+  const [shareModal, setShareModal] = useState(false)
+  const [generando, setGenerando] = useState(false)
+  const [revoking, setRevoking] = useState(false)
+  const [mapaModal, setMapaModal] = useState(false)
+  const [mapaValue, setMapaValue] = useState(pp.mapaHtml ?? "")
+  const [savingMapa, setSavingMapa] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [origin, setOrigin] = useState("")
+  const mapRef = useRef<HTMLIFrameElement>(null)
+  const [mapH, setMapH] = useState(480)
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+    const style = document.createElement("style")
+    style.id = "resumen-print-css"
+    style.innerHTML = `
+      @media print {
+        body * { visibility: hidden !important; }
+        #resumen-print-zone, #resumen-print-zone * { visibility: visible !important; }
+        #resumen-print-zone { position: absolute; left: 0; top: 0; width: 100%; padding: 32px; box-sizing: border-box; }
+        @page { size: A4; margin: 12mm; }
+      }
+    `
+    document.head.appendChild(style)
+    return () => { document.getElementById("resumen-print-css")?.remove() }
+  }, [])
+
+  const shareUrl = pp.shareToken && origin ? `${origin}/share/proyecto/${pp.shareToken}` : null
+
+  async function generateShare() {
+    setGenerando(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/share`, { method: "POST" })
+      if (!r.ok) throw new Error()
+      const { token } = await r.json()
+      onUpdate({ ...pp, shareToken: token })
+      success("Enlace generado")
+    } catch { toastError("Error al generar enlace") }
+    finally { setGenerando(false) }
+  }
+
+  async function revokeShare() {
+    setRevoking(true)
+    try {
+      await fetch(`/api/pre-proyectos/${pp.id}/share`, { method: "DELETE" })
+      onUpdate({ ...pp, shareToken: null })
+      success("Enlace revocado"); setCopied(false)
+    } catch { toastError("Error") }
+    finally { setRevoking(false) }
+  }
+
+  async function copyLink() {
+    if (!shareUrl) return
+    await navigator.clipboard.writeText(shareUrl)
+    setCopied(true); setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function saveMapa() {
+    setSavingMapa(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${pp.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mapaHtml: mapaValue || null }),
+      })
+      if (!r.ok) throw new Error()
+      onUpdate({ ...pp, mapaHtml: mapaValue || null })
+      setMapaModal(false); success("Mapa actualizado")
+    } catch { toastError("Error al guardar mapa") }
+    finally { setSavingMapa(false) }
+  }
+
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(pp, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a"); a.href = url; a.download = `proyecto-${pp.id}.json`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportHWCSV() {
+    const rows = [
+      ["Tipo", "Marca", "Modelo", "N_Serie", "Estado", "Precio_EUR"],
+      ...pp.hardwareUnidades.map(u => [
+        HW_TIPO_LABEL[u.catalogo.tipo] ?? u.catalogo.tipo,
+        u.catalogo.marca, u.catalogo.modelo,
+        u.numSerie ?? "",
+        HW_ESTADO[u.estado]?.label ?? u.estado,
+        u.catalogo.precio != null ? String(u.catalogo.precio) : "",
+      ]),
+    ]
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a"); a.href = url; a.download = `hardware-${pp.id}.csv`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleMapLoad(e: React.SyntheticEvent<HTMLIFrameElement>) {
+    try {
+      const doc = e.currentTarget.contentDocument
+      if (doc) setMapH(Math.max(400, Math.min(doc.documentElement.scrollHeight + 32, 8000)))
+    } catch { setMapH(3000) }
+  }
+
+  const fasesOK = pp.fases.filter(f => f.estado === "COMPLETADO").length
+  const pct = pp.fases.length ? Math.round((fasesOK / pp.fases.length) * 100) : 0
+  const totalHW = pp.hardwareUnidades.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
+  const visitasOK = pp.visitas.filter(v => v.estado === "COMPLETADA").length
+  const estadoStyle = ESTADO_COLOR[pp.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
+  const genDate = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+  const byTipo = pp.hardwareUnidades.reduce<Record<string, HardwareUnidad[]>>((acc, u) => {
+    const t = u.catalogo.tipo; if (!acc[t]) acc[t] = []; acc[t].push(u); return acc
+  }, {})
+  const duracionDias = pp.fechaInicio && pp.fechaFinPlan
+    ? Math.round((new Date(pp.fechaFinPlan).getTime() - new Date(pp.fechaInicio).getTime()) / 86400000)
+    : null
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-5 print:hidden">
+        <h3 className="font-semibold text-gray-900">Resumen del proyecto</h3>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-80"
+            style={{ backgroundColor: TEAL }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Imprimir / PDF
+          </button>
+          <button onClick={() => setShareModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors hover:bg-teal-50"
+            style={{ borderColor: TEAL, color: TEAL }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+            Compartir
+          </button>
+          <button onClick={exportJSON}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            JSON
+          </button>
+          {pp.hardwareUnidades.length > 0 && (
+            <button onClick={exportHWCSV}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              CSV Hardware
+            </button>
+          )}
+          <button onClick={() => { setMapaValue(pp.mapaHtml ?? ""); setMapaModal(true) }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
+            {pp.mapaHtml ? "Editar mapa" : "Importar mapa"}
+          </button>
+        </div>
+      </div>
+
+      {/* Printable zone */}
+      <div id="resumen-print-zone" className="space-y-5">
+
+        {/* Print header */}
+        <div className="hidden print:flex items-start justify-between border-b border-gray-200 pb-5">
+          <div>
+            <p className="text-xl font-bold" style={{ color: TEAL }}>Palex Medical · InLab</p>
+            <p className="text-sm text-gray-500 mt-0.5">Informe de Proyecto — Confidencial</p>
+          </div>
+          <p className="text-xs text-gray-400">Generado: {genDate}</p>
+        </div>
+
+        {/* Header card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>{ESTADO_LABEL[pp.estado]}</span>
+                {pp.prioridad > 0 && <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50" style={{ color: PRIORIDAD[pp.prioridad]?.color }}>{PRIORIDAD[pp.prioridad]?.label}</span>}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">{pp.titulo}</h2>
+              <p className="text-gray-600">
+                <span className="font-semibold text-gray-800">{pp.hospital.nombre}</span>
+                {" · "}{pp.hospital.ciudad}{pp.hospital.provincia ? `, ${pp.hospital.provincia}` : ""}
+                {pp.hospital.tipo && <> · <span className="text-gray-500">{TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo}</span></>}
+                {pp.hospital.camas ? ` · ${pp.hospital.camas} camas` : ""}
+              </p>
+              <p className="text-sm text-gray-400 mt-0.5">
+                {pp.responsable && <><span className="font-medium text-gray-600">{pp.responsable.nombre}</span>{" · "}</>}
+                {pp.hospital.zona && <>Zona: <span className="font-medium text-gray-600">{pp.hospital.zona.nombre}</span></>}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              {pp.presupuesto != null && <p className="text-2xl font-bold text-gray-900">{pp.presupuesto.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</p>}
+              <p className="text-sm text-gray-400">{fmtFecha(pp.fechaInicio)} → {fmtFecha(pp.fechaFinPlan)}</p>
+              {pp.fechaFinReal && <p className="text-xs font-semibold text-green-600 mt-0.5">Entregado: {fmtFecha(pp.fechaFinReal)}</p>}
+            </div>
+          </div>
+          <div className="mt-5">
+            <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <span>{fasesOK} de {pp.fases.length} fases completadas</span>
+              <span className="font-bold" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Progreso",  val: `${pct}%`,                          sub: `${fasesOK}/${pp.fases.length} fases`,                                                       color: pct === 100 ? "#16a34a" : TEAL },
+            { label: "Hardware",  val: `${pp.hardwareUnidades.length} uds`, sub: totalHW > 0 ? totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }) : "Sin precios registrados", color: "#7c3aed" },
+            { label: "Visitas",   val: `${pp.visitas.length}`,              sub: `${visitasOK} completadas`,                                                                  color: "#0369a1" },
+            { label: "Duración",  val: duracionDias ? `${duracionDias} d` : "—", sub: duracionDias ? "días planificados" : (pp.fechaFinReal ? "Entregado" : "Sin fechas"),    color: ORANGE },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{k.label}</p>
+              <p className="text-2xl font-bold" style={{ color: k.color }}>{k.val}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Hospital + contactos */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Datos del hospital</p>
+            <div className="space-y-1.5">
+              {pp.hospital.tipo && <RowInfo label="Tipo" value={TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo} />}
+              <RowInfo label="Ciudad" value={`${pp.hospital.ciudad}${pp.hospital.provincia ? `, ${pp.hospital.provincia}` : ""}`} />
+              {pp.hospital.camas && <RowInfo label="Camas" value={String(pp.hospital.camas)} />}
+              {pp.hospital.direccion && <RowInfo label="Dirección" value={pp.hospital.direccion} />}
+              {pp.hospital.zona && <RowInfo label="Zona" value={pp.hospital.zona.nombre} />}
+              {pp.hospital.pais && <RowInfo label="País" value={pp.hospital.pais} />}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Contactos del proyecto</p>
+            {pp.contactos.length === 0 ? (
+              <p className="text-sm text-gray-400">Sin contactos vinculados</p>
+            ) : (
+              <div className="space-y-2.5">
+                {pp.contactos.map(({ contacto: c }) => (
+                  <div key={c.id} className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5" style={{ backgroundColor: TEAL }}>
+                      {c.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800">{c.nombre}
+                        {c.principal && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>Principal</span>}
+                      </p>
+                      {c.cargo && <p className="text-xs text-gray-500">{c.cargo}</p>}
+                      <div className="flex gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
+                        {c.email && <span>{c.email}</span>}
+                        {c.telefono && <span>{c.telefono}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Timeline compact */}
+        {pp.fases.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Fases del proyecto</p>
+            <div className="space-y-1.5">
+              {pp.fases.map(f => {
+                const s = FASE_ESTADO_COLOR[f.estado] ?? FASE_ESTADO_COLOR.PENDIENTE
+                return (
+                  <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: s.bg }}>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
+                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">{f.nombre}</span>
+                    <span className="text-xs font-semibold shrink-0" style={{ color: s.text }}>
+                      {f.estado === "PENDIENTE" ? "Pendiente" : f.estado === "EN_PROGRESO" ? "En progreso" : f.estado === "COMPLETADO" ? "Completado" : "Bloqueado"}
+                    </span>
+                    {(f.fechaReal ?? f.fechaPlan) && (
+                      <span className="text-xs text-gray-400 shrink-0 hidden sm:block">{fmtFecha(f.fechaReal ?? f.fechaPlan)}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {pp.hitos.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Hitos</p>
+                <div className="flex flex-wrap gap-2">
+                  {pp.hitos.map(h => (
+                    <span key={h.id} className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border"
+                      style={h.completado ? { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0", color: "#16a34a" } : { backgroundColor: "#fffbeb", borderColor: "#fde68a", color: "#d97706" }}>
+                      {h.completado ? "✓" : "◇"} {h.titulo} · {fmtFecha(h.fecha)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hardware table */}
+        {pp.hardwareUnidades.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Inventario de hardware</p>
+            <div className="space-y-5">
+              {Object.entries(byTipo).map(([tipo, units]) => {
+                const subtotal = units.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
+                return (
+                  <div key={tipo}>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                      {HW_TIPO_LABEL[tipo] ?? tipo} <span className="font-normal text-gray-400">({units.length})</span>
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            {["Modelo", "N/S", "Estado", "Precio/ud"].map((h, i) => (
+                              <th key={h} className={`text-xs font-semibold text-gray-400 pb-2 ${i === 3 ? "text-right" : "text-left pr-4"}`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {units.map(u => (
+                            <tr key={u.id} className="border-b border-gray-50 last:border-0">
+                              <td className="py-2 pr-4 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
+                              <td className="py-2 pr-4 font-mono text-xs text-gray-500">{u.numSerie ?? "—"}</td>
+                              <td className="py-2 pr-4">
+                                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                  style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
+                                  {HW_ESTADO[u.estado]?.label ?? u.estado}
+                                </span>
+                              </td>
+                              <td className="py-2 text-right text-gray-600">
+                                {u.catalogo.precio != null ? u.catalogo.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {subtotal > 0 && (
+                          <tfoot>
+                            <tr className="border-t border-gray-200">
+                              <td colSpan={3} className="pt-2 text-xs font-semibold text-gray-500">Subtotal</td>
+                              <td className="pt-2 text-right font-bold text-gray-800">{subtotal.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {totalHW > 0 && (
+              <div className="mt-5 pt-4 border-t-2 border-gray-200 flex justify-between items-center">
+                <span className="font-bold text-gray-700">Total hardware</span>
+                <span className="text-xl font-bold" style={{ color: TEAL }}>{totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Visitas */}
+        {pp.visitas.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Visitas ({pp.visitas.length})</p>
+            <div className="space-y-2">
+              {pp.visitas.slice(0, 6).map(v => (
+                <div key={v.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={v.estado === "COMPLETADA" ? { backgroundColor: "#f0fdf4", color: "#16a34a" }
+                           : v.estado === "BORRADOR"   ? { backgroundColor: "#fffbeb", color: "#d97706" }
+                           :                             { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
+                      {v.estado}
+                    </span>
+                    <span className="text-xs text-gray-500">{v.tipo}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-700">{fmtFecha(v.fecha)}</p>
+                    <p className="text-xs text-gray-400">{v.usuario.nombre}</p>
+                  </div>
+                </div>
+              ))}
+              {pp.visitas.length > 6 && <p className="text-xs text-center text-gray-400 pt-1">+{pp.visitas.length - 6} visitas más</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Map */}
+        {pp.mapaHtml ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mapa de la instalación</p>
+              <button onClick={() => { setMapaValue(pp.mapaHtml ?? ""); setMapaModal(true) }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 print:hidden">
+                Actualizar
+              </button>
+            </div>
+            <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
+              onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa" />
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center print:hidden">
+            <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
+            <p className="text-sm font-medium text-gray-500 mb-1">Sin mapa de instalación</p>
+            <p className="text-xs text-gray-400 mb-3">Importa el HTML para visualizarlo aquí y en el enlace compartido</p>
+            <button onClick={() => { setMapaValue(""); setMapaModal(true) }}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: TEAL }}>
+              Importar mapa HTML
+            </button>
+          </div>
+        )}
+
+        {/* Notas */}
+        {(pp.descripcion || pp.notas) && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {pp.descripcion && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción</p>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{pp.descripcion}</p>
+              </div>
+            )}
+            {pp.notas && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Notas internas</p>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{pp.notas}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Print footer */}
+        <div className="hidden print:flex items-center justify-between pt-5 border-t border-gray-200 text-xs text-gray-400">
+          <span>Palex Medical · InLab — Confidencial</span>
+          <span>Generado: {genDate}</span>
+        </div>
+      </div>
+
+      {/* Share modal */}
+      {shareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="font-bold text-gray-900 text-lg mb-1">Compartir proyecto</h3>
+            <p className="text-sm text-gray-500 mb-5">Cualquier persona con el enlace puede ver el resumen completo sin iniciar sesión.</p>
+            {pp.shareToken ? (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <input readOnly value={shareUrl ?? ""} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-xs font-mono bg-gray-50 text-gray-600 focus:outline-none" />
+                  <button onClick={copyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shrink-0 transition-colors"
+                    style={{ backgroundColor: copied ? "#16a34a" : TEAL }}>
+                    {copied ? "Copiado" : "Copiar"}
+                  </button>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  <button onClick={revokeShare} disabled={revoking}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-50">
+                    {revoking ? "Revocando…" : "Revocar enlace"}
+                  </button>
+                  <button onClick={() => setShareModal(false)}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-500 text-center">
+                  Sin enlace generado para este proyecto
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={generateShare} disabled={generando}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                    style={{ backgroundColor: TEAL }}>
+                    {generando ? "Generando…" : "Generar enlace público"}
+                  </button>
+                  <button onClick={() => setShareModal(false)}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Map modal */}
+      {mapaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-gray-900 text-lg mb-1">Mapa HTML de la instalación</h3>
+            <p className="text-sm text-gray-500 mb-4">Pega el HTML del mapa generado por InLab. Aparecerá aquí y en el enlace público.</p>
+            <textarea value={mapaValue} onChange={e => setMapaValue(e.target.value)}
+              placeholder="Pega aquí el HTML completo del mapa…" rows={12}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-400 resize-y bg-gray-50" />
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setMapaModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              {mapaValue && <button onClick={() => setMapaValue("")} className="px-4 py-2.5 border border-red-200 rounded-xl text-sm text-red-500 hover:bg-red-50">Limpiar</button>}
+              <button onClick={saveMapa} disabled={savingMapa}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                style={{ backgroundColor: TEAL }}>
+                {savingMapa ? "Guardando…" : "Guardar mapa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RowInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="text-gray-400 w-20 shrink-0 text-sm">{label}</span>
+      <span className="text-gray-700 font-medium text-sm">{value}</span>
     </div>
   )
 }
