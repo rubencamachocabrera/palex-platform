@@ -12,6 +12,8 @@ const PROTECTED_PREFIXES = [
   "/hospitales",
   "/visitas",
   "/ventas",
+  "/proyectos",
+  "/mapa",
   "/perfil",
 ]
 

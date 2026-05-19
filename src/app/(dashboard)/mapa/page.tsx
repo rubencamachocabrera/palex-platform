@@ -1,17 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
-import dynamic from "next/dynamic"
-import type { HospitalMapa } from "@/components/MapaLeaflet"
-
-const MapaLeaflet = dynamic(() => import("@/components/MapaLeaflet"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full bg-gray-50">
-      <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#00A99D" }} />
-    </div>
-  ),
-})
+import MapaWrapper from "./MapaWrapper"
 
 export default async function MapaPage() {
   const session = await auth()
@@ -19,7 +9,7 @@ export default async function MapaPage() {
   const role = (session.user as { role?: string }).role
   if (role !== "ADMIN" && role !== "VENTAS") redirect("/dashboard")
 
-  const hospitales: HospitalMapa[] = await db.hospital.findMany({
+  const hospitales = await db.hospital.findMany({
     where: { activo: true },
     select: {
       id: true,
@@ -47,7 +37,7 @@ export default async function MapaPage() {
 
       {/* Map fills remaining height */}
       <div className="flex-1 min-h-0">
-        <MapaLeaflet hospitales={hospitales} />
+        <MapaWrapper hospitales={hospitales} />
       </div>
     </div>
   )
