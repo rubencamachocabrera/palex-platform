@@ -13,6 +13,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true } },
         usuario: { select: { id: true, nombre: true } },
+        oportunidad: { select: { id: true, titulo: true, etapa: true } },
       },
     })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -50,6 +51,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.datos !== undefined && { datos: body.datos }),
         ...(body.estado !== undefined && { estado: body.estado }),
         ...(body.fecha !== undefined && { fecha: new Date(body.fecha) }),
+        ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
+      },
+      include: {
+        oportunidad: { select: { id: true, titulo: true, etapa: true } },
       },
     })
     return NextResponse.json(updated)

@@ -15,8 +15,13 @@ export async function GET(req: NextRequest) {
     const rol = session.user.role
     const userId = session.user.id
 
+    const hospitalId = req.nextUrl.searchParams.get("hospitalId") ?? undefined
+
     const oportunidades = await db.oportunidad.findMany({
-      where: rol === "ADMIN" ? {} : { usuarioId: userId },
+      where: {
+        ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
+        ...(hospitalId ? { hospitalId, etapa: { notIn: ["GANADO", "PERDIDO"] } } : {}),
+      },
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
         usuario:  { select: { id: true, nombre: true } },

@@ -66,8 +66,12 @@ const ESTADO_COLOR: Record<string, string> = {
 interface Foto { id: string; name: string; data: string; caption: string }
 type FotosMap = Record<string, Foto[]>
 
+interface OportunidadItem { id: string; titulo: string; etapa: string }
+
 interface VisitaData {
   id: string; estado: string; tipo: string; fecha: string
+  oportunidadId?: string | null
+  oportunidad?: OportunidadItem | null
   datos: Record<string, unknown>
   hospital: { id: string; nombre: string; ciudad: string; provincia?: string | null }
   usuario: { id: string; nombre: string }
@@ -517,6 +521,8 @@ export default function VisitaPage() {
   // Panel lateral de navegación (mobile: colapsable)
   const [navOpen, setNavOpen] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [oportunidades, setOportunidades] = useState<OportunidadItem[]>([])
+  const [vinculandoOp, setVinculandoOp] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
@@ -546,6 +552,11 @@ export default function VisitaPage() {
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
+          // Cargar oportunidades del hospital para el picker
+          fetch(`/api/oportunidades?hospitalId=${data.hospital.id}`)
+            .then(r => r.ok ? r.json() : [])
+            .then(ops => { if (Array.isArray(ops)) setOportunidades(ops.map((o: { id: string; titulo: string; etapa: string }) => ({ id: o.id, titulo: o.titulo, etapa: o.etapa }))) })
+            .catch(() => {})
         }
         setLoading(false)
       })
@@ -631,6 +642,25 @@ export default function VisitaPage() {
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
+
+  const vincularOportunidad = useCallback(async (oportunidadId: string | null) => {
+    if (!visitaRef.current) return
+    setVinculandoOp(true)
+    try {
+      const r = await fetch(`/api/visitas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oportunidadId }),
+      })
+      if (r.ok) {
+        const updated = await r.json()
+        setVisita(v => v ? { ...v, oportunidadId: updated.oportunidadId, oportunidad: updated.oportunidad ?? null } : v)
+      }
+    } catch { /* silencioso */ } finally {
+      setVinculandoOp(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const cambiarEstado = useCallback(async (estado: string) => {
     setCambiandoEstado(true); await guardar(estado); setCambiandoEstado(false)
@@ -837,6 +867,41 @@ export default function VisitaPage() {
               {ESTADO_LABEL[visita.estado]}
             </span>
           </div>
+
+          {/* Vincular oportunidad */}
+          {(oportunidades.length > 0 || visita.oportunidad) && (
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-400 shrink-0">Oportunidad:</span>
+              {visita.oportunidad ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  {visita.oportunidad.titulo}
+                  {!readOnly && (
+                    <button
+                      onClick={() => vincularOportunidad(null)}
+                      disabled={vinculandoOp}
+                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
+                      title="Desvincular"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  )}
+                </span>
+              ) : (
+                <select
+                  disabled={readOnly || vinculandoOp}
+                  onChange={e => e.target.value && vincularOportunidad(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Vincular a oportunidad…</option>
+                  {oportunidades.map(op => (
+                    <option key={op.id} value={op.id}>{op.titulo}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
           {/* Acordeón secciones */}
           <div className="space-y-2">

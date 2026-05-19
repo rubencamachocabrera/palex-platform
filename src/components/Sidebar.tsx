@@ -213,11 +213,13 @@ function NavLink({
   item,
   active,
   collapsed,
+  badge,
   onClick,
 }: {
   item: NavItem
   active: boolean
   collapsed?: boolean
+  badge?: number
   onClick?: () => void
 }) {
   const Icon = Icons[item.icon]
@@ -247,11 +249,25 @@ function NavLink({
         }
       }}
     >
-      <span className="shrink-0 transition-transform duration-150 group-hover:scale-110">
+      <span className="shrink-0 transition-transform duration-150 group-hover:scale-110 relative">
         <Icon />
+        {collapsed && badge != null && badge > 0 && (
+          <span
+            className="absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white"
+            style={{ backgroundColor: ORANGE }}
+          />
+        )}
       </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
-      {!collapsed && active && (
+      {!collapsed && badge != null && badge > 0 && (
+        <span
+          className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none text-white shrink-0"
+          style={{ backgroundColor: ORANGE }}
+        >
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+      {!collapsed && active && badge == null && (
         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60 shrink-0" />
       )}
     </Link>
@@ -269,8 +285,21 @@ function SidebarInner({
   const pathname = usePathname()
   const groups = NAV_GROUPS[rol] ?? NAV_GROUPS.VENTAS
   const inicial = nombre.charAt(0).toUpperCase()
-  // useMemo — evita recalcular en cada render
   const allHrefs = useMemo(() => groups.flatMap(g => g.items.map(i => i.href)), [groups])
+
+  const [pipelineBadge, setPipelineBadge] = useState<number>(0)
+
+  useEffect(() => {
+    if (rol !== "ADMIN" && rol !== "VENTAS") return
+    fetch("/api/notificaciones")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.items) return
+        const count = data.items.filter((n: { tipo: string }) => n.tipo === "oportunidad_inactiva").length
+        setPipelineBadge(count)
+      })
+      .catch(() => {})
+  }, [rol])
 
   return (
     <aside
@@ -346,6 +375,7 @@ function SidebarInner({
                     item={item}
                     active={active}
                     collapsed={collapsed}
+                    badge={item.href === "/ventas/pipeline" && pipelineBadge > 0 ? pipelineBadge : undefined}
                     onClick={onClose}
                   />
                 )

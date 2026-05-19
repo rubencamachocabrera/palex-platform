@@ -147,19 +147,21 @@ model Contacto {
 // --- VISITAS ---------------------------------------------------------
 
 model Visita {
-  id         String       @id @default(cuid())
-  hospitalId String
-  usuarioId  String
-  tipo       TipoVisita
-  estado     EstadoVisita @default(BORRADOR)
-  fecha      DateTime     @default(now())
-  datos      Json         @default("{}")
-  fotos      Json         @default("[]")
-  creadoEn   DateTime     @default(now())
-  editadoEn  DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  hospitalId    String
+  usuarioId     String
+  oportunidadId String?
+  tipo          TipoVisita
+  estado        EstadoVisita @default(BORRADOR)
+  fecha         DateTime     @default(now())
+  datos         Json         @default("{}")
+  fotos         Json         @default("[]")
+  creadoEn      DateTime     @default(now())
+  editadoEn     DateTime     @updatedAt
 
-  hospital Hospital @relation(fields: [hospitalId], references: [id])
-  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+  hospital    Hospital     @relation(fields: [hospitalId], references: [id])
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
+  oportunidad Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
 
   @@map("visitas")
 }
@@ -225,6 +227,7 @@ model Oportunidad {
 
   hospital Hospital @relation(fields: [hospitalId], references: [id])
   usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+  visitas  Visita[]
 
   @@map("oportunidades")
 }
