@@ -225,19 +225,19 @@ export default function HospitalDetailPage() {
     <div className="max-w-2xl mx-auto">
 
       {/* Cabecera */}
-      <div className="flex items-start gap-3 mb-6">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 mt-0.5">
+      <div className="flex items-center gap-2 mb-6">
+        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 p-2.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0">
           <IconArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold text-gray-800 leading-tight">{hospital.nombre}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
+          <h1 className="text-xl font-semibold text-gray-800 leading-tight truncate">{hospital.nombre}</h1>
+          <p className="text-sm text-gray-400 mt-0.5 truncate">
             {hospital.ciudad}{hospital.provincia ? `, ${hospital.provincia}` : ""} &#183; {hospital.zona.nombre}
           </p>
         </div>
         <button
           onClick={() => setShowQR(true)}
-          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
+          className="p-2.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors shrink-0 flex items-center justify-center min-w-[40px] min-h-[40px]"
           title="Ver QR del hospital"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -249,30 +249,32 @@ export default function HospitalDetailPage() {
         <button
           onClick={nuevaVisita}
           disabled={creandoVisita}
-          className="text-sm font-medium text-white px-4 py-2 rounded-lg shrink-0 disabled:opacity-60 transition-opacity"
+          className="text-sm font-medium text-white px-4 py-2.5 rounded-lg shrink-0 disabled:opacity-60 transition-opacity"
           style={{ backgroundColor: TEAL }}
         >
           {creandoVisita ? "..." : "+ Visita"}
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-5 gap-1">
-        {(["info", "contactos", "visitas", "timeline"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); if (t === "timeline") cargarTimeline() }}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              tab === t ? "border-teal-500" : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-            style={tab === t ? { borderColor: TEAL, color: TEAL } : {}}
-          >
-            {t === "info" ? "Informacion"
-              : t === "contactos" ? `Contactos (${hospital.contactos.length})`
-              : t === "visitas" ? `Visitas (${hospital.visitas.length})`
-              : "Timeline"}
-          </button>
-        ))}
+      {/* Tabs — scrollable en móvil */}
+      <div className="overflow-x-auto mb-5">
+        <div className="flex border-b border-gray-200 gap-1 min-w-max">
+          {(["info", "contactos", "visitas", "timeline"] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); if (t === "timeline") cargarTimeline() }}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                tab === t ? "border-teal-500" : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+              style={tab === t ? { borderColor: TEAL, color: TEAL } : {}}
+            >
+              {t === "info" ? "Informacion"
+                : t === "contactos" ? `Contactos (${hospital.contactos.length})`
+                : t === "visitas" ? `Visitas (${hospital.visitas.length})`
+                : "Timeline"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Tab: Informacion ── */}
@@ -546,7 +548,7 @@ export default function HospitalDetailPage() {
                   link.href = canvas.toDataURL("image/png")
                   link.click()
                 }}
-                className="w-full py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                className="w-full py-3 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors min-h-[44px]"
               >
                 Descargar PNG
               </button>

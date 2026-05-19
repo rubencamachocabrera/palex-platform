@@ -55,12 +55,12 @@ export default function ShareMapaPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Barra superior mínima */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-gray-800">{data.nombre}</p>
-          <p className="text-xs text-gray-400">{data.hospital} · {data.ciudad}</p>
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-800 truncate">{data.nombre}</p>
+          <p className="text-xs text-gray-400 truncate">{data.hospital} · {data.ciudad}</p>
         </div>
-        <span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 font-semibold px-2.5 py-1 rounded-full">
+        <span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 font-semibold px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap">
           InLab · Palex Medical
         </span>
       </div>
