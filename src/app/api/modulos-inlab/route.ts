@@ -7,6 +7,17 @@ export async function GET(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
+    // ?admin=1 — gestión completa (todos los módulos + conteo), solo ADMIN
+    const adminView = req.nextUrl.searchParams.get("admin") === "1"
+    if (adminView && session.user.role === "ADMIN") {
+      const modulos = await db.moduloInlab.findMany({
+        orderBy: { nombre: "asc" },
+        include: { _count: { select: { proyectos: true } } },
+      })
+      return NextResponse.json(modulos)
+    }
+
+    // Vista normal: solo módulos activos (usada en formularios de proyecto)
     const modulos = await db.moduloInlab.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
@@ -16,6 +27,26 @@ export async function GET(req: NextRequest) {
     return res
   } catch (err) {
     console.error("[GET /api/modulos-inlab]", err)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session?.user || session.user.role !== "ADMIN")
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+
+    const { nombre } = await req.json()
+    if (!nombre?.trim())
+      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 })
+
+    const modulo = await db.moduloInlab.create({ data: { nombre: nombre.trim() } })
+    return NextResponse.json(modulo, { status: 201 })
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === "P2002")
+      return NextResponse.json({ error: "Ya existe un módulo con ese nombre" }, { status: 409 })
+    console.error("[POST /api/modulos-inlab]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
