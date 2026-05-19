@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const body = await req.json()
-    const { nombre, ciudad, provincia, pais, tipo, camas, direccion, zonaId } = body
+    const { nombre, ciudad, provincia, pais, tipo, camas, direccion, zonaId, latitud, longitud } = body
     if (!nombre || !ciudad || !zonaId) return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
 
     const hospital = await db.hospital.create({
@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
         camas: camas ? Number(camas) : null,
         direccion,
         zonaId,
+        latitud: latitud != null ? Number(latitud) : null,
+        longitud: longitud != null ? Number(longitud) : null,
       },
     })
     return NextResponse.json(hospital, { status: 201 })

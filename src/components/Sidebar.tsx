@@ -115,6 +115,12 @@ const Icons: Record<string, () => React.ReactElement> = {
       <rect x="13" y="13" width="9" height="9" rx="1"/>
     </svg>
   ),
+  Mapa: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  ),
 }
 
 // Estructura de navegacion
@@ -137,7 +143,10 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     },
     {
       label: "CRM",
-      items: [{ href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" }],
+      items: [
+        { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
+        { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
+      ],
     },
     {
       label: "InLab",
@@ -164,14 +173,17 @@ const NAV_GROUPS: Record<string, NavGroup[]> = {
     {
       label: "Mi trabajo",
       items: [
-        { href: "/hospitales",      label: "Mis hospitales", icon: "Hospitales" },
-        { href: "/visitas",         label: "Mis visitas",    icon: "Visitas" },
-        { href: "/visitas/calendario", label: "Calendario",  icon: "Calendar" },
+        { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
+        { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
+        { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
       ],
     },
     {
       label: "CRM",
-      items: [{ href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" }],
+      items: [
+        { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
+        { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
+      ],
     },
     {
       label: "InLab",

@@ -28,6 +28,7 @@ interface Zona { id: string; nombre: string }
 interface Hospital {
   id: string; nombre: string; ciudad: string; provincia: string | null
   tipo: string; activo: boolean; camas: number | null
+  latitud: number | null; longitud: number | null
   zona: { id: string; nombre: string }
   _count?: { visitas: number; contactos: number }
 }
@@ -35,6 +36,7 @@ interface Hospital {
 const FORM_EMPTY = {
   nombre: "", ciudad: "", provincia: "", pais: "Espana",
   tipo: "HOSPITAL_PUBLICO", camas: "", zonaId: "", activo: true,
+  latitud: "", longitud: "",
 }
 
 export default function HospitalesAdminPage() {
@@ -99,7 +101,7 @@ export default function HospitalesAdminPage() {
 
   function abrirEditar(h: Hospital) {
     setEditId(h.id)
-    setForm({ nombre: h.nombre, ciudad: h.ciudad, provincia: h.provincia ?? "", pais: "Espana", tipo: h.tipo, camas: h.camas?.toString() ?? "", zonaId: h.zona.id, activo: h.activo })
+    setForm({ nombre: h.nombre, ciudad: h.ciudad, provincia: h.provincia ?? "", pais: "Espana", tipo: h.tipo, camas: h.camas?.toString() ?? "", zonaId: h.zona.id, activo: h.activo, latitud: h.latitud?.toString() ?? "", longitud: h.longitud?.toString() ?? "" })
     setError("")
     setModalOpen(true)
   }
@@ -108,7 +110,7 @@ export default function HospitalesAdminPage() {
     if (!form.nombre.trim() || !form.ciudad.trim() || !form.zonaId) { setError("Nombre, ciudad y zona son obligatorios"); return }
     setGuardando(true); setError("")
     try {
-      const payload = { nombre: form.nombre.trim(), ciudad: form.ciudad.trim(), provincia: form.provincia.trim() || null, pais: "Espana", tipo: form.tipo, camas: form.camas ? parseInt(form.camas) : null, zonaId: form.zonaId, activo: form.activo }
+      const payload = { nombre: form.nombre.trim(), ciudad: form.ciudad.trim(), provincia: form.provincia.trim() || null, pais: "Espana", tipo: form.tipo, camas: form.camas ? parseInt(form.camas) : null, zonaId: form.zonaId, activo: form.activo, latitud: form.latitud ? parseFloat(form.latitud) : null, longitud: form.longitud ? parseFloat(form.longitud) : null }
       const url = editId ? `/api/hospitales/${editId}` : "/api/hospitales"
       const method = editId ? "PATCH" : "POST"
       const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
@@ -282,6 +284,18 @@ export default function HospitalesAdminPage() {
                   <option value="">Seleccionar zona...</option>
                   {zonas.map(z => <option key={z.id} value={z.id}>{z.nombre}</option>)}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Latitud</label>
+                  <input type="number" step="any" value={form.latitud} onChange={e => f("latitud", e.target.value)} placeholder="40.4168"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Longitud</label>
+                  <input type="number" step="any" value={form.longitud} onChange={e => f("longitud", e.target.value)} placeholder="-3.7038"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent" />
+                </div>
               </div>
               {editId && (
                 <div className="flex items-center justify-between py-2">

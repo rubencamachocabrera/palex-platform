@@ -114,6 +114,8 @@ model Hospital {
   direccion String?
   activo    Boolean      @default(true)
   zonaId    String
+  latitud   Float?
+  longitud  Float?
   creadoEn  DateTime     @default(now())
   editadoEn DateTime     @updatedAt
 
