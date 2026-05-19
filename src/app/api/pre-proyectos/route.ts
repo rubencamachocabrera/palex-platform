@@ -37,7 +37,9 @@ export async function GET(req: Request) {
         hospital: { select: { id: true, nombre: true, ciudad: true } },
         responsable: { select: { id: true, nombre: true } },
         fases: { select: { id: true, tipo: true, estado: true, orden: true } },
-        _count: { select: { visitas: true, solicitudes: true, hardwareUnidades: true } },
+        visitas: { select: { id: true } },
+        solicitudes: { select: { id: true } },
+        hardwareUnidades: { select: { id: true } },
       },
       orderBy: { creadoEn: "desc" },
     })

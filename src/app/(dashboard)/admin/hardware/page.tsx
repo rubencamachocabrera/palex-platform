@@ -5,7 +5,7 @@ import { useToast } from "@/components/Toast"
 import { TEAL } from "@/lib/brand"
 
 const HW_TIPOS = [
-  { value: "BC_ROBOT",      label: "BC Robot" },
+  { value: "BC_ROBOT",      label: "BC Robo" },
   { value: "ZEBRA_MC",      label: "Zebra MC (Handheld)" },
   { value: "ZEBRA_PRINTER", label: "Zebra Printer" },
   { value: "LECTOR_BARRAS", label: "Lector Barras" },

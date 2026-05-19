@@ -332,6 +332,7 @@ function SidebarInner({
   const allHrefs = useMemo(() => groups.flatMap(g => g.items.map(i => i.href)), [groups])
 
   const [pipelineBadge, setPipelineBadge] = useState<number>(0)
+  const [preProyectosBadge, setPreProyectosBadge] = useState<number>(0)
   const [crmActivo, setCrmActivo] = useState<boolean>(true)
 
   useEffect(() => {
@@ -342,14 +343,14 @@ function SidebarInner({
   }, [])
 
   useEffect(() => {
-    if (!crmActivo) return
-    if (rol !== "ADMIN" && rol !== "VENTAS") return
     fetch("/api/notificaciones")
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data?.items) return
-        const count = data.items.filter((n: { tipo: string }) => n.tipo === "oportunidad_inactiva").length
-        setPipelineBadge(count)
+        const pipeline = data.items.filter((n: { tipo: string }) => n.tipo === "oportunidad_inactiva").length
+        const fases = data.items.filter((n: { tipo: string }) => n.tipo === "fase_retrasada").length
+        if (crmActivo && (rol === "ADMIN" || rol === "VENTAS")) setPipelineBadge(pipeline)
+        setPreProyectosBadge(fases)
       })
       .catch(() => {})
   }, [rol, crmActivo])
@@ -428,7 +429,11 @@ function SidebarInner({
                     item={item}
                     active={active}
                     collapsed={collapsed}
-                    badge={item.href === "/ventas/pipeline" && pipelineBadge > 0 ? pipelineBadge : undefined}
+                    badge={
+                      item.href === "/ventas/pipeline" && pipelineBadge > 0 ? pipelineBadge
+                      : item.href === "/pre-proyectos" && preProyectosBadge > 0 ? preProyectosBadge
+                      : undefined
+                    }
                     onClick={onClose}
                   />
                 )

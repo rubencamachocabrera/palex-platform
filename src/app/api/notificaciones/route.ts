@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest) {
     const hace7dias = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const hace48h = new Date(now.getTime() - 48 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -34,6 +34,24 @@ export async function GET(_req: NextRequest) {
         orderBy: { editadoEn: "asc" },
         take: 10,
       }),
+      db.fasePreProyecto.findMany({
+        where: {
+          fechaPlan: { lt: now },
+          estado: { not: "COMPLETADO" },
+          preProyecto: {
+            estado: { notIn: ["COMPLETADO", "CANCELADO"] },
+            ...(rol === "ADMIN" ? {} : { responsableId: userId }),
+          },
+        },
+        select: {
+          id: true,
+          nombre: true,
+          fechaPlan: true,
+          preProyecto: { select: { id: true, titulo: true } },
+        },
+        orderBy: { fechaPlan: "asc" },
+        take: 10,
+      }),
     ])
 
     const items = [
@@ -50,6 +68,13 @@ export async function GET(_req: NextRequest) {
         titulo: v.hospital.nombre,
         href: `/visitas/${v.id}`,
         mensaje: `Borrador pendiente desde ${new Date(v.editadoEn).toLocaleDateString("es-ES")}`,
+      })),
+      ...fasesRetrasadas.map(f => ({
+        tipo: "fase_retrasada" as const,
+        id: f.id,
+        titulo: f.preProyecto.titulo,
+        href: `/pre-proyectos/${f.preProyecto.id}`,
+        mensaje: `Fase "${f.nombre}" retrasada desde ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`,
       })),
     ]
 
