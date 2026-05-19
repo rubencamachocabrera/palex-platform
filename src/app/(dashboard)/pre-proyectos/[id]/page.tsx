@@ -1063,12 +1063,11 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [shareModal, setShareModal] = useState(false)
   const [generando, setGenerando] = useState(false)
   const [revoking, setRevoking] = useState(false)
-  const [mapaModal, setMapaModal] = useState(false)
-  const [mapaValue, setMapaValue] = useState(pp.mapaHtml ?? "")
   const [savingMapa, setSavingMapa] = useState(false)
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState("")
   const mapRef = useRef<HTMLIFrameElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [mapH, setMapH] = useState(480)
 
   useEffect(() => {
@@ -1117,19 +1116,73 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  async function saveMapa() {
+  async function saveMapaContent(html: string) {
     setSavingMapa(true)
     try {
       const r = await fetch(`/api/pre-proyectos/${pp.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mapaHtml: mapaValue || null }),
+        body: JSON.stringify({ mapaHtml: html || null }),
       })
       if (!r.ok) throw new Error()
-      onUpdate({ ...pp, mapaHtml: mapaValue || null })
-      setMapaModal(false); success("Mapa actualizado")
+      onUpdate({ ...pp, mapaHtml: html || null })
+      success(html ? "Mapa importado" : "Mapa eliminado")
     } catch { toastError("Error al guardar mapa") }
     finally { setSavingMapa(false) }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string
+      if (content) saveMapaContent(content)
+    }
+    reader.readAsText(file, "utf-8")
+    e.target.value = ""
+  }
+
+  function printMapa() {
+    if (!pp.mapaHtml) { toastError("No hay mapa importado"); return }
+    const win = window.open("", "_blank", "width=1200,height=900")
+    if (!win) { toastError("Permite ventanas emergentes para imprimir"); return }
+    const safeHtml = pp.mapaHtml.replace(/"/g, "&quot;")
+    const fecha = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+    win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>${pp.titulo} — Mapa de Instalación</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff}
+    .hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:3px solid #00A99D;background:#fff;height:57px}
+    .brand{font-weight:800;color:#00A99D;font-size:16px;letter-spacing:-0.3px}
+    .brand em{font-style:normal;color:#F7941D}
+    .meta{font-size:11px;color:#9ca3af;text-align:right;line-height:1.6}
+    .meta strong{color:#374151}
+    .map-frame{width:100%;border:none;display:block;height:calc(100vh - 57px)}
+    .ftr{display:none}
+    @media print{
+      .hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .ftr{display:block;position:fixed;bottom:0;left:0;right:0;padding:5px 24px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;text-align:center;background:#fff}
+      @page{margin:0}
+    }
+  </style>
+</head>
+<body>
+  <div class="hdr">
+    <span class="brand">Palex Medical · <em>InLab</em></span>
+    <div class="meta"><strong>${pp.titulo}</strong><br>${pp.hospital.nombre} · ${fecha}</div>
+  </div>
+  <iframe class="map-frame" srcdoc="${safeHtml}" sandbox="allow-scripts allow-same-origin"></iframe>
+  <div class="ftr">Palex Medical · InLab — Confidencial — ${fecha}</div>
+</body>
+</html>`)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { try { win.print() } catch { /* closed */ } }, 800)
   }
 
   function exportJSON() {
@@ -1183,13 +1236,13 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
       <div className="flex items-center justify-between flex-wrap gap-2 mb-5 print:hidden">
         <h3 className="font-semibold text-gray-900">Resumen del proyecto</h3>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => window.print()}
+          <button onClick={printMapa}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-80"
             style={{ backgroundColor: TEAL }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
             </svg>
-            Imprimir / PDF
+            Imprimir mapa
           </button>
           <button onClick={() => setShareModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors hover:bg-teal-50"
@@ -1217,14 +1270,23 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
               CSV Hardware
             </button>
           )}
-          <button onClick={() => { setMapaValue(pp.mapaHtml ?? ""); setMapaModal(true) }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+          <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
               <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
             </svg>
-            {pp.mapaHtml ? "Editar mapa" : "Importar mapa"}
+            {savingMapa ? "Guardando…" : pp.mapaHtml ? "Reemplazar mapa" : "Importar mapa"}
           </button>
+          {pp.mapaHtml && (
+            <button onClick={() => saveMapaContent("")} disabled={savingMapa}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+              Quitar mapa
+            </button>
+          )}
         </div>
       </div>
 
@@ -1464,9 +1526,9 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mapa de la instalación</p>
-              <button onClick={() => { setMapaValue(pp.mapaHtml ?? ""); setMapaModal(true) }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 print:hidden">
-                Actualizar
+              <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 print:hidden disabled:opacity-50">
+                {savingMapa ? "Guardando…" : "Actualizar"}
               </button>
             </div>
             <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
@@ -1480,9 +1542,9 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
             </svg>
             <p className="text-sm font-medium text-gray-500 mb-1">Sin mapa de instalación</p>
             <p className="text-xs text-gray-400 mb-3">Importa el HTML para visualizarlo aquí y en el enlace compartido</p>
-            <button onClick={() => { setMapaValue(""); setMapaModal(true) }}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: TEAL }}>
-              Importar mapa HTML
+            <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: TEAL }}>
+              {savingMapa ? "Importando…" : "Importar mapa HTML"}
             </button>
           </div>
         )}
@@ -1560,27 +1622,14 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
         </div>
       )}
 
-      {/* Map modal */}
-      {mapaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-gray-900 text-lg mb-1">Mapa HTML de la instalación</h3>
-            <p className="text-sm text-gray-500 mb-4">Pega el HTML del mapa generado por InLab. Aparecerá aquí y en el enlace público.</p>
-            <textarea value={mapaValue} onChange={e => setMapaValue(e.target.value)}
-              placeholder="Pega aquí el HTML completo del mapa…" rows={12}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-400 resize-y bg-gray-50" />
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setMapaModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-              {mapaValue && <button onClick={() => setMapaValue("")} className="px-4 py-2.5 border border-red-200 rounded-xl text-sm text-red-500 hover:bg-red-50">Limpiar</button>}
-              <button onClick={saveMapa} disabled={savingMapa}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-                style={{ backgroundColor: TEAL }}>
-                {savingMapa ? "Guardando…" : "Guardar mapa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Hidden file input for map import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".html,.htm"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
     </div>
   )
 }
