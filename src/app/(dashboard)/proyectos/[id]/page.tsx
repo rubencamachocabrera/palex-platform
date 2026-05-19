@@ -363,21 +363,23 @@ export default function ProyectoDetallePage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        {([["info", "Información"], ["modulos", "Módulos INLAB"], ["mapa", "Mapa del proyecto"]] as [Tab, string][]).map(([t, label]) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all"
-            style={tab === t ? { backgroundColor: "white", color: TEAL, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" } : { color: "#6b7280" }}
-          >
-            {label}
-            {t === "mapa" && proyecto.mapaHtml && (
-              <span className="ml-1.5 w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: ORANGE }} />
-            )}
-          </button>
-        ))}
+      {/* Tabs — scrollable en móvil */}
+      <div className="overflow-x-auto">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit min-w-max">
+          {([["info", "Información"], ["modulos", "Módulos INLAB"], ["mapa", "Mapa del proyecto"]] as [Tab, string][]).map(([t, label]) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap"
+              style={tab === t ? { backgroundColor: "white", color: TEAL, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" } : { color: "#6b7280" }}
+            >
+              {label}
+              {t === "mapa" && proyecto.mapaHtml && (
+                <span className="ml-1.5 w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: ORANGE }} />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ─── Tab: Información ─── */}
@@ -482,14 +484,14 @@ export default function ProyectoDetallePage() {
               {proyecto.modulos.map(pm => (
                 <div
                   key={pm.modulo.id}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100"
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl border border-gray-100 min-h-[52px]"
                 >
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />
-                  <span className="text-sm text-gray-800 flex-1">{pm.modulo.nombre}</span>
+                  <span className="text-sm text-gray-800 flex-1 min-w-0">{pm.modulo.nombre}</span>
                   <select
                     value={pm.estado}
                     onChange={e => actualizarEstadoModulo(pm.modulo.id, e.target.value as EstadoModulo)}
-                    className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer focus:outline-none focus:ring-2 ${ESTADO_MODULO_COLOR[pm.estado]}`}
+                    className={`text-xs font-semibold px-2.5 py-2.5 rounded-lg border-0 cursor-pointer focus:outline-none focus:ring-2 shrink-0 min-h-[44px] min-w-[130px] ${ESTADO_MODULO_COLOR[pm.estado]}`}
                     style={{ ["--tw-ring-color" as string]: TEAL }}
                   >
                     {(Object.keys(ESTADO_MODULO_LABEL) as EstadoModulo[]).map(e => (
@@ -507,14 +509,14 @@ export default function ProyectoDetallePage() {
       {tab === "mapa" && (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-gray-100">
             <div>
               <p className="text-sm font-semibold text-gray-900">Mapa interactivo del proyecto</p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {proyecto.mapaHtml ? "Mapa HTML cargado" : "Sin mapa — importa un fichero HTML"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap gap-2">
               {proyecto.mapaHtml && (
                 <>
                   <button
