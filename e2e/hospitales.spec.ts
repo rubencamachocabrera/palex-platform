@@ -15,10 +15,10 @@ test.describe("Hospitales", () => {
 
   test("lista de hospitales carga y muestra resultados", async ({ page }) => {
     await page.goto("/hospitales")
-    // Esperar a que aparezca contenido o el empty state (no networkidle)
-    await expect(
-      page.locator("a[href*='/hospitales/'], text=Sin hospitales").first()
-    ).toBeVisible({ timeout: 15000 })
+    // Esperar contenido o empty state con .or()
+    const contenido = page.locator("a[href*='/hospitales/']").first()
+    const vacio = page.getByText("Sin hospitales")
+    await expect(contenido.or(vacio)).toBeVisible({ timeout: 15000 })
   })
 
   test("busqueda filtra hospitales por nombre", async ({ page }) => {
