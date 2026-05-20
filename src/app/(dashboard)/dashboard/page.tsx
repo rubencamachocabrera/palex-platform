@@ -344,7 +344,7 @@ async function DashboardAdmin() {
   })
   const idsConVisita = new Set(hConVisitaReciente.map(v => v.hospitalId))
 
-  const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos] = await Promise.all([
+  const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos, fasesRetrasadasGlobal, hitosRetrasadosGlobal] = await Promise.all([
     db.preProyecto.findMany({
       where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
       select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
@@ -367,6 +367,16 @@ async function DashboardAdmin() {
       select: { id: true, nombre: true, ciudad: true },
       orderBy: { nombre: "asc" },
       take: 5,
+    }),
+    db.fasePreProyecto.findMany({
+      where: { fechaPlan: { lt: ahora }, estado: { not: "COMPLETADO" }, preProyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, nombre: true, fechaPlan: true, preProyecto: { select: { id: true, titulo: true } } },
+      orderBy: { fechaPlan: "asc" }, take: 5,
+    }),
+    db.hito.findMany({
+      where: { fecha: { lt: ahora }, completado: false, preProyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
+      orderBy: { fecha: "asc" }, take: 5,
     }),
   ])
 
@@ -409,6 +419,24 @@ async function DashboardAdmin() {
       sub: `${h.ciudad} · sin visitas en más de 60 días`,
       href: `/hospitales/${h.id}`,
       color: "#6b7280", bg: "#f3f4f6",
+    })
+  })
+  fasesRetrasadasGlobal.forEach(f => {
+    alertas.push({
+      key: `frg-${f.id}`,
+      titulo: f.preProyecto.titulo,
+      sub: `Fase "${f.nombre}" vencida el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`,
+      href: `/pre-proyectos/${f.preProyecto.id}`,
+      color: "#dc2626", bg: "#fef2f2",
+    })
+  })
+  hitosRetrasadosGlobal.forEach(h => {
+    alertas.push({
+      key: `hrg-${h.id}`,
+      titulo: h.preProyecto.titulo,
+      sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`,
+      href: `/pre-proyectos/${h.preProyecto.id}`,
+      color: "#f97316", bg: "#fff7ed",
     })
   })
 
@@ -764,7 +792,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const [
     misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
     proximasVisitas, estadoModulosRaw, totalVisitas,
-    misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas,
+    misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas, hitosRetrasados,
   ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -798,6 +826,11 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, preProyecto: { select: { id: true, hospital: { select: { nombre: true } } } } },
       orderBy: { fechaCita: "asc" }, take: 5,
     }),
+    db.hito.findMany({
+      where: { fecha: { lt: ahora }, completado: false, preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
+      orderBy: { fecha: "asc" }, take: 5,
+    }),
   ])
 
   const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -818,6 +851,9 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   })
   fasesRetrasadas.forEach(f => {
     alertas.push({ key: `fr-${f.id}`, titulo: f.preProyecto.titulo, sub: `Fase "${f.nombre}" — debía completarse el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${f.preProyecto.id}`, color: "#dc2626", bg: "#fef2f2" })
+  })
+  hitosRetrasados.forEach(h => {
+    alertas.push({ key: `hr-${h.id}`, titulo: h.preProyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${h.preProyecto.id}`, color: "#f97316", bg: "#fff7ed" })
   })
 
   return (

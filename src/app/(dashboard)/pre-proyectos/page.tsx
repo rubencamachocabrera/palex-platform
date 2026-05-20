@@ -334,21 +334,32 @@ export default function PreProyectosPage() {
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState("")
   const [filtroEstado, setFiltroEstado] = useState("")
+  const [filtroPrioridad, setFiltroPrioridad] = useState("")
+  const [filtroResponsable, setFiltroResponsable] = useState("")
+  const [responsables, setResponsables] = useState<Responsable[]>([])
   const [vista, setVista] = useState<"lista" | "kanban">("lista")
   const [mostrarModal, setMostrarModal] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+  useEffect(() => {
+    fetch("/api/usuarios").then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setResponsables(d)
+    })
+  }, [])
+
   const cargar = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams()
     if (q) params.set("q", q)
     if (filtroEstado && vista === "lista") params.set("estado", filtroEstado)
+    if (filtroPrioridad && vista === "lista") params.set("prioridad", filtroPrioridad)
+    if (filtroResponsable && vista === "lista") params.set("responsableId", filtroResponsable)
     const r = await fetch(`/api/pre-proyectos?${params}`)
     if (r.ok) setItems(await r.json())
     setLoading(false)
-  }, [q, filtroEstado, vista])
+  }, [q, filtroEstado, filtroPrioridad, filtroResponsable, vista])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -375,6 +386,34 @@ export default function PreProyectosPage() {
   }
 
   const activeItem = activeId ? items.find(i => i.id === activeId) ?? null : null
+
+  function exportarCSV() {
+    const header = ["Título", "Hospital", "Ciudad", "Estado", "Prioridad", "Responsable", "Inicio", "Fin planificado", "Progreso (%)", "Presupuesto (€)"]
+    const rows = items.map(i => {
+      const pct = progreso(i.fases)
+      const prio = PRIORIDAD_LABEL[i.prioridad]?.label ?? "Normal"
+      return [
+        `"${i.titulo.replace(/"/g, '""')}"`,
+        `"${i.hospital.nombre.replace(/"/g, '""')}"`,
+        `"${i.hospital.ciudad}"`,
+        ESTADO_LABEL[estadoEfectivo(i)] ?? i.estado,
+        prio,
+        i.responsable?.nombre ?? "—",
+        i.fechaInicio ? new Date(i.fechaInicio).toLocaleDateString("es-ES") : "—",
+        i.fechaFinPlan ? new Date(i.fechaFinPlan).toLocaleDateString("es-ES") : "—",
+        String(pct),
+        i.presupuesto != null ? String(i.presupuesto) : "—",
+      ].join(",")
+    })
+    const csv = [header.join(","), ...rows].join("\n")
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url; a.download = `proyectos_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 5000)
+  }
+
+  const hayFiltros = !!(filtroEstado || filtroPrioridad || filtroResponsable)
 
   const total       = items.length
   const enCurso     = items.filter(i => estadoEfectivo(i) === "EN_CURSO").length
@@ -407,6 +446,18 @@ export default function PreProyectosPage() {
               <IconKanban /> Kanban
             </button>
           </div>
+          {vista === "lista" && items.length > 0 && (
+            <button
+              onClick={exportarCSV}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              title="Exportar lista actual a CSV"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              CSV
+            </button>
+          )}
           <button
             onClick={() => setMostrarModal(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90"
@@ -427,23 +478,74 @@ export default function PreProyectosPage() {
       </div>
 
       {/* Filtros */}
-      <div className={`flex flex-col sm:flex-row gap-3 mb-5 ${vista === "kanban" ? "max-w-sm" : ""}`}>
-        <div className="relative flex-1">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"><IconSearch /></span>
-          <input
-            value={q} onChange={e => setQ(e.target.value)}
-            placeholder="Buscar por título u hospital…"
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
-          />
+      <div className={`space-y-3 mb-5 ${vista === "kanban" ? "max-w-sm" : ""}`}>
+        <div className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"><IconSearch /></span>
+            <input
+              value={q} onChange={e => setQ(e.target.value)}
+              placeholder="Buscar por título u hospital…"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+            />
+          </div>
+          {vista === "lista" && (
+            <>
+              <select
+                value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
+                className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+              >
+                <option value="">Estado</option>
+                {Object.entries(ESTADO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+              <select
+                value={filtroPrioridad} onChange={e => setFiltroPrioridad(e.target.value)}
+                className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+              >
+                <option value="">Prioridad</option>
+                <option value="0">Normal</option>
+                <option value="1">Alta</option>
+                <option value="2">Crítica</option>
+              </select>
+              {responsables.length > 0 && (
+                <select
+                  value={filtroResponsable} onChange={e => setFiltroResponsable(e.target.value)}
+                  className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+                >
+                  <option value="">Responsable</option>
+                  {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                </select>
+              )}
+            </>
+          )}
         </div>
-        {vista === "lista" && (
-          <select
-            value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
-          >
-            <option value="">Todos los estados</option>
-            {Object.entries(ESTADO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+        {/* Chips de filtros activos */}
+        {(q || hayFiltros) && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-gray-400">Filtros activos:</span>
+            {q && (
+              <button onClick={() => setQ("")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                &quot;{q}&quot; <span className="text-gray-400">×</span>
+              </button>
+            )}
+            {filtroEstado && (
+              <button onClick={() => setFiltroEstado("")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                {ESTADO_LABEL[filtroEstado]} <span>×</span>
+              </button>
+            )}
+            {filtroPrioridad && (
+              <button onClick={() => setFiltroPrioridad("")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors">
+                {PRIORIDAD_LABEL[parseInt(filtroPrioridad)]?.label} <span>×</span>
+              </button>
+            )}
+            {filtroResponsable && (
+              <button onClick={() => setFiltroResponsable("")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors">
+                {responsables.find(r => r.id === filtroResponsable)?.nombre ?? "Responsable"} <span>×</span>
+              </button>
+            )}
+            <button onClick={() => { setQ(""); setFiltroEstado(""); setFiltroPrioridad(""); setFiltroResponsable("") }} className="text-xs text-gray-400 hover:text-gray-700 underline">
+              Limpiar todo
+            </button>
+          </div>
         )}
       </div>
 

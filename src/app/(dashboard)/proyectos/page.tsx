@@ -280,6 +280,7 @@ export default function ProyectosPage() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState("")
+  const [filtroEstado, setFiltroEstado] = useState("")
   const [showModal, setShowModal] = useState(false)
 
   const cargar = useCallback(() => {
@@ -292,11 +293,14 @@ export default function ProyectosPage() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const filtrados = proyectos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.hospital.ciudad.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  const filtrados = proyectos.filter(p => {
+    const texto = p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      p.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      p.hospital.ciudad.toLowerCase().includes(busqueda.toLowerCase())
+    if (!texto) return false
+    if (!filtroEstado) return true
+    return estadoProyecto(p).label === filtroEstado
+  })
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -315,18 +319,39 @@ export default function ProyectosPage() {
         }
       />
 
-      {/* Buscador */}
-      <div className="relative max-w-sm">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <IconSearch />
-        </span>
-        <input
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 bg-white"
+      {/* Buscador + filtros */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <IconSearch />
+          </span>
+          <input
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 bg-white"
+            style={{ ["--tw-ring-color" as string]: TEAL }}
+            placeholder="Buscar proyectos..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+          />
+        </div>
+        <select
+          value={filtroEstado}
+          onChange={e => setFiltroEstado(e.target.value)}
+          className="px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 bg-white"
           style={{ ["--tw-ring-color" as string]: TEAL }}
-          placeholder="Buscar proyectos..."
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-        />
+        >
+          <option value="">Todos los estados</option>
+          <option value="En curso">En curso</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+        {(busqueda || filtroEstado) && (
+          <button
+            onClick={() => { setBusqueda(""); setFiltroEstado("") }}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+          >
+            <IconX /> Limpiar
+          </button>
+        )}
       </div>
 
       {/* Contenido */}

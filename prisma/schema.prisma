@@ -359,6 +359,7 @@ model PreProyecto {
   visitas          Visita[]
   entradas         EntradaTimeline[]
   tareas           Tarea[]
+  adjuntos         Adjunto[]
 
   @@map("pre_proyectos")
 }
@@ -525,6 +526,23 @@ model PreProyectoContacto {
 
   @@id([preProyectoId, contactoId])
   @@map("pre_proyectos_contactos")
+}
+
+// --- ADJUNTOS --------------------------------------------------------
+
+model Adjunto {
+  id            String   @id @default(cuid())
+  preProyectoId String
+  nombre        String
+  tipo          String
+  tamano        Int
+  contenido     String   @db.Text
+  creadoPor     String   @default("")
+  creadoEn      DateTime @default(now())
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+
+  @@map("adjuntos")
 }
 
 // --- PLANTILLAS DE VISITA --------------------------------------------

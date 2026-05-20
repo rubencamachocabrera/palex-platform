@@ -23,11 +23,15 @@ export async function GET(req: Request) {
   const estado = searchParams.get("estado")
   const hospitalId = searchParams.get("hospitalId")
   const q = searchParams.get("q")
+  const prioridad = searchParams.get("prioridad")
+  const responsableId = searchParams.get("responsableId")
   try {
     const items = await db.preProyecto.findMany({
       where: {
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
+        ...(prioridad !== null && prioridad !== "" ? { prioridad: parseInt(prioridad) } : {}),
+        ...(responsableId ? { responsableId } : {}),
         ...(q ? { OR: [
           { titulo: { contains: q, mode: "insensitive" } },
           { hospital: { nombre: { contains: q, mode: "insensitive" } } },

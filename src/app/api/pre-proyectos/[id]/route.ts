@@ -43,6 +43,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         tareas: {
           orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
         },
+        adjuntos: {
+          select: { id: true },
+        },
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
