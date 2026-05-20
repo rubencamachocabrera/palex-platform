@@ -154,9 +154,18 @@ export default function PreProyectoDetalle() {
   )
   if (!pp) return null
 
-  const estadoStyle = ESTADO_COLOR[pp.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
   const fasesCompletadas = pp.fases.filter(f => f.estado === "COMPLETADO").length
   const pct = pp.fases.length ? Math.round((fasesCompletadas / pp.fases.length) * 100) : 0
+  const efDetalle = (() => {
+    if (pp.estado === "PAUSADO" || pp.estado === "CANCELADO") return pp.estado
+    if (!pp.fases.length) return "NUEVO"
+    if (pp.fases.every(f => f.estado === "COMPLETADO")) return "COMPLETADO"
+    if (pp.fases.some(f => f.estado === "EN_PROGRESO" || f.estado === "COMPLETADO")) return "EN_CURSO"
+    return "NUEVO"
+  })()
+  const estadoStyle = ESTADO_COLOR[efDetalle] ?? { bg: "#f3f4f6", text: "#6b7280" }
+  const isRetrasadoHeader = pp.fechaFinPlan && new Date(pp.fechaFinPlan) < new Date()
+    && !["COMPLETADO", "CANCELADO"].includes(efDetalle)
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -173,12 +182,15 @@ export default function PreProyectoDetalle() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
               <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
-                {ESTADO_LABEL[pp.estado]}
+                {ESTADO_LABEL[efDetalle]}
               </span>
               {pp.prioridad > 0 && (
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50" style={{ color: PRIORIDAD[pp.prioridad]?.color }}>
                   {PRIORIDAD[pp.prioridad]?.label}
                 </span>
+              )}
+              {isRetrasadoHeader && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Retrasado</span>
               )}
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">{pp.titulo}</h1>
@@ -1288,44 +1300,58 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
 
   function printMapa() {
     if (!pp.mapaHtml) { toastError("No hay mapa importado"); return }
-    const win = window.open("", "_blank", "width=1200,height=900")
+    const win = window.open("", "_blank", "width=1280,height=960")
     if (!win) { toastError("Permite ventanas emergentes para imprimir"); return }
-    const safeHtml = pp.mapaHtml.replace(/"/g, "&quot;")
     const fecha = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+    const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    // srcdoc se asigna por JS para evitar problemas de codificación y sin sandbox
+    // (el sandbox bloquea tiles externos de Leaflet/OpenStreetMap)
+    const safeJson = JSON.stringify(pp.mapaHtml).replace(/</g,"\\u003c").replace(/>/g,"\\u003e")
     win.document.write(`<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>${pp.titulo} — Mapa de Instalación</title>
+  <title>${esc(pp.titulo)} — Mapa de Instalación</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff}
-    .hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:3px solid #00A99D;background:#fff;height:57px}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;display:flex;flex-direction:column}
+    .hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:3px solid #00A99D;background:#fff;height:57px;flex-shrink:0}
     .brand{font-weight:800;color:#00A99D;font-size:16px;letter-spacing:-0.3px}
     .brand em{font-style:normal;color:#F7941D}
     .meta{font-size:11px;color:#9ca3af;text-align:right;line-height:1.6}
     .meta strong{color:#374151}
-    .map-frame{width:100%;border:none;display:block;height:calc(100vh - 57px)}
+    .toolbar{display:flex;align-items:center;gap:8px;padding:8px 24px;background:#f8fafc;border-bottom:1px solid #e5e7eb;flex-shrink:0}
+    .bp{padding:7px 20px;background:#00A99D;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+    .bc{padding:7px 16px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:13px;cursor:pointer}
+    .hint{font-size:11px;color:#9ca3af;margin-left:6px}
+    #mf{flex:1;width:100%;border:none;display:block}
     .ftr{display:none}
     @media print{
+      .toolbar{display:none!important}
       .hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .ftr{display:block;position:fixed;bottom:0;left:0;right:0;padding:5px 24px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;text-align:center;background:#fff}
-      @page{margin:0}
+      .ftr{display:block!important;position:fixed;bottom:0;left:0;right:0;padding:4px 24px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;text-align:center;background:#fff}
+      @page{margin:0;size:A3 landscape}
     }
   </style>
 </head>
 <body>
   <div class="hdr">
     <span class="brand">Palex Medical · <em>InLab</em></span>
-    <div class="meta"><strong>${pp.titulo}</strong><br>${pp.hospital.nombre} · ${fecha}</div>
+    <div class="meta"><strong>${esc(pp.titulo)}</strong><br>${esc(pp.hospital.nombre)} · ${fecha}</div>
   </div>
-  <iframe class="map-frame" srcdoc="${safeHtml}" sandbox="allow-scripts allow-same-origin"></iframe>
+  <div class="toolbar">
+    <button class="bp" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <button class="bc" onclick="window.close()">Cerrar</button>
+    <span class="hint">Espera a que el mapa cargue completamente antes de imprimir</span>
+  </div>
+  <iframe id="mf"></iframe>
   <div class="ftr">Palex Medical · InLab — Confidencial — ${fecha}</div>
+  <script>document.getElementById('mf').srcdoc=${safeJson};</script>
 </body>
 </html>`)
     win.document.close()
     win.focus()
-    setTimeout(() => { try { win.print() } catch { /* closed */ } }, 800)
   }
 
   function printInformeCompleto() {
@@ -1424,6 +1450,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
 .hito-pend{background:#fffbeb;border-color:#fde68a;color:#d97706}
 .nt{font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap}
 .pfooter{display:none}
+.map-page{display:none;padding:28px 44px;flex-direction:column;min-height:100vh}
 @media print{
   .toolbar,.no-print{display:none!important}
   .cover{min-height:100vh;page-break-after:always;break-after:page}
@@ -1432,6 +1459,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
   .phm{font-size:10px;color:#9ca3af;text-align:right}
   .kgrid,.cmeta{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .pfooter{display:flex!important;justify-content:space-between;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;margin-top:28px}
+  .map-page{display:flex!important;break-before:page;page-break-before:always}
+  .map-page #mpf{height:calc(100vh - 160px)!important;min-height:0!important}
   @page{margin:14mm 14mm 18mm;size:A4}
   @page:first{margin:0;size:A4}
 }
@@ -1497,6 +1526,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
   ${pp.descripcion||pp.notas?`<div class="sec"><p class="stitle">Notas y descripción</p>${pp.descripcion?`<div style="margin-bottom:14px"><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Descripción</p><p class="nt">${e(pp.descripcion)}</p></div>`:""}${pp.notas?`<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Notas internas</p><p class="nt">${e(pp.notas)}</p></div>`:""}</div>`:""}
   <div class="pfooter"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
 </div>
+${pp.mapaHtml ? `<div class="map-page">
+  <div class="phdr"><span class="phb">Palex Medical · <em>InLab</em></span><div class="phm"><strong>${e(pp.titulo)}</strong><br>Mapa de instalación · ${e(fecha)}</div></div>
+  <p class="stitle" style="margin-bottom:12px">Mapa de instalación — ${e(pp.hospital.nombre)}</p>
+  <iframe id="mpf" style="width:100%;flex:1;border:1px solid #e5e7eb;border-radius:8px;display:block;min-height:500px"></iframe>
+  <div class="pfooter" style="margin-top:10px"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
+</div>
+<script>document.getElementById('mpf').srcdoc=${JSON.stringify(pp.mapaHtml).replace(/</g,"\\u003c").replace(/>/g,"\\u003e")};</script>` : ""}
 </body></html>`)
     win.document.close()
     win.focus()
