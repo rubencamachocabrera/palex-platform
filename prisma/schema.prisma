@@ -118,6 +118,20 @@ enum TipoEntrada {
   CITA
 }
 
+enum EstadoTarea {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADA
+  CANCELADA
+}
+
+enum PrioridadTarea {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
 // --- CONFIG ----------------------------------------------------------
 
 model ConfigApp {
@@ -344,6 +358,7 @@ model PreProyecto {
   contactos        PreProyectoContacto[]
   visitas          Visita[]
   entradas         EntradaTimeline[]
+  tareas           Tarea[]
 
   @@map("pre_proyectos")
 }
@@ -400,6 +415,28 @@ model EntradaTimeline {
   preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
 
   @@map("entradas_timeline")
+}
+
+model Tarea {
+  id               String         @id @default(cuid())
+  preProyectoId    String
+  parentId         String?
+  titulo           String
+  descripcion      String?        @db.Text
+  estado           EstadoTarea    @default(PENDIENTE)
+  prioridad        PrioridadTarea @default(MEDIA)
+  asignadoA        String?
+  fechaVencimiento DateTime?
+  fechaCompletada  DateTime?
+  orden            Int            @default(0)
+  creadoEn         DateTime       @default(now())
+  editadoEn        DateTime       @updatedAt
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  parent      Tarea?      @relation("TareaSubtareas", fields: [parentId], references: [id], onDelete: Cascade)
+  subtareas   Tarea[]     @relation("TareaSubtareas")
+
+  @@map("tareas")
 }
 
 model SolicitudMaterial {

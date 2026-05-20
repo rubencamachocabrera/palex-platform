@@ -40,6 +40,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         entradas: {
           orderBy: { fechaEntrada: "asc" },
         },
+        tareas: {
+          orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+        },
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })

@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest) {
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -65,6 +65,23 @@ export async function GET(_req: NextRequest) {
         orderBy: { fechaFinPlan: "asc" },
         take: 5,
       }),
+      db.tarea.findMany({
+        where: {
+          fechaVencimiento: { lt: now },
+          estado: { notIn: ["COMPLETADA", "CANCELADA"] },
+          parentId: null,
+          preProyecto: {
+            estado: { notIn: ["COMPLETADO", "CANCELADO"] },
+            ...(rol === "ADMIN" ? {} : { responsableId: userId }),
+          },
+        },
+        select: {
+          id: true, titulo: true, fechaVencimiento: true,
+          preProyecto: { select: { id: true, titulo: true } },
+        },
+        orderBy: { fechaVencimiento: "asc" },
+        take: 8,
+      }),
     ])
 
     const items = [
@@ -97,6 +114,16 @@ export async function GET(_req: NextRequest) {
           titulo: p.titulo,
           href: `/pre-proyectos/${p.id}`,
           mensaje: diasRestantes <= 0 ? "Fecha de entrega hoy" : `Entrega en ${diasRestantes} día${diasRestantes === 1 ? "" : "s"}`,
+        }
+      }),
+      ...tareasRetrasadas.map(t => {
+        const diasRetraso = Math.floor((now.getTime() - new Date(t.fechaVencimiento!).getTime()) / 86400000)
+        return {
+          tipo: "tarea_retrasada" as const,
+          id: t.id,
+          titulo: t.titulo,
+          href: `/pre-proyectos/${t.preProyecto.id}`,
+          mensaje: `En "${t.preProyecto.titulo}" · ${diasRetraso === 0 ? "vencía hoy" : `retrasada ${diasRetraso}d`}`,
         }
       }),
     ]
