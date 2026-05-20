@@ -641,17 +641,43 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const inicioPrevMes = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
+  const en7dias = new Date(ahora.getTime() + 7 * 86400000)
 
-  const [misVisitas, misHospitales, visitasPrevMes, visitasChart, proximasVisitas, estadoModulosRaw] = await Promise.all([
+  const [
+    misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
+    proximasVisitas, estadoModulosRaw, totalVisitas,
+    misProyectos, fasesRetrasadas, proyectosVenc,
+  ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
     db.visita.count({ where: { usuarioId: userId, creadoEn: { gte: inicioPrevMes, lte: finPrevMes } } }),
     db.visita.findMany({ where: { usuarioId: userId, creadoEn: { gte: inicioSeisM } }, select: { creadoEn: true } }),
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: ahora } }, orderBy: { fecha: "asc" }, take: 5, include: { hospital: { select: { nombre: true } } } }),
     db.proyectoModulo.groupBy({ by: ["estado"], _count: { _all: true } }),
+    db.visita.count({ where: { usuarioId: userId } }),
+    db.preProyecto.findMany({
+      where: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
+      include: { hospital: { select: { nombre: true } }, fases: { select: { estado: true } } },
+      orderBy: { fechaFinPlan: "asc" },
+    }),
+    db.fasePreProyecto.findMany({
+      where: {
+        fechaPlan: { lt: ahora },
+        estado: { not: "COMPLETADO" },
+        preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
+      },
+      select: { id: true, nombre: true, fechaPlan: true, preProyecto: { select: { id: true, titulo: true } } },
+      orderBy: { fechaPlan: "asc" },
+      take: 5,
+    }),
+    db.preProyecto.findMany({
+      where: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
+      select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
+      orderBy: { fechaFinPlan: "asc" },
+    }),
   ])
 
-  const visitasMes = misVisitas.filter(v => new Date(v.creadoEn) >= inicioMes).length
+  const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
   const trendVisitas = calcTrend(visitasMes, visitasPrevMes)
   const chartData = agruparPorMes(visitasChart.map(v => new Date(v.creadoEn)), 6)
 
@@ -660,17 +686,29 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     .map(estado => ({ estado, count: estadoModulosRaw.find(r => r.estado === estado)?._count._all ?? 0 }))
     .filter(d => d.count > 0)
 
+  // Alertas
+  type AlertaItem = { key: string; titulo: string; sub: string; href: string; color: string; bg: string }
+  const alertas: AlertaItem[] = []
+  proyectosVenc.forEach(p => {
+    const dias = p.fechaFinPlan ? Math.ceil((new Date(p.fechaFinPlan).getTime() - ahora.getTime()) / 86400000) : 0
+    alertas.push({ key: `pv-${p.id}`, titulo: p.titulo, sub: `Vence en ${dias} día${dias !== 1 ? "s" : ""} · ${p.hospital.nombre}`, href: `/pre-proyectos/${p.id}`, color: "#f97316", bg: "#fff7ed" })
+  })
+  fasesRetrasadas.forEach(f => {
+    alertas.push({ key: `fr-${f.id}`, titulo: f.preProyecto.titulo, sub: `Fase "${f.nombre}" — debía completarse el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${f.preProyecto.id}`, color: "#dc2626", bg: "#fef2f2" })
+  })
+
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
         <KpiCard label="Hospitales en mi zona" value={misHospitales} icon={<IconHospital size={18} />} />
-        <KpiCard label="Total visitas" value={misVisitas.length} icon={<IconFileText size={18} />} />
+        <KpiCard label="Total visitas" value={totalVisitas} icon={<IconFileText size={18} />} />
+        <KpiCard label="Proyectos activos" value={misProyectos.length} icon={<IconCheckCircle size={18} />} />
       </div>
 
-      {/* Fila: Visitas por mes + Estado módulos */}
+      {/* Fila: gráficos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
@@ -683,45 +721,99 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
           <BarChart data={chartData} />
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-800 mb-1">Proyectos activos</h2>
-          <p className="text-xs text-gray-400 mb-4">Módulos por estado de instalación</p>
+          <h2 className="text-sm font-bold text-gray-800 mb-1">Estado instalaciones</h2>
+          <p className="text-xs text-gray-400 mb-4">Módulos por fase</p>
           <EstadoModulosChart data={estadoModulosData} />
         </div>
       </div>
 
+      {/* Alertas proactivas */}
+      {alertas.length > 0 && (
+        <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+            <p className="text-sm font-semibold text-gray-800">Acciones recomendadas</p>
+            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-500">{alertas.length}</span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {alertas.map(a => (
+              <Link key={a.key} href={a.href} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
+                <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: a.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{a.titulo}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{a.sub}</p>
+                </div>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-0.5 group-hover:opacity-100" style={{ backgroundColor: a.bg, color: a.color }}>Ver</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Mis visitas recientes */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis visitas recientes" link="/visitas" /></div>
           <div className="divide-y divide-gray-50">
-            {misVisitas.length === 0
-              ? <EmptyState icon="clipboard" title="Sin visitas aun" description="Crea tu primera visita preproyecto" action={{ label: "Nueva visita", href: "/visitas/nueva" }} />
-              : misVisitas.map(v => (
-                <div key={v.id} className="flex items-center gap-3 px-5 py-3">
+            {misVisitasRecientes.length === 0
+              ? <EmptyState icon="clipboard" title="Sin visitas aun" description="Crea tu primera visita preproyecto" action={{ label: "Nueva visita", href: "/visitas?abrir=1" }} />
+              : misVisitasRecientes.map(v => (
+                <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
                     <p className="text-xs text-gray-400">{new Date(v.fecha).toLocaleDateString("es-ES")}</p>
                   </div>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
-                </div>
+                </Link>
               ))}
           </div>
         </div>
-        {proximasVisitas.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Proximas visitas" /></div>
-            <div className="flex gap-3 p-4 overflow-x-auto">
-              {proximasVisitas.map(v => <ProximaCard key={v.id} id={v.id} hospital={v.hospital.nombre} fecha={v.fecha.toString()} href={`/visitas/${v.id}`} />)}
+
+        {/* Mis proyectos activos */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis proyectos activos" link="/pre-proyectos" /></div>
+          {misProyectos.length === 0 ? (
+            <EmptyState icon="folder" title="Sin proyectos asignados" description="No tienes proyectos activos asignados" />
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {misProyectos.slice(0, 5).map(p => {
+                const pct = p.fases.length ? Math.round((p.fases.filter(f => f.estado === "COMPLETADO").length / p.fases.length) * 100) : 0
+                return (
+                  <Link key={p.id} href={`/pre-proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-teal-700 transition-colors">{p.hospital.nombre}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[80px]">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400">{pct}%</span>
+                      </div>
+                    </div>
+                    <span className="text-gray-300 text-sm group-hover:text-teal-400 transition-colors">›</span>
+                  </Link>
+                )
+              })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {proximasVisitas.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Proximas visitas" /></div>
+          <div className="flex gap-3 p-4 overflow-x-auto">
+            {proximasVisitas.map(v => <ProximaCard key={v.id} id={v.id} hospital={v.hospital.nombre} fecha={v.fecha.toString()} href={`/visitas/${v.id}`} />)}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <QuickLink href="/visitas/nueva"      label="Nueva visita"      Icon={IconClipboard} color="bg-teal-50 text-teal-700" />
-          <QuickLink href="/visitas"            label="Todas mis visitas" Icon={IconFileText}  color="bg-blue-50 text-blue-700" />
-          <QuickLink href="/ventas/hospitales"  label="Mis hospitales"    Icon={IconHospital}  color="bg-amber-50 text-amber-700" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <QuickLink href="/visitas?abrir=1" label="Nueva visita"      Icon={IconClipboard} color="bg-teal-50 text-teal-700" />
+          <QuickLink href="/visitas"         label="Mis visitas"       Icon={IconFileText}  color="bg-blue-50 text-blue-700" />
+          <QuickLink href="/hospitales"      label="Mis hospitales"    Icon={IconHospital}  color="bg-amber-50 text-amber-700" />
+          <QuickLink href="/pre-proyectos"   label="Proyectos"         Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
         </div>
       </div>
     </div>
