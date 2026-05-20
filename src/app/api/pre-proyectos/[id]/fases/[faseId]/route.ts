@@ -20,11 +20,24 @@ export async function PATCH(
     if ("fechaReal" in body) data.fechaReal = body.fechaReal ? new Date(body.fechaReal) : null
     const updated = await db.fasePreProyecto.update({ where: { id: faseId }, data })
 
-    // Auto-transición: si una fase pasa a activa y el proyecto sigue en NUEVO → EN_CURSO
+    // Auto-transición de estado del proyecto según progreso de fases
     if (data.estado === "EN_PROGRESO" || data.estado === "COMPLETADO") {
       const proyecto = await db.preProyecto.findUnique({ where: { id: proyectoId }, select: { estado: true } })
       if (proyecto?.estado === "NUEVO") {
         await db.preProyecto.update({ where: { id: proyectoId }, data: { estado: "EN_CURSO" } })
+      }
+      // EN_CURSO → COMPLETADO cuando todas las fases estén completadas
+      if (
+        data.estado === "COMPLETADO" &&
+        proyecto &&
+        !["PAUSADO", "CANCELADO", "COMPLETADO"].includes(proyecto.estado)
+      ) {
+        const sinCompletar = await db.fasePreProyecto.count({
+          where: { preProyectoId: proyectoId, estado: { not: "COMPLETADO" } },
+        })
+        if (sinCompletar === 0) {
+          await db.preProyecto.update({ where: { id: proyectoId }, data: { estado: "COMPLETADO" } })
+        }
       }
     }
 

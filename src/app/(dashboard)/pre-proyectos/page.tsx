@@ -63,6 +63,14 @@ function progreso(fases: FaseResumen[]) {
   return Math.round((fases.filter(f => f.estado === "COMPLETADO").length / fases.length) * 100)
 }
 
+function estadoEfectivo(item: PreProyecto): string {
+  if (item.estado === "PAUSADO" || item.estado === "CANCELADO") return item.estado
+  if (!item.fases.length) return "NUEVO"
+  if (item.fases.every(f => f.estado === "COMPLETADO")) return "COMPLETADO"
+  if (item.fases.some(f => f.estado === "EN_PROGRESO" || f.estado === "COMPLETADO")) return "EN_CURSO"
+  return "NUEVO"
+}
+
 // ---- icons ----
 
 function IconPlus() {
@@ -96,15 +104,16 @@ function KpiCard({ label, value, color }: { label: string; value: number; color?
 
 function CardContent({ item }: { item: PreProyecto }) {
   const pct = progreso(item.fases)
-  const estadoStyle = ESTADO_COLOR[item.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
+  const ef = estadoEfectivo(item)
+  const estadoStyle = ESTADO_COLOR[ef] ?? { bg: "#f3f4f6", text: "#6b7280" }
   const prio = PRIORIDAD_LABEL[item.prioridad]
   const retrasado = item.fechaFinPlan && new Date(item.fechaFinPlan) < new Date()
-    && item.estado !== "COMPLETADO" && item.estado !== "CANCELADO"
+    && ef !== "COMPLETADO" && ef !== "CANCELADO"
   return (
     <>
       <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
-          {ESTADO_LABEL[item.estado]}
+          {ESTADO_LABEL[ef]}
         </span>
         {item.prioridad > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50" style={{ color: prio.color }}>{prio.label}</span>
@@ -352,7 +361,7 @@ export default function PreProyectosPage() {
     const { active, over } = event
     if (!over) return
     const item = items.find(i => i.id === active.id)
-    if (!item || item.estado === over.id) return
+    if (!item || estadoEfectivo(item) === over.id) return
     const nuevoEstado = over.id as string
     setItems(prev => prev.map(i => i.id === active.id ? { ...i, estado: nuevoEstado } : i))
     const r = await fetch(`/api/pre-proyectos/${active.id}`, {
@@ -368,11 +377,12 @@ export default function PreProyectosPage() {
   const activeItem = activeId ? items.find(i => i.id === activeId) ?? null : null
 
   const total       = items.length
-  const enCurso     = items.filter(i => i.estado === "EN_CURSO").length
+  const enCurso     = items.filter(i => estadoEfectivo(i) === "EN_CURSO").length
   const retrasados  = items.filter(i =>
-    i.fechaFinPlan && new Date(i.fechaFinPlan) < new Date() && i.estado !== "COMPLETADO" && i.estado !== "CANCELADO"
+    i.fechaFinPlan && new Date(i.fechaFinPlan) < new Date()
+    && !["COMPLETADO", "CANCELADO"].includes(estadoEfectivo(i))
   ).length
-  const completados = items.filter(i => i.estado === "COMPLETADO").length
+  const completados = items.filter(i => estadoEfectivo(i) === "COMPLETADO").length
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -457,10 +467,11 @@ export default function PreProyectosPage() {
           <div className="space-y-3">
             {items.map(item => {
               const pct = progreso(item.fases)
-              const estadoStyle = ESTADO_COLOR[item.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
+              const ef = estadoEfectivo(item)
+              const estadoStyle = ESTADO_COLOR[ef] ?? { bg: "#f3f4f6", text: "#6b7280" }
               const prio = PRIORIDAD_LABEL[item.prioridad]
               const retrasado = item.fechaFinPlan && new Date(item.fechaFinPlan) < new Date()
-                && item.estado !== "COMPLETADO" && item.estado !== "CANCELADO"
+                && ef !== "COMPLETADO" && ef !== "CANCELADO"
               return (
                 <Link
                   key={item.id}
@@ -471,7 +482,7 @@ export default function PreProyectosPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
-                          {ESTADO_LABEL[item.estado]}
+                          {ESTADO_LABEL[ef]}
                         </span>
                         {item.prioridad > 0 && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50" style={{ color: prio.color }}>
@@ -534,7 +545,7 @@ export default function PreProyectosPage() {
               <KanbanColumn
                 key={estado}
                 estado={estado}
-                items={items.filter(i => i.estado === estado)}
+                items={items.filter(i => estadoEfectivo(i) === estado)}
               />
             ))}
           </div>
