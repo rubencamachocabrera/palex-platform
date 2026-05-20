@@ -1068,6 +1068,7 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [origin, setOrigin] = useState("")
   const [dragOver, setDragOver] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const [mapaExpanded, setMapaExpanded] = useState(false)
   const mapRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [mapH, setMapH] = useState(560)
@@ -1114,8 +1115,16 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
 
   async function copyLink() {
     if (!shareUrl) return
-    await navigator.clipboard.writeText(shareUrl)
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+    } catch {
+      // Fallback para HTTP o contextos sin permisos de clipboard
+      const ta = document.createElement("textarea")
+      ta.value = shareUrl; ta.style.position = "fixed"; ta.style.opacity = "0"
+      document.body.appendChild(ta); ta.select()
+      document.execCommand("copy"); document.body.removeChild(ta)
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2500)
   }
 
   async function saveMapaContent(html: string) {
@@ -1743,28 +1752,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
         {pp.mapaHtml ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Map toolbar */}
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between print:hidden bg-gray-50/60">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: TEAL }} />
+            <div
+              className={`px-5 py-3 flex items-center justify-between print:hidden bg-gray-50/60 transition-colors ${mapaExpanded ? "border-b border-gray-100" : ""}`}>
+              <button
+                onClick={() => setMapaExpanded(v => !v)}
+                className="flex items-center gap-2 group min-w-0">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Mapa de instalación</p>
-              </div>
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  className="shrink-0 ml-0.5 transition-transform duration-200"
+                  style={{ transform: mapaExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setFullscreen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                    <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                  </svg>
-                  Pantalla completa
-                </button>
-                <button onClick={printMapa}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
-                  </svg>
-                  Imprimir
-                </button>
-                <div className="w-px h-4 bg-gray-200" />
+                {mapaExpanded && (
+                  <>
+                    <button onClick={() => setFullscreen(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                        <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                      </svg>
+                      Pantalla completa
+                    </button>
+                    <button onClick={printMapa}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                      </svg>
+                      Imprimir
+                    </button>
+                    <div className="w-px h-4 bg-gray-200" />
+                  </>
+                )}
                 <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all disabled:opacity-40">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1774,8 +1797,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
                 </button>
               </div>
             </div>
-            <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
-              onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa de instalación" />
+            {mapaExpanded && (
+              <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
+                onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa de instalación" />
+            )}
           </div>
         ) : (
           <div
@@ -1890,48 +1915,94 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
 
       {/* Share modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 className="font-bold text-gray-900 text-lg mb-1">Compartir proyecto</h3>
-            <p className="text-sm text-gray-500 mb-5">Cualquier persona con el enlace puede ver el resumen completo sin iniciar sesión.</p>
-            {pp.shareToken ? (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <input readOnly value={shareUrl ?? ""} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-xs font-mono bg-gray-50 text-gray-600 focus:outline-none" />
-                  <button onClick={copyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shrink-0 transition-colors"
-                    style={{ backgroundColor: copied ? "#16a34a" : TEAL }}>
-                    {copied ? "Copiado" : "Copiar"}
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShareModal(false) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Compartir proyecto</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Cualquier persona con el enlace puede ver el resumen sin iniciar sesión</p>
                 </div>
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
-                  <button onClick={revokeShare} disabled={revoking}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-50">
-                    {revoking ? "Revocando…" : "Revocar enlace"}
-                  </button>
-                  <button onClick={() => setShareModal(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
-                    Cerrar
-                  </button>
-                </div>
+                <button onClick={() => setShareModal(false)} className="text-gray-300 hover:text-gray-500 transition-colors p-1 -mt-1 -mr-1">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-500 text-center">
-                  Sin enlace generado para este proyecto
+            </div>
+
+            <div className="p-6">
+              {pp.shareToken ? (
+                <div className="space-y-4">
+                  {/* Status pill */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: `${TEAL}10` }}>
+                    <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ backgroundColor: TEAL }} />
+                    <span className="text-xs font-semibold" style={{ color: TEAL }}>Enlace activo</span>
+                    <span className="text-xs text-gray-400 ml-auto">Se puede acceder sin login</span>
+                  </div>
+
+                  {/* URL box */}
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Enlace público</p>
+                    <p className="text-xs font-mono text-gray-600 break-all leading-relaxed">{shareUrl}</p>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={copyLink}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                      style={{ backgroundColor: copied ? "#16a34a" : TEAL }}>
+                      {copied ? (
+                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado</>
+                      ) : (
+                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar enlace</>
+                      )}
+                    </button>
+                    <a href={shareUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-teal-50"
+                      style={{ borderColor: TEAL, color: TEAL }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                      Abrir enlace
+                    </a>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100">
+                    <button onClick={revokeShare} disabled={revoking}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 border border-red-100 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors">
+                      {revoking ? "Revocando…" : "Revocar enlace público"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+              ) : (
+                <div className="space-y-4">
+                  {/* Empty state */}
+                  <div className="rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Sin enlace generado</p>
+                    <p className="text-xs text-gray-400">Genera un enlace único para compartir este proyecto con cualquier persona</p>
+                  </div>
                   <button onClick={generateShare} disabled={generando}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-opacity hover:opacity-90"
                     style={{ backgroundColor: TEAL }}>
-                    {generando ? "Generando…" : "Generar enlace público"}
-                  </button>
-                  <button onClick={() => setShareModal(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
-                    Cancelar
+                    {generando ? (
+                      <><svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generando enlace…</>
+                    ) : (
+                      <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Generar enlace público</>
+                    )}
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
