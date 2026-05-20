@@ -158,6 +158,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/admin/usuarios",       label: "Usuarios",          icon: "Usuarios" },
       { href: "/admin/zonas",          label: "Zonas",             icon: "Zonas" },
       { href: "/admin/hospitales",     label: "Hospitales",        icon: "Hospitales" },
+      { href: "/mapa",                 label: "Mapa",              icon: "Mapa" },
       { href: "/admin/visitas",        label: "Todas las visitas", icon: "TodasVisitas" },
       { href: "/admin/configuracion",  label: "Configuración",     icon: "Configuracion" },
     ],
@@ -167,7 +168,6 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
     crmOnly: true,
     items: [
       { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
-      { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
     ],
   },
   {
@@ -186,6 +186,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
       { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+      { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },
   {
@@ -193,7 +194,6 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
     crmOnly: true,
     items: [
       { href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" },
-      { href: "/mapa",            label: "Mapa",     icon: "Mapa" },
     ],
   },
   {
@@ -212,6 +212,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+      { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },
   {
@@ -230,6 +231,7 @@ const NAV_GROUPS_TECNICO: NavGroup[] = [
       { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+      { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },
   {

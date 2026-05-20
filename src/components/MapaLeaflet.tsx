@@ -9,10 +9,21 @@ export type HospitalMapa = {
   nombre: string
   ciudad: string
   provincia: string | null
+  tipo?: string
   latitud: number | null
   longitud: number | null
   zona: { id: string; nombre: string }
   _count: { visitas: number; oportunidades: number }
+}
+
+const TIPO_LABELS: Record<string, string> = {
+  HOSPITAL_PUBLICO: "H. Público",
+  HOSPITAL_PRIVADO: "H. Privado",
+  CLINICA_PRIVADA:  "Clínica Privada",
+  LABORATORIO:      "Laboratorio",
+  CENTRO_SALUD:     "C. de Salud",
+  UNIVERSIDAD:      "Universidad",
+  OTRO:             "Otro",
 }
 
 const ZONE_PALETTE = [
@@ -129,7 +140,6 @@ function getCoords(h: HospitalMapa): [number, number] | null {
   return COORDS_POR_CIUDAD[h.ciudad.toLowerCase().trim()] ?? null
 }
 
-// Carga Leaflet desde CDN — sin dependencia npm
 function cargarLeaflet(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!document.getElementById("leaflet-css")) {
@@ -142,7 +152,6 @@ function cargarLeaflet(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).L) { resolve(); return }
     if (document.getElementById("leaflet-js")) {
-      // Script ya en DOM pero aún cargando — esperar
       const existing = document.getElementById("leaflet-js") as HTMLScriptElement
       existing.addEventListener("load", () => resolve(), { once: true })
       existing.addEventListener("error", reject, { once: true })
@@ -161,9 +170,16 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
   const mapRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapObj = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markersRef = useRef<Array<{ marker: any; h: HospitalMapa }>>([])
   const [mapReady, setMapReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [selected, setSelected] = useState<HospitalMapa | null>(null)
+
+  // Filtros
+  const [searchQ, setSearchQ] = useState("")
+  const [zonasFiltro, setZonasFiltro] = useState<Set<string>>(new Set())
+  const [tiposFiltro, setTiposFiltro] = useState<Set<string>>(new Set())
 
   const zoneColorMap = useMemo(() => {
     const sorted = [...new Map(hospitales.map(h => [h.zona.id, h.zona.nombre])).entries()]
@@ -179,8 +195,23 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
       .map(([id, nombre]) => ({ id, nombre, color: zoneColorMap[id] ?? TEAL })),
   [hospitales, zoneColorMap])
 
+  const tiposDisponibles = useMemo(() =>
+    [...new Set(hospitales.map(h => h.tipo).filter((t): t is string => Boolean(t)))].sort(),
+  [hospitales])
+
+  const visibleCount = useMemo(() => {
+    const q = searchQ.toLowerCase()
+    return hospitales.filter(h => {
+      const inZona = zonasFiltro.size === 0 || zonasFiltro.has(h.zona.id)
+      const inTipo = tiposFiltro.size === 0 || tiposFiltro.has(h.tipo ?? "")
+      const inSearch = !q || h.nombre.toLowerCase().includes(q) || h.ciudad.toLowerCase().includes(q)
+      return inZona && inTipo && inSearch
+    }).length
+  }, [hospitales, zonasFiltro, tiposFiltro, searchQ])
+
   const ubicados = useMemo(() => hospitales.filter(h => getCoords(h) !== null), [hospitales])
 
+  // Inicializar mapa
   useEffect(() => {
     if (!mapRef.current || mapObj.current) return
     const el = mapRef.current
@@ -201,13 +232,14 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
           const coords = getCoords(h)
           if (!coords) return
           const color = zoneColorMap[h.zona.id] ?? TEAL
-          L.circleMarker(coords, {
+          const marker = L.circleMarker(coords, {
             radius: 9, fillColor: color,
             color: "#ffffff", weight: 2.5, opacity: 1, fillOpacity: 0.88,
           })
             .bindTooltip(h.nombre, { permanent: false, direction: "top", offset: [0, -6], className: "leaflet-tooltip-palex" })
             .addTo(map)
             .on("click", () => setSelected(h))
+          markersRef.current.push({ marker, h })
         })
 
         mapObj.current = map
@@ -217,15 +249,135 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
 
     return () => {
       if (mapObj.current) { mapObj.current.remove(); mapObj.current = null }
+      markersRef.current = []
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Aplicar filtros a marcadores
+  useEffect(() => {
+    if (!mapObj.current) return
+    const map = mapObj.current
+    const q = searchQ.toLowerCase()
+    markersRef.current.forEach(({ marker, h }) => {
+      const inZona = zonasFiltro.size === 0 || zonasFiltro.has(h.zona.id)
+      const inTipo = tiposFiltro.size === 0 || tiposFiltro.has(h.tipo ?? "")
+      const inSearch = !q || h.nombre.toLowerCase().includes(q) || h.ciudad.toLowerCase().includes(q)
+      const visible = inZona && inTipo && inSearch
+      if (visible && !map.hasLayer(marker)) map.addLayer(marker)
+      else if (!visible && map.hasLayer(marker)) map.removeLayer(marker)
+    })
+  }, [zonasFiltro, tiposFiltro, searchQ])
+
+  const toggleZona = (id: string) => {
+    setZonasFiltro(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const toggleTipo = (tipo: string) => {
+    setTiposFiltro(prev => {
+      const next = new Set(prev)
+      if (next.has(tipo)) next.delete(tipo); else next.add(tipo)
+      return next
+    })
+  }
+
+  const hasFilter = zonasFiltro.size > 0 || tiposFiltro.size > 0 || searchQ.length > 0
+
   return (
     <div className="relative flex h-full overflow-hidden">
+
+      {/* Barra de filtros flotante */}
+      {mapReady && (
+        <div className="absolute top-3 left-3 right-3 z-[1002] bg-white/96 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 px-3 py-2.5 flex flex-wrap gap-1.5 items-center">
+          {/* Búsqueda */}
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder="Buscar hospital o ciudad…"
+            className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-1 bg-white w-44 shrink-0"
+            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+          />
+
+          <div className="w-px h-4 bg-gray-200 shrink-0" />
+
+          {/* Chips de zona */}
+          {zonasPaleta.map(z => {
+            const active = zonasFiltro.has(z.id)
+            return (
+              <button
+                key={z.id}
+                onClick={() => toggleZona(z.id)}
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-all"
+                style={active
+                  ? { backgroundColor: z.color, color: "#fff", borderColor: z.color }
+                  : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: active ? "rgba(255,255,255,0.7)" : z.color }}
+                />
+                {z.nombre}
+              </button>
+            )
+          })}
+
+          {/* Filtro de tipo */}
+          {tiposDisponibles.length > 1 && (
+            <>
+              <div className="w-px h-4 bg-gray-200 shrink-0" />
+              <select
+                value=""
+                onChange={e => {
+                  if (e.target.value) toggleTipo(e.target.value)
+                  e.currentTarget.value = ""
+                }}
+                className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-gray-600 bg-white focus:outline-none focus:ring-1 shrink-0"
+                style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+              >
+                <option value="">Tipo…</option>
+                {tiposDisponibles.map(t => (
+                  <option key={t} value={t}>{TIPO_LABELS[t] ?? t}</option>
+                ))}
+              </select>
+              {[...tiposFiltro].map(t => (
+                <button
+                  key={t}
+                  onClick={() => toggleTipo(t)}
+                  className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-white"
+                  style={{ backgroundColor: "#374151" }}
+                >
+                  {TIPO_LABELS[t] ?? t}
+                  <span className="opacity-60 ml-0.5">×</span>
+                </button>
+              ))}
+            </>
+          )}
+
+          {/* Contador y limpiar */}
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            <span className="text-[10px] font-semibold text-gray-400">
+              {visibleCount} / {hospitales.length}
+            </span>
+            {hasFilter && (
+              <button
+                onClick={() => { setSearchQ(""); setZonasFiltro(new Set()); setTiposFiltro(new Set()) }}
+                className="text-[10px] text-gray-400 hover:text-red-500 transition-colors px-2 py-0.5 rounded-lg hover:bg-red-50"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mapa */}
       <div ref={mapRef} className="flex-1 h-full" />
 
-      {/* Loading */}
+      {/* Cargando */}
       {!mapReady && !loadError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-[500]">
           <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin mb-3" style={{ borderTopColor: TEAL }} />
@@ -241,16 +393,21 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
         </div>
       )}
 
-      {/* Zone legend */}
+      {/* Leyenda de zonas — interactiva */}
       {mapReady && zonasPaleta.length > 0 && (
         <div className="absolute bottom-6 left-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 max-w-[180px]">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Zonas</p>
           <div className="space-y-1.5">
             {zonasPaleta.map(z => (
-              <div key={z.id} className="flex items-center gap-2">
+              <button
+                key={z.id}
+                onClick={() => toggleZona(z.id)}
+                className="flex items-center gap-2 w-full text-left transition-opacity"
+                style={{ opacity: zonasFiltro.size > 0 && !zonasFiltro.has(z.id) ? 0.3 : 1 }}
+              >
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: z.color }} />
                 <span className="text-xs text-gray-600 truncate">{z.nombre}</span>
-              </div>
+              </button>
             ))}
           </div>
           <div className="mt-2 pt-2 border-t border-gray-100">
@@ -262,7 +419,7 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
         </div>
       )}
 
-      {/* Hospital panel */}
+      {/* Panel detalle hospital */}
       {selected && (
         <div className="absolute right-0 top-0 h-full w-72 bg-white border-l border-gray-100 shadow-2xl z-[1001] flex flex-col">
           <div className="flex items-start gap-3 px-5 py-4 border-b border-gray-100">
@@ -271,6 +428,9 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
               <p className="text-xs text-gray-400 mt-0.5 truncate">
                 {selected.ciudad}{selected.provincia ? `, ${selected.provincia}` : ""}
               </p>
+              {selected.tipo && (
+                <p className="text-[10px] text-gray-400 mt-0.5">{TIPO_LABELS[selected.tipo] ?? selected.tipo}</p>
+              )}
             </div>
             <button
               onClick={() => setSelected(null)}

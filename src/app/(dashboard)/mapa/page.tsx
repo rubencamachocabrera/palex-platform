@@ -6,12 +6,6 @@ import MapaWrapper from "./MapaWrapper"
 export default async function MapaPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
-  const role = (session.user as { role?: string }).role
-  if (role !== "ADMIN" && role !== "VENTAS") redirect("/dashboard")
-
-  let config = await db.configApp.findUnique({ where: { id: 1 } })
-  if (!config) config = await db.configApp.create({ data: { id: 1, crmActivo: true } })
-  if (!config.crmActivo) redirect("/dashboard")
 
   const hospitales = await db.hospital.findMany({
     where: { activo: true },
@@ -20,6 +14,7 @@ export default async function MapaPage() {
       nombre: true,
       ciudad: true,
       provincia: true,
+      tipo: true,
       latitud: true,
       longitud: true,
       zona: { select: { id: true, nombre: true } },
