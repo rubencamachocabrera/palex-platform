@@ -386,6 +386,8 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
   const [editEntradaId, setEditEntradaId] = useState<string | null>(null)
   const [editEntradaForm, setEditEntradaForm] = useState({ titulo: "", contenido: "", fechaEntrada: "", fechaCita: "", horaCita: "", personaCita: "" })
+  const [editHitoId, setEditHitoId] = useState<string | null>(null)
+  const [editHitoForm, setEditHitoForm] = useState({ titulo: "", descripcion: "", fecha: "", fechaReal: "" })
 
   function abrirEditFase(f: Fase) {
     setEditFaseId(f.id)
@@ -474,6 +476,39 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       onUpdate({ ...pp, entradas: (pp.entradas ?? []).filter(e => e.id !== entradaId) })
       success("Eliminado")
     } catch { toastError("Error") }
+  }
+
+  function abrirEditHito(h: Hito) {
+    setEditHitoId(h.id)
+    setEditHitoForm({
+      titulo: h.titulo,
+      descripcion: h.descripcion ?? "",
+      fecha: fmtFechaInput(h.fecha),
+      fechaReal: fmtFechaInput(h.fechaReal),
+    })
+    setAddTipo(null)
+  }
+
+  async function guardarHito(hitoId: string) {
+    if (!editHitoForm.titulo.trim() || !editHitoForm.fecha) { toastError("Título y fecha son obligatorios"); return }
+    setGuardando(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/hitos/${hitoId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: editHitoForm.titulo.trim(),
+          descripcion: editHitoForm.descripcion || null,
+          fecha: editHitoForm.fecha,
+          fechaReal: editHitoForm.fechaReal || null,
+        }),
+      })
+      if (!r.ok) throw new Error()
+      const updated = await r.json()
+      onUpdate({ ...pp, hitos: pp.hitos.map(h => h.id === hitoId ? { ...h, ...updated } : h) })
+      setEditHitoId(null)
+      success("Hito actualizado")
+    } catch { toastError("Error al guardar") }
+    finally { setGuardando(false) }
   }
 
   function abrirEditEntrada(e: EntradaTimeline) {
@@ -805,36 +840,96 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
 
             if (item.kind === "hito") {
               const h = item.data
+              const editingHito = editHitoId === h.id
               return (
                 <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[24px] top-3.5 w-4 h-4 rotate-45 border-2 border-white shadow-sm z-10 rounded-sm"
-                    style={{ backgroundColor: h.completado ? "#16a34a" : ORANGE }} />
-                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Hito</span>
-                          <span className="text-xs text-gray-400">{fmtFecha(h.fecha)}</span>
-                          {h.completado && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Completado</span>}
+                    style={{ backgroundColor: editingHito ? "#00A99D" : h.completado ? "#16a34a" : ORANGE }} />
+                  <div className={`rounded-2xl border p-4 ${editingHito ? "bg-teal-50 border-teal-200" : "bg-amber-50 border-amber-100"}`}>
+                    {editingHito ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wide">Hito</span>
+                          <span className="text-[10px] text-teal-600 font-semibold">Editando</span>
                         </div>
-                        <h4 className="font-semibold text-gray-900 mt-0.5">{h.titulo}</h4>
-                        {h.descripcion && <p className="text-xs text-gray-500 mt-0.5">{h.descripcion}</p>}
+                        <input
+                          autoFocus
+                          value={editHitoForm.titulo}
+                          onChange={e => setEditHitoForm(p => ({ ...p, titulo: e.target.value }))}
+                          onKeyDown={e => { if (e.key === "Escape") setEditHitoId(null) }}
+                          placeholder="Título del hito"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+                        />
+                        <input
+                          value={editHitoForm.descripcion}
+                          onChange={e => setEditHitoForm(p => ({ ...p, descripcion: e.target.value }))}
+                          placeholder="Descripción (opcional)"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Fecha planificada *</label>
+                            <input type="date" value={editHitoForm.fecha}
+                              onChange={e => setEditHitoForm(p => ({ ...p, fecha: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Fecha real</label>
+                            <input type="date" value={editHitoForm.fechaReal}
+                              onChange={e => setEditHitoForm(p => ({ ...p, fechaReal: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => guardarHito(h.id)} disabled={guardando}
+                            className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+                            style={{ backgroundColor: "#00A99D" }}>
+                            {guardando ? "Guardando…" : "Guardar"}
+                          </button>
+                          <button onClick={() => setEditHitoId(null)}
+                            className="px-4 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-teal-100 transition-colors">
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={() => toggleHito(h)} title={h.completado ? "Marcar pendiente" : "Marcar completado"}
-                          className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors text-amber-600">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        </button>
-                        <button onClick={() => eliminarHito(h.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-red-400">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
-                        </button>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Hito</span>
+                            <span className="text-xs text-gray-400">{fmtFecha(h.fecha)}</span>
+                            {h.completado && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Completado</span>}
+                            {h.fechaReal && !h.completado && <span className="text-xs text-gray-400">Real: {fmtFecha(h.fechaReal)}</span>}
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mt-0.5">{h.titulo}</h4>
+                          {h.descripcion && <p className="text-xs text-gray-500 mt-0.5">{h.descripcion}</p>}
+                          {h.completado && h.fechaReal && (
+                            <p className="text-xs text-green-600 mt-0.5">Completado el {fmtFecha(h.fechaReal)}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => toggleHito(h)} title={h.completado ? "Marcar pendiente" : "Marcar completado"}
+                            className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors text-amber-600">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => abrirEditHito(h)} title="Editar hito"
+                            className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors text-gray-300 hover:text-blue-500">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => eliminarHito(h.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-red-400">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )
