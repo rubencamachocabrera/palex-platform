@@ -38,6 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         contenido: body.contenido || null,
         fechaCita: body.fechaCita ? new Date(body.fechaCita) : null,
         personaCita: body.personaCita || null,
+        fechaEntrada: body.fechaEntrada ? new Date(body.fechaEntrada) : undefined,
         autor,
       },
     })

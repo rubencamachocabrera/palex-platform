@@ -382,7 +382,7 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const [fasePatch, setFasePatch] = useState({ estado: "", fechaPlan: "", fechaReal: "", notas: "" })
   const [guardando, setGuardando] = useState(false)
   const [addTipo, setAddTipo] = useState<"EVENTO" | "COMENTARIO" | "CITA" | "HITO" | null>(null)
-  const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "" })
+  const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "" })
   const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
 
   function abrirEditFase(f: Fase) {
@@ -454,12 +454,13 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
           contenido: addForm.contenido || null,
           fechaCita: fechaCitaStr,
           personaCita: addForm.personaCita || null,
+          fechaEntrada: (addTipo === "EVENTO" || addTipo === "COMENTARIO") ? (addForm.fechaEntrada || null) : null,
         }),
       })
       if (!r.ok) throw new Error()
       const nueva = await r.json()
       onUpdate({ ...pp, entradas: [...(pp.entradas ?? []), nueva] })
-      setAddForm({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "" }); setAddTipo(null)
+      setAddForm({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "" }); setAddTipo(null)
       success(addTipo === "CITA" ? "Cita creada" : addTipo === "EVENTO" ? "Evento registrado" : "Nota añadida")
     } catch { toastError("Error al guardar") }
     finally { setGuardando(false) }
@@ -584,6 +585,22 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                 placeholder="Con quién (persona, cargo…)"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
             </>
+          )}
+          {(addTipo === "EVENTO" || addTipo === "COMENTARIO") && (
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 shrink-0">
+                {addTipo === "EVENTO" ? "Fecha del evento" : "Fecha de la nota"}
+              </label>
+              <input type="date" value={addForm.fechaEntrada}
+                onChange={e => setAddForm(p => ({ ...p, fechaEntrada: e.target.value }))}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              {addForm.fechaEntrada && (
+                <button type="button" onClick={() => setAddForm(p => ({ ...p, fechaEntrada: "" }))}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline">
+                  hoy
+                </button>
+              )}
+            </div>
           )}
           <textarea value={addForm.contenido} onChange={e => setAddForm(p => ({ ...p, contenido: e.target.value }))}
             placeholder={addTipo === "COMENTARIO" ? "Escribe tu nota o comentario…" : "Notas adicionales (opcional)"}
@@ -2665,6 +2682,58 @@ function TareaCheck({ estado }: { estado: string }) {
   )
 }
 
+interface TareasQFProps {
+  parentId: string | null
+  titulo: string; prioridad: string; fechaVencimiento: string; asignadoA: string
+  guardando: boolean
+  onChange: (f: "titulo" | "prioridad" | "fechaVencimiento" | "asignadoA", v: string) => void
+  onSubmit: () => void
+  onCancel: () => void
+}
+function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asignadoA, guardando, onChange, onSubmit, onCancel }: TareasQFProps) {
+  return (
+    <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 p-3 space-y-2">
+      <input
+        autoFocus
+        value={titulo}
+        onChange={e => onChange("titulo", e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") onSubmit(); if (e.key === "Escape") onCancel() }}
+        placeholder={parentId ? "Nombre de la subtarea..." : "Nombre de la tarea..."}
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
+        style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+      />
+      <div className="flex flex-wrap gap-2">
+        <select value={prioridad} onChange={e => onChange("prioridad", e.target.value)}
+          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+          <option value="BAJA">Baja</option>
+          <option value="MEDIA">Media</option>
+          <option value="ALTA">Alta</option>
+          <option value="CRITICA">Crítica</option>
+        </select>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-gray-400">Vence:</label>
+          <input type="date" value={fechaVencimiento} onChange={e => onChange("fechaVencimiento", e.target.value)}
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+        </div>
+        <input value={asignadoA} onChange={e => onChange("asignadoA", e.target.value)}
+          placeholder="Asignado a..."
+          className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={onSubmit} disabled={guardando}
+          className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity disabled:opacity-50"
+          style={{ backgroundColor: "#00A99D" }}>
+          {guardando ? "Guardando..." : "Añadir"}
+        </button>
+        <button onClick={onCancel}
+          className="px-4 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
   const { success, error: toastError } = useToast()
   type Filtro = "TODAS" | "PENDIENTE" | "EN_PROGRESO" | "RETRASADAS" | "COMPLETADA"
@@ -2774,50 +2843,6 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
     setAddingTo(to)
   }
 
-  function QuickFormInline({ parentId }: { parentId: string | null }) {
-    return (
-      <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 p-3 space-y-2">
-        <input
-          autoFocus
-          value={qForm.titulo}
-          onChange={e => setQForm(p => ({ ...p, titulo: e.target.value }))}
-          onKeyDown={e => { if (e.key === "Enter") crearTarea(parentId); if (e.key === "Escape") setAddingTo(null) }}
-          placeholder={parentId ? "Nombre de la subtarea..." : "Nombre de la tarea..."}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
-          style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
-        />
-        <div className="flex flex-wrap gap-2">
-          <select value={qForm.prioridad} onChange={e => setQForm(p => ({ ...p, prioridad: e.target.value }))}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
-            <option value="BAJA">Baja</option>
-            <option value="MEDIA">Media</option>
-            <option value="ALTA">Alta</option>
-            <option value="CRITICA">Crítica</option>
-          </select>
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs text-gray-400">Vence:</label>
-            <input type="date" value={qForm.fechaVencimiento} onChange={e => setQForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
-              className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
-          </div>
-          <input value={qForm.asignadoA} onChange={e => setQForm(p => ({ ...p, asignadoA: e.target.value }))}
-            placeholder="Asignado a..."
-            className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => crearTarea(parentId)} disabled={guardando}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity disabled:opacity-50"
-            style={{ backgroundColor: "#00A99D" }}>
-            {guardando ? "Guardando..." : "Añadir"}
-          </button>
-          <button onClick={() => setAddingTo(null)}
-            className="px-4 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">
-            Cancelar
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
 
@@ -2881,7 +2906,17 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
       </div>
 
       {/* Formulario nueva tarea raíz */}
-      {addingTo === "ROOT" && <QuickFormInline parentId={null} />}
+      {addingTo === "ROOT" && (
+        <QuickFormInline
+          parentId={null}
+          titulo={qForm.titulo} prioridad={qForm.prioridad}
+          fechaVencimiento={qForm.fechaVencimiento} asignadoA={qForm.asignadoA}
+          guardando={guardando}
+          onChange={(f, v) => setQForm(p => ({ ...p, [f]: v }))}
+          onSubmit={() => crearTarea(null)}
+          onCancel={() => setAddingTo(null)}
+        />
+      )}
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-1.5">
@@ -3062,7 +3097,15 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
                   {/* Formulario nueva subtarea */}
                   {addingTo === tarea.id && (
                     <div className="px-4 py-3">
-                      <QuickFormInline parentId={tarea.id} />
+                      <QuickFormInline
+                        parentId={tarea.id}
+                        titulo={qForm.titulo} prioridad={qForm.prioridad}
+                        fechaVencimiento={qForm.fechaVencimiento} asignadoA={qForm.asignadoA}
+                        guardando={guardando}
+                        onChange={(f, v) => setQForm(p => ({ ...p, [f]: v }))}
+                        onSubmit={() => crearTarea(tarea.id)}
+                        onCancel={() => setAddingTo(null)}
+                      />
                     </div>
                   )}
                 </div>
