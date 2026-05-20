@@ -2742,6 +2742,8 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
   const [addingTo, setAddingTo] = useState<"ROOT" | string | null>(null)
   const [qForm, setQForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
   const [guardando, setGuardando] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
 
   const tareas = pp.tareas ?? []
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
@@ -2841,6 +2843,40 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
   function openAdd(to: "ROOT" | string) {
     setQForm({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
     setAddingTo(to)
+    setEditId(null)
+  }
+
+  function openEdit(t: Tarea) {
+    setEditId(t.id)
+    setEditForm({
+      titulo: t.titulo,
+      prioridad: t.prioridad,
+      fechaVencimiento: t.fechaVencimiento ? fmtFechaInput(t.fechaVencimiento) : "",
+      asignadoA: t.asignadoA ?? "",
+    })
+    setAddingTo(null)
+  }
+
+  async function guardarEdit(tareaId: string) {
+    if (!editForm.titulo.trim()) { toastError("El título es obligatorio"); return }
+    setGuardando(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/tareas/${tareaId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: editForm.titulo.trim(),
+          prioridad: editForm.prioridad,
+          fechaVencimiento: editForm.fechaVencimiento || null,
+          asignadoA: editForm.asignadoA || null,
+        }),
+      })
+      if (!r.ok) throw new Error()
+      const updated = await r.json()
+      onUpdate({ ...pp, tareas: tareas.map(t => t.id === tareaId ? { ...t, ...updated } : t) })
+      setEditId(null)
+      success("Guardada")
+    } catch { toastError("Error al guardar") }
+    finally { setGuardando(false) }
   }
 
   return (
@@ -2969,9 +3005,50 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
           return (
             <div key={tarea.id}
               className="bg-white rounded-2xl border shadow-sm overflow-hidden transition-all"
-              style={{ borderColor: retrasada ? "#fca5a5" : "#f3f4f6" }}>
+              style={{ borderColor: editId === tarea.id ? "#00A99D" : retrasada ? "#fca5a5" : "#f3f4f6" }}>
 
-              {/* Fila principal */}
+              {/* Modo edición */}
+              {editId === tarea.id ? (
+                <div className="p-4 space-y-2.5">
+                  <input
+                    autoFocus
+                    value={editForm.titulo}
+                    onChange={e => setEditForm(p => ({ ...p, titulo: e.target.value }))}
+                    onKeyDown={e => { if (e.key === "Enter") guardarEdit(tarea.id); if (e.key === "Escape") setEditId(null) }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
+                    style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+                      <option value="BAJA">Baja</option><option value="MEDIA">Media</option>
+                      <option value="ALTA">Alta</option><option value="CRITICA">Crítica</option>
+                    </select>
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs text-gray-400">Vence:</label>
+                      <input type="date" value={editForm.fechaVencimiento}
+                        onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
+                        className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                    </div>
+                    <input value={editForm.asignadoA}
+                      onChange={e => setEditForm(p => ({ ...p, asignadoA: e.target.value }))}
+                      placeholder="Asignado a..."
+                      className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => guardarEdit(tarea.id)} disabled={guardando}
+                      className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+                      style={{ backgroundColor: "#00A99D" }}>
+                      {guardando ? "Guardando..." : "Guardar"}
+                    </button>
+                    <button onClick={() => setEditId(null)}
+                      className="px-4 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              /* Fila principal */
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <button onClick={() => ciclarEstado(tarea)}
                   className="shrink-0 hover:scale-110 transition-transform" title="Cambiar estado">
@@ -3025,6 +3102,15 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
                       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
                   </button>
+                  {/* Editar */}
+                  <button onClick={() => openEdit(tarea)}
+                    className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                    title="Editar tarea">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
                   {/* Eliminar */}
                   <button onClick={() => eliminarTarea(tarea.id)}
                     className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -3037,6 +3123,7 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
                   </button>
                 </div>
               </div>
+              )} {/* fin modo edición / fila normal */}
 
               {/* Sección subtareas */}
               {(subs.length > 0 || addingTo === tarea.id) && (
@@ -3063,33 +3150,82 @@ function TabTareas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyect
                     const sv = vencStyle(sub.fechaVencimiento, sub.estado)
                     const sd = sub.estado === "COMPLETADA"
                     return (
-                      <div key={sub.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0">
-                        <div className="w-4 shrink-0" />
-                        <button onClick={() => ciclarEstado(sub)} className="shrink-0 hover:scale-110 transition-transform">
-                          <TareaCheck estado={sub.estado} />
-                        </button>
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sp.color }} />
-                        <p className={`flex-1 text-sm min-w-0 truncate ${sd ? "line-through text-gray-400" : "text-gray-700"}`}>
-                          {sub.titulo}
-                        </p>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {sv && (
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                              style={{ backgroundColor: sv.bg, color: sv.color }}>
-                              {sv.label}
-                            </span>
-                          )}
-                          {sub.asignadoA && (
-                            <span className="text-[11px] text-gray-400 hidden sm:inline max-w-16 truncate">{sub.asignadoA}</span>
-                          )}
-                          <button onClick={() => eliminarTarea(sub.id)}
-                            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            </svg>
-                          </button>
-                        </div>
+                      <div key={sub.id} className="border-b border-gray-100 last:border-0"
+                        style={{ backgroundColor: editId === sub.id ? "#f0fdf4" : undefined }}>
+                        {editId === sub.id ? (
+                          <div className="px-5 py-3 space-y-2">
+                            <input
+                              autoFocus
+                              value={editForm.titulo}
+                              onChange={e => setEditForm(p => ({ ...p, titulo: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter") guardarEdit(sub.id); if (e.key === "Escape") setEditId(null) }}
+                              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
+                              style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
+                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+                                <option value="BAJA">Baja</option><option value="MEDIA">Media</option>
+                                <option value="ALTA">Alta</option><option value="CRITICA">Crítica</option>
+                              </select>
+                              <input type="date" value={editForm.fechaVencimiento}
+                                onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
+                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                              <input value={editForm.asignadoA}
+                                onChange={e => setEditForm(p => ({ ...p, asignadoA: e.target.value }))}
+                                placeholder="Asignado a..."
+                                className="flex-1 min-w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => guardarEdit(sub.id)} disabled={guardando}
+                                className="px-3 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+                                style={{ backgroundColor: "#00A99D" }}>
+                                {guardando ? "..." : "Guardar"}
+                              </button>
+                              <button onClick={() => setEditId(null)}
+                                className="px-3 py-1 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 px-4 py-2.5">
+                            <div className="w-4 shrink-0" />
+                            <button onClick={() => ciclarEstado(sub)} className="shrink-0 hover:scale-110 transition-transform">
+                              <TareaCheck estado={sub.estado} />
+                            </button>
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sp.color }} />
+                            <p className={`flex-1 text-sm min-w-0 truncate ${sd ? "line-through text-gray-400" : "text-gray-700"}`}>
+                              {sub.titulo}
+                            </p>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {sv && (
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                                  style={{ backgroundColor: sv.bg, color: sv.color }}>
+                                  {sv.label}
+                                </span>
+                              )}
+                              {sub.asignadoA && (
+                                <span className="text-[11px] text-gray-400 hidden sm:inline max-w-16 truncate">{sub.asignadoA}</span>
+                              )}
+                              <button onClick={() => openEdit(sub)}
+                                className="p-1 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                title="Editar subtarea">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
+                              <button onClick={() => eliminarTarea(sub.id)}
+                                className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                  <polyline points="3 6 5 6 21 6"/>
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
