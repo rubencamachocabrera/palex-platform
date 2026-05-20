@@ -13,7 +13,10 @@ export async function GET(_req: NextRequest) {
     const hace7dias = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const hace48h = new Date(now.getTime() - 48 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas] = await Promise.all([
+    const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -52,6 +55,16 @@ export async function GET(_req: NextRequest) {
         orderBy: { fechaPlan: "asc" },
         take: 10,
       }),
+      db.preProyecto.findMany({
+        where: {
+          fechaFinPlan: { lte: en7dias, gte: now },
+          estado: { notIn: ["COMPLETADO", "CANCELADO"] },
+          ...(rol === "ADMIN" ? {} : { responsableId: userId }),
+        },
+        select: { id: true, titulo: true, fechaFinPlan: true },
+        orderBy: { fechaFinPlan: "asc" },
+        take: 5,
+      }),
     ])
 
     const items = [
@@ -76,6 +89,16 @@ export async function GET(_req: NextRequest) {
         href: `/pre-proyectos/${f.preProyecto.id}`,
         mensaje: `Fase "${f.nombre}" retrasada desde ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`,
       })),
+      ...proyectosPorVencer.map(p => {
+        const diasRestantes = Math.ceil((new Date(p.fechaFinPlan!).getTime() - now.getTime()) / 86400000)
+        return {
+          tipo: "proyecto_por_vencer" as const,
+          id: p.id,
+          titulo: p.titulo,
+          href: `/pre-proyectos/${p.id}`,
+          mensaje: diasRestantes <= 0 ? "Fecha de entrega hoy" : `Entrega en ${diasRestantes} día${diasRestantes === 1 ? "" : "s"}`,
+        }
+      }),
     ]
 
     const res = NextResponse.json({ total: items.length, items })

@@ -37,6 +37,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         hardwareUnidades: {
           include: { catalogo: true },
         },
+        entradas: {
+          orderBy: { fechaEntrada: "asc" },
+        },
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })

@@ -16,7 +16,7 @@ interface Resultado {
 }
 
 interface Notificacion {
-  tipo: "oportunidad_inactiva" | "visita_borrador" | "fase_retrasada"
+  tipo: "oportunidad_inactiva" | "visita_borrador" | "fase_retrasada" | "proyecto_por_vencer"
   id: string
   titulo: string
   href: string
@@ -239,34 +239,90 @@ export function TopBar() {
         </button>
 
         {notifOpen && (
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50 animate-in fade-in scale-in duration-150">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Notificaciones</p>
+          <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+            {/* Cabecera */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <p className="text-sm font-bold text-gray-900">Centro de alertas</p>
               {notifs.length > 0 && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500">{notifs.length}</span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-500">
+                  {notifs.length} {notifs.length === 1 ? "alerta" : "alertas"}
+                </span>
               )}
             </div>
-            {notifs.length === 0 ? (
-              <div className="px-4 py-6 text-center">
-                <p className="text-sm text-gray-400">Todo al dia</p>
-                <p className="text-xs text-gray-300 mt-1">Sin alertas pendientes</p>
+
+            {/* Estado vacío */}
+            {notifs.length === 0 && (
+              <div className="px-5 py-10 text-center">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: "#E6F7F6" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-gray-700">Todo al día</p>
+                <p className="text-xs text-gray-400 mt-1">Sin alertas pendientes</p>
               </div>
-            ) : (
-              <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
-                {notifs.map(n => (
-                  <Link
-                    key={`${n.tipo}-${n.id}`}
-                    href={n.href}
-                    onClick={() => setNotifOpen(false)}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.tipo === "oportunidad_inactiva" ? "bg-amber-400" : n.tipo === "fase_retrasada" ? "bg-red-400" : "bg-blue-400"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 truncate">{n.titulo}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{n.mensaje}</p>
-                    </div>
-                  </Link>
-                ))}
+            )}
+
+            {/* Lista */}
+            {notifs.length > 0 && (
+              <div className="max-h-[420px] overflow-y-auto divide-y divide-gray-50">
+                {notifs.map(n => {
+                  const styles: Record<string, { bg: string; icon: React.ReactNode }> = {
+                    fase_retrasada: {
+                      bg: "bg-red-50 text-red-500",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                      ),
+                    },
+                    proyecto_por_vencer: {
+                      bg: "bg-orange-50 text-orange-500",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                      ),
+                    },
+                    oportunidad_inactiva: {
+                      bg: "bg-amber-50 text-amber-500",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                      ),
+                    },
+                    visita_borrador: {
+                      bg: "bg-blue-50 text-blue-500",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+                        </svg>
+                      ),
+                    },
+                  }
+                  const s = styles[n.tipo] ?? styles.visita_borrador
+                  return (
+                    <Link
+                      key={`${n.tipo}-${n.id}`}
+                      href={n.href}
+                      onClick={() => setNotifOpen(false)}
+                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${s.bg}`}>
+                        {s.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 leading-tight truncate">{n.titulo}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">{n.mensaje}</p>
+                      </div>
+                      <svg className="shrink-0 mt-2 text-gray-300 group-hover:text-gray-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </Link>
+                  )
+                })}
               </div>
             )}
           </div>

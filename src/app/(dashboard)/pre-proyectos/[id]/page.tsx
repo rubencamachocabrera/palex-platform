@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, Fragment } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
@@ -35,6 +35,12 @@ interface Contacto {
   id: string; nombre: string; cargo: string | null; email: string | null; telefono: string | null; principal: boolean
 }
 interface ContactoPivot { contacto: Contacto }
+interface EntradaTimeline {
+  id: string; tipo: "EVENTO" | "COMENTARIO" | "CITA"
+  titulo: string; contenido: string | null
+  fechaEntrada: string; fechaCita: string | null; personaCita: string | null
+  autor: string; creadoEn: string
+}
 interface Visita {
   id: string; fecha: string; estado: string; tipo: string
   usuario: { nombre: string }
@@ -54,6 +60,7 @@ interface PreProyecto {
   hospital: Hospital; responsable: Responsable | null
   fases: Fase[]; hitos: Hito[]; solicitudes: Solicitud[]
   contactos: ContactoPivot[]; visitas: Visita[]; hardwareUnidades: HardwareUnidad[]
+  entradas: EntradaTimeline[]
 }
 
 // ---- constantes ----
@@ -234,7 +241,7 @@ export default function PreProyectoDetalle() {
             style={tab === t ? { backgroundColor: "white", color: TEAL, boxShadow: "0 1px 4px rgba(0,0,0,.08)" } : { color: "#6b7280" }}
           >
             {t}
-            {t === "Timeline" && <span className="ml-1.5 text-xs opacity-60">{pp.fases.length + pp.hitos.length}</span>}
+            {t === "Timeline" && <span className="ml-1.5 text-xs opacity-60">{pp.fases.length + pp.hitos.length + (pp.entradas?.length ?? 0)}</span>}
             {t === "Materiales" && pp.hardwareUnidades.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.hardwareUnidades.length}</span>}
             {t === "Contactos" && pp.contactos.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.contactos.length}</span>}
             {t === "Visitas" && pp.visitas.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.visitas.length}</span>}
@@ -359,78 +366,42 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
 
 function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
   const { success, error: toastError } = useToast()
+
   const [editFaseId, setEditFaseId] = useState<string | null>(null)
-  const [fasePatch, setFasePatch] = useState<{ estado: string; fechaPlan: string; fechaReal: string; notas: string }>({
-    estado: "", fechaPlan: "", fechaReal: "", notas: "",
-  })
-  const [mostrarHitoForm, setMostrarHitoForm] = useState(false)
-  const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
+  const [fasePatch, setFasePatch] = useState({ estado: "", fechaPlan: "", fechaReal: "", notas: "" })
   const [guardando, setGuardando] = useState(false)
+  const [addTipo, setAddTipo] = useState<"EVENTO" | "COMENTARIO" | "CITA" | "HITO" | null>(null)
+  const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "" })
+  const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
 
   function abrirEditFase(f: Fase) {
     setEditFaseId(f.id)
-    setFasePatch({
-      estado: f.estado,
-      fechaPlan: fmtFechaInput(f.fechaPlan),
-      fechaReal: fmtFechaInput(f.fechaReal),
-      notas: f.notas ?? "",
-    })
+    setFasePatch({ estado: f.estado, fechaPlan: fmtFechaInput(f.fechaPlan), fechaReal: fmtFechaInput(f.fechaReal), notas: f.notas ?? "" })
   }
 
   async function guardarFase(faseId: string) {
     setGuardando(true)
     try {
       const r = await fetch(`/api/pre-proyectos/${pp.id}/fases/${faseId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fasePatch),
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fasePatch),
       })
       if (!r.ok) throw new Error()
       const updated = await r.json()
       onUpdate({ ...pp, fases: pp.fases.map(f => f.id === faseId ? { ...f, ...updated } : f) })
-      setEditFaseId(null)
-      success("Fase actualizada")
-    } catch {
-      toastError("Error al guardar fase")
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  async function crearHito() {
-    if (!hitoForm.titulo || !hitoForm.fecha) return
-    setGuardando(true)
-    try {
-      const r = await fetch(`/api/pre-proyectos/${pp.id}/hitos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(hitoForm),
-      })
-      if (!r.ok) throw new Error()
-      const nuevo = await r.json()
-      onUpdate({ ...pp, hitos: [...pp.hitos, nuevo].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()) })
-      setHitoForm({ titulo: "", descripcion: "", fecha: "" })
-      setMostrarHitoForm(false)
-      success("Hito añadido")
-    } catch {
-      toastError("Error al crear hito")
-    } finally {
-      setGuardando(false)
-    }
+      setEditFaseId(null); success("Fase actualizada")
+    } catch { toastError("Error al guardar fase") }
+    finally { setGuardando(false) }
   }
 
   async function toggleHito(hito: Hito) {
     try {
       const r = await fetch(`/api/pre-proyectos/${pp.id}/hitos/${hito.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completado: !hito.completado }),
       })
       if (!r.ok) throw new Error()
       onUpdate({ ...pp, hitos: pp.hitos.map(h => h.id === hito.id ? { ...h, completado: !h.completado } : h) })
-    } catch {
-      toastError("Error")
-    }
+    } catch { toastError("Error") }
   }
 
   async function eliminarHito(hitoId: string) {
@@ -438,105 +409,283 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       await fetch(`/api/pre-proyectos/${pp.id}/hitos/${hitoId}`, { method: "DELETE" })
       onUpdate({ ...pp, hitos: pp.hitos.filter(h => h.id !== hitoId) })
       success("Hito eliminado")
-    } catch {
-      toastError("Error")
-    }
+    } catch { toastError("Error") }
   }
 
-  // Merge fases + hitos ordenados por fecha (fases sin fecha van al final)
-  type TimelineItem = { kind: "fase"; data: Fase } | { kind: "hito"; data: Hito }
-  const items: TimelineItem[] = [
-    ...pp.fases.map(f => ({ kind: "fase" as const, data: f })),
-  ].sort((a, b) => {
-    const da = a.kind === "fase" ? ((a.data as Fase).fechaPlan ? new Date((a.data as Fase).fechaPlan!).getTime() : Infinity) : new Date((a.data as unknown as Hito).fecha).getTime()
-    const db2 = b.kind === "fase" ? ((b.data as Fase).fechaPlan ? new Date((b.data as Fase).fechaPlan!).getTime() : Infinity) : new Date((b.data as unknown as Hito).fecha).getTime()
-    return da - db2
-  })
+  async function crearHito() {
+    if (!hitoForm.titulo || !hitoForm.fecha) return
+    setGuardando(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/hitos`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(hitoForm),
+      })
+      if (!r.ok) throw new Error()
+      const nuevo = await r.json()
+      onUpdate({ ...pp, hitos: [...pp.hitos, nuevo].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()) })
+      setHitoForm({ titulo: "", descripcion: "", fecha: "" }); setAddTipo(null); success("Hito añadido")
+    } catch { toastError("Error al crear hito") }
+    finally { setGuardando(false) }
+  }
 
-  // Insertamos hitos en orden cronológico
-  const merged: TimelineItem[] = [...items]
-  pp.hitos.forEach(h => {
-    const pos = merged.findIndex(i => {
-      const d = i.kind === "fase" ? (i.data.fechaPlan ? new Date(i.data.fechaPlan).getTime() : Infinity) : new Date((i.data as Hito).fecha).getTime()
-      return d > new Date(h.fecha).getTime()
-    })
-    const item: TimelineItem = { kind: "hito", data: h }
-    if (pos === -1) merged.push(item)
-    else merged.splice(pos, 0, item)
-  })
+  async function crearEntrada() {
+    if (!addTipo || addTipo === "HITO") return
+    if (addTipo === "CITA" && !addForm.fechaCita) { toastError("La cita necesita una fecha"); return }
+    if (addTipo === "COMENTARIO" && !addForm.contenido.trim()) { toastError("El comentario no puede estar vacío"); return }
+    if ((addTipo === "EVENTO" || addTipo === "CITA") && !addForm.titulo.trim()) { toastError("El título es obligatorio"); return }
+    setGuardando(true)
+    try {
+      const fechaCitaStr = addForm.fechaCita ? `${addForm.fechaCita}T${addForm.horaCita || "09:00"}:00` : null
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/entradas`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: addTipo,
+          titulo: addTipo === "COMENTARIO" ? (addForm.titulo || "Nota") : addForm.titulo,
+          contenido: addForm.contenido || null,
+          fechaCita: fechaCitaStr,
+          personaCita: addForm.personaCita || null,
+        }),
+      })
+      if (!r.ok) throw new Error()
+      const nueva = await r.json()
+      onUpdate({ ...pp, entradas: [...(pp.entradas ?? []), nueva] })
+      setAddForm({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "" }); setAddTipo(null)
+      success(addTipo === "CITA" ? "Cita creada" : addTipo === "EVENTO" ? "Evento registrado" : "Nota añadida")
+    } catch { toastError("Error al guardar") }
+    finally { setGuardando(false) }
+  }
+
+  async function eliminarEntrada(entradaId: string) {
+    try {
+      await fetch(`/api/pre-proyectos/${pp.id}/entradas/${entradaId}`, { method: "DELETE" })
+      onUpdate({ ...pp, entradas: (pp.entradas ?? []).filter(e => e.id !== entradaId) })
+      success("Eliminado")
+    } catch { toastError("Error") }
+  }
+
+  const now = Date.now()
+
+  type MergedItem =
+    | { kind: "fase"; data: Fase; sortKey: number }
+    | { kind: "hito"; data: Hito; sortKey: number }
+    | { kind: "entrada"; data: EntradaTimeline; sortKey: number }
+
+  const merged: MergedItem[] = [
+    ...pp.fases.map(f => ({ kind: "fase" as const, data: f, sortKey: f.fechaPlan ? new Date(f.fechaPlan).getTime() : f.orden * 1e12 })),
+    ...pp.hitos.map(h => ({ kind: "hito" as const, data: h, sortKey: new Date(h.fecha).getTime() })),
+    ...(pp.entradas ?? []).map(e => ({
+      kind: "entrada" as const, data: e,
+      sortKey: e.tipo === "CITA" && e.fechaCita ? new Date(e.fechaCita).getTime() : new Date(e.fechaEntrada).getTime(),
+    })),
+  ].sort((a, b) => a.sortKey - b.sortKey)
+
+  const citasFuturas = (pp.entradas ?? [])
+    .filter(e => e.tipo === "CITA" && e.fechaCita && new Date(e.fechaCita).getTime() > now)
+    .sort((a, b) => new Date(a.fechaCita!).getTime() - new Date(b.fechaCita!).getTime())
+
+  type RenderItem =
+    | { rType: "header"; month: string; rKey: string }
+    | { rType: "item"; item: MergedItem; rKey: string }
+
+  const renderList: RenderItem[] = []
+  let lastMonth = ""
+  for (const item of merged) {
+    const d = new Date(item.sortKey > 0 && item.sortKey < 2e15 ? item.sortKey : now)
+    const month = d.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+    if (month !== lastMonth) {
+      renderList.push({ rType: "header", month, rKey: `hdr-${month}` })
+      lastMonth = month
+    }
+    renderList.push({ rType: "item", item, rKey: `${item.kind}-${item.data.id}` })
+  }
+
+  const ADD_BTNS = [
+    { tipo: "EVENTO" as const, label: "Evento", color: "#f97316" },
+    { tipo: "COMENTARIO" as const, label: "Nota", color: "#6b7280" },
+    { tipo: "CITA" as const, label: "Cita", color: "#3b82f6" },
+    { tipo: "HITO" as const, label: "Hito", color: ORANGE },
+  ]
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">Timeline del Proyecto</h3>
-        <button onClick={() => setMostrarHitoForm(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Añadir hito
-        </button>
+    <div className="space-y-4">
+      {/* Barra de añadir */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-gray-700 mr-1">Añadir</span>
+        {ADD_BTNS.map(({ tipo, label, color }) => (
+          <button
+            key={tipo}
+            onClick={() => setAddTipo(addTipo === tipo ? null : tipo)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+            style={addTipo === tipo
+              ? { backgroundColor: color, color: "white", borderColor: color }
+              : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}
+          >
+            {tipo === "EVENTO" && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            )}
+            {tipo === "COMENTARIO" && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            )}
+            {tipo === "CITA" && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            )}
+            {tipo === "HITO" && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            )}
+            {label}
+          </button>
+        ))}
       </div>
 
-      {mostrarHitoForm && (
-        <div className="bg-white rounded-2xl border border-teal-200 p-5 shadow-sm mb-4">
-          <h4 className="font-semibold text-gray-900 mb-3">Nuevo hito</h4>
-          <div className="space-y-3">
-            <input value={hitoForm.titulo} onChange={e => setHitoForm(p => ({ ...p, titulo: e.target.value }))}
-              placeholder="Título del hito"
+      {/* Formulario: Evento, Comentario o Cita */}
+      {addTipo && addTipo !== "HITO" && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
+          <p className="text-sm font-semibold text-gray-800">
+            {addTipo === "EVENTO" ? "Registrar evento" : addTipo === "COMENTARIO" ? "Añadir nota" : "Nueva cita"}
+          </p>
+          {(addTipo === "EVENTO" || addTipo === "CITA") && (
+            <input value={addForm.titulo} onChange={e => setAddForm(p => ({ ...p, titulo: e.target.value }))}
+              placeholder={addTipo === "EVENTO" ? "¿Qué ha ocurrido?" : "Título de la reunión"}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-            <input value={hitoForm.descripcion} onChange={e => setHitoForm(p => ({ ...p, descripcion: e.target.value }))}
-              placeholder="Descripción (opcional)"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-            <input type="date" value={hitoForm.fecha} onChange={e => setHitoForm(p => ({ ...p, fecha: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-            <div className="flex gap-2">
-              <button onClick={() => setMostrarHitoForm(false)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-              <button onClick={crearHito} disabled={guardando}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-                style={{ backgroundColor: TEAL }}>
-                {guardando ? "Guardando…" : "Añadir"}
-              </button>
-            </div>
+          )}
+          {addTipo === "CITA" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Fecha *</label>
+                  <input type="date" value={addForm.fechaCita} onChange={e => setAddForm(p => ({ ...p, fechaCita: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Hora</label>
+                  <input type="time" value={addForm.horaCita} onChange={e => setAddForm(p => ({ ...p, horaCita: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                </div>
+              </div>
+              <input value={addForm.personaCita} onChange={e => setAddForm(p => ({ ...p, personaCita: e.target.value }))}
+                placeholder="Con quién (persona, cargo…)"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            </>
+          )}
+          <textarea value={addForm.contenido} onChange={e => setAddForm(p => ({ ...p, contenido: e.target.value }))}
+            placeholder={addTipo === "COMENTARIO" ? "Escribe tu nota o comentario…" : "Notas adicionales (opcional)"}
+            rows={addTipo === "COMENTARIO" ? 3 : 2}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+          <div className="flex gap-2">
+            <button onClick={() => setAddTipo(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <button onClick={crearEntrada} disabled={guardando}
+              className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+              style={{ backgroundColor: TEAL }}>
+              {guardando ? "…" : addTipo === "EVENTO" ? "Registrar" : addTipo === "COMENTARIO" ? "Añadir" : "Crear cita"}
+            </button>
           </div>
         </div>
       )}
 
-      <div className="relative pl-8">
-        {/* Línea vertical */}
-        <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gray-100" />
+      {/* Formulario: Hito */}
+      {addTipo === "HITO" && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
+          <p className="text-sm font-semibold text-gray-800">Nuevo hito</p>
+          <input value={hitoForm.titulo} onChange={e => setHitoForm(p => ({ ...p, titulo: e.target.value }))}
+            placeholder="Título del hito"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+          <input value={hitoForm.descripcion} onChange={e => setHitoForm(p => ({ ...p, descripcion: e.target.value }))}
+            placeholder="Descripción (opcional)"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+          <input type="date" value={hitoForm.fecha} onChange={e => setHitoForm(p => ({ ...p, fecha: e.target.value }))}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+          <div className="flex gap-2">
+            <button onClick={() => setAddTipo(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <button onClick={crearHito} disabled={guardando}
+              className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+              style={{ backgroundColor: TEAL }}>
+              {guardando ? "…" : "Añadir hito"}
+            </button>
+          </div>
+        </div>
+      )}
 
-        <div className="space-y-3">
-          {merged.map((item, idx) => {
+      {/* Próximas citas */}
+      {citasFuturas.length > 0 && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">Próximas citas</p>
+          {citasFuturas.slice(0, 4).map(c => {
+            const dias = Math.ceil((new Date(c.fechaCita!).getTime() - now) / 86400000)
+            return (
+              <div key={c.id} className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-blue-900 leading-tight">{c.titulo}</p>
+                  <div className="flex flex-wrap items-center gap-x-2 mt-0.5 text-xs text-blue-500">
+                    <span>{new Date(c.fechaCita!).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                    {c.personaCita && <span>· Con: {c.personaCita}</span>}
+                  </div>
+                  {c.contenido && <p className="text-xs text-blue-600 mt-0.5 line-clamp-1">{c.contenido}</p>}
+                </div>
+                <span className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">
+                  {dias <= 0 ? "Hoy" : dias === 1 ? "Mañana" : `En ${dias}d`}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Timeline principal */}
+      {renderList.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 text-sm">
+          Timeline vacío. Usa los botones de arriba para añadir eventos, notas o citas.
+        </div>
+      ) : (
+        <div className="relative pl-8">
+          <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gray-100" />
+          {renderList.map(ri => {
+            if (ri.rType === "header") {
+              return (
+                <div key={ri.rKey} className="relative -ml-8 flex items-center gap-2 my-4">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest capitalize pl-1">{ri.month}</span>
+                  <div className="flex-1 h-px bg-gray-100 ml-1" />
+                </div>
+              )
+            }
+
+            const { item } = ri
+
             if (item.kind === "fase") {
-              const f = item.data as Fase
+              const f = item.data
               const s = FASE_ESTADO_COLOR[f.estado] ?? FASE_ESTADO_COLOR.PENDIENTE
               const editing = editFaseId === f.id
               return (
-                <div key={`fase-${f.id}`} className="relative">
-                  {/* Dot */}
+                <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[22px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm z-10"
                     style={{ backgroundColor: s.dot }} />
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.bg, color: s.text }}>
                             {f.estado === "PENDIENTE" ? "Pendiente" : f.estado === "EN_PROGRESO" ? "En progreso" : f.estado === "COMPLETADO" ? "Completado" : "Bloqueado"}
                           </span>
                           <span className="text-xs text-gray-400">Fase {f.orden}</span>
+                          {f.fechaPlan && !editing && (
+                            <span className="text-xs text-gray-400">{fmtFecha(f.fechaPlan)}</span>
+                          )}
                         </div>
                         <h4 className="font-semibold text-gray-900 mt-1">{f.nombre}</h4>
-                        {!editing && (
-                          <div className="flex gap-4 mt-1 text-xs text-gray-400">
-                            {f.fechaPlan && <span>Plan: {fmtFecha(f.fechaPlan)}</span>}
-                            {f.fechaReal && <span className="text-green-600">Real: {fmtFecha(f.fechaReal)}</span>}
-                          </div>
+                        {!editing && f.fechaReal && (
+                          <span className="text-xs text-green-600">Real: {fmtFecha(f.fechaReal)}</span>
                         )}
-                        {!editing && f.notas && <p className="text-xs text-gray-500 mt-1.5 italic">{f.notas}</p>}
+                        {!editing && f.notas && <p className="text-xs text-gray-500 mt-1 italic">{f.notas}</p>}
                       </div>
                       {!editing && (
-                        <button onClick={() => abrirEditFase(f)} className="shrink-0 text-gray-300 hover:text-teal-600 p-1 rounded-lg hover:bg-gray-50 transition-colors">
+                        <button onClick={() => abrirEditFase(f)}
+                          className="shrink-0 text-gray-300 hover:text-teal-600 p-1 rounded-lg hover:bg-gray-50 transition-colors">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -581,20 +730,21 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                   </div>
                 </div>
               )
-            } else {
-              const h = item.data as Hito
+            }
+
+            if (item.kind === "hito") {
+              const h = item.data
               return (
-                <div key={`hito-${h.id}`} className="relative">
-                  {/* Hito diamond */}
+                <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[24px] top-3.5 w-4 h-4 rotate-45 border-2 border-white shadow-sm z-10 rounded-sm"
                     style={{ backgroundColor: h.completado ? "#16a34a" : ORANGE }} />
                   <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Hito</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Hito</span>
                           <span className="text-xs text-gray-400">{fmtFecha(h.fecha)}</span>
-                          {h.completado && <span className="text-xs font-bold text-green-600">Completado</span>}
+                          {h.completado && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Completado</span>}
                         </div>
                         <h4 className="font-semibold text-gray-900 mt-0.5">{h.titulo}</h4>
                         {h.descripcion && <p className="text-xs text-gray-500 mt-0.5">{h.descripcion}</p>}
@@ -608,7 +758,7 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                         </button>
                         <button onClick={() => eliminarHito(h.id)}
                           className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-red-400">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                           </svg>
                         </button>
@@ -618,9 +768,70 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                 </div>
               )
             }
+
+            if (item.kind === "entrada") {
+              const e = item.data
+              const isFutureCita = e.tipo === "CITA" && e.fechaCita && new Date(e.fechaCita).getTime() > now
+              const cardStyle: Record<string, { bg: string; border: string; dotColor: string; labelColor: string; label: string }> = {
+                EVENTO:     { bg: "bg-orange-50",  border: "border-orange-100", dotColor: "#f97316", labelColor: "text-orange-600", label: "Evento" },
+                COMENTARIO: { bg: "bg-gray-50",    border: "border-gray-200",   dotColor: "#9ca3af", labelColor: "text-gray-500",   label: "Nota" },
+                CITA:       { bg: isFutureCita ? "bg-blue-50"  : "bg-slate-50",
+                               border: isFutureCita ? "border-blue-100" : "border-slate-200",
+                               dotColor: isFutureCita ? "#3b82f6" : "#94a3b8",
+                               labelColor: isFutureCita ? "text-blue-600" : "text-slate-500", label: "Cita" },
+              }
+              const cs = cardStyle[e.tipo] ?? cardStyle.COMENTARIO
+              const fechaDisplay = e.tipo === "CITA" && e.fechaCita
+                ? new Date(e.fechaCita).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                : new Date(e.fechaEntrada).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+              return (
+                <div key={ri.rKey} className="relative mb-3">
+                  <div className="absolute -left-[22px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm z-10"
+                    style={{ backgroundColor: cs.dotColor }} />
+                  <div className={`rounded-2xl border p-4 ${cs.bg} ${cs.border}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className={`text-[10px] font-bold uppercase tracking-wide ${cs.labelColor}`}>{cs.label}</span>
+                          <span className="text-xs text-gray-400">{fechaDisplay}</span>
+                          {isFutureCita && (() => {
+                            const dias = Math.ceil((new Date(e.fechaCita!).getTime() - now) / 86400000)
+                            return (
+                              <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                {dias <= 0 ? "Hoy" : dias === 1 ? "Mañana" : `En ${dias}d`}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                        {e.titulo && e.titulo !== "Nota" && (
+                          <h4 className="font-semibold text-gray-900 text-sm leading-tight">{e.titulo}</h4>
+                        )}
+                        {e.contenido && (
+                          <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-wrap">{e.contenido}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 flex-wrap">
+                          {e.personaCita && (
+                            <span>Con: <span className="font-medium text-gray-600">{e.personaCita}</span></span>
+                          )}
+                          <span>— {e.autor}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => eliminarEntrada(e.id)}
+                        className="shrink-0 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-gray-300 hover:text-red-400">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            return null
           })}
         </div>
-      </div>
+      )}
     </div>
   )
 }

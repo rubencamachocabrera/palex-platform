@@ -112,6 +112,12 @@ enum EstadoSolicitud {
   CANCELADA
 }
 
+enum TipoEntrada {
+  EVENTO
+  COMENTARIO
+  CITA
+}
+
 // --- CONFIG ----------------------------------------------------------
 
 model ConfigApp {
@@ -337,6 +343,7 @@ model PreProyecto {
   hardwareUnidades HardwareUnidad[]
   contactos        PreProyectoContacto[]
   visitas          Visita[]
+  entradas         EntradaTimeline[]
 
   @@map("pre_proyectos")
 }
@@ -375,6 +382,24 @@ model Hito {
   preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
 
   @@map("hitos")
+}
+
+model EntradaTimeline {
+  id            String      @id @default(cuid())
+  preProyectoId String
+  tipo          TipoEntrada
+  titulo        String
+  contenido     String?     @db.Text
+  fechaEntrada  DateTime    @default(now())
+  fechaCita     DateTime?
+  personaCita   String?
+  autor         String      @default("")
+  creadoEn      DateTime    @default(now())
+  editadoEn     DateTime    @updatedAt
+
+  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+
+  @@map("entradas_timeline")
 }
 
 model SolicitudMaterial {
