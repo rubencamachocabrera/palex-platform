@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, Fragment } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
@@ -31,7 +31,18 @@ interface TimelineEvento {
 const TIPO_COLOR: Record<string, string> = {
   visita: "bg-teal-500", oportunidad: "bg-purple-500", etapa: "bg-amber-400",
   proyecto: "bg-blue-500", preproyecto: "bg-indigo-400",
+  fase: "bg-emerald-500", hito: "bg-orange-400", material: "bg-cyan-500",
 }
+
+const TIMELINE_FILTROS = [
+  { value: "todos", label: "Todos" },
+  { value: "visitas", label: "Visitas" },
+  { value: "oportunidades", label: "Oportunidades" },
+  { value: "proyectos", label: "Proyectos" },
+  { value: "fases", label: "Fases e hitos" },
+  { value: "material", label: "Material" },
+] as const
+type TimelineFiltro = typeof TIMELINE_FILTROS[number]["value"]
 
 const CONTACTO_EMPTY = { nombre: "", cargo: "", email: "", telefono: "", principal: false }
 
@@ -60,6 +71,7 @@ export default function HospitalDetailPage() {
   const [tab, setTab] = useState<"info" | "contactos" | "visitas" | "timeline">("info")
   const [timeline, setTimeline] = useState<TimelineEvento[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFiltro>("todos")
   const [creandoVisita, setCreandoVisita] = useState(false)
 
   // Estado modal contacto
@@ -160,6 +172,17 @@ export default function HospitalDetailPage() {
       .then(d => { if (Array.isArray(d)) setTimeline(d) })
       .finally(() => setTimelineLoading(false))
   }
+
+  const filteredTimeline = timelineFilter === "todos" ? timeline : timeline.filter(ev => {
+    switch (timelineFilter) {
+      case "visitas": return ev.tipo === "visita"
+      case "oportunidades": return ev.tipo === "oportunidad" || ev.tipo === "etapa"
+      case "proyectos": return ev.tipo === "proyecto" || ev.tipo === "preproyecto"
+      case "fases": return ev.tipo === "fase" || ev.tipo === "hito"
+      case "material": return ev.tipo === "material"
+      default: return true
+    }
+  })
 
   async function eliminarContacto(contactoId: string, nombre: string) {
     if (!confirm(`Eliminar el contacto "${nombre}"?`)) return
@@ -272,7 +295,7 @@ export default function HospitalDetailPage() {
               {t === "info" ? "Informacion"
                 : t === "contactos" ? `Contactos (${hospital.contactos.length})`
                 : t === "visitas" ? `Visitas (${hospital.visitas.length})`
-                : "Timeline"}
+                : (!timelineLoading && timeline.length > 0 ? `Timeline (${timeline.length})` : "Timeline")}
             </button>
           ))}
         </div>
@@ -492,30 +515,63 @@ export default function HospitalDetailPage() {
           ) : timeline.length === 0 ? (
             <EmptyState icon="document" title="Sin actividad registrada" description="Las visitas, oportunidades y proyectos de este hospital aparecerán aquí." />
           ) : (
-            <div className="relative">
-              <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-100" />
-              <div className="space-y-0">
-                {timeline.map((ev, i) => (
-                  <div key={ev.id} className="flex gap-4" style={{ animationDelay: `${i * 20}ms` }}>
-                    <div className={`w-2.5 h-2.5 rounded-full mt-[18px] shrink-0 z-10 ${TIPO_COLOR[ev.tipo] ?? "bg-gray-300"}`} />
-                    <div className="flex-1 pb-4 pl-2">
-                      {ev.href ? (
-                        <Link href={ev.href} className="group block">
-                          <p className="text-sm font-medium text-gray-800 group-hover:text-teal-600 transition-colors">{ev.titulo}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
-                          <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                        </Link>
-                      ) : (
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">{ev.titulo}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
-                          <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            <div>
+              <div className="overflow-x-auto mb-4">
+                <div className="flex gap-1.5 min-w-max pb-1">
+                  {TIMELINE_FILTROS.map(f => (
+                    <button
+                      key={f.value}
+                      onClick={() => setTimelineFilter(f.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                        timelineFilter === f.value ? "text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      }`}
+                      style={timelineFilter === f.value ? { backgroundColor: TEAL } : {}}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              {filteredTimeline.length === 0 ? (
+                <EmptyState icon="document" title="Sin eventos de este tipo" description="Prueba con otro filtro." />
+              ) : (
+                <div className="relative">
+                  <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-100" />
+                  <div className="space-y-0">
+                    {filteredTimeline.map((ev, i) => {
+                      const evMonth = new Date(ev.fecha).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+                      const prevMonth = i > 0 ? new Date(filteredTimeline[i - 1].fecha).toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : null
+                      return (
+                        <Fragment key={ev.id}>
+                          {evMonth !== prevMonth && (
+                            <div className="pl-7 py-2">
+                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider capitalize">{evMonth}</span>
+                            </div>
+                          )}
+                          <div className="flex gap-4">
+                            <div className={`w-2.5 h-2.5 rounded-full mt-[18px] shrink-0 z-10 ${TIPO_COLOR[ev.tipo] ?? "bg-gray-300"}`} />
+                            <div className="flex-1 pb-4 pl-2">
+                              {ev.href ? (
+                                <Link href={ev.href} className="group block">
+                                  <p className="text-sm font-medium text-gray-800 group-hover:text-teal-600 transition-colors">{ev.titulo}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
+                                  <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                                </Link>
+                              ) : (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-800">{ev.titulo}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">{ev.descripcion}</p>
+                                  <p className="text-[10px] text-gray-300 mt-0.5">{new Date(ev.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Fragment>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

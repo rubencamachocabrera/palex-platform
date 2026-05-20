@@ -30,7 +30,22 @@ export async function GET(
       }),
       db.preProyecto.findMany({
         where: { hospitalId: id },
-        select: { id: true, titulo: true, estado: true, creadoEn: true, responsable: { select: { nombre: true } } },
+        select: {
+          id: true, titulo: true, estado: true, creadoEn: true,
+          responsable: { select: { nombre: true } },
+          fases: {
+            where: { estado: { in: ["COMPLETADO", "BLOQUEADO"] } },
+            select: { id: true, nombre: true, estado: true, fechaReal: true, editadoEn: true },
+          },
+          hitos: {
+            where: { completado: true },
+            select: { id: true, titulo: true, fechaReal: true, fecha: true },
+          },
+          solicitudes: {
+            where: { estado: "ENTREGADA" },
+            select: { id: true, titulo: true, fechaEntregaReal: true, fechaSolicitud: true },
+          },
+        },
         orderBy: { creadoEn: "desc" },
       }),
     ])
@@ -88,6 +103,33 @@ export async function GET(
         descripcion: `Pre-proyecto · ${ESTADO_PP[pp.estado] ?? pp.estado}${pp.responsable ? ` · ${pp.responsable.nombre}` : ""}`,
         fecha: pp.creadoEn.toISOString(), href: `/pre-proyectos/${pp.id}`,
       })
+      for (const fase of pp.fases) {
+        eventos.push({
+          id: `f-${fase.id}`, tipo: "fase",
+          titulo: fase.nombre,
+          descripcion: `${fase.estado === "COMPLETADO" ? "Fase completada" : "Fase bloqueada"} · ${pp.titulo}`,
+          fecha: (fase.fechaReal ?? fase.editadoEn).toISOString(),
+          href: `/pre-proyectos/${pp.id}`,
+        })
+      }
+      for (const hito of pp.hitos) {
+        eventos.push({
+          id: `h-${hito.id}`, tipo: "hito",
+          titulo: hito.titulo,
+          descripcion: `Hito completado · ${pp.titulo}`,
+          fecha: (hito.fechaReal ?? hito.fecha).toISOString(),
+          href: `/pre-proyectos/${pp.id}`,
+        })
+      }
+      for (const sol of pp.solicitudes) {
+        eventos.push({
+          id: `m-${sol.id}`, tipo: "material",
+          titulo: sol.titulo,
+          descripcion: `Material entregado · ${pp.titulo}`,
+          fecha: (sol.fechaEntregaReal ?? sol.fechaSolicitud).toISOString(),
+          href: `/pre-proyectos/${pp.id}`,
+        })
+      }
     }
 
     eventos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
