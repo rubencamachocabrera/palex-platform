@@ -125,16 +125,20 @@ export default function ShareProyectoPage() {
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
       {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 px-4 sm:px-8 py-3 flex items-center justify-between gap-3 sticky top-0 z-10 print:hidden">
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: TEAL }}>InLab</span>
-          <span className="text-sm font-semibold text-gray-800 truncate max-w-xs hidden sm:block">{d.titulo}</span>
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center gap-3 sticky top-0 z-10 print:hidden">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white whitespace-nowrap" style={{ backgroundColor: TEAL }}>InLab</span>
+          <span className="text-xs text-gray-300 hidden sm:block">|</span>
+          <span className="text-xs text-gray-400 hidden sm:block whitespace-nowrap">Palex Medical</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 hidden sm:block">Palex Medical</span>
+        <div className="flex-1 min-w-0 hidden sm:block">
+          <p className="text-sm font-semibold text-gray-800 truncate">{d.titulo}</p>
+          <p className="text-xs text-gray-400 truncate">{d.hospital.nombre} · {d.hospital.ciudad}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-80 whitespace-nowrap"
             style={{ backgroundColor: TEAL }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

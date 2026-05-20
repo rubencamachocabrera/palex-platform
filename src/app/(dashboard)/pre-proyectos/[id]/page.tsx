@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import QRCode from "qrcode"
 
 // ---- tipos ----
 
@@ -39,6 +40,7 @@ interface EntradaTimeline {
   id: string; tipo: "EVENTO" | "COMENTARIO" | "CITA"
   titulo: string; contenido: string | null
   fechaEntrada: string; fechaCita: string | null; personaCita: string | null
+  lugarCita: string | null; motivoCita: string | null; importanciaCita: number | null
   autor: string; creadoEn: string
 }
 interface Tarea {
@@ -382,10 +384,16 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const [fasePatch, setFasePatch] = useState({ estado: "", fechaPlan: "", fechaReal: "", notas: "" })
   const [guardando, setGuardando] = useState(false)
   const [addTipo, setAddTipo] = useState<"EVENTO" | "COMENTARIO" | "CITA" | "HITO" | null>(null)
-  const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "" })
+  const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "", lugarCita: "", motivoCita: "", importanciaCita: "" })
   const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
   const [editEntradaId, setEditEntradaId] = useState<string | null>(null)
-  const [editEntradaForm, setEditEntradaForm] = useState({ titulo: "", contenido: "", fechaEntrada: "", fechaCita: "", horaCita: "", personaCita: "" })
+  const [editEntradaForm, setEditEntradaForm] = useState({ titulo: "", contenido: "", fechaEntrada: "", fechaCita: "", horaCita: "", personaCita: "", lugarCita: "", motivoCita: "", importanciaCita: "" })
+  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+
+  function toggleCollapse(id: string) {
+    setCollapsedItems(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
   const [editHitoId, setEditHitoId] = useState<string | null>(null)
   const [editHitoForm, setEditHitoForm] = useState({ titulo: "", descripcion: "", fecha: "", fechaReal: "" })
 
@@ -458,13 +466,16 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
           contenido: addForm.contenido || null,
           fechaCita: fechaCitaStr,
           personaCita: addForm.personaCita || null,
+          lugarCita: addTipo === "CITA" ? (addForm.lugarCita || null) : null,
+          motivoCita: addTipo === "CITA" ? (addForm.motivoCita || null) : null,
+          importanciaCita: addTipo === "CITA" ? (addForm.importanciaCita ? Number(addForm.importanciaCita) : null) : null,
           fechaEntrada: (addTipo === "EVENTO" || addTipo === "COMENTARIO") ? (addForm.fechaEntrada || null) : null,
         }),
       })
       if (!r.ok) throw new Error()
       const nueva = await r.json()
       onUpdate({ ...pp, entradas: [...(pp.entradas ?? []), nueva] })
-      setAddForm({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "" }); setAddTipo(null)
+      setAddForm({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "", lugarCita: "", motivoCita: "", importanciaCita: "" }); setAddTipo(null)
       success(addTipo === "CITA" ? "Cita creada" : addTipo === "EVENTO" ? "Evento registrado" : "Nota añadida")
     } catch { toastError("Error al guardar") }
     finally { setGuardando(false) }
@@ -521,6 +532,9 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       fechaCita: fechaCitaBase ? fmtFechaInput(e.fechaCita) : "",
       horaCita: fechaCitaBase ? fechaCitaBase.toTimeString().slice(0, 5) : "",
       personaCita: e.personaCita ?? "",
+      lugarCita: e.lugarCita ?? "",
+      motivoCita: e.motivoCita ?? "",
+      importanciaCita: e.importanciaCita ? String(e.importanciaCita) : "",
     })
     setAddTipo(null)
   }
@@ -537,6 +551,9 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
           ? `${editEntradaForm.fechaCita}T${editEntradaForm.horaCita || "09:00"}:00`
           : null
         body.personaCita = editEntradaForm.personaCita || null
+        body.lugarCita = editEntradaForm.lugarCita || null
+        body.motivoCita = editEntradaForm.motivoCita || null
+        body.importanciaCita = editEntradaForm.importanciaCita ? Number(editEntradaForm.importanciaCita) : null
       } else {
         body.fechaEntrada = editEntradaForm.fechaEntrada || null
       }
@@ -662,6 +679,36 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
               <input value={addForm.personaCita} onChange={e => setAddForm(p => ({ ...p, personaCita: e.target.value }))}
                 placeholder="Con quién (persona, cargo…)"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              {/* Lugar */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Tipo de reunión</label>
+                <div className="flex flex-wrap gap-2">
+                  {[{ v: "PRESENCIAL", l: "Presencial", icon: "🏢" }, { v: "TEAMS", l: "Teams", icon: "💜" }, { v: "ZOOM", l: "Zoom", icon: "🔵" }, { v: "GOOGLE_MEET", l: "Meet", icon: "🟢" }].map(opt => (
+                    <button key={opt.v} type="button"
+                      onClick={() => setAddForm(p => ({ ...p, lugarCita: p.lugarCita === opt.v ? "" : opt.v }))}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                      style={addForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", color: "white", borderColor: "#3b82f6" } : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}>
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Motivo */}
+              <input value={addForm.motivoCita} onChange={e => setAddForm(p => ({ ...p, motivoCita: e.target.value }))}
+                placeholder="Motivo de la cita (opcional)"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              {/* Importancia */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500 shrink-0">Importancia:</span>
+                {[{ v: "1", l: "Normal", bg: "#f3f4f6", col: "#374151" }, { v: "2", l: "Importante", bg: "#fff7ed", col: "#f97316" }, { v: "3", l: "Crítica", bg: "#fef2f2", col: "#dc2626" }].map(opt => (
+                  <button key={opt.v} type="button"
+                    onClick={() => setAddForm(p => ({ ...p, importanciaCita: p.importanciaCita === opt.v ? "" : opt.v }))}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                    style={addForm.importanciaCita === opt.v ? { backgroundColor: opt.col, color: "white", borderColor: opt.col } : { backgroundColor: opt.bg, color: opt.col, borderColor: "#e5e7eb" }}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
             </>
           )}
           {(addTipo === "EVENTO" || addTipo === "COMENTARIO") && (
@@ -784,19 +831,28 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                           )}
                         </div>
                         <h4 className="font-semibold text-gray-900 mt-1">{f.nombre}</h4>
-                        {!editing && f.fechaReal && (
+                        {!editing && !collapsedItems.has(f.id) && f.fechaReal && (
                           <span className="text-xs text-green-600">Real: {fmtFecha(f.fechaReal)}</span>
                         )}
-                        {!editing && f.notas && <p className="text-xs text-gray-500 mt-1 italic">{f.notas}</p>}
+                        {!editing && !collapsedItems.has(f.id) && f.notas && <p className="text-xs text-gray-500 mt-1 italic">{f.notas}</p>}
                       </div>
                       {!editing && (
-                        <button onClick={() => abrirEditFase(f)}
-                          className="shrink-0 text-gray-300 hover:text-teal-600 p-1 rounded-lg hover:bg-gray-50 transition-colors">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => abrirEditFase(f)}
+                            className="text-gray-300 hover:text-teal-600 p-1 rounded-lg hover:bg-gray-50 transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => toggleCollapse(f.id)}
+                            className="p-1 rounded-lg hover:bg-gray-50 transition-colors text-gray-300 hover:text-gray-500">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                              style={{ transform: collapsedItems.has(f.id) ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s" }}>
+                              <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                          </button>
+                        </div>
                       )}
                     </div>
                     {editing && (
@@ -893,21 +949,15 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
+                      <div>
+                        <div className="flex items-center justify-between gap-3 cursor-pointer select-none" onClick={() => toggleCollapse(h.id)}>
+                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                             <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Hito</span>
                             <span className="text-xs text-gray-400">{fmtFecha(h.fecha)}</span>
                             {h.completado && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Completado</span>}
-                            {h.fechaReal && !h.completado && <span className="text-xs text-gray-400">Real: {fmtFecha(h.fechaReal)}</span>}
+                            <span className="font-semibold text-gray-900 text-sm truncate">{h.titulo}</span>
                           </div>
-                          <h4 className="font-semibold text-gray-900 mt-0.5">{h.titulo}</h4>
-                          {h.descripcion && <p className="text-xs text-gray-500 mt-0.5">{h.descripcion}</p>}
-                          {h.completado && h.fechaReal && (
-                            <p className="text-xs text-green-600 mt-0.5">Completado el {fmtFecha(h.fechaReal)}</p>
-                          )}
-                        </div>
-                        <div className="flex gap-1 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                           <button onClick={() => toggleHito(h)} title={h.completado ? "Marcar pendiente" : "Marcar completado"}
                             className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors text-amber-600">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -927,8 +977,20 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                           </button>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                            className="transition-transform duration-200" style={{ transform: collapsedItems.has(h.id) ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
                         </div>
                       </div>
+                      {!collapsedItems.has(h.id) && (
+                        <div className="mt-2 pt-2 border-t border-amber-100 space-y-0.5">
+                          {h.descripcion && <p className="text-xs text-gray-500">{h.descripcion}</p>}
+                          {h.fechaReal && !h.completado && <p className="text-xs text-gray-400">Fecha real: {fmtFecha(h.fechaReal)}</p>}
+                          {h.completado && h.fechaReal && <p className="text-xs text-green-600">Completado el {fmtFecha(h.fechaReal)}</p>}
+                        </div>
+                      )}
+                    </div>
                     )}
                   </div>
                 </div>
@@ -992,6 +1054,34 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                               onChange={ev => setEditEntradaForm(p => ({ ...p, personaCita: ev.target.value }))}
                               placeholder="Con quién (persona, cargo…)"
                               className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1.5">Tipo de reunión</label>
+                              <div className="flex flex-wrap gap-2">
+                                {[{ v: "PRESENCIAL", l: "Presencial" }, { v: "TEAMS", l: "Teams" }, { v: "ZOOM", l: "Zoom" }, { v: "GOOGLE_MEET", l: "Meet" }].map(opt => (
+                                  <button key={opt.v} type="button"
+                                    onClick={() => setEditEntradaForm(p => ({ ...p, lugarCita: p.lugarCita === opt.v ? "" : opt.v }))}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                                    style={editEntradaForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", color: "white", borderColor: "#3b82f6" } : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}>
+                                    {opt.l}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <input value={editEntradaForm.motivoCita}
+                              onChange={ev => setEditEntradaForm(p => ({ ...p, motivoCita: ev.target.value }))}
+                              placeholder="Motivo de la cita (opcional)"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs text-gray-500 shrink-0">Importancia:</span>
+                              {[{ v: "1", l: "Normal", col: "#374151" }, { v: "2", l: "Importante", col: "#f97316" }, { v: "3", l: "Crítica", col: "#dc2626" }].map(opt => (
+                                <button key={opt.v} type="button"
+                                  onClick={() => setEditEntradaForm(p => ({ ...p, importanciaCita: p.importanciaCita === opt.v ? "" : opt.v }))}
+                                  className="px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all"
+                                  style={editEntradaForm.importanciaCita === opt.v ? { backgroundColor: opt.col, color: "white", borderColor: opt.col } : { backgroundColor: "white", color: opt.col, borderColor: "#e5e7eb" }}>
+                                  {opt.l}
+                                </button>
+                              ))}
+                            </div>
                           </>
                         )}
                         {(e.tipo === "EVENTO" || e.tipo === "COMENTARIO") && (
@@ -1049,6 +1139,18 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                           <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 flex-wrap">
                             {e.personaCita && (
                               <span>Con: <span className="font-medium text-gray-600">{e.personaCita}</span></span>
+                            )}
+                            {e.lugarCita && (
+                              <span className="px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}>
+                                {e.lugarCita === "PRESENCIAL" ? "Presencial" : e.lugarCita === "TEAMS" ? "Teams" : e.lugarCita === "ZOOM" ? "Zoom" : "Meet"}
+                              </span>
+                            )}
+                            {e.motivoCita && <span className="text-gray-500 italic">{e.motivoCita}</span>}
+                            {(e.importanciaCita ?? 0) >= 2 && (
+                              <span className="px-2 py-0.5 rounded-full font-bold"
+                                style={e.importanciaCita === 3 ? { backgroundColor: "#fef2f2", color: "#dc2626" } : { backgroundColor: "#fff7ed", color: "#f97316" }}>
+                                {e.importanciaCita === 3 ? "Crítica" : "Importante"}
+                              </span>
                             )}
                             <span>— {e.autor}</span>
                           </div>
@@ -1655,6 +1757,7 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [shareModal, setShareModal] = useState(false)
   const [generando, setGenerando] = useState(false)
   const [revoking, setRevoking] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [savingMapa, setSavingMapa] = useState(false)
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState("")
@@ -1682,6 +1785,15 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   }, [])
 
   const shareUrl = pp.shareToken && origin ? `${origin}/share/proyecto/${pp.shareToken}` : null
+
+  useEffect(() => {
+    if (shareUrl) {
+      QRCode.toDataURL(shareUrl, { width: 220, margin: 2, color: { dark: "#111827", light: "#ffffff" } })
+        .then(setQrDataUrl).catch(() => setQrDataUrl(null))
+    } else {
+      setQrDataUrl(null)
+    }
+  }, [shareUrl])
 
   async function generateShare() {
     setGenerando(true)
@@ -2788,6 +2900,20 @@ ${pp.mapaHtml ? `<div class="map-page">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Enlace público</p>
                     <p className="text-xs font-mono text-gray-600 break-all leading-relaxed">{shareUrl}</p>
                   </div>
+
+                  {/* QR Code */}
+                  {qrDataUrl && (
+                    <div className="flex flex-col items-center gap-3 py-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest self-start">Código QR</p>
+                      <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+                        <img src={qrDataUrl} alt="QR del proyecto" width={180} height={180} className="block" />
+                      </div>
+                      <a href={qrDataUrl} download={`qr-${pp.id}.png`}
+                        className="text-xs font-semibold underline" style={{ color: TEAL }}>
+                        Descargar QR
+                      </a>
+                    </div>
+                  )}
 
                   {/* Action buttons */}
                   <div className="grid grid-cols-2 gap-2">

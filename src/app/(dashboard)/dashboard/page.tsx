@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
+import ToggleCRM from "./ToggleCRM"
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
   IconCheckCircle, IconFileText, IconMap,
@@ -275,11 +276,16 @@ async function DashboardAdmin() {
   const inicioPrevMes = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
+  const en14dias = new Date(ahora.getTime() + 14 * 86400000)
+
+  const configApp = await db.configApp.findFirst()
+  const crmActivo = configApp?.crmActivo ?? true
 
   const [
     totalHospitales, totalUsuarios, visitasMes, visitasPrevMes, ultimasVisitas,
     totalOportunidades, valorPipeline, visitasChart, opCalientes, proximasVisitas,
     funnelRaw, opsPrevRaw, top5Raw,
+    proyectosActivos, proximasCitas,
   ] = await Promise.all([
     db.hospital.count({ where: { activo: true } }),
     db.usuario.count({ where: { activo: true } }),
@@ -294,11 +300,29 @@ async function DashboardAdmin() {
     db.oportunidad.groupBy({ by: ["etapa"], where: { etapa: { notIn: ["PERDIDO"] } }, _count: { _all: true } }),
     db.oportunidad.findMany({ where: { etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
     db.hospital.findMany({ where: { activo: true }, orderBy: { visitas: { _count: "desc" } }, take: 5, select: { nombre: true, _count: { select: { visitas: true } } } }),
+    db.preProyecto.findMany({
+      where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
+      select: { id: true, titulo: true, estado: true, fechaFinPlan: true, hospital: { select: { nombre: true } }, fases: { select: { estado: true } } },
+      orderBy: { fechaFinPlan: "asc" }, take: 8,
+    }),
+    db.entradaTimeline.findMany({
+      where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias } },
+      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, preProyecto: { select: { id: true, titulo: true, hospital: { select: { nombre: true } } } } },
+      orderBy: { fechaCita: "asc" }, take: 6,
+    }),
   ])
 
   const trendVisitas = calcTrend(visitasMes, visitasPrevMes)
   const chartData = agruparPorMes(visitasChart.map(v => new Date(v.creadoEn)), 6)
   const opOrdenadas = opCalientes.map(op => ({ ...op, heat: (op.valorEstimado ?? 0) * ((op.probabilidad ?? 50) / 100) })).sort((a, b) => b.heat - a.heat).slice(0, 5)
+
+  const proyectosCon = proyectosActivos.map(p => {
+    const total = p.fases.length; const ok = p.fases.filter(f => f.estado === "COMPLETADO").length
+    const pct = total ? Math.round((ok / total) * 100) : 0
+    const dias = p.fechaFinPlan ? Math.ceil((new Date(p.fechaFinPlan).getTime() - ahora.getTime()) / 86400000) : null
+    return { ...p, pct, dias }
+  })
+  const promedioProgreso = proyectosCon.length ? Math.round(proyectosCon.reduce((s, p) => s + p.pct, 0) / proyectosCon.length) : 0
 
   const ETAPAS_FUNNEL = ["IDENTIFICADO", "PRIMERA_VISITA", "PROPUESTA", "NEGOCIACION", "GANADO"]
   const funnelData = ETAPAS_FUNNEL.map(etapa => ({
@@ -390,17 +414,23 @@ async function DashboardAdmin() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
+      <div className="flex items-start justify-between mb-1">
+        <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
+        <ToggleCRM crmActivo={crmActivo} />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Hospitales activos" value={totalHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Usuarios activos" value={totalUsuarios} icon={<IconUsers size={18} />} />
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
-        <KpiCard label="Pipeline activo" value={fmtEuros(valorPipeline._sum.valorEstimado ?? 0)} sub={`${totalOportunidades} oportunidades`} icon={<IconTrendingUp size={18} />} />
+        {crmActivo
+          ? <KpiCard label="Pipeline activo" value={fmtEuros(valorPipeline._sum.valorEstimado ?? 0)} sub={`${totalOportunidades} oportunidades`} icon={<IconTrendingUp size={18} />} />
+          : <KpiCard label="Proyectos activos" value={proyectosActivos.length} sub={`${promedioProgreso}% progreso medio`} icon={<IconCheckCircle size={18} />} />
+        }
       </div>
 
-      {/* Fila 1: Visitas por mes + Funnel */}
+      {/* Fila 1: Visitas por mes + Funnel/Proyectos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
@@ -412,25 +442,107 @@ async function DashboardAdmin() {
           </div>
           <BarChart data={chartData} />
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-800 mb-1">Funnel del pipeline</h2>
-          <p className="text-xs text-gray-400 mb-4">Oportunidades activas por etapa</p>
-          <FunnelChart data={funnelData} />
-        </div>
+        {crmActivo ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-bold text-gray-800 mb-1">Funnel del pipeline</h2>
+            <p className="text-xs text-gray-400 mb-4">Oportunidades activas por etapa</p>
+            <FunnelChart data={funnelData} />
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-bold text-gray-800 mb-1">Progreso de proyectos</h2>
+            <p className="text-xs text-gray-400 mb-3">Cobertura media: <span className="font-bold" style={{ color: TEAL }}>{promedioProgreso}%</span></p>
+            <div className="space-y-2.5">
+              {proyectosCon.slice(0, 5).map(p => (
+                <div key={p.id}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-700 truncate max-w-[160px]">{p.hospital.nombre}</span>
+                    <span className="font-bold shrink-0 ml-2" style={{ color: p.pct === 100 ? "#16a34a" : TEAL }}>{p.pct}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${p.pct}%`, backgroundColor: p.pct === 100 ? "#16a34a" : TEAL }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Fila 2: Previsión + Top 5 */}
+      {/* Fila 2: Previsión/Próximas citas + Top 5 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-800 mb-1">Previsión de cierre</h2>
-          <p className="text-xs text-gray-400 mb-4">Pipeline ponderado (valor × prob.) próximos 6 meses</p>
-          <PrediccionBars data={previsionData} />
-        </div>
+        {crmActivo ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-bold text-gray-800 mb-1">Previsión de cierre</h2>
+            <p className="text-xs text-gray-400 mb-4">Pipeline ponderado (valor × prob.) próximos 6 meses</p>
+            <PrediccionBars data={previsionData} />
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Próximas citas (14 días)" link="/pre-proyectos" /></div>
+            {proximasCitas.length === 0 ? (
+              <p className="text-sm text-gray-400 p-5 text-center">Sin citas próximas</p>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {proximasCitas.map(c => {
+                  const dias = c.fechaCita ? Math.ceil((new Date(c.fechaCita).getTime() - ahora.getTime()) / 86400000) : 0
+                  return (
+                    <Link key={c.id} href={`/pre-proyectos/${c.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                      <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 text-white text-[10px] font-bold" style={{ backgroundColor: dias <= 1 ? "#dc2626" : dias <= 3 ? "#f97316" : TEAL }}>
+                        <span className="text-sm font-black leading-none">{dias <= 0 ? "Hoy" : dias}</span>
+                        {dias > 0 && <span>d</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{c.titulo}</p>
+                        <p className="text-xs text-gray-400 truncate">{c.preProyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
+                      </div>
+                      {c.lugarCita && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}>{c.lugarCita === "PRESENCIAL" ? "Presencial" : c.lugarCita === "TEAMS" ? "Teams" : c.lugarCita === "ZOOM" ? "Zoom" : "Meet"}</span>}
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h2 className="text-sm font-bold text-gray-800 mb-1">Top 5 hospitales</h2>
           <p className="text-xs text-gray-400 mb-4">Por número de visitas</p>
           <Top5Chart data={top5Data} />
         </div>
+      </div>
+
+      {/* Proyectos activos (siempre visible) */}
+      <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50">
+          <SectionHeader title="Proyectos activos" link="/pre-proyectos" />
+        </div>
+        {proyectosCon.length === 0 ? (
+          <p className="text-sm text-gray-400 p-5 text-center">Sin proyectos activos</p>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {proyectosCon.map(p => (
+              <Link key={p.id} href={`/pre-proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-teal-700 transition-colors">{p.hospital.nombre}</p>
+                  <p className="text-xs text-gray-400 truncate">{p.titulo}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[100px]">
+                      <div className="h-full rounded-full" style={{ width: `${p.pct}%`, backgroundColor: p.pct === 100 ? "#16a34a" : TEAL }} />
+                    </div>
+                    <span className="text-[10px] text-gray-400">{p.pct}%</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  {p.dias !== null && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={p.dias <= 7 ? { backgroundColor: "#fef2f2", color: "#dc2626" } : p.dias <= 30 ? { backgroundColor: "#fff7ed", color: "#f97316" } : { backgroundColor: "#f0fdf4", color: "#16a34a" }}>
+                      {p.dias <= 0 ? "Vencido" : `${p.dias}d`}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Listas */}
@@ -450,13 +562,15 @@ async function DashboardAdmin() {
               ))}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Oportunidades calientes" link="/ventas/pipeline" /></div>
-          <div className="divide-y divide-gray-50">
-            {opOrdenadas.length === 0 ? <EmptyState icon="pipeline" title="Sin oportunidades activas" />
-              : opOrdenadas.map(op => <OpCard key={op.id} titulo={op.titulo} hospitalNombre={op.hospital.nombre} etapa={op.etapa} valorEstimado={op.valorEstimado} probabilidad={op.probabilidad} />)}
+        {crmActivo && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Oportunidades calientes" link="/ventas/pipeline" /></div>
+            <div className="divide-y divide-gray-50">
+              {opOrdenadas.length === 0 ? <EmptyState icon="pipeline" title="Sin oportunidades activas" />
+                : opOrdenadas.map(op => <OpCard key={op.id} titulo={op.titulo} hospitalNombre={op.hospital.nombre} etapa={op.etapa} valorEstimado={op.valorEstimado} probabilidad={op.probabilidad} />)}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {proximasVisitas.length > 0 && (
@@ -471,10 +585,13 @@ async function DashboardAdmin() {
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickLink href="/admin/usuarios"   label="Gestionar usuarios" Icon={IconUsers}      color="bg-blue-50 text-blue-700" />
-          <QuickLink href="/admin/hospitales" label="Ver hospitales"     Icon={IconHospital}   color="bg-teal-50 text-teal-700" />
-          <QuickLink href="/admin/zonas"      label="Configurar zonas"   Icon={IconMap}        color="bg-amber-50 text-amber-700" />
-          <QuickLink href="/ventas/pipeline"  label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
+          <QuickLink href="/admin/usuarios"   label="Gestionar usuarios" Icon={IconUsers}       color="bg-blue-50 text-blue-700" />
+          <QuickLink href="/admin/hospitales" label="Ver hospitales"     Icon={IconHospital}    color="bg-teal-50 text-teal-700" />
+          <QuickLink href="/pre-proyectos"    label="Proyectos InLab"    Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
+          {crmActivo
+            ? <QuickLink href="/ventas/pipeline" label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
+            : <QuickLink href="/admin/zonas"     label="Configurar zonas"   Icon={IconMap}        color="bg-amber-50 text-amber-700" />
+          }
         </div>
       </div>
 
@@ -642,11 +759,12 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
   const en7dias = new Date(ahora.getTime() + 7 * 86400000)
+  const en14dias = new Date(ahora.getTime() + 14 * 86400000)
 
   const [
     misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
     proximasVisitas, estadoModulosRaw, totalVisitas,
-    misProyectos, fasesRetrasadas, proyectosVenc,
+    misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas,
   ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -674,6 +792,11 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       where: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
       select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
       orderBy: { fechaFinPlan: "asc" },
+    }),
+    db.entradaTimeline.findMany({
+      where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias }, preProyecto: { responsableId: userId } },
+      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, preProyecto: { select: { id: true, hospital: { select: { nombre: true } } } } },
+      orderBy: { fechaCita: "asc" }, take: 5,
     }),
   ])
 
@@ -807,12 +930,41 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
         </div>
       )}
 
+      {proximasCitas.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50">
+            <SectionHeader title="Próximas citas (14 días)" link="/pre-proyectos" />
+          </div>
+          <div className="divide-y divide-gray-50">
+            {proximasCitas.map(c => {
+              const dias = c.fechaCita ? Math.ceil((new Date(c.fechaCita).getTime() - ahora.getTime()) / 86400000) : 0
+              return (
+                <Link key={c.id} href={`/pre-proyectos/${c.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 text-white text-[10px] font-bold" style={{ backgroundColor: dias <= 1 ? "#dc2626" : dias <= 3 ? "#f97316" : TEAL }}>
+                    <span className="text-sm font-black leading-none">{dias <= 0 ? "!" : dias}</span>
+                    {dias > 0 && <span>d</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{c.titulo}</p>
+                    <p className="text-xs text-gray-400 truncate">{c.preProyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {c.lugarCita && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}>{c.lugarCita === "PRESENCIAL" ? "Presencial" : c.lugarCita === "TEAMS" ? "Teams" : c.lugarCita === "ZOOM" ? "Zoom" : "Meet"}</span>}
+                    {(c.importanciaCita ?? 0) >= 2 && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={c.importanciaCita === 3 ? { backgroundColor: "#fef2f2", color: "#dc2626" } : { backgroundColor: "#fff7ed", color: "#f97316" }}>{c.importanciaCita === 3 ? "Crítica" : "Importante"}</span>}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickLink href="/visitas?abrir=1" label="Nueva visita"      Icon={IconClipboard} color="bg-teal-50 text-teal-700" />
-          <QuickLink href="/visitas"         label="Mis visitas"       Icon={IconFileText}  color="bg-blue-50 text-blue-700" />
-          <QuickLink href="/hospitales"      label="Mis hospitales"    Icon={IconHospital}  color="bg-amber-50 text-amber-700" />
+          <QuickLink href="/visitas?abrir=1" label="Nueva visita"      Icon={IconClipboard}   color="bg-teal-50 text-teal-700" />
+          <QuickLink href="/visitas"         label="Mis visitas"       Icon={IconFileText}    color="bg-blue-50 text-blue-700" />
+          <QuickLink href="/hospitales"      label="Mis hospitales"    Icon={IconHospital}    color="bg-amber-50 text-amber-700" />
           <QuickLink href="/pre-proyectos"   label="Proyectos"         Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
         </div>
       </div>
