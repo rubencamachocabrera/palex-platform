@@ -1068,7 +1068,7 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [origin, setOrigin] = useState("")
   const [dragOver, setDragOver] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
-  const [mapaExpanded, setMapaExpanded] = useState(false)
+  const [mapaExpanded, setMapaExpanded] = useState(() => Boolean(pp.mapaHtml))
   const mapRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [mapH, setMapH] = useState(560)
@@ -1507,7 +1507,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
       {/* Printable zone */}
       <div id="resumen-print-zone" className="space-y-5">
 
-        {/* Print header */}
+        {/* Print header (solo impresión) */}
         <div className="hidden print:flex items-start justify-between border-b border-gray-200 pb-5">
           <div>
             <p className="text-xl font-bold" style={{ color: TEAL }}>Palex Medical · InLab</p>
@@ -1515,6 +1515,126 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
           </div>
           <p className="text-xs text-gray-400">Generado: {genDate}</p>
         </div>
+
+        {/* ── Hero card — visible en pantalla ─────────────────────── */}
+        {(() => {
+          const isRetrasado = pp.fechaFinPlan && new Date(pp.fechaFinPlan) < new Date()
+            && pp.estado !== "COMPLETADO" && pp.estado !== "CANCELADO"
+          return (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
+              {/* Gradient accent bar */}
+              <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${TEAL} 0%, ${ORANGE} 100%)` }} />
+              <div className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start gap-5">
+                  {/* Left: identity */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2.5">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
+                        {ESTADO_LABEL[pp.estado]}
+                      </span>
+                      {pp.prioridad > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50" style={{ color: PRIORIDAD[pp.prioridad]?.color }}>
+                          {PRIORIDAD[pp.prioridad]?.label}
+                        </span>
+                      )}
+                      {isRetrasado && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Retrasado</span>
+                      )}
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{pp.titulo}</h2>
+
+                    {/* Hospital row */}
+                    <div className="flex items-center gap-2 flex-wrap text-sm mb-3">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                      </svg>
+                      <span className="font-semibold text-gray-800">{pp.hospital.nombre}</span>
+                      {pp.hospital.tipo && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                          {TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo}
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-xs">
+                        {pp.hospital.ciudad}{pp.hospital.provincia ? `, ${pp.hospital.provincia}` : ""}
+                        {pp.hospital.pais && pp.hospital.pais !== "España" ? ` · ${pp.hospital.pais}` : ""}
+                      </span>
+                      {pp.hospital.camas && (
+                        <span className="text-gray-400 text-xs">{pp.hospital.camas} camas</span>
+                      )}
+                    </div>
+
+                    {/* Meta chips */}
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                      {pp.responsable && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                          </svg>
+                          {pp.responsable.nombre}
+                        </span>
+                      )}
+                      {pp.hospital.zona && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                          </svg>
+                          Zona {pp.hospital.zona.nombre}
+                        </span>
+                      )}
+                      {pp.hospital.direccion && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          {pp.hospital.direccion}
+                        </span>
+                      )}
+                      {(pp.fechaInicio || pp.fechaFinPlan) && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          {fmtFecha(pp.fechaInicio)} → {fmtFecha(pp.fechaFinPlan)}
+                          {duracionDias ? <span className="text-gray-400"> · {duracionDias} días</span> : null}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: budget */}
+                  {pp.presupuesto != null && (
+                    <div className="shrink-0 lg:text-right bg-gray-50 rounded-2xl px-5 py-4 border border-gray-100">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Presupuesto</p>
+                      <p className="text-3xl font-bold tabular-nums" style={{ color: TEAL }}>
+                        {pp.presupuesto.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}
+                      </p>
+                      {pp.fechaFinReal && (
+                        <p className="text-xs font-semibold text-green-600 mt-2 flex items-center gap-1 justify-end">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          Entregado: {fmtFecha(pp.fechaFinReal)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                {pp.fases.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-gray-50">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                      <span className="font-medium">{fasesOK} de {pp.fases.length} fases completadas</span>
+                      <span className="font-bold" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Header card — solo impresión */}
         <div className="hidden print:block bg-white rounded-2xl border border-gray-100 p-6">
@@ -1553,7 +1673,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
           </div>
         </div>
 
-        {/* KPI */}
+        {/* ── KPI cards ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Progreso",  val: `${pct}%`,                          sub: `${fasesOK}/${pp.fases.length} fases`,                                                       color: pct === 100 ? "#16a34a" : TEAL },
@@ -1572,7 +1692,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
           ))}
         </div>
 
-        {/* Compartir activo */}
+        {/* ── Share banner ──────────────────────────────────────────── */}
         {pp.shareToken && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl border print:hidden"
             style={{ backgroundColor: `${TEAL}08`, borderColor: `${TEAL}30` }}>
@@ -1582,171 +1702,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
           </div>
         )}
 
-        {/* Hospital + contactos */}
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Datos del hospital</p>
-            <div className="space-y-1.5">
-              {pp.hospital.tipo && <RowInfo label="Tipo" value={TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo} />}
-              <RowInfo label="Ciudad" value={`${pp.hospital.ciudad}${pp.hospital.provincia ? `, ${pp.hospital.provincia}` : ""}`} />
-              {pp.hospital.camas && <RowInfo label="Camas" value={String(pp.hospital.camas)} />}
-              {pp.hospital.direccion && <RowInfo label="Dirección" value={pp.hospital.direccion} />}
-              {pp.hospital.zona && <RowInfo label="Zona" value={pp.hospital.zona.nombre} />}
-              {pp.hospital.pais && <RowInfo label="País" value={pp.hospital.pais} />}
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Contactos del proyecto</p>
-            {pp.contactos.length === 0 ? (
-              <p className="text-sm text-gray-400">Sin contactos vinculados</p>
-            ) : (
-              <div className="space-y-2.5">
-                {pp.contactos.map(({ contacto: c }) => (
-                  <div key={c.id} className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5" style={{ backgroundColor: TEAL }}>
-                      {c.nombre.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{c.nombre}
-                        {c.principal && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>Principal</span>}
-                      </p>
-                      {c.cargo && <p className="text-xs text-gray-500">{c.cargo}</p>}
-                      <div className="flex gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
-                        {c.email && <span>{c.email}</span>}
-                        {c.telefono && <span>{c.telefono}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Timeline compact */}
-        {pp.fases.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Fases del proyecto</p>
-            <div className="space-y-1.5">
-              {pp.fases.map(f => {
-                const s = FASE_ESTADO_COLOR[f.estado] ?? FASE_ESTADO_COLOR.PENDIENTE
-                return (
-                  <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: s.bg }}>
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
-                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">{f.nombre}</span>
-                    <span className="text-xs font-semibold shrink-0" style={{ color: s.text }}>
-                      {f.estado === "PENDIENTE" ? "Pendiente" : f.estado === "EN_PROGRESO" ? "En progreso" : f.estado === "COMPLETADO" ? "Completado" : "Bloqueado"}
-                    </span>
-                    {(f.fechaReal ?? f.fechaPlan) && (
-                      <span className="text-xs text-gray-400 shrink-0 hidden sm:block">{fmtFecha(f.fechaReal ?? f.fechaPlan)}</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            {pp.hitos.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Hitos</p>
-                <div className="flex flex-wrap gap-2">
-                  {pp.hitos.map(h => (
-                    <span key={h.id} className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border"
-                      style={h.completado ? { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0", color: "#16a34a" } : { backgroundColor: "#fffbeb", borderColor: "#fde68a", color: "#d97706" }}>
-                      {h.completado ? "✓" : "◇"} {h.titulo} · {fmtFecha(h.fecha)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Hardware table */}
-        {pp.hardwareUnidades.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Inventario de hardware</p>
-            <div className="space-y-5">
-              {Object.entries(byTipo).map(([tipo, units]) => {
-                const subtotal = units.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
-                return (
-                  <div key={tipo}>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                      {HW_TIPO_LABEL[tipo] ?? tipo} <span className="font-normal text-gray-400">({units.length})</span>
-                    </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-100">
-                            {["Modelo", "N/S", "Estado", "Precio/ud"].map((h, i) => (
-                              <th key={h} className={`text-xs font-semibold text-gray-400 pb-2 ${i === 3 ? "text-right" : "text-left pr-4"}`}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {units.map(u => (
-                            <tr key={u.id} className="border-b border-gray-50 last:border-0">
-                              <td className="py-2 pr-4 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
-                              <td className="py-2 pr-4 font-mono text-xs text-gray-500">{u.numSerie ?? "—"}</td>
-                              <td className="py-2 pr-4">
-                                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                  style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
-                                  {HW_ESTADO[u.estado]?.label ?? u.estado}
-                                </span>
-                              </td>
-                              <td className="py-2 text-right text-gray-600">
-                                {u.catalogo.precio != null ? u.catalogo.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "—"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        {subtotal > 0 && (
-                          <tfoot>
-                            <tr className="border-t border-gray-200">
-                              <td colSpan={3} className="pt-2 text-xs font-semibold text-gray-500">Subtotal</td>
-                              <td className="pt-2 text-right font-bold text-gray-800">{subtotal.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</td>
-                            </tr>
-                          </tfoot>
-                        )}
-                      </table>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {totalHW > 0 && (
-              <div className="mt-5 pt-4 border-t-2 border-gray-200 flex justify-between items-center">
-                <span className="font-bold text-gray-700">Total hardware</span>
-                <span className="text-xl font-bold" style={{ color: TEAL }}>{totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Visitas */}
-        {pp.visitas.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Visitas ({pp.visitas.length})</p>
-            <div className="space-y-2">
-              {pp.visitas.slice(0, 6).map(v => (
-                <div key={v.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={v.estado === "COMPLETADA" ? { backgroundColor: "#f0fdf4", color: "#16a34a" }
-                           : v.estado === "BORRADOR"   ? { backgroundColor: "#fffbeb", color: "#d97706" }
-                           :                             { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
-                      {v.estado}
-                    </span>
-                    <span className="text-xs text-gray-500">{v.tipo}</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-700">{fmtFecha(v.fecha)}</p>
-                    <p className="text-xs text-gray-400">{v.usuario.nombre}</p>
-                  </div>
-                </div>
-              ))}
-              {pp.visitas.length > 6 && <p className="text-xs text-center text-gray-400 pt-1">+{pp.visitas.length - 6} visitas más</p>}
-            </div>
-          </div>
-        )}
+        {/* ── MAPA (ahora arriba, pieza clave) ─────────────────────── */}
 
         {/* Map */}
         {pp.mapaHtml ? (
@@ -1888,7 +1844,275 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
           </div>
         )}
 
-        {/* Notas */}
+        {/* ── Hospital (enriquecido) + Contactos ───────────────────── */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          {/* Hospital card */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between" style={{ backgroundColor: `${TEAL}06` }}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${TEAL}18` }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate">{pp.hospital.nombre}</p>
+                  {pp.hospital.tipo && (
+                    <span className="text-[10px] font-bold text-blue-600">{TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo}</span>
+                  )}
+                </div>
+              </div>
+              <Link href={`/hospitales/${pp.hospital.id}`}
+                className="text-xs font-semibold shrink-0 flex items-center gap-1 hover:opacity-70 transition-opacity"
+                style={{ color: TEAL }}>
+                Ver
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </Link>
+            </div>
+            <div className="p-5 grid grid-cols-2 gap-x-4 gap-y-2.5">
+              {[
+                { label: "Ciudad", value: `${pp.hospital.ciudad}${pp.hospital.provincia ? `, ${pp.hospital.provincia}` : ""}` },
+                pp.hospital.camas ? { label: "Camas", value: `${pp.hospital.camas}` } : null,
+                pp.hospital.zona ? { label: "Zona", value: pp.hospital.zona.nombre } : null,
+                pp.hospital.pais ? { label: "País", value: pp.hospital.pais } : null,
+                pp.hospital.tipo ? { label: "Tipo", value: TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo } : null,
+              ].filter(Boolean).map((row) => row && (
+                <div key={row.label}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{row.label}</p>
+                  <p className="text-sm font-semibold text-gray-700">{row.value}</p>
+                </div>
+              ))}
+              {pp.hospital.direccion && (
+                <div className="col-span-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Dirección</p>
+                  <p className="text-sm font-semibold text-gray-700">{pp.hospital.direccion}</p>
+                </div>
+              )}
+              {/* Mini stats del proyecto para este hospital */}
+              <div className="col-span-2 mt-1 pt-3 border-t border-gray-50 grid grid-cols-3 gap-2">
+                {[
+                  { label: "Visitas", value: pp.visitas.length },
+                  { label: "Contactos", value: pp.contactos.length },
+                  { label: "Hardware", value: pp.hardwareUnidades.length },
+                ].map(s => (
+                  <div key={s.label} className="text-center rounded-xl py-2" style={{ backgroundColor: `${TEAL}08` }}>
+                    <p className="text-base font-bold" style={{ color: TEAL }}>{s.value}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Contactos */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#f8fafc" }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-purple-50">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-800">Contactos del proyecto</p>
+              {pp.contactos.length > 0 && (
+                <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">{pp.contactos.length}</span>
+              )}
+            </div>
+            <div className="p-5">
+              {pp.contactos.length === 0 ? (
+                <div className="text-center py-6 text-gray-400">
+                  <svg className="mx-auto mb-2 opacity-30" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  </svg>
+                  <p className="text-sm">Sin contactos vinculados</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pp.contactos.map(({ contacto: c }) => (
+                    <div key={c.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: TEAL }}>
+                        {c.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">
+                          {c.nombre}
+                          {c.principal && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>Principal</span>}
+                        </p>
+                        {c.cargo && <p className="text-xs text-gray-500 mt-0.5">{c.cargo}</p>}
+                        <div className="flex gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
+                          {c.email && <span className="truncate">{c.email}</span>}
+                          {c.telefono && <span>{c.telefono}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Hardware table ────────────────────────────────────────── */}
+        {pp.hardwareUnidades.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#faf5ff" }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-purple-100">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-800">Inventario de hardware</p>
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-600">{pp.hardwareUnidades.length} uds</span>
+              {totalHW > 0 && <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</span>}
+            </div>
+            <div className="p-6 space-y-5">
+              {Object.entries(byTipo).map(([tipo, units]) => {
+                const subtotal = units.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
+                return (
+                  <div key={tipo}>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                      {HW_TIPO_LABEL[tipo] ?? tipo} <span className="font-normal text-gray-400">({units.length})</span>
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            {["Modelo", "N/S", "Estado", "Precio/ud"].map((h, i) => (
+                              <th key={h} className={`text-xs font-semibold text-gray-400 pb-2 ${i === 3 ? "text-right" : "text-left pr-4"}`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {units.map(u => (
+                            <tr key={u.id} className="border-b border-gray-50 last:border-0">
+                              <td className="py-2 pr-4 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
+                              <td className="py-2 pr-4 font-mono text-xs text-gray-500">{u.numSerie ?? "—"}</td>
+                              <td className="py-2 pr-4">
+                                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                  style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
+                                  {HW_ESTADO[u.estado]?.label ?? u.estado}
+                                </span>
+                              </td>
+                              <td className="py-2 text-right text-gray-600">
+                                {u.catalogo.precio != null ? u.catalogo.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {subtotal > 0 && (
+                          <tfoot>
+                            <tr className="border-t border-gray-200">
+                              <td colSpan={3} className="pt-2 text-xs font-semibold text-gray-500">Subtotal</td>
+                              <td className="pt-2 text-right font-bold text-gray-800">{subtotal.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {totalHW > 0 && (
+              <div className="mx-6 mb-5 pt-4 border-t-2 border-gray-200 flex justify-between items-center">
+                <span className="font-bold text-gray-700">Total hardware</span>
+                <span className="text-xl font-bold" style={{ color: "#7c3aed" }}>{totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Visitas ───────────────────────────────────────────────── */}
+        {pp.visitas.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#f0f9ff" }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-blue-100">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-800">Visitas del proyecto</p>
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">{pp.visitas.length}</span>
+              <span className="text-xs text-gray-400">{visitasOK} completadas</span>
+            </div>
+            <div className="p-5 space-y-2">
+              {pp.visitas.slice(0, 6).map(v => (
+                <div key={v.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={v.estado === "COMPLETADA" ? { backgroundColor: "#f0fdf4", color: "#16a34a" }
+                           : v.estado === "BORRADOR"   ? { backgroundColor: "#fffbeb", color: "#d97706" }
+                           :                             { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
+                      {v.estado}
+                    </span>
+                    <span className="text-xs text-gray-500">{v.tipo}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-700">{fmtFecha(v.fecha)}</p>
+                    <p className="text-xs text-gray-400">{v.usuario.nombre}</p>
+                  </div>
+                </div>
+              ))}
+              {pp.visitas.length > 6 && <p className="text-xs text-center text-gray-400 pt-1">+{pp.visitas.length - 6} visitas más</p>}
+            </div>
+          </div>
+        )}
+
+        {/* ── FASES (al final, como solicitado) ─────────────────────── */}
+        {pp.fases.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: `${TEAL}06` }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${TEAL}18` }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-800">Fases del proyecto</p>
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>
+                {fasesOK}/{pp.fases.length} completadas
+              </span>
+            </div>
+            <div className="p-5 space-y-1.5">
+              {pp.fases.map((f, idx) => {
+                const s = FASE_ESTADO_COLOR[f.estado] ?? FASE_ESTADO_COLOR.PENDIENTE
+                return (
+                  <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: s.bg }}>
+                    <span className="text-[10px] font-bold text-gray-300 w-5 shrink-0 text-right tabular-nums">{idx + 1}</span>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
+                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">{f.nombre}</span>
+                    <span className="text-xs font-semibold shrink-0" style={{ color: s.text }}>
+                      {f.estado === "PENDIENTE" ? "Pendiente" : f.estado === "EN_PROGRESO" ? "En progreso" : f.estado === "COMPLETADO" ? "Completado" : "Bloqueado"}
+                    </span>
+                    {(f.fechaReal ?? f.fechaPlan) && (
+                      <span className="text-xs text-gray-400 shrink-0 hidden sm:block">{fmtFecha(f.fechaReal ?? f.fechaPlan)}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {pp.hitos.length > 0 && (
+              <div className="px-5 pb-5 pt-0">
+                <div className="pt-4 border-t border-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Hitos</p>
+                  <div className="flex flex-wrap gap-2">
+                    {pp.hitos.map(h => (
+                      <span key={h.id} className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border"
+                        style={h.completado ? { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0", color: "#16a34a" } : { backgroundColor: "#fffbeb", borderColor: "#fde68a", color: "#d97706" }}>
+                        {h.completado ? "✓" : "◇"} {h.titulo} · {fmtFecha(h.fecha)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Notas ─────────────────────────────────────────────────── */}
         {(pp.descripcion || pp.notas) && (
           <div className="grid sm:grid-cols-2 gap-4">
             {pp.descripcion && (
