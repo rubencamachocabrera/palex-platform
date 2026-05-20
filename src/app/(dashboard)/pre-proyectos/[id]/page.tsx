@@ -226,7 +226,7 @@ export default function PreProyectoDetalle() {
             {t === "Materiales" && pp.hardwareUnidades.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.hardwareUnidades.length}</span>}
             {t === "Contactos" && pp.contactos.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.contactos.length}</span>}
             {t === "Visitas" && pp.visitas.length > 0 && <span className="ml-1.5 text-xs opacity-60">{pp.visitas.length}</span>}
-            {t === "Resumen" && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: TEAL }}>NEW</span>}
+            {t === "Resumen" && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}20`, color: TEAL }}>360°</span>}
           </button>
         ))}
       </div>
@@ -1066,9 +1066,11 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [savingMapa, setSavingMapa] = useState(false)
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState("")
+  const [dragOver, setDragOver] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
   const mapRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [mapH, setMapH] = useState(480)
+  const [mapH, setMapH] = useState(560)
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -1134,13 +1136,25 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    readFile(file)
+    e.target.value = ""
+  }
+
+  function readFile(file: File) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target?.result as string
       if (content) saveMapaContent(content)
     }
     reader.readAsText(file, "utf-8")
-    e.target.value = ""
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = Array.from(e.dataTransfer.files).find(f => f.name.endsWith(".html") || f.name.endsWith(".htm"))
+    if (file) readFile(file)
+    else toastError("Solo se aceptan ficheros .html o .htm")
   }
 
   function printMapa() {
@@ -1233,11 +1247,15 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-5 print:hidden">
-        <h3 className="font-semibold text-gray-900">Resumen del proyecto</h3>
-        <div className="flex gap-2 flex-wrap">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6 print:hidden">
+        <div>
+          <h3 className="font-bold text-gray-900 text-base">Resumen del proyecto</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Vista 360° · {pp.hospital.nombre}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Primarios */}
           <button onClick={printMapa}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-85 shadow-sm"
             style={{ backgroundColor: TEAL }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
@@ -1245,7 +1263,7 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
             Imprimir mapa
           </button>
           <button onClick={() => setShareModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors hover:bg-teal-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-teal-50 shadow-sm"
             style={{ borderColor: TEAL, color: TEAL }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -1253,38 +1271,41 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
             </svg>
             Compartir
           </button>
+          {/* Separador */}
+          <div className="w-px h-6 bg-gray-200 hidden sm:block" />
+          {/* Secundarios */}
           <button onClick={exportJSON}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             JSON
           </button>
           {pp.hardwareUnidades.length > 0 && (
             <button onClick={exportHWCSV}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="14 2 14 8 20 8"/>
               </svg>
-              CSV Hardware
+              CSV
             </button>
           )}
+          <div className="w-px h-6 bg-gray-200 hidden sm:block" />
           <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             {savingMapa ? "Guardando…" : pp.mapaHtml ? "Reemplazar mapa" : "Importar mapa"}
           </button>
           {pp.mapaHtml && (
             <button onClick={() => saveMapaContent("")} disabled={savingMapa}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              title="Eliminar mapa"
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
               </svg>
-              Quitar mapa
             </button>
           )}
         </div>
@@ -1302,8 +1323,8 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
           <p className="text-xs text-gray-400">Generado: {genDate}</p>
         </div>
 
-        {/* Header card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        {/* Header card — solo impresión */}
+        <div className="hidden print:block bg-white rounded-2xl border border-gray-100 p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -1347,13 +1368,26 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
             { label: "Visitas",   val: `${pp.visitas.length}`,              sub: `${visitasOK} completadas`,                                                                  color: "#0369a1" },
             { label: "Duración",  val: duracionDias ? `${duracionDias} d` : "—", sub: duracionDias ? "días planificados" : (pp.fechaFinReal ? "Entregado" : "Sin fechas"),    color: ORANGE },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{k.label}</p>
-              <p className="text-2xl font-bold" style={{ color: k.color }}>{k.val}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
+            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="h-1 w-full" style={{ backgroundColor: k.color }} />
+              <div className="p-5">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{k.label}</p>
+                <p className="text-2xl font-bold leading-none" style={{ color: k.color }}>{k.val}</p>
+                <p className="text-xs text-gray-400 mt-1.5">{k.sub}</p>
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Compartir activo */}
+        {pp.shareToken && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border print:hidden"
+            style={{ backgroundColor: `${TEAL}08`, borderColor: `${TEAL}30` }}>
+            <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ backgroundColor: TEAL }} />
+            <p className="text-xs text-gray-600 flex-1">Enlace público activo — cualquier persona con el enlace puede ver este resumen</p>
+            <button onClick={() => setShareModal(true)} className="text-xs font-semibold shrink-0" style={{ color: TEAL }}>Gestionar</button>
+          </div>
+        )}
 
         {/* Hospital + contactos */}
         <div className="grid sm:grid-cols-2 gap-4">
@@ -1524,28 +1558,124 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
         {/* Map */}
         {pp.mapaHtml ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mapa de la instalación</p>
-              <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 print:hidden disabled:opacity-50">
-                {savingMapa ? "Guardando…" : "Actualizar"}
-              </button>
+            {/* Map toolbar */}
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between print:hidden bg-gray-50/60">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: TEAL }} />
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Mapa de instalación</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setFullscreen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                    <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                  </svg>
+                  Pantalla completa
+                </button>
+                <button onClick={printMapa}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  Imprimir
+                </button>
+                <div className="w-px h-4 bg-gray-200" />
+                <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all disabled:opacity-40">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  {savingMapa ? "Guardando…" : "Actualizar"}
+                </button>
+              </div>
             </div>
             <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
-              onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa" />
+              onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa de instalación" />
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center print:hidden">
-            <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-            </svg>
-            <p className="text-sm font-medium text-gray-500 mb-1">Sin mapa de instalación</p>
-            <p className="text-xs text-gray-400 mb-3">Importa el HTML para visualizarlo aquí y en el enlace compartido</p>
-            <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: TEAL }}>
-              {savingMapa ? "Importando…" : "Importar mapa HTML"}
-            </button>
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => !savingMapa && fileInputRef.current?.click()}
+            className="relative rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer print:hidden overflow-hidden group"
+            style={{ borderColor: dragOver ? TEAL : "#e5e7eb", backgroundColor: dragOver ? `${TEAL}08` : "#fafafa" }}>
+            {/* Subtle grid pattern */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: "radial-gradient(circle, #00A99D 1px, transparent 1px)",
+              backgroundSize: "24px 24px"
+            }} />
+            <div className="relative flex flex-col items-center justify-center py-14 px-8 text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-200 shadow-sm"
+                style={{ backgroundColor: dragOver ? `${TEAL}20` : "#f3f4f6" }}>
+                {savingMapa ? (
+                  <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                ) : (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={dragOver ? TEAL : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-colors duration-200">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                    <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+                  </svg>
+                )}
+              </div>
+              {savingMapa ? (
+                <p className="text-sm font-semibold" style={{ color: TEAL }}>Cargando mapa…</p>
+              ) : dragOver ? (
+                <>
+                  <p className="text-sm font-bold mb-1" style={{ color: TEAL }}>Suelta el fichero aquí</p>
+                  <p className="text-xs text-gray-400">Se importará automáticamente</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-gray-700 mb-1">Importar mapa de instalación</p>
+                  <p className="text-xs text-gray-400 mb-5 max-w-xs">Arrastra un fichero <span className="font-mono font-bold">.html</span> aquí, o haz clic para abrirlo desde el explorador</p>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-opacity group-hover:opacity-90"
+                      style={{ backgroundColor: TEAL }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Seleccionar fichero
+                    </span>
+                    <span className="text-xs text-gray-300">o arrastra aquí</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Fullscreen overlay */}
+        {fullscreen && pp.mapaHtml && (
+          <div className="fixed inset-0 z-50 flex flex-col print:hidden" style={{ backgroundColor: "#000" }}>
+            <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ backgroundColor: "#111", borderBottom: "1px solid #222" }}>
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-sm" style={{ color: TEAL }}>Palex Medical · InLab</span>
+                <span className="text-gray-500 text-xs">·</span>
+                <span className="text-gray-300 text-xs">{pp.titulo}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={printMapa}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  Imprimir
+                </button>
+                <button onClick={() => setFullscreen(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
+                    <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+                  </svg>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            <iframe srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
+              className="flex-1 border-0 w-full" title="Mapa pantalla completa" />
           </div>
         )}
 
