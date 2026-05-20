@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
+import QRCode from "qrcode"
 
 type EstadoModulo = "PENDIENTE" | "EN_INSTALACION" | "INSTALADO" | "FORMACION" | "VALIDADO"
 
@@ -136,6 +137,8 @@ export default function ProyectoDetallePage() {
   const [iframeHeight, setIframeHeight] = useState(600)
   const [linkCompartir, setLinkCompartir] = useState("")
   const [generandoLink, setGenerandoLink] = useState(false)
+  const [shareModal, setShareModal] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [toast, setToast] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -180,6 +183,13 @@ export default function ProyectoDetallePage() {
   }, [id])
 
   useEffect(() => { cargar() }, [cargar])
+
+  useEffect(() => {
+    if (!linkCompartir) { setQrDataUrl(null); return }
+    QRCode.toDataURL(linkCompartir, { width: 220, margin: 2 })
+      .then(url => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(null))
+  }, [linkCompartir])
 
   function toggleModulo(mid: string) {
     setForm(f => ({
@@ -257,8 +267,7 @@ export default function ProyectoDetallePage() {
     if (r.ok) {
       const d = await r.json()
       setLinkCompartir(d.url)
-      navigator.clipboard.writeText(d.url).catch(() => {})
-      showToast("Enlace copiado al portapapeles")
+      setShareModal(true)
     } else {
       showToast("Error al generar el enlace")
     }
@@ -401,6 +410,80 @@ header{background:#00A99D;color:#fff;display:flex;align-items:center;justify-con
           style={{ backgroundColor: TEAL }}
         >
           {toast}
+        </div>
+      )}
+
+      {/* Share modal */}
+      {shareModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShareModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">Compartir mapa del proyecto</h3>
+                <p className="text-xs text-gray-400 mt-0.5">El enlace permite ver el mapa sin iniciar sesión</p>
+              </div>
+              <button onClick={() => setShareModal(false)} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
+                <IconX />
+              </button>
+            </div>
+            {/* Status pill */}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: TEAL }} />
+                Enlace activo
+              </span>
+            </div>
+            {/* URL box */}
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+              <span className="text-[11px] text-gray-600 font-mono flex-1 truncate">{linkCompartir}</span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(linkCompartir); showToast("Copiado al portapapeles") }}
+                className="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-lg text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: TEAL }}
+              >
+                Copiar
+              </button>
+            </div>
+            {/* QR */}
+            {qrDataUrl ? (
+              <div className="flex flex-col items-center gap-2 py-1">
+                <div className="p-2 border border-gray-100 rounded-2xl bg-white shadow-sm">
+                  <img src={qrDataUrl} alt="QR mapa proyecto" className="w-44 h-44" />
+                </div>
+                <a href={qrDataUrl} download="qr-mapa-proyecto.png"
+                  className="text-xs text-gray-400 hover:underline transition-colors" style={{ color: TEAL }}>
+                  Descargar código QR
+                </a>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-20 text-xs text-gray-300">Generando QR…</div>
+            )}
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <a
+                href={linkCompartir}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-center transition-colors"
+              >
+                Abrir enlace
+              </a>
+              <button
+                onClick={async () => { await revocarCompartir(); setShareModal(false) }}
+                className="flex-1 px-3 py-2 text-sm font-medium rounded-xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
+              >
+                Revocar acceso
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -655,15 +738,18 @@ header{background:#00A99D;color:#fff;display:flex;align-items:center;justify-con
               )}
               {proyecto.mapaHtml && (
                 <button
-                  onClick={compartirMapa}
+                  onClick={linkCompartir ? () => setShareModal(true) : compartirMapa}
                   disabled={generandoLink}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-50"
+                  style={linkCompartir
+                    ? { backgroundColor: `${TEAL}15`, borderColor: `${TEAL}40`, color: TEAL }
+                    : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#4b5563" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                   </svg>
-                  {generandoLink ? "..." : "Compartir"}
+                  {generandoLink ? "..." : linkCompartir ? "Enlace activo" : "Compartir"}
                 </button>
               )}
               <input
@@ -685,20 +771,6 @@ header{background:#00A99D;color:#fff;display:flex;align-items:center;justify-con
             </div>
           </div>
 
-          {/* Banner enlace activo */}
-          {linkCompartir && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00A99D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-              <span className="text-xs text-teal-700 flex-1 truncate font-mono">{linkCompartir}</span>
-              <button onClick={() => { navigator.clipboard.writeText(linkCompartir); showToast("Copiado") }}
-                className="text-xs text-teal-600 hover:text-teal-800 font-medium shrink-0">Copiar</button>
-              <button onClick={revocarCompartir}
-                className="text-xs text-red-400 hover:text-red-600 shrink-0">Revocar</button>
-            </div>
-          )}
 
           {/* Visor — auto-height al cargar el documento */}
           {proyecto.mapaHtml ? (

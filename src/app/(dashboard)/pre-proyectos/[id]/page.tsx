@@ -389,9 +389,14 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const [editEntradaId, setEditEntradaId] = useState<string | null>(null)
   const [editEntradaForm, setEditEntradaForm] = useState({ titulo: "", contenido: "", fechaEntrada: "", fechaCita: "", horaCita: "", personaCita: "", lugarCita: "", motivoCita: "", importanciaCita: "" })
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set())
 
   function toggleCollapse(id: string) {
     setCollapsedItems(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function toggleMonth(month: string) {
+    setCollapsedMonths(prev => { const n = new Set(prev); n.has(month) ? n.delete(month) : n.add(month); return n })
   }
 
   const [editHitoId, setEditHitoId] = useState<string | null>(null)
@@ -605,6 +610,29 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
     renderList.push({ rType: "item", item, rKey: `${item.kind}-${item.data.id}` })
   }
 
+  // Compute status for each month header: 'warning' | 'ok' | 'empty'
+  const monthStatus = new Map<string, "warning" | "ok" | "empty">()
+  {
+    let mKey = ""
+    let hasItems = false
+    let hasIssues = false
+    const flush = () => { if (mKey) monthStatus.set(mKey, hasIssues ? "warning" : hasItems ? "ok" : "empty") }
+    for (const ri of renderList) {
+      if (ri.rType === "header") { flush(); mKey = ri.month; hasItems = false; hasIssues = false }
+      else {
+        hasItems = true
+        const { item } = ri
+        if (item.kind === "fase") {
+          if (item.data.estado === "BLOQUEADO") hasIssues = true
+          else if (item.data.fechaPlan && new Date(item.data.fechaPlan).getTime() < now && item.data.estado !== "COMPLETADO") hasIssues = true
+        } else if (item.kind === "hito") {
+          if (!item.data.completado && new Date(item.data.fecha).getTime() < now) hasIssues = true
+        }
+      }
+    }
+    flush()
+  }
+
   const ADD_BTNS = [
     { tipo: "EVENTO" as const, label: "Evento", color: "#f97316" },
     { tipo: "COMENTARIO" as const, label: "Nota", color: "#6b7280" },
@@ -798,15 +826,32 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       ) : (
         <div className="relative pl-8">
           <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gray-100" />
-          {renderList.map(ri => {
+          {(() => {
+            let currentMonth = ""
+            return renderList.map(ri => {
             if (ri.rType === "header") {
+              currentMonth = ri.month
+              const st = monthStatus.get(ri.month) ?? "empty"
+              const dotColor = st === "warning" ? "#dc2626" : st === "ok" ? "#16a34a" : "#d1d5db"
+              const collapsed = collapsedMonths.has(ri.month)
               return (
-                <div key={ri.rKey} className="relative -ml-8 flex items-center gap-2 my-4">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest capitalize pl-1">{ri.month}</span>
+                <div key={ri.rKey}
+                  className="relative -ml-8 flex items-center gap-2 my-4 cursor-pointer select-none group"
+                  onClick={() => toggleMonth(ri.month)}
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0 transition-colors" style={{ backgroundColor: dotColor }} />
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest capitalize group-hover:text-gray-600 transition-colors">{ri.month}</span>
                   <div className="flex-1 h-px bg-gray-100 ml-1" />
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    className="shrink-0 transition-transform duration-150"
+                    style={{ transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
                 </div>
               )
             }
+
+            if (collapsedMonths.has(currentMonth)) return null
 
             const { item } = ri
 
@@ -1180,7 +1225,8 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
             }
 
             return null
-          })}
+          })
+          })()}
         </div>
       )}
     </div>
