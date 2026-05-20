@@ -384,6 +384,8 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const [addTipo, setAddTipo] = useState<"EVENTO" | "COMENTARIO" | "CITA" | "HITO" | null>(null)
   const [addForm, setAddForm] = useState({ titulo: "", contenido: "", fechaCita: "", horaCita: "", personaCita: "", fechaEntrada: "" })
   const [hitoForm, setHitoForm] = useState({ titulo: "", descripcion: "", fecha: "" })
+  const [editEntradaId, setEditEntradaId] = useState<string | null>(null)
+  const [editEntradaForm, setEditEntradaForm] = useState({ titulo: "", contenido: "", fechaEntrada: "", fechaCita: "", horaCita: "", personaCita: "" })
 
   function abrirEditFase(f: Fase) {
     setEditFaseId(f.id)
@@ -472,6 +474,47 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       onUpdate({ ...pp, entradas: (pp.entradas ?? []).filter(e => e.id !== entradaId) })
       success("Eliminado")
     } catch { toastError("Error") }
+  }
+
+  function abrirEditEntrada(e: EntradaTimeline) {
+    setEditEntradaId(e.id)
+    const fechaCitaBase = e.fechaCita ? new Date(e.fechaCita) : null
+    setEditEntradaForm({
+      titulo: e.titulo === "Nota" ? "" : e.titulo,
+      contenido: e.contenido ?? "",
+      fechaEntrada: e.tipo !== "CITA" ? fmtFechaInput(e.fechaEntrada) : "",
+      fechaCita: fechaCitaBase ? fmtFechaInput(e.fechaCita) : "",
+      horaCita: fechaCitaBase ? fechaCitaBase.toTimeString().slice(0, 5) : "",
+      personaCita: e.personaCita ?? "",
+    })
+    setAddTipo(null)
+  }
+
+  async function guardarEntrada(entradaId: string, tipo: string) {
+    setGuardando(true)
+    try {
+      const body: Record<string, unknown> = {
+        titulo: editEntradaForm.titulo || (tipo === "COMENTARIO" ? "Nota" : ""),
+        contenido: editEntradaForm.contenido || null,
+      }
+      if (tipo === "CITA") {
+        body.fechaCita = editEntradaForm.fechaCita
+          ? `${editEntradaForm.fechaCita}T${editEntradaForm.horaCita || "09:00"}:00`
+          : null
+        body.personaCita = editEntradaForm.personaCita || null
+      } else {
+        body.fechaEntrada = editEntradaForm.fechaEntrada || null
+      }
+      const r = await fetch(`/api/pre-proyectos/${pp.id}/entradas/${entradaId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      })
+      if (!r.ok) throw new Error()
+      const updated = await r.json()
+      onUpdate({ ...pp, entradas: (pp.entradas ?? []).map(e => e.id === entradaId ? { ...e, ...updated } : e) })
+      setEditEntradaId(null)
+      success("Guardado")
+    } catch { toastError("Error al guardar") }
+    finally { setGuardando(false) }
   }
 
   const now = Date.now()
@@ -812,45 +855,128 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
               const fechaDisplay = e.tipo === "CITA" && e.fechaCita
                 ? new Date(e.fechaCita).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
                 : new Date(e.fechaEntrada).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+              const editing = editEntradaId === e.id
               return (
                 <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[22px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm z-10"
-                    style={{ backgroundColor: cs.dotColor }} />
-                  <div className={`rounded-2xl border p-4 ${cs.bg} ${cs.border}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    style={{ backgroundColor: editing ? "#00A99D" : cs.dotColor }} />
+                  <div className={`rounded-2xl border p-4 ${cs.bg} ${editing ? "border-teal-300" : cs.border}`}>
+                    {editing ? (
+                      /* ── Modo edición ── */
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className={`text-[10px] font-bold uppercase tracking-wide ${cs.labelColor}`}>{cs.label}</span>
-                          <span className="text-xs text-gray-400">{fechaDisplay}</span>
-                          {isFutureCita && (() => {
-                            const dias = Math.ceil((new Date(e.fechaCita!).getTime() - now) / 86400000)
-                            return (
-                              <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                {dias <= 0 ? "Hoy" : dias === 1 ? "Mañana" : `En ${dias}d`}
-                              </span>
-                            )
-                          })()}
+                          <span className="text-[10px] text-teal-600 font-semibold">Editando</span>
                         </div>
-                        {e.titulo && e.titulo !== "Nota" && (
-                          <h4 className="font-semibold text-gray-900 text-sm leading-tight">{e.titulo}</h4>
+                        {(e.tipo === "EVENTO" || e.tipo === "CITA") && (
+                          <input
+                            autoFocus
+                            value={editEntradaForm.titulo}
+                            onChange={ev => setEditEntradaForm(p => ({ ...p, titulo: ev.target.value }))}
+                            placeholder={e.tipo === "EVENTO" ? "¿Qué ocurrió?" : "Título de la reunión"}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+                          />
                         )}
-                        {e.contenido && (
-                          <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-wrap">{e.contenido}</p>
+                        {e.tipo === "CITA" && (
+                          <>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Fecha *</label>
+                                <input type="date" value={editEntradaForm.fechaCita}
+                                  onChange={ev => setEditEntradaForm(p => ({ ...p, fechaCita: ev.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Hora</label>
+                                <input type="time" value={editEntradaForm.horaCita}
+                                  onChange={ev => setEditEntradaForm(p => ({ ...p, horaCita: ev.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                              </div>
+                            </div>
+                            <input value={editEntradaForm.personaCita}
+                              onChange={ev => setEditEntradaForm(p => ({ ...p, personaCita: ev.target.value }))}
+                              placeholder="Con quién (persona, cargo…)"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                          </>
                         )}
-                        <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 flex-wrap">
-                          {e.personaCita && (
-                            <span>Con: <span className="font-medium text-gray-600">{e.personaCita}</span></span>
-                          )}
-                          <span>— {e.autor}</span>
+                        {(e.tipo === "EVENTO" || e.tipo === "COMENTARIO") && (
+                          <div className="flex items-center gap-3">
+                            <label className="text-xs text-gray-500 shrink-0">
+                              {e.tipo === "EVENTO" ? "Fecha del evento" : "Fecha de la nota"}
+                            </label>
+                            <input type="date" value={editEntradaForm.fechaEntrada}
+                              onChange={ev => setEditEntradaForm(p => ({ ...p, fechaEntrada: ev.target.value }))}
+                              className="px-3 py-1.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                          </div>
+                        )}
+                        <textarea
+                          value={editEntradaForm.contenido}
+                          onChange={ev => setEditEntradaForm(p => ({ ...p, contenido: ev.target.value }))}
+                          placeholder={e.tipo === "COMENTARIO" ? "Escribe tu nota…" : "Notas adicionales (opcional)"}
+                          rows={e.tipo === "COMENTARIO" ? 3 : 2}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white resize-none"
+                          {...(e.tipo === "COMENTARIO" ? { autoFocus: true } : {})}
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={() => guardarEntrada(e.id, e.tipo)} disabled={guardando}
+                            className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50 transition-opacity"
+                            style={{ backgroundColor: "#00A99D" }}>
+                            {guardando ? "Guardando…" : "Guardar"}
+                          </button>
+                          <button onClick={() => setEditEntradaId(null)}
+                            className="px-4 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-white/60 transition-colors">
+                            Cancelar
+                          </button>
                         </div>
                       </div>
-                      <button onClick={() => eliminarEntrada(e.id)}
-                        className="shrink-0 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-gray-300 hover:text-red-400">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
-                    </div>
+                    ) : (
+                      /* ── Modo lectura ── */
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className={`text-[10px] font-bold uppercase tracking-wide ${cs.labelColor}`}>{cs.label}</span>
+                            <span className="text-xs text-gray-400">{fechaDisplay}</span>
+                            {isFutureCita && (() => {
+                              const dias = Math.ceil((new Date(e.fechaCita!).getTime() - now) / 86400000)
+                              return (
+                                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                  {dias <= 0 ? "Hoy" : dias === 1 ? "Mañana" : `En ${dias}d`}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                          {e.titulo && e.titulo !== "Nota" && (
+                            <h4 className="font-semibold text-gray-900 text-sm leading-tight">{e.titulo}</h4>
+                          )}
+                          {e.contenido && (
+                            <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-wrap">{e.contenido}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 flex-wrap">
+                            {e.personaCita && (
+                              <span>Con: <span className="font-medium text-gray-600">{e.personaCita}</span></span>
+                            )}
+                            <span>— {e.autor}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => abrirEditEntrada(e)}
+                            className="p-1.5 rounded-lg hover:bg-white/70 transition-colors text-gray-300 hover:text-blue-500"
+                            title="Editar">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => eliminarEntrada(e.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-gray-300 hover:text-red-400"
+                            title="Eliminar">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

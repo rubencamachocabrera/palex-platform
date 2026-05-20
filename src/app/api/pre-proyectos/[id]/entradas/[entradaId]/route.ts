@@ -16,6 +16,7 @@ export async function PATCH(
     if ("contenido" in body) data.contenido = body.contenido || null
     if ("fechaCita" in body) data.fechaCita = body.fechaCita ? new Date(body.fechaCita) : null
     if ("personaCita" in body) data.personaCita = body.personaCita || null
+    if ("fechaEntrada" in body) data.fechaEntrada = body.fechaEntrada ? new Date(body.fechaEntrada) : undefined
     const updated = await db.entradaTimeline.update({ where: { id: entradaId }, data })
     return NextResponse.json(updated)
   } catch {
