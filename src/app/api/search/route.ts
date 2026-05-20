@@ -11,9 +11,9 @@ export async function GET(req: NextRequest) {
     const rol = session.user.role
     const userId = session.user.id
 
-    if (q.length < 2) return NextResponse.json({ hospitales: [], visitas: [] })
+    if (q.length < 2) return NextResponse.json({ hospitales: [], visitas: [], preProyectos: [], proyectos: [] })
 
-    const [hospitales, visitas] = await Promise.all([
+    const [hospitales, visitas, preProyectos, proyectos] = await Promise.all([
       db.hospital.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
           ],
         },
         select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } },
-        take: 6,
+        take: 5,
         orderBy: { nombre: "asc" },
       }),
       db.visita.findMany({
@@ -39,18 +39,41 @@ export async function GET(req: NextRequest) {
             ],
           },
         },
-        select: {
-          id: true,
-          estado: true,
-          fecha: true,
-          hospital: { select: { nombre: true } },
-        },
-        take: 5,
+        select: { id: true, estado: true, fecha: true, hospital: { select: { nombre: true } } },
+        take: 4,
         orderBy: { fecha: "desc" },
+      }),
+      db.preProyecto.findMany({
+        where: {
+          OR: [
+            { titulo: { contains: q, mode: "insensitive" } },
+            { hospital: { nombre: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+        select: {
+          id: true, titulo: true, estado: true,
+          hospital: { select: { nombre: true, ciudad: true } },
+        },
+        take: 4,
+        orderBy: { editadoEn: "desc" },
+      }),
+      db.proyecto.findMany({
+        where: {
+          OR: [
+            { nombre: { contains: q, mode: "insensitive" } },
+            { hospital: { nombre: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+        select: {
+          id: true, nombre: true,
+          hospital: { select: { nombre: true, ciudad: true } },
+        },
+        take: 3,
+        orderBy: { actualizadoEn: "desc" },
       }),
     ])
 
-    const res = NextResponse.json({ hospitales, visitas })
+    const res = NextResponse.json({ hospitales, visitas, preProyectos, proyectos })
     res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
     return res
   } catch (err) {

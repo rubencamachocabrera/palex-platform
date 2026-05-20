@@ -8,7 +8,7 @@ import { useSidebarToggle } from "@/components/Sidebar"
 import { TEAL } from "@/lib/brand"
 
 interface Resultado {
-  tipo: "hospital" | "visita"
+  tipo: "hospital" | "visita" | "preproyecto" | "proyecto"
   id: string
   titulo: string
   subtitulo: string
@@ -41,6 +41,25 @@ function VisitaIcon() {
       <polyline points="14 2 14 8 20 8"/>
       <line x1="16" y1="13" x2="8" y2="13"/>
       <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+  )
+}
+
+function PreProyectoIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  )
+}
+
+function ProyectoIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+      <polyline points="2 17 12 22 22 17"/>
+      <polyline points="2 12 12 17 22 12"/>
     </svg>
   )
 }
@@ -87,7 +106,7 @@ export function TopBar() {
     try {
       const r = await fetch("/api/search?q=" + encodeURIComponent(texto.trim()))
       if (!r.ok) return
-      const { hospitales = [], visitas = [] } = await r.json()
+      const { hospitales = [], visitas = [], preProyectos = [], proyectos = [] } = await r.json()
 
       const resH: Resultado[] = hospitales.map((h: { id: string; nombre: string; ciudad: string; zona?: { nombre: string } }) => ({
         tipo: "hospital" as const,
@@ -105,8 +124,25 @@ export function TopBar() {
         href: "/visitas/" + v.id,
       }))
 
-      setResultados([...resH, ...resV])
-      setAbierto(resH.length + resV.length > 0)
+      const resPP: Resultado[] = preProyectos.map((p: { id: string; titulo: string; estado: string; hospital: { nombre: string; ciudad: string } }) => ({
+        tipo: "preproyecto" as const,
+        id: p.id,
+        titulo: p.titulo,
+        subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : "") + " · " + p.estado,
+        href: "/pre-proyectos/" + p.id,
+      }))
+
+      const resPR: Resultado[] = proyectos.map((p: { id: string; nombre: string; hospital: { nombre: string; ciudad: string } }) => ({
+        tipo: "proyecto" as const,
+        id: p.id,
+        titulo: p.nombre,
+        subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : ""),
+        href: "/proyectos/" + p.id,
+      }))
+
+      const todos = [...resH, ...resV, ...resPP, ...resPR]
+      setResultados(todos)
+      setAbierto(todos.length > 0)
     } catch (e) {
       console.error("Error en busqueda:", e)
     } finally {
@@ -196,7 +232,10 @@ export function TopBar() {
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
               >
                 <span className="shrink-0 text-gray-400">
-                  {r.tipo === "hospital" ? <HospitalIcon /> : <VisitaIcon />}
+                  {r.tipo === "hospital" ? <HospitalIcon />
+                   : r.tipo === "visita" ? <VisitaIcon />
+                   : r.tipo === "preproyecto" ? <PreProyectoIcon />
+                   : <ProyectoIcon />}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{r.titulo}</p>
@@ -204,12 +243,17 @@ export function TopBar() {
                 </div>
                 <span
                   className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                  style={r.tipo === "hospital"
-                    ? { backgroundColor: "#E6F7F6", color: TEAL }
-                    : { backgroundColor: "#FEF3E5", color: "#F7941D" }
+                  style={
+                    r.tipo === "hospital"    ? { backgroundColor: "#E6F7F6", color: TEAL }
+                    : r.tipo === "visita"    ? { backgroundColor: "#FEF3E5", color: "#F7941D" }
+                    : r.tipo === "preproyecto" ? { backgroundColor: "#EEF2FF", color: "#4F46E5" }
+                    : { backgroundColor: "#EFF6FF", color: "#2563EB" }
                   }
                 >
-                  {r.tipo === "hospital" ? "Hospital" : "Visita"}
+                  {r.tipo === "hospital" ? "Hospital"
+                   : r.tipo === "visita" ? "Visita"
+                   : r.tipo === "preproyecto" ? "Pre-proyecto"
+                   : "Proyecto"}
                 </span>
               </button>
             ))}
