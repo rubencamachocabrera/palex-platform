@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const { faseId } = await params
+  const { id: proyectoId, faseId } = await params
   try {
     const body = await req.json()
     const data: Record<string, unknown> = {}
@@ -19,6 +19,15 @@ export async function PATCH(
     if ("fechaPlan" in body) data.fechaPlan = body.fechaPlan ? new Date(body.fechaPlan) : null
     if ("fechaReal" in body) data.fechaReal = body.fechaReal ? new Date(body.fechaReal) : null
     const updated = await db.fasePreProyecto.update({ where: { id: faseId }, data })
+
+    // Auto-transición: si una fase pasa a activa y el proyecto sigue en NUEVO → EN_CURSO
+    if (data.estado === "EN_PROGRESO" || data.estado === "COMPLETADO") {
+      const proyecto = await db.preProyecto.findUnique({ where: { id: proyectoId }, select: { estado: true } })
+      if (proyecto?.estado === "NUEVO") {
+        await db.preProyecto.update({ where: { id: proyectoId }, data: { estado: "EN_CURSO" } })
+      }
+    }
+
     return NextResponse.json(updated)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

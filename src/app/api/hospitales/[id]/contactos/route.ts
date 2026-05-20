@@ -23,15 +23,15 @@ export async function GET(
   }
 }
 
-// POST /api/hospitales/[id]/contactos — crea un contacto (solo ADMIN)
+// POST /api/hospitales/[id]/contactos — crea un contacto (todos los roles autenticados)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
     const { id: hospitalId } = await params
