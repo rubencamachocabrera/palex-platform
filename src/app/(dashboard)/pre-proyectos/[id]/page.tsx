@@ -1199,6 +1199,181 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
     setTimeout(() => { try { win.print() } catch { /* closed */ } }, 800)
   }
 
+  function printInformeCompleto() {
+    const win = window.open("", "_blank", "width=1050,height=900")
+    if (!win) { toastError("Permite ventanas emergentes para imprimir"); return }
+    const e = (s: string | null | undefined) =>
+      String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+    const fecha = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+    const estadoColor = ESTADO_COLOR[pp.estado]?.text ?? "#6b7280"
+    const estadoBg = ESTADO_COLOR[pp.estado]?.bg ?? "#f3f4f6"
+    const estadoLabel = ESTADO_LABEL[pp.estado] ?? pp.estado
+    const prioLabel = PRIORIDAD[pp.prioridad]?.label ?? ""
+    const prioColor = PRIORIDAD[pp.prioridad]?.color ?? ""
+    const tipoH = pp.hospital.tipo ? (TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo) : ""
+    const fasesRows = pp.fases.map(f => {
+      const cols: Record<string,string> = { COMPLETADO:"#16a34a", EN_PROGRESO:"#00A99D", BLOQUEADO:"#dc2626", PENDIENTE:"#9ca3af" }
+      const lbls: Record<string,string> = { COMPLETADO:"Completado", EN_PROGRESO:"En progreso", BLOQUEADO:"Bloqueado", PENDIENTE:"Pendiente" }
+      return `<tr><td class="cell">${e(f.nombre)}</td><td class="cell" style="color:${cols[f.estado]??'#9ca3af'};font-weight:600">${lbls[f.estado]??f.estado}</td><td class="cell tr">${fmtFecha(f.fechaReal ?? f.fechaPlan)}</td></tr>`
+    }).join("")
+    const hitosHTML = pp.hitos.map(h =>
+      `<span class="hito ${h.completado?"hito-ok":"hito-pend"}">${h.completado?"✓":"◇"} ${e(h.titulo)} · ${fmtFecha(h.fecha)}</span>`
+    ).join("")
+    const hwSections = Object.entries(byTipo).map(([tipo, units]) => {
+      const sub = units.reduce((s,u) => s + (u.catalogo.precio ?? 0), 0)
+      const rows = units.map(u =>
+        `<tr><td class="cell">${e(u.catalogo.marca)} ${e(u.catalogo.modelo)}</td><td class="cell mono">${e(u.numSerie??"—")}</td><td class="cell" style="color:${HW_ESTADO[u.estado]?.color??"#6b7280"}">${HW_ESTADO[u.estado]?.label??u.estado}</td><td class="cell tr">${u.catalogo.precio!=null?u.catalogo.precio.toLocaleString("es-ES",{style:"currency",currency:"EUR"}):"—"}</td></tr>`
+      ).join("")
+      return `<div class="hw-group"><p class="hw-tipo">${e(HW_TIPO_LABEL[tipo]??tipo)} (${units.length})</p><table class="tbl"><thead><tr><th>Modelo</th><th>N/S</th><th>Estado</th><th class="tr">Precio/ud</th></tr></thead><tbody>${rows}</tbody>${sub>0?`<tfoot><tr><td colspan="3" class="sub-lbl">Subtotal</td><td class="sub-val tr">${sub.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</td></tr></tfoot>`:""}</table></div>`
+    }).join("")
+    const visitasRows = pp.visitas.slice(0,8).map(v => {
+      const col = v.estado==="COMPLETADA"?"#16a34a":v.estado==="BORRADOR"?"#d97706":"#6b7280"
+      return `<tr><td class="cell">${fmtFecha(v.fecha)}</td><td class="cell" style="color:${col};font-weight:600">${e(v.estado)}</td><td class="cell">${e(v.tipo)}</td><td class="cell">${e(v.usuario.nombre)}</td></tr>`
+    }).join("")
+    const contactosHTML = pp.contactos.map(({contacto:c}) =>
+      `<div class="contact"><p class="cn">${e(c.nombre)}${c.principal?` <span class="badge-p">Principal</span>`:""}</p>${c.cargo?`<p class="cm">${e(c.cargo)}</p>`:""}${c.email?`<p class="cm">${e(c.email)}</p>`:""}${c.telefono?`<p class="cm">${e(c.telefono)}</p>`:""}</div>`
+    ).join("")
+    const pb = `<div class="pw"><div class="pb" style="width:${pct}%;background:${pct===100?"#16a34a":"#00A99D"}"></div></div>`
+    win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${e(pp.titulo)} — Informe de Proyecto</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;background:#fff;font-size:13px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:#f8fafc;border-bottom:2px solid #e5e7eb;position:sticky;top:0;z-index:10}
+.tb{font-weight:800;color:#00A99D;font-size:15px}.tb em{color:#F7941D;font-style:normal}
+.bp{padding:8px 20px;background:#00A99D;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.bc{padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-left:8px}
+.cover{min-height:100vh;display:flex;flex-direction:column;border-top:8px solid #00A99D;page-break-after:always;break-after:page}
+.ctop{padding:32px 44px 0;display:flex;justify-content:space-between;align-items:center}
+.cbrand{font-size:18px;font-weight:800;color:#00A99D;letter-spacing:-0.5px}.cbrand em{color:#F7941D;font-style:normal}
+.cbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 44px 28px}
+.eye{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:14px}
+.ctitle{font-size:38px;font-weight:800;color:#111827;line-height:1.1;letter-spacing:-0.5px;margin-bottom:8px}
+.chosp{font-size:18px;font-weight:600;color:#374151;margin-bottom:4px}
+.cloc{font-size:13px;color:#9ca3af;margin-bottom:24px}
+.cbadges{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+.badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.cmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px;background:#f8fafc;border-radius:14px;border:1px solid #e5e7eb;margin-bottom:20px}
+.mi p:first-child{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:3px}
+.mi p:last-child{font-size:15px;font-weight:800;color:#111827}
+.pl{display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:5px}
+.pw{width:100%;height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden}
+.pb{height:100%;border-radius:99px}
+.cfooter{padding:18px 44px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}
+.cfb{font-size:12px;font-weight:700;color:#9ca3af}.cfc{font-size:11px;color:#d1d5db;font-style:italic}
+.content{padding:28px 44px;max-width:920px;margin:0 auto}
+.phdr{display:none}
+.sec{margin-bottom:28px}
+.stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid #f3f4f6}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kcard{background:#f8fafc;border-radius:12px;padding:14px;border-top:3px solid}
+.kl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px}
+.kv{font-size:22px;font-weight:800;line-height:1}
+.ks{font-size:10px;color:#9ca3af;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:#f8fafc;border-radius:12px;padding:14px}
+.ri{display:flex;gap:8px;margin-bottom:5px}
+.rl{font-size:11px;color:#9ca3af;width:60px;flex-shrink:0}
+.rv{font-size:12px;font-weight:600;color:#374151}
+.contact{margin-bottom:10px}
+.cn{font-size:13px;font-weight:700;color:#111827}
+.cm{font-size:11px;color:#6b7280;margin-top:1px}
+.badge-p{display:inline-block;font-size:9px;background:#00A99D18;color:#00A99D;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:5px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl thead th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9ca3af;padding:0 0 7px;text-align:left;border-bottom:1px solid #e5e7eb}
+.cell{padding:7px 8px 7px 0;border-bottom:1px solid #f9fafb;vertical-align:top}
+.tr{text-align:right;padding-right:0}
+.mono{font-family:monospace;font-size:11px;color:#6b7280}
+.sub-lbl{padding-top:7px;font-size:11px;font-weight:600;color:#6b7280}
+.sub-val{padding-top:7px;font-weight:700;color:#111827;text-align:right}
+.hw-group{margin-bottom:18px}
+.hw-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;margin-bottom:7px}
+.hw-total{margin-top:10px;padding-top:10px;border-top:2px solid #e5e7eb;display:flex;justify-content:space-between;font-size:14px;font-weight:800}
+.hitos-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.hito{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid}
+.hito-ok{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+.hito-pend{background:#fffbeb;border-color:#fde68a;color:#d97706}
+.nt{font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap}
+.pfooter{display:none}
+@media print{
+  .toolbar,.no-print{display:none!important}
+  .cover{min-height:100vh;page-break-after:always;break-after:page}
+  .phdr{display:flex!important;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px solid #00A99D;margin-bottom:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .phb{font-weight:800;color:#00A99D;font-size:12px}.phb em{color:#F7941D;font-style:normal}
+  .phm{font-size:10px;color:#9ca3af;text-align:right}
+  .kgrid,.cmeta{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pfooter{display:flex!important;justify-content:space-between;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;margin-top:28px}
+  @page{margin:14mm 14mm 18mm;size:A4}
+  @page:first{margin:0;size:A4}
+}
+</style></head><body>
+<div class="toolbar no-print">
+  <span class="tb">Palex Medical · <em>InLab</em></span>
+  <div><button class="bp" onclick="window.print()">Imprimir / Guardar PDF</button><button class="bc" onclick="window.close()">Cerrar</button></div>
+</div>
+<div class="cover">
+  <div class="ctop">
+    <span class="cbrand">Palex Medical · <em>InLab</em></span>
+    <span style="font-size:11px;color:#9ca3af">Informe confidencial · ${e(fecha)}</span>
+  </div>
+  <div class="cbody">
+    <p class="eye">Informe de Proyecto</p>
+    <h1 class="ctitle">${e(pp.titulo)}</h1>
+    <p class="chosp">${e(pp.hospital.nombre)}</p>
+    <p class="cloc">${e(pp.hospital.ciudad)}${pp.hospital.provincia?", "+e(pp.hospital.provincia):""}${tipoH?" · "+e(tipoH):""}${pp.hospital.camas?" · "+pp.hospital.camas+" camas":""}</p>
+    <div class="cbadges">
+      <span class="badge" style="background:${estadoBg};color:${estadoColor}">${estadoLabel}</span>
+      ${pp.prioridad>0?`<span class="badge" style="background:#fff7ed;color:${e(prioColor)}">${e(prioLabel)}</span>`:""}
+      ${pp.hospital.zona?`<span class="badge" style="background:#f0f9ff;color:#0369a1">Zona ${e(pp.hospital.zona.nombre)}</span>`:""}
+    </div>
+    <div class="cmeta">
+      <div class="mi"><p>Presupuesto</p><p>${pp.presupuesto!=null?pp.presupuesto.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}):"—"}</p></div>
+      <div class="mi"><p>Inicio planificado</p><p>${fmtFecha(pp.fechaInicio)}</p></div>
+      <div class="mi"><p>Fin planificado</p><p>${fmtFecha(pp.fechaFinPlan)}</p></div>
+      ${pp.responsable?`<div class="mi"><p>Responsable</p><p>${e(pp.responsable.nombre)}</p></div>`:""}
+      <div class="mi"><p>Hardware</p><p>${pp.hardwareUnidades.length} uds${totalHW>0?" · "+totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}):""}</p></div>
+      <div class="mi"><p>Visitas</p><p>${pp.visitas.length} (${visitasOK} completadas)</p></div>
+    </div>
+    <div class="pl"><span>${fasesOK} de ${pp.fases.length} fases completadas</span><span style="font-weight:700;color:${pct===100?"#16a34a":"#00A99D"}">${pct}%</span></div>
+    ${pb}
+  </div>
+  <div class="cfooter"><span class="cfb">Palex Medical · InLab</span><span class="cfc">Documento confidencial — uso interno</span></div>
+</div>
+<div class="content">
+  <div class="phdr"><span class="phb">Palex Medical · <em>InLab</em></span><div class="phm"><strong>${e(pp.titulo)}</strong><br>${e(fecha)}</div></div>
+  <div class="sec"><p class="stitle">Indicadores del proyecto</p>
+    <div class="kgrid">
+      <div class="kcard" style="border-top-color:${pct===100?"#16a34a":"#00A99D"}"><p class="kl">Progreso</p><p class="kv" style="color:${pct===100?"#16a34a":"#00A99D"}">${pct}%</p><p class="ks">${fasesOK}/${pp.fases.length} fases</p></div>
+      <div class="kcard" style="border-top-color:#7c3aed"><p class="kl">Hardware</p><p class="kv" style="color:#7c3aed">${pp.hardwareUnidades.length} uds</p><p class="ks">${totalHW>0?totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}):"Sin precios"}</p></div>
+      <div class="kcard" style="border-top-color:#0369a1"><p class="kl">Visitas</p><p class="kv" style="color:#0369a1">${pp.visitas.length}</p><p class="ks">${visitasOK} completadas</p></div>
+      <div class="kcard" style="border-top-color:#F7941D"><p class="kl">Duración</p><p class="kv" style="color:#F7941D">${duracionDias?duracionDias+" d":"—"}</p><p class="ks">${duracionDias?"días planificados":"Sin fechas"}</p></div>
+    </div>
+  </div>
+  <div class="sec two">
+    <div class="card"><p class="stitle">Datos del hospital</p>
+      ${tipoH?`<div class="ri"><span class="rl">Tipo</span><span class="rv">${e(tipoH)}</span></div>`:""}
+      <div class="ri"><span class="rl">Ciudad</span><span class="rv">${e(pp.hospital.ciudad)}${pp.hospital.provincia?", "+e(pp.hospital.provincia):""}</span></div>
+      ${pp.hospital.camas?`<div class="ri"><span class="rl">Camas</span><span class="rv">${pp.hospital.camas}</span></div>`:""}
+      ${pp.hospital.direccion?`<div class="ri"><span class="rl">Dirección</span><span class="rv">${e(pp.hospital.direccion)}</span></div>`:""}
+      ${pp.hospital.zona?`<div class="ri"><span class="rl">Zona</span><span class="rv">${e(pp.hospital.zona.nombre)}</span></div>`:""}
+      ${pp.hospital.pais?`<div class="ri"><span class="rl">País</span><span class="rv">${e(pp.hospital.pais)}</span></div>`:""}
+    </div>
+    <div class="card"><p class="stitle">Contactos del proyecto</p>
+      ${pp.contactos.length>0?contactosHTML:`<p style="font-size:12px;color:#9ca3af">Sin contactos vinculados</p>`}
+    </div>
+  </div>
+  ${pp.fases.length>0?`<div class="sec"><p class="stitle">Fases del proyecto</p><table class="tbl"><thead><tr><th>Fase</th><th>Estado</th><th class="tr">Fecha</th></tr></thead><tbody>${fasesRows}</tbody></table>${hitosHTML?`<div class="hitos-wrap">${hitosHTML}</div>`:""}</div>`:""}
+  ${pp.hardwareUnidades.length>0?`<div class="sec"><p class="stitle">Inventario de hardware</p>${hwSections}${totalHW>0?`<div class="hw-total"><span>Total hardware</span><span style="color:#00A99D">${totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</span></div>`:""}</div>`:""}
+  ${pp.visitas.length>0?`<div class="sec"><p class="stitle">Visitas (${pp.visitas.length})</p><table class="tbl"><thead><tr><th>Fecha</th><th>Estado</th><th>Tipo</th><th>Técnico</th></tr></thead><tbody>${visitasRows}</tbody></table>${pp.visitas.length>8?`<p style="font-size:11px;color:#9ca3af;margin-top:7px">+${pp.visitas.length-8} visitas adicionales</p>`:""}</div>`:""}
+  ${pp.descripcion||pp.notas?`<div class="sec"><p class="stitle">Notas y descripción</p>${pp.descripcion?`<div style="margin-bottom:14px"><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Descripción</p><p class="nt">${e(pp.descripcion)}</p></div>`:""}${pp.notas?`<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Notas internas</p><p class="nt">${e(pp.notas)}</p></div>`:""}</div>`:""}
+  <div class="pfooter"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
+</div>
+</body></html>`)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { try { win.print() } catch { /* closed */ } }, 600)
+  }
+
   function exportJSON() {
     const blob = new Blob([JSON.stringify(pp, null, 2)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
@@ -1254,13 +1429,22 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Primarios */}
-          <button onClick={printMapa}
+          <button onClick={printInformeCompleto}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-85 shadow-sm"
             style={{ backgroundColor: TEAL }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Informe completo
+          </button>
+          <button onClick={printMapa}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border-2 transition-colors hover:opacity-85 shadow-sm"
+            style={{ borderColor: TEAL, color: TEAL }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
             </svg>
-            Imprimir mapa
+            Mapa
           </button>
           <button onClick={() => setShareModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-teal-50 shadow-sm"
