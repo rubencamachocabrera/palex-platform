@@ -25,7 +25,46 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { nombre: "asc" },
     })
-    const res = NextResponse.json(hospitales)
+
+    const [oppGroups, ppGroups, lastVisits] = await Promise.all([
+      db.oportunidad.groupBy({
+        by: ["hospitalId"],
+        where: { etapa: { notIn: ["GANADO", "PERDIDO"] } },
+        _count: { _all: true },
+      }),
+      db.preProyecto.groupBy({
+        by: ["hospitalId"],
+        where: { estado: "EN_CURSO" },
+        _count: { _all: true },
+      }),
+      db.visita.findMany({
+        distinct: ["hospitalId"],
+        orderBy: { fecha: "desc" },
+        select: { hospitalId: true, fecha: true },
+      }),
+    ])
+
+    const oppMap: Record<string, number> = {}
+    oppGroups.forEach(r => { oppMap[r.hospitalId] = r._count._all })
+    const ppMap: Record<string, number> = {}
+    ppGroups.forEach(r => { ppMap[r.hospitalId] = r._count._all })
+    const lvMap: Record<string, Date> = {}
+    lastVisits.forEach(v => { lvMap[v.hospitalId] = v.fecha })
+
+    const now = Date.now()
+    const result = hospitales.map(h => {
+      const lastV = lvMap[h.id]
+      const daysSince = lastV ? Math.floor((now - new Date(lastV).getTime()) / 86400000) : 999
+      const vPts = Math.min(30, h._count.visitas * 2)
+      const cPts = Math.min(15, h._count.contactos * 3)
+      const oPts = Math.min(20, (oppMap[h.id] ?? 0) * 5)
+      const pPts = Math.min(20, (ppMap[h.id] ?? 0) * 7)
+      const pen = daysSince > 90 ? 15 : daysSince > 60 ? 8 : 0
+      const score = Math.max(0, Math.min(100, vPts + cPts + oPts + pPts - pen))
+      return { ...h, score }
+    })
+
+    const res = NextResponse.json(result)
     res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
     return res
   } catch (err) {

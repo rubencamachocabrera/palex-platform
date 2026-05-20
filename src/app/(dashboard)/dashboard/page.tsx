@@ -308,6 +308,86 @@ async function DashboardAdmin() {
   const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
   const top5Data = top5Raw.map(h => ({ nombre: h.nombre, count: h._count.visitas }))
 
+  // ── Alertas proactivas ─────────────────────────────────────────────────────
+  const hace60 = new Date(ahora.getTime() - 60 * 86400000)
+  const hace30 = new Date(ahora.getTime() - 30 * 86400000)
+  const en7dias = new Date(ahora.getTime() + 7 * 86400000)
+
+  const hConVisitaReciente = await db.visita.findMany({
+    where: { fecha: { gte: hace60 } },
+    select: { hospitalId: true },
+    distinct: ["hospitalId"],
+  })
+  const idsConVisita = new Set(hConVisitaReciente.map(v => v.hospitalId))
+
+  const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos] = await Promise.all([
+    db.preProyecto.findMany({
+      where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
+      select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
+      orderBy: { fechaFinPlan: "asc" },
+      take: 5,
+    }),
+    db.oportunidad.findMany({
+      where: { etapa: { notIn: ["GANADO", "PERDIDO"] }, editadoEn: { lte: hace30 } },
+      select: { id: true, titulo: true, etapa: true, editadoEn: true, hospital: { select: { nombre: true } } },
+      orderBy: { editadoEn: "asc" },
+      take: 5,
+    }),
+    db.hardwareUnidad.findMany({
+      where: { estado: "ASIGNADO", preProyecto: { estado: "COMPLETADO" } },
+      select: { id: true, catalogo: { select: { marca: true, modelo: true } }, preProyecto: { select: { id: true, titulo: true } } },
+      take: 5,
+    }),
+    db.hospital.findMany({
+      where: { activo: true, id: { notIn: Array.from(idsConVisita) } },
+      select: { id: true, nombre: true, ciudad: true },
+      orderBy: { nombre: "asc" },
+      take: 5,
+    }),
+  ])
+
+  type AlertaItem = { key: string; titulo: string; sub: string; href: string; color: string; bg: string }
+  const alertas: AlertaItem[] = []
+
+  proyectosVenc.forEach(p => {
+    const dias = p.fechaFinPlan ? Math.ceil((new Date(p.fechaFinPlan).getTime() - ahora.getTime()) / 86400000) : 0
+    alertas.push({
+      key: `pv-${p.id}`,
+      titulo: p.titulo,
+      sub: `${p.hospital.nombre} · vence en ${dias} día${dias !== 1 ? "s" : ""}`,
+      href: `/pre-proyectos/${p.id}`,
+      color: "#dc2626", bg: "#fef2f2",
+    })
+  })
+  opEstancadas.forEach(o => {
+    const dias = Math.floor((ahora.getTime() - new Date(o.editadoEn).getTime()) / 86400000)
+    alertas.push({
+      key: `oe-${o.id}`,
+      titulo: o.titulo,
+      sub: `${o.hospital.nombre} · sin cambios hace ${dias} días`,
+      href: "/ventas/pipeline",
+      color: "#d97706", bg: "#fef3c7",
+    })
+  })
+  hwHuerfano.forEach(u => {
+    alertas.push({
+      key: `hw-${u.id}`,
+      titulo: `${u.catalogo.marca} ${u.catalogo.modelo}`,
+      sub: `Asignado a proyecto completado: ${u.preProyecto?.titulo ?? "—"}`,
+      href: u.preProyecto ? `/pre-proyectos/${u.preProyecto.id}` : "/hardware",
+      color: "#7c3aed", bg: "#f5f3ff",
+    })
+  })
+  hospitalesInactivos.forEach(h => {
+    alertas.push({
+      key: `hi-${h.id}`,
+      titulo: h.nombre,
+      sub: `${h.ciudad} · sin visitas en más de 60 días`,
+      href: `/hospitales/${h.id}`,
+      color: "#6b7280", bg: "#f3f4f6",
+    })
+  })
+
   return (
     <div>
       <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
@@ -396,6 +476,47 @@ async function DashboardAdmin() {
           <QuickLink href="/admin/zonas"      label="Configurar zonas"   Icon={IconMap}        color="bg-amber-50 text-amber-700" />
           <QuickLink href="/ventas/pipeline"  label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
         </div>
+      </div>
+
+      {/* Alertas proactivas */}
+      <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: alertas.length > 0 ? "#fef3c7" : "#f0fdf4" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={alertas.length > 0 ? "#d97706" : "#16a34a"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {alertas.length > 0
+                  ? <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>
+                  : <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>
+                }
+              </svg>
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Acciones recomendadas</h2>
+              <p className="text-xs text-gray-400">{alertas.length > 0 ? `${alertas.length} situación${alertas.length !== 1 ? "es" : ""} que requieren atención` : "Todo en orden"}</p>
+            </div>
+          </div>
+          {alertas.length > 0 && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{alertas.length}</span>
+          )}
+        </div>
+        {alertas.length === 0 ? (
+          <p className="text-sm text-gray-400 px-5 py-6 text-center">No hay alertas pendientes. ¡Buen trabajo!</p>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {alertas.map(a => (
+              <Link key={a.key} href={a.href} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-gray-900">{a.titulo}</p>
+                  <p className="text-xs text-gray-400 truncate">{a.sub}</p>
+                </div>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: a.bg, color: a.color }}>
+                  Ver
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

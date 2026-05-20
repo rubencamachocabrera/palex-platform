@@ -67,6 +67,14 @@ interface Hospital {
   camas: number | null
   zona: { id: string; nombre: string }
   _count: { visitas: number; contactos: number }
+  score?: number
+}
+
+function scoreStyle(s: number): { bg: string; text: string } {
+  if (s >= 80) return { bg: "#f0fdf4", text: "#16a34a" }
+  if (s >= 60) return { bg: "#f0fdfa", text: "#0d9488" }
+  if (s >= 30) return { bg: "#fef3c7", text: "#d97706" }
+  return { bg: "#fef2f2", text: "#dc2626" }
 }
 
 type Vista = "lista" | "grid"
@@ -247,6 +255,14 @@ export default function HospitalesPage() {
                         <p className="text-xs text-gray-300 mt-0.5">{TIPO_LABELS[h.tipo] ?? h.tipo}</p>
                       </div>
                       <div className="text-right shrink-0 space-y-0.5">
+                        {h.score !== undefined && (() => {
+                          const ss = scoreStyle(h.score)
+                          return (
+                            <span className="inline-block text-[10px] font-black px-1.5 py-0.5 rounded-full mb-0.5" style={{ backgroundColor: ss.bg, color: ss.text }}>
+                              {h.score}
+                            </span>
+                          )
+                        })()}
                         <p className="text-xs text-gray-400">{h._count.visitas} visitas</p>
                         <p className="text-xs text-gray-300">{h._count.contactos} contactos</p>
                         <span className="text-gray-300 text-sm block">›</span>
@@ -284,6 +300,14 @@ export default function HospitalesPage() {
                           {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
                         </p>
                       </div>
+                      {h.score !== undefined && (() => {
+                        const ss = scoreStyle(h.score)
+                        return (
+                          <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full shrink-0 self-start" style={{ backgroundColor: ss.bg, color: ss.text }}>
+                            {h.score}
+                          </span>
+                        )
+                      })()}
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                       <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
