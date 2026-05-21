@@ -256,7 +256,7 @@ export default function HospitalesAdminPage() {
 
       {/* Error de carga */}
       {fetchError && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div role="alert" aria-live="polite" className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
@@ -730,7 +730,7 @@ export default function HospitalesAdminPage() {
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-xs px-3 py-2.5 rounded-xl">
+                <div role="alert" aria-live="polite" className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-xs px-3 py-2.5 rounded-xl">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>

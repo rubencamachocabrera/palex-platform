@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   return (
     <KeyboardShortcutsProvider>
       <ToastProvider>
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
+        <div className="flex h-screen bg-page overflow-hidden">
           <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />

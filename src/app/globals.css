@@ -7,6 +7,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --page-bg:    #f0fdfa;   /* teal-50: fondo corporativo sutil — medical/healthcare */
 
   --teal:        #00A99D;
   --teal-light:  #E6F7F6;
@@ -14,11 +15,30 @@
   --orange:      #F7941D;
   --orange-light:#FEF3E5;
   --orange-dark: #D97706;
+
+  /* Elevation system — 4 niveles */
+  --el-1: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --el-2: 0 4px 8px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  --el-3: 0 10px 24px rgba(0,0,0,0.09), 0 4px 8px rgba(0,0,0,0.04);
+  --el-4: 0 20px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
+
+  /* Radio de tarjeta */
+  --radius-card: 16px;
+  --radius-modal: 20px;
+}
+
+.dark {
+  --page-bg: #0f172a;
+  --el-1: 0 1px 3px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.20);
+  --el-2: 0 4px 8px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.20);
+  --el-3: 0 10px 24px rgba(0,0,0,0.50), 0 4px 8px rgba(0,0,0,0.25);
+  --el-4: 0 20px 48px rgba(0,0,0,0.60), 0 8px 16px rgba(0,0,0,0.30);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-page:       var(--page-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -55,8 +75,9 @@ html.theme-transitioning * {
 }
 
 /* Fondo de página */
-.dark main { background-color: #0f172a !important; }
-.dark .bg-gray-50 { background-color: #0f172a !important; }
+.dark main         { background-color: #0f172a !important; }
+.dark .bg-page     { background-color: #0f172a !important; }
+.dark .bg-gray-50  { background-color: #0f172a !important; }
 
 /* Tarjetas / paneles */
 .dark .bg-white  { background-color: #1e293b !important; }
@@ -332,14 +353,19 @@ button:not([disabled]):active {
 
 /* ─── Card hover lift ───────────────────────────────────────────────────────── */
 .card-hover {
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease-out !important;
+  transition:
+    transform    220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow   220ms ease-out,
+    border-color 180ms ease-out !important;
 }
 .card-hover:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 14px 32px -6px rgba(0,0,0,0.10), 0 4px 12px -4px rgba(0,0,0,0.06) !important;
+  transform:    translateY(-2px) !important;
+  box-shadow:   var(--el-3) !important;
+  border-color: rgba(0, 169, 157, 0.22) !important;
 }
 .dark .card-hover:hover {
-  box-shadow: 0 14px 32px -6px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3) !important;
+  box-shadow:   var(--el-3) !important;
+  border-color: rgba(0, 169, 157, 0.30) !important;
 }
 
 /* ─── Kanban card ─────────────────────────────────────────────────────────── */
@@ -353,14 +379,26 @@ button:not([disabled]):active {
   box-shadow: 0 8px 24px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3) !important;
 }
 
-/* ─── Primary button ────────────────────────────────────────────────────────── */
+/* ─── Primary button (orange) ───────────────────────────────────────────────── */
 .btn-primary {
   transition: transform 100ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out !important;
 }
 .btn-primary:hover:not([disabled]) {
-  box-shadow: 0 4px 12px -2px rgba(0, 169, 157, 0.35);
+  box-shadow: 0 4px 14px -2px rgba(247, 148, 29, 0.45), 0 2px 6px -2px rgba(247, 148, 29, 0.20);
 }
 .btn-primary:active:not([disabled]) {
+  transform: scale(0.96) !important;
+  box-shadow: none !important;
+}
+
+/* ─── Teal button ───────────────────────────────────────────────────────────── */
+.btn-teal {
+  transition: transform 100ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out !important;
+}
+.btn-teal:hover:not([disabled]) {
+  box-shadow: 0 4px 14px -2px rgba(0, 169, 157, 0.45), 0 2px 6px -2px rgba(0, 169, 157, 0.20);
+}
+.btn-teal:active:not([disabled]) {
   transform: scale(0.96) !important;
   box-shadow: none !important;
 }
