@@ -146,7 +146,7 @@ function DraggableCard({ op, onClick, activa }: { op: Oportunidad; onClick: () =
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`bg-white rounded-lg border p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all select-none ${activa ? "border-teal-400" : "border-gray-200 hover:border-gray-300"}`}
+      className={`kanban-card bg-white rounded-lg border p-3 cursor-grab active:cursor-grabbing select-none ${activa ? "border-teal-400 shadow-md" : "border-gray-200"}`}
     >
       <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">{op.titulo}</p>
       <p className="text-[11px] text-gray-400 mt-1 truncate">{op.hospital.nombre}</p>
@@ -566,7 +566,7 @@ export default function PipelinePage() {
 
       {/* ── Panel lateral de detalle ── */}
       {panelOp && (
-        <aside className="w-80 shrink-0 bg-white rounded-xl border border-gray-200 p-5 self-start sticky top-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
+        <aside className="slide-down w-80 shrink-0 bg-white rounded-xl border border-gray-200 p-5 self-start sticky top-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0 pr-2">
               <h2 className="text-base font-bold text-gray-800 leading-tight">{panelOp.titulo}</h2>
@@ -739,8 +739,8 @@ export default function PipelinePage() {
 
       {/* ── Modal crear / editar ── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 animate-in fade-in duration-150">
+          <div className="slide-up bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
               <h2 className="text-base font-bold text-gray-800">
                 {editandoId ? "Editar oportunidad" : "Nueva oportunidad"}

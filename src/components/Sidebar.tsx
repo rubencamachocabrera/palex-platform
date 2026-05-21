@@ -298,7 +298,7 @@ function NavLink({
         <Icon />
         {collapsed && badge != null && badge > 0 && (
           <span
-            className="absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white"
+            className="pop-in badge-pulse absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white"
             style={{ backgroundColor: ORANGE }}
           />
         )}
@@ -306,7 +306,7 @@ function NavLink({
       {!collapsed && <span className="truncate">{item.label}</span>}
       {!collapsed && badge != null && badge > 0 && (
         <span
-          className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none text-white shrink-0"
+          className="pop-in badge-pulse ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none text-white shrink-0"
           style={{ backgroundColor: ORANGE }}
         >
           {badge > 9 ? "9+" : badge}
@@ -417,7 +417,7 @@ function SidebarInner({
             {group.label && collapsed && (
               <div className="border-t border-gray-100 my-2" />
             )}
-            <div className="space-y-0.5">
+            <div className="stagger-nav space-y-0.5">
               {group.items.map(item => {
                 const active =
                   pathname === item.href ||

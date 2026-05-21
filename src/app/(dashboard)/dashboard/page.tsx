@@ -84,16 +84,16 @@ function KpiCard({ label, value, sub, icon, trend }: {
   label: string; value: string | number; sub?: string; icon: React.ReactNode; trend?: number
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="card-hover bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
       <div className="flex items-start justify-between mb-3">
         <span className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">{icon}</span>
         {trend !== undefined && (
-          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${trend > 0 ? "bg-green-50 text-green-600" : trend < 0 ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400"}`}>
+          <span className={`pop-in text-xs font-semibold px-1.5 py-0.5 rounded-full ${trend > 0 ? "bg-green-50 text-green-600" : trend < 0 ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400"}`}>
             {trend > 0 ? "+" : ""}{trend}%
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <p className="number-reveal text-2xl font-bold text-gray-900">{value}</p>
       <p className="text-xs font-medium text-gray-500 mt-1">{label}</p>
       {sub && <p className="text-xs text-gray-300 mt-0.5">{sub}</p>}
     </div>
@@ -221,7 +221,7 @@ function QuickLink({ href, label, Icon, color }: {
   href: string; label: string; Icon: React.ComponentType<{ size?: number }>; color: string
 }) {
   return (
-    <Link href={href} className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
+    <Link href={href} className="card-hover flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all group">
       <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${color}`}><Icon size={18} /></span>
       <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 leading-tight">{label}</span>
     </Link>
@@ -463,7 +463,7 @@ async function DashboardAdmin() {
       <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Hospitales activos" value={totalHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Usuarios activos" value={totalUsuarios} icon={<IconUsers size={18} />} />
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
@@ -627,7 +627,7 @@ async function DashboardAdmin() {
 
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="stagger-grid grid grid-cols-2 sm:grid-cols-4 gap-3">
           <QuickLink href="/admin/usuarios"   label="Gestionar usuarios" Icon={IconUsers}       color="bg-blue-50 text-blue-700" />
           <QuickLink href="/admin/hospitales" label="Ver hospitales"     Icon={IconHospital}    color="bg-teal-50 text-teal-700" />
           <QuickLink href="/pre-proyectos"    label="Proyectos InLab"    Icon={IconCheckCircle} color="bg-green-50 text-green-700" />

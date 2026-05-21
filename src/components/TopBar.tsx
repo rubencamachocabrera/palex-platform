@@ -224,7 +224,7 @@ export function TopBar() {
 
         {/* Dropdown resultados */}
         {abierto && resultados.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50 animate-in scale-in duration-150">
+          <div className="slide-down absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50">
             {resultados.map(r => (
               <button
                 key={`${r.tipo}-${r.id}`}
@@ -276,14 +276,14 @@ export function TopBar() {
         >
           <BellIcon />
           {notifs.length > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: "#ef4444" }}>
+            <span className="pop-in badge-pulse absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: "#ef4444" }}>
               {notifs.length > 9 ? "9+" : notifs.length}
             </span>
           )}
         </button>
 
         {notifOpen && (
-          <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+          <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden z-50">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <p className="text-sm font-bold text-gray-900">Centro de alertas</p>

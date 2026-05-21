@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { TopBar } from "@/components/TopBar"
 import { ToastProvider } from "@/components/Toast"
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider"
+import { PageTransition } from "@/components/PageTransition"
 
 export default async function DashboardLayout({
   children,
@@ -21,7 +22,9 @@ export default async function DashboardLayout({
           <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
-            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
+            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+              <PageTransition>{children}</PageTransition>
+            </main>
           </div>
         </div>
       </ToastProvider>
