@@ -84,3 +84,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
+
+// DELETE /api/usuarios/[id]
+export async function DELETE(
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const role = (session?.user as { role?: string } | undefined)?.role
+    if (!session?.user || role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    const { id } = await params
+    if (id === session.user.id) return NextResponse.json({ error: "No puedes eliminar tu propia cuenta" }, { status: 400 })
+    await db.usuario.delete({ where: { id } })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error("[DELETE]", err)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}

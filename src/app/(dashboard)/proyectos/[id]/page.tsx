@@ -297,81 +297,50 @@ export default function ProyectoDetallePage() {
 
   function exportarPDF() {
     if (!proyecto?.mapaHtml) return
-    const fechaHoy = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
-    const mapaJson = JSON.stringify(proyecto.mapaHtml).replace(/<\/script/gi, "<\\/script")
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${proyecto.nombre} — Palex InLab</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff}
-header{background:#00A99D;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:64px;flex-shrink:0}
-.logo-area{display:flex;align-items:center;gap:14px}
-.logo-text{font-size:22px;font-weight:800;letter-spacing:-0.5px}
-.badge-inlab{background:#F7941D;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:0.6px;text-transform:uppercase}
-.header-right{text-align:right}
-.header-right h1{font-size:15px;font-weight:700;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.header-right p{font-size:12px;opacity:.75;margin-top:2px}
-.infostrip{display:flex;gap:28px;padding:9px 28px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;flex-wrap:wrap;align-items:center}
-.infostrip strong{color:#1e293b}
-.infostrip .spacer{flex:1}
-.map-wrap{width:100%}
-.map-wrap iframe{width:100%;border:none;display:block;height:calc(100vh - 108px)}
-.footer-print{display:none;text-align:center;font-size:11px;color:#94a3b8;padding:10px 0;border-top:1px solid #f1f5f9}
-.actions{position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:9999}
-.btn-close{background:#fff;color:#64748b;border:1px solid #e2e8f0;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-.btn-close:hover{background:#f8fafc}
-.btn-print{background:#00A99D;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,169,157,.35);display:flex;align-items:center;gap:8px}
-.btn-print:hover{opacity:.9}
-@media print{
-  .actions{display:none!important}
-  .footer-print{display:block}
-  @page{size:A3 landscape;margin:0}
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .map-wrap iframe{height:calc(100vh - 128px)!important}
-}
-</style>
-</head>
-<body>
-<header>
-  <div class="logo-area">
-    <span class="logo-text">PALEX</span>
-    <span class="badge-inlab">InLab</span>
-  </div>
-  <div class="header-right">
-    <h1>${proyecto.nombre}</h1>
-    <p>${proyecto.hospital.nombre}&nbsp;&middot;&nbsp;${proyecto.hospital.ciudad}</p>
-  </div>
-</header>
-<div class="infostrip">
-  <span>Ref: <strong>${proyecto.refConcurso || "—"}</strong></span>
-  <span>Inicio: <strong>${fmtFecha(proyecto.fechaInicio)}</strong></span>
-  <span>Fin: <strong>${fmtFecha(proyecto.fechaFin)}</strong></span>
-  <span>Módulos: <strong>${proyecto.modulos.length}</strong></span>
-  <span class="spacer"></span>
-  <span>Generado: <strong>${fechaHoy}</strong></span>
-</div>
-<div class="map-wrap">
-  <iframe id="mapa" title="Mapa interactivo"></iframe>
-</div>
-<div class="footer-print">Palex Medical &nbsp;&middot;&nbsp; Documento confidencial &nbsp;&middot;&nbsp; ${fechaHoy}</div>
-<div class="actions">
-  <button class="btn-close" onclick="window.close()">Cerrar</button>
-  <button class="btn-print" onclick="window.print()">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-    Imprimir / Guardar PDF
-  </button>
-</div>
-<script>
-(function(){var m=${mapaJson};document.getElementById('mapa').srcdoc=m})();
-</script>
-</body>
-</html>`
     const win = window.open("", "_blank", "width=1400,height=900,resizable=yes")
     if (!win) { showToast("Activa ventanas emergentes para exportar PDF"); return }
+    const fechaHoy = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+    const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    // Inyectamos toolbar y CSS directamente en el HTML de Leaflet — sin iframe.
+    // Sin iframe el mapa se renderiza como HTML nativo, sin rasterización de captura de pantalla.
+    const info = [
+      proyecto.refConcurso ? `Ref: <strong>${esc(proyecto.refConcurso)}</strong>` : "",
+      `Inicio: <strong>${fmtFecha(proyecto.fechaInicio)}</strong>`,
+      `Fin: <strong>${fmtFecha(proyecto.fechaFin)}</strong>`,
+      `Módulos: <strong>${proyecto.modulos.length}</strong>`,
+      `Generado: <strong>${fechaHoy}</strong>`,
+    ].filter(Boolean).join(" &nbsp;·&nbsp; ")
+    const toolbar = `<div id="__ptb" style="position:fixed;top:0;left:0;right:0;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif"><div style="background:#00A99D;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:18px;font-weight:800;letter-spacing:-0.5px">PALEX</span><span style="background:#F7941D;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:0.6px">InLab</span><span style="font-size:14px;font-weight:700;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(proyecto.nombre)}</span></div><div style="display:flex;align-items:center;gap:10px"><span id="__pst" style="font-size:11px;opacity:.7">Cargando&hellip;</span><button id="__pbp" disabled onclick="window.print()" style="padding:6px 16px;background:#fff;color:#00A99D;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5">Imprimir &mdash; PDF</button><button onclick="window.close()" style="padding:6px 14px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cerrar</button></div></div><div style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:7px 24px;font-size:12px;color:#64748b">${info}</div></div>`
+    const printHead = [
+      "<style>",
+      "@media print{",
+      "#__ptb{display:none!important}",
+      "@page{size:A3 landscape;margin:0}",
+      "html,body{margin:0!important;padding:0!important;overflow:visible!important}",
+      "*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}",
+      "}",
+      "</style>",
+      "<scr" + "ipt>",
+      "window.addEventListener('load',function(){",
+      "setTimeout(function(){",
+      "var b=document.getElementById('__pbp'),s=document.getElementById('__pst');",
+      "if(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';}",
+      "if(s){s.textContent='Listo &mdash; puedes imprimir';}",
+      "},2500);",
+      "});",
+      "</scr" + "ipt>",
+    ].join("")
+    let html = proyecto.mapaHtml
+    if (html.includes("</head>")) {
+      html = html.replace("</head>", printHead + "\n</head>")
+    } else {
+      html = "<head>" + printHead + "</head>" + html
+    }
+    if (/<body[^>]*>/i.test(html)) {
+      html = html.replace(/<body([^>]*)>/i, (m: string) => m + toolbar)
+    } else {
+      html = toolbar + html
+    }
     win.document.write(html)
     win.document.close()
   }

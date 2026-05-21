@@ -34,6 +34,11 @@ export default function UsuariosPage() {
   const [zonasSeleccionadas, setZonasSeleccionadas] = useState<string[]>([])
   const [guardandoZonas, setGuardandoZonas] = useState(false)
 
+  // Modal editar usuario
+  const [editModal, setEditModal] = useState<Usuario | null>(null)
+  const [editForm, setEditForm] = useState({ nombre: "", email: "" })
+  const [guardandoEdit, setGuardandoEdit] = useState(false)
+
   async function cargar() {
     const [u, z] = await Promise.all([
       fetch("/api/usuarios").then(r => r.json()),
@@ -85,6 +90,42 @@ export default function UsuariosPage() {
     })
     success("Rol actualizado")
     await cargar()
+  }
+
+  function abrirEdit(u: Usuario) {
+    setEditModal(u)
+    setEditForm({ nombre: u.nombre, email: u.email })
+  }
+
+  async function guardarEdit() {
+    if (!editModal) return
+    setGuardandoEdit(true)
+    const r = await fetch(`/api/usuarios/${editModal.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: editForm.nombre.trim(), email: editForm.email.trim() }),
+    })
+    setGuardandoEdit(false)
+    if (r.ok) {
+      setEditModal(null)
+      success("Usuario actualizado")
+      await cargar()
+    } else {
+      const d = await r.json()
+      toastError(d.error ?? "Error al guardar")
+    }
+  }
+
+  async function eliminarUsuario(u: Usuario) {
+    if (!confirm(`¿Eliminar a ${u.nombre}? Esta acción no se puede deshacer.`)) return
+    const r = await fetch(`/api/usuarios/${u.id}`, { method: "DELETE" })
+    if (r.ok) {
+      success("Usuario eliminado")
+      await cargar()
+    } else {
+      const d = await r.json()
+      toastError(d.error ?? "Error al eliminar")
+    }
   }
 
   async function abrirZonas(u: Usuario) {
@@ -238,12 +279,26 @@ export default function UsuariosPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <button
-                      onClick={() => toggleActivo(u.id, u.activo)}
-                      className={`text-xs font-medium transition-colors ${u.activo ? "text-red-400 hover:text-red-600" : "text-green-500 hover:text-green-700"}`}
-                    >
-                      {u.activo ? "Desactivar" : "Activar"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleActivo(u.id, u.activo)}
+                        className={`text-xs font-medium transition-colors ${u.activo ? "text-red-400 hover:text-red-600" : "text-green-500 hover:text-green-700"}`}
+                      >
+                        {u.activo ? "Desactivar" : "Activar"}
+                      </button>
+                      <button
+                        onClick={() => abrirEdit(u)}
+                        className="text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => eliminarUsuario(u)}
+                        className="text-xs font-medium text-red-300 hover:text-red-600 transition-colors"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -251,6 +306,53 @@ export default function UsuariosPage() {
           </table>
         )}
       </div>
+
+      {/* Modal editar usuario */}
+      {editModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-1">Editar usuario</h2>
+            <p className="text-xs text-gray-400 mb-5">{editModal.email}</p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Nombre</label>
+                <input
+                  value={editForm.nombre}
+                  onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEditModal(null)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarEdit}
+                disabled={guardandoEdit || !editForm.nombre.trim() || !editForm.email.trim()}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white disabled:opacity-60"
+                style={{ backgroundColor: TEAL }}
+              >
+                {guardandoEdit ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal zonas */}
       {zonaModal && (

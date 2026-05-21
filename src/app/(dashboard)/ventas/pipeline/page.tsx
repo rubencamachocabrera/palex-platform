@@ -708,23 +708,32 @@ export default function PipelinePage() {
           </div>
 
           {/* Acciones */}
-          {(rol === "VENTAS" || esAdmin) && (
-            <div className="mt-5 flex gap-2">
-              <button
-                onClick={() => { abrirEditar(panelOp) }}
-                className="flex-1 text-sm font-medium text-white py-2 rounded-lg hover:opacity-90 transition"
-                style={{ backgroundColor: TEAL }}
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => eliminarOportunidad(panelOp.id)}
-                className="px-3 py-2 text-sm font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition"
-              >
-                Eliminar
-              </button>
-            </div>
-          )}
+          <div className="mt-5 space-y-2">
+            <Link
+              href={`/ventas/pipeline/${panelOp.id}`}
+              className="flex items-center justify-center gap-2 w-full text-sm font-medium py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+            >
+              Ver ficha completa
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </Link>
+            {(rol === "VENTAS" || esAdmin) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { abrirEditar(panelOp) }}
+                  className="flex-1 text-sm font-medium text-white py-2 rounded-lg hover:opacity-90 transition"
+                  style={{ backgroundColor: TEAL }}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => eliminarOportunidad(panelOp.id)}
+                  className="px-3 py-2 text-sm font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition"
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
+          </div>
         </aside>
       )}
 

@@ -6,9 +6,9 @@ import type { Riesgo } from "@/lib/visita-analysis"
 import { TEAL } from "@/lib/brand"
 
 const NIVEL_CONFIG = {
-  alto:  { bg: "bg-red-50",    border: "border-red-200",    text: "text-red-700",    icon: "🔴", label: "Alto" },
-  medio: { bg: "bg-amber-50",  border: "border-amber-200",  text: "text-amber-700",  icon: "🟡", label: "Medio" },
-  info:  { bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-700",   icon: "🔵", label: "Info" },
+  alto:  { bg: "bg-red-50",    border: "border-red-200",    text: "text-red-700",    dot: "#ef4444", label: "Alto" },
+  medio: { bg: "bg-amber-50",  border: "border-amber-200",  text: "text-amber-700",  dot: "#f59e0b", label: "Medio" },
+  info:  { bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-700",   dot: "#3b82f6", label: "Info" },
 }
 
 interface AnalisisPanelProps {
@@ -114,18 +114,21 @@ export function AnalisisPanel({ datos }: AnalisisPanelProps) {
             </span>
             <div className="flex items-center gap-1.5 ml-auto flex-wrap">
               {altos.length > 0 && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
-                  🔴 {altos.length} alto{altos.length > 1 ? "s" : ""}
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100 inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  {altos.length} alto{altos.length > 1 ? "s" : ""}
                 </span>
               )}
               {medios.length > 0 && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
-                  🟡 {medios.length} medio{medios.length > 1 ? "s" : ""}
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  {medios.length} medio{medios.length > 1 ? "s" : ""}
                 </span>
               )}
               {infos.length > 0 && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                  🔵 {infos.length}
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                  {infos.length}
                 </span>
               )}
             </div>
@@ -148,7 +151,9 @@ export function AnalisisPanel({ datos }: AnalisisPanelProps) {
       {/* Sin riesgos */}
       {riesgos.length === 0 && hayDatos && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
-          <span className="text-xl">✅</span>
+          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
           <div>
             <p className="text-sm font-medium text-green-700">Sin alertas detectadas</p>
             <p className="text-xs text-green-500 mt-0.5">Los datos recogidos no muestran banderas rojas en este momento.</p>
@@ -172,7 +177,7 @@ function RiesgoItem({ riesgo, expanded, onToggle }: {
       className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
     >
       <div className="flex items-start gap-3">
-        <span className="text-base shrink-0 mt-0.5">{cfg.icon}</span>
+        <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ backgroundColor: cfg.dot }} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-medium text-gray-800">{riesgo.titulo}</p>

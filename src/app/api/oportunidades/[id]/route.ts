@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
+// GET /api/oportunidades/[id]
+export async function GET(
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    const { id } = await params
+    const op = await db.oportunidad.findUnique({
+      where: { id },
+      include: {
+        hospital: { select: { id: true, nombre: true, ciudad: true, provincia: true, zona: { select: { nombre: true } } } },
+        usuario:  { select: { id: true, nombre: true } },
+      },
+    })
+    if (!op) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    return NextResponse.json(op)
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+  }
+}
+
 // PATCH /api/oportunidades/[id]
 export async function PATCH(
   req: NextRequest,

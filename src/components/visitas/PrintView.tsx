@@ -215,7 +215,7 @@ export default function PrintView({ visita, datos, sections }: PrintViewProps) {
         return (
           <div className="section-block" style={{ marginBottom: 32, pageBreakInside: "avoid" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 10, borderBottom: `2px solid ${TEAL}` }}>
-              <span style={{ fontSize: 20 }}>✅</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111", margin: 0 }}>Pendientes de la visita</h2>
               <span style={{ marginLeft: "auto", fontSize: 10, color: "#9ca3af" }}>
                 {pendientes.length} pendiente{pendientes.length !== 1 ? "s" : ""} · {hechos.length} completado{hechos.length !== 1 ? "s" : ""}

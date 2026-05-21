@@ -164,7 +164,7 @@ export function VoiceNotes({ notas, onChange, readOnly = false }: VoiceNotesProp
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-base">🎙️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
           <h3 className="text-sm font-semibold text-gray-700">Notas de voz</h3>
           {notas.length > 0 && (
             <span className="text-xs text-gray-400">{notas.length} nota{notas.length > 1 ? "s" : ""}</span>
@@ -181,7 +181,7 @@ export function VoiceNotes({ notas, onChange, readOnly = false }: VoiceNotesProp
               className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border-2 border-dashed transition-all hover:shadow-md active:scale-95"
               style={{ borderColor: TEAL, color: TEAL }}
             >
-              <span className="text-2xl">🎙️</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
               <span className="text-sm font-semibold">Iniciar grabacion</span>
             </button>
           )}

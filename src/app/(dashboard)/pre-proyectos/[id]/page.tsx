@@ -954,11 +954,12 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
               <div>
                 <label className="block text-xs text-gray-500 mb-1.5">Tipo de reunión</label>
                 <div className="flex flex-wrap gap-2">
-                  {[{ v: "PRESENCIAL", l: "Presencial", icon: "🏢" }, { v: "TEAMS", l: "Teams", icon: "💜" }, { v: "ZOOM", l: "Zoom", icon: "🔵" }, { v: "GOOGLE_MEET", l: "Meet", icon: "🟢" }].map(opt => (
+                  {[{ v: "PRESENCIAL", l: "Presencial", dot: "#6b7280" }, { v: "TEAMS", l: "Teams", dot: "#7c3aed" }, { v: "ZOOM", l: "Zoom", dot: "#2563eb" }, { v: "GOOGLE_MEET", l: "Meet", dot: "#16a34a" }].map(opt => (
                     <button key={opt.v} type="button"
                       onClick={() => setAddForm(p => ({ ...p, lugarCita: p.lugarCita === opt.v ? "" : opt.v }))}
-                      className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5"
                       style={addForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", color: "white", borderColor: "#3b82f6" } : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: addForm.lugarCita === opt.v ? "white" : opt.dot }} />
                       {opt.l}
                     </button>
                   ))}
@@ -2508,52 +2509,40 @@ function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
     if (!win) { toastError("Permite ventanas emergentes para imprimir"); return }
     const fecha = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
     const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    // srcdoc se asigna por JS para evitar problemas de codificación y sin sandbox
-    // (el sandbox bloquea tiles externos de Leaflet/OpenStreetMap)
-    const safeJson = JSON.stringify(pp.mapaHtml).replace(/</g,"\\u003c").replace(/>/g,"\\u003e")
-    win.document.write(`<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>${esc(pp.titulo)} — Mapa de Instalación</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;overflow:hidden}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;display:flex;flex-direction:column}
-    .hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:3px solid #00A99D;background:#fff;height:57px;flex-shrink:0}
-    .brand{font-weight:800;color:#00A99D;font-size:16px;letter-spacing:-0.3px}
-    .brand em{font-style:normal;color:#F7941D}
-    .meta{font-size:11px;color:#9ca3af;text-align:right;line-height:1.6}
-    .meta strong{color:#374151}
-    .toolbar{display:flex;align-items:center;gap:8px;padding:8px 24px;background:#f8fafc;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-    .bp{padding:7px 20px;background:#00A99D;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
-    .bc{padding:7px 16px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:13px;cursor:pointer}
-    .hint{font-size:11px;color:#9ca3af;margin-left:6px}
-    #mf{flex:1;width:100%;border:none;display:block}
-    .ftr{display:none}
-    @media print{
-      .toolbar{display:none!important}
-      .hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .ftr{display:block!important;position:fixed;bottom:0;left:0;right:0;padding:4px 24px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;text-align:center;background:#fff}
-      @page{margin:0;size:A3 landscape}
+    // Inyectamos toolbar y CSS directamente en el HTML de Leaflet — sin iframe.
+    // Sin iframe no hay rasterización: el mapa se renderiza como HTML nativo en el PDF.
+    const toolbar = `<div id="__ptb" style="position:fixed;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:2px solid #00A99D;display:flex;align-items:center;gap:12px;padding:0 20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.1)"><span style="font-weight:800;color:#00A99D;font-size:14px;white-space:nowrap">Palex·<span style="color:#F7941D">InLab</span></span><span style="flex:1;font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pp.titulo)} &middot; ${esc(pp.hospital.nombre)} &middot; ${fecha}</span><span id="__pst" style="font-size:11px;color:#9ca3af;white-space:nowrap">Cargando tiles&hellip;</span><button id="__pbp" disabled onclick="window.print()" style="padding:7px 18px;background:#00A99D;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;white-space:nowrap">Imprimir &mdash; PDF</button><button onclick="window.close()" style="padding:7px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cerrar</button></div>`
+    const printHead = [
+      "<style>",
+      "@media print{",
+      "#__ptb{display:none!important}",
+      "@page{margin:0;size:A3 landscape}",
+      "html,body{margin:0!important;padding:0!important;overflow:visible!important}",
+      "*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}",
+      "}",
+      "</style>",
+      "<scr" + "ipt>",
+      "window.addEventListener('load',function(){",
+      "setTimeout(function(){",
+      "var b=document.getElementById('__pbp'),s=document.getElementById('__pst');",
+      "if(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';}",
+      "if(s){s.textContent='Listo — puedes imprimir';}",
+      "},2500);",
+      "});",
+      "</scr" + "ipt>",
+    ].join("")
+    let html = pp.mapaHtml
+    if (html.includes("</head>")) {
+      html = html.replace("</head>", printHead + "\n</head>")
+    } else {
+      html = "<head>" + printHead + "</head>" + html
     }
-  </style>
-</head>
-<body>
-  <div class="hdr">
-    <span class="brand">Palex Medical · <em>InLab</em></span>
-    <div class="meta"><strong>${esc(pp.titulo)}</strong><br>${esc(pp.hospital.nombre)} · ${fecha}</div>
-  </div>
-  <div class="toolbar">
-    <button class="bp" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <button class="bc" onclick="window.close()">Cerrar</button>
-    <span class="hint">Espera a que el mapa cargue completamente antes de imprimir</span>
-  </div>
-  <iframe id="mf"></iframe>
-  <div class="ftr">Palex Medical · InLab — Confidencial — ${fecha}</div>
-  <script>document.getElementById('mf').srcdoc=${safeJson};</script>
-</body>
-</html>`)
+    if (/<body[^>]*>/i.test(html)) {
+      html = html.replace(/<body([^>]*)>/i, (m: string) => m + toolbar)
+    } else {
+      html = toolbar + html
+    }
+    win.document.write(html)
     win.document.close()
     win.focus()
   }
@@ -2664,7 +2653,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
   .kgrid,.cmeta{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .pfooter{display:flex!important;justify-content:space-between;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;margin-top:28px}
   .map-page{display:flex!important;break-before:page;page-break-before:always}
-  .map-page #mpf{height:calc(100vh - 160px)!important;min-height:0!important}
+  .map-page #mpf{height:calc(100vh - 100px)!important;min-height:0!important}
   @page{margin:14mm 14mm 18mm;size:A4}
   @page:first{margin:0;size:A4}
 }
@@ -2733,14 +2722,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
 ${pp.mapaHtml ? `<div class="map-page">
   <div class="phdr"><span class="phb">Palex Medical · <em>InLab</em></span><div class="phm"><strong>${e(pp.titulo)}</strong><br>Mapa de instalación · ${e(fecha)}</div></div>
   <p class="stitle" style="margin-bottom:12px">Mapa de instalación — ${e(pp.hospital.nombre)}</p>
-  <iframe id="mpf" style="width:100%;flex:1;border:1px solid #e5e7eb;border-radius:8px;display:block;min-height:500px"></iframe>
+  <iframe id="mpf" style="width:100%;flex:1;border:none;display:block;min-height:500px"></iframe>
   <div class="pfooter" style="margin-top:10px"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
 </div>
-<script>document.getElementById('mpf').srcdoc=${JSON.stringify(pp.mapaHtml).replace(/</g,"\\u003c").replace(/>/g,"\\u003e")};</script>` : ""}
+<script>(function(){var el=document.getElementById('mpf');el.addEventListener('load',function(){setTimeout(function(){try{window.print();}catch(e){}},2000);});el.srcdoc=${JSON.stringify(pp.mapaHtml).replace(/</g,"\\u003c").replace(/>/g,"\\u003e")};})();<\/script>` : `<script>setTimeout(function(){try{window.print();}catch(e){}},500);<\/script>`}
 </body></html>`)
     win.document.close()
     win.focus()
-    setTimeout(() => { try { win.print() } catch { /* closed */ } }, 600)
   }
 
   function exportJSON() {
