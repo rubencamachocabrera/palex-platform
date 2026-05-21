@@ -15,6 +15,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("preProyectoId" in body) data.preProyectoId = body.preProyectoId || null
     if ("fechaCompra" in body) data.fechaCompra = body.fechaCompra ? new Date(body.fechaCompra) : null
     if ("fechaGarantia" in body) data.fechaGarantia = body.fechaGarantia ? new Date(body.fechaGarantia) : null
+    if ("proximoMantenimiento" in body) data.proximoMantenimiento = body.proximoMantenimiento ? new Date(body.proximoMantenimiento) : null
     if ("notas" in body) data.notas = body.notas || null
     const updated = await db.hardwareUnidad.update({
       where: { id },

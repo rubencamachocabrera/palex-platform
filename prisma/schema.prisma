@@ -502,10 +502,11 @@ model HardwareUnidad {
   estado        EstadoHardware @default(DISPONIBLE)
   hospitalId    String?
   preProyectoId String?
-  fechaCompra   DateTime?
-  fechaGarantia DateTime?
-  notas         String?
-  creadoEn      DateTime       @default(now())
+  fechaCompra           DateTime?
+  fechaGarantia         DateTime?
+  proximoMantenimiento  DateTime?
+  notas                 String?
+  creadoEn              DateTime       @default(now())
   editadoEn     DateTime       @updatedAt
 
   catalogo    HardwareCatalogo @relation(fields: [catalogoId], references: [id])
