@@ -74,11 +74,12 @@ export default function UsuariosPage() {
   }
 
   async function toggleActivo(id: string, activo: boolean) {
-    await fetch(`/api/usuarios/${id}`, {
+    const r = await fetch(`/api/usuarios/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: !activo }),
     })
+    if (!r.ok) { toastError("Error al cambiar el estado del usuario"); return }
     await cargar()
   }
 

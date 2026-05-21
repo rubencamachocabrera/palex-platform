@@ -171,11 +171,30 @@ export function TopBar() {
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
+  // Atajo "/" para enfocar búsqueda (cuando no se está escribiendo en otro input)
   useEffect(() => {
-    fetch("/api/notificaciones")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.items) setNotifs(d.items) })
-      .catch(() => {})
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return
+      const active = document.activeElement
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement) return
+      e.preventDefault()
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+    document.addEventListener("keydown", handleKey)
+    return () => document.removeEventListener("keydown", handleKey)
+  }, [])
+
+  useEffect(() => {
+    function fetchNotifs() {
+      fetch("/api/notificaciones")
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.items) setNotifs(d.items) })
+        .catch(() => {})
+    }
+    fetchNotifs()
+    const interval = setInterval(fetchNotifs, 3 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   function navegar(href: string) {
@@ -217,9 +236,9 @@ export function TopBar() {
             style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
           />
           {!q && !buscando && (
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium text-gray-300 bg-gray-100 dark:bg-[#334155] dark:text-slate-500 px-1.5 py-0.5 rounded pointer-events-none select-none">
-              ⌘K
-            </kbd>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 pointer-events-none select-none">
+              <kbd className="text-[10px] font-medium text-gray-300 bg-gray-100 dark:bg-[#334155] dark:text-slate-500 px-1.5 py-0.5 rounded">/</kbd>
+            </div>
           )}
           {buscando && (
             <div
@@ -323,13 +342,23 @@ export function TopBar() {
         {notifOpen && (
           <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-xl overflow-hidden z-50">
             {/* Cabecera */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <p className="text-sm font-bold text-gray-900">Centro de alertas</p>
-              {notifs.length > 0 && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-500">
-                  {notifs.length} {notifs.length === 1 ? "alerta" : "alertas"}
-                </span>
-              )}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[rgba(255,255,255,0.07)]">
+              <p className="text-sm font-bold text-gray-900 dark:text-slate-200">Centro de alertas</p>
+              <div className="flex items-center gap-2">
+                {notifs.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => setNotifs([])}
+                      className="text-xs text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                    >
+                      Marcar todas leídas
+                    </button>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-500">
+                      {notifs.length} {notifs.length === 1 ? "alerta" : "alertas"}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Estado vacío */}
@@ -398,15 +427,18 @@ export function TopBar() {
                     <Link
                       key={`${n.tipo}-${n.id}`}
                       href={n.href}
-                      onClick={() => setNotifOpen(false)}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors group"
+                      onClick={() => {
+                        setNotifOpen(false)
+                        setNotifs(prev => prev.filter(x => !(x.tipo === n.tipo && x.id === n.id)))
+                      }}
+                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.04)] transition-colors group"
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${s.bg}`}>
                         {s.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 leading-tight truncate">{n.titulo}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">{n.mensaje}</p>
+                        <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-tight truncate">{n.titulo}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">{n.mensaje}</p>
                       </div>
                       <svg className="shrink-0 mt-2 text-gray-300 group-hover:text-gray-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="9 18 15 12 9 6"/>

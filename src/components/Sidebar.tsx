@@ -17,14 +17,14 @@ const ROL_LABEL: Record<string, string> = {
 }
 
 // ─── Paleta dark ──────────────────────────────────────────────────────────────
-const BG   = "#0f172a"
-const BD   = "rgba(255,255,255,0.07)"
-const MUTE = "#64748b"
-const HTXT = "#cbd5e1"
-const HBG  = "rgba(255,255,255,0.06)"
-const ABG  = "rgba(0,169,157,0.14)"
+const BG   = "#1c2b45"
+const BD   = "rgba(255,255,255,0.1)"
+const MUTE = "#7a94b4"
+const HTXT = "#c8d8ea"
+const HBG  = "rgba(255,255,255,0.09)"
+const ABG  = "rgba(0,169,157,0.22)"
 const ATXT = "#2dd4bf"
-const CARD = "#1e293b"
+const CARD = "#243558"
 
 // ─── Iconos SVG ───────────────────────────────────────────────────────────────
 const Icons: Record<string, () => React.ReactElement> = {
@@ -138,6 +138,14 @@ const Icons: Record<string, () => React.ReactElement> = {
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
   ),
+  Datos: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+      <line x1="2" y1="20" x2="22" y2="20"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
@@ -167,6 +175,10 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
     label: "Proyectos",
     items: [{ href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" }],
   },
+  {
+    label: "Analítica",
+    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
+  },
 ]
 
 const NAV_GROUPS_VENTAS: NavGroup[] = [
@@ -189,6 +201,10 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
     label: "Proyectos",
     items: [{ href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" }],
   },
+  {
+    label: "Analítica",
+    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
+  },
 ]
 
 const NAV_GROUPS_PROYECTOS: NavGroup[] = [
@@ -208,6 +224,10 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/pre-proyectos", label: "Proyectos", icon: "PreProyectos" },
       { href: "/hardware",      label: "Hardware",  icon: "Hardware" },
     ],
+  },
+  {
+    label: "Analítica",
+    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
   },
 ]
 

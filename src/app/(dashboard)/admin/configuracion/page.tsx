@@ -165,7 +165,7 @@ function PlantillasSection() {
                           className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none"
                         />
                         <button onClick={() => renombrar(item.id)} className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
-                        <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                        <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                       </div>
                     ) : (
                       <button
@@ -348,7 +348,7 @@ function ModulosInlabSection() {
                           className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none"
                         />
                         <button onClick={() => renombrar(item.id)} className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
-                        <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                        <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                       </div>
                     ) : (
                       <button

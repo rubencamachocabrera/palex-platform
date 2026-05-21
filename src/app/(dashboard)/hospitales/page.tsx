@@ -82,6 +82,7 @@ type Vista = "lista" | "grid"
 export default function HospitalesPage() {
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [busqueda, setBusqueda] = useState("")
   const [filtroZona, setFiltroZona] = useState("TODAS")
   const [vista, setVista] = useState<Vista>("lista")
@@ -90,7 +91,7 @@ export default function HospitalesPage() {
     fetch("/api/hospitales")
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(data => { setHospitales(Array.isArray(data) ? data : []); setLoading(false) })
-      .catch(e => { console.error("Error cargando hospitales:", e); setLoading(false) })
+      .catch(e => { console.error("Error cargando hospitales:", e); setFetchError(true); setLoading(false) })
   }, [])
 
   const zonas = Array.from(new Set(hospitales.map(h => h.zona.nombre))).sort()
@@ -197,7 +198,14 @@ export default function HospitalesPage() {
         </div>
       )}
 
-      {loading ? (
+      {fetchError ? (
+        <div className="bg-red-50 border border-red-100 rounded-xl px-5 py-4 flex items-center gap-3 text-sm text-red-700">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>No se pudo cargar la lista de hospitales. <button onClick={() => { setFetchError(false); setLoading(true); fetch("/api/hospitales").then(r => r.ok ? r.json() : []).then(d => { setHospitales(Array.isArray(d) ? d : []); setLoading(false) }).catch(() => { setFetchError(true); setLoading(false) }) }} className="font-semibold underline ml-1">Reintentar</button></span>
+        </div>
+      ) : loading ? (
         <div className="space-y-6 animate-in fade-in duration-200">
           {[1,2].map(g => (
             <div key={g}>

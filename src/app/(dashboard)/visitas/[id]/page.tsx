@@ -522,9 +522,115 @@ function fmtResumenValue(type: string, value: unknown): string {
   return s.length > 90 ? s.slice(0, 90) + "…" : s
 }
 
+// ─── Inline Field Editor ──────────────────────────────────────────────────────
+function InlineFieldEditor({ field, value, onChange }: {
+  field: FormField
+  value: unknown
+  onChange: (v: unknown) => void
+}) {
+  const base = "text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 w-full focus:outline-none focus:ring-1 bg-gray-50 transition-colors"
+  const ringStyle = { "--tw-ring-color": TEAL } as React.CSSProperties
+
+  if (field.type === "radio" && field.opts) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {field.opts.map(opt => (
+          <button key={opt} type="button"
+            onClick={() => onChange(value === opt ? "" : opt)}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              value === opt ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
+            }`}
+            style={value === opt ? { backgroundColor: TEAL, borderColor: TEAL } : {}}
+          >{opt}</button>
+        ))}
+      </div>
+    )
+  }
+
+  if (field.type === "checks" && field.opts) {
+    const arr = Array.isArray(value) ? (value as string[]) : []
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {field.opts.map(opt => {
+          const on = arr.includes(opt)
+          return (
+            <button key={opt} type="button"
+              onClick={() => onChange(on ? arr.filter((x: string) => x !== opt) : [...arr, opt])}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                on ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
+              }`}
+              style={on ? { backgroundColor: TEAL, borderColor: TEAL } : {}}
+            >{opt}</button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  if (field.type === "select" && field.opts) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {field.opts.map(opt => (
+          <button key={opt} type="button"
+            onClick={() => onChange(value === opt ? "" : opt)}
+            className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+              value === opt ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
+            }`}
+            style={value === opt ? { backgroundColor: TEAL, borderColor: TEAL } : {}}
+          >{opt}</button>
+        ))}
+      </div>
+    )
+  }
+
+  if (field.type === "rating") {
+    const num = typeof value === "number" ? value : 0
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map(star => (
+          <button key={star} type="button"
+            onClick={() => onChange(star === num ? 0 : star)}
+            className="w-6 h-6 flex items-center justify-center hover:opacity-80 transition-opacity"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24"
+              fill={star <= num ? "#fbbf24" : "none"} stroke={star <= num ? "#fbbf24" : "#d1d5db"} strokeWidth="1.5">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  if (field.type === "textarea") {
+    return (
+      <textarea className={`${base} resize-none`} style={ringStyle} rows={3}
+        value={typeof value === "string" ? value : ""}
+        placeholder={field.ph ?? ""}
+        onChange={e => onChange(e.target.value)}
+      />
+    )
+  }
+
+  const inputType = field.type === "number" ? "number"
+    : field.type === "date" ? "date" : field.type === "month" ? "month"
+    : field.type === "time" ? "time" : field.type === "email" ? "email"
+    : field.type === "tel" ? "tel" : "text"
+
+  return (
+    <input type={inputType} className={base} style={ringStyle}
+      value={typeof value === "string" || typeof value === "number" ? String(value) : ""}
+      placeholder={field.ph ?? ""}
+      onChange={e => onChange(field.type === "number"
+        ? (e.target.value === "" ? "" : Number(e.target.value))
+        : e.target.value)}
+    />
+  )
+}
+
 function VistaResumen({
   visita, datos, sections, fotosMap, score, scoreColor, scoreLabel,
-  completadas, progreso, onClose, onGoToSection,
+  completadas, progreso, onClose, onGoToSection, onSetField,
 }: {
   visita: VisitaData
   datos: Record<string, unknown>
@@ -534,7 +640,9 @@ function VistaResumen({
   completadas: number; progreso: number
   onClose: () => void
   onGoToSection: (id: string) => void
+  onSetField: (fieldId: string, value: unknown) => void
 }) {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const totalFotos = Object.values(fotosMap).reduce((a, b) => a + b.length, 0)
   const todos = (datos.todos as TodoItem[]) ?? []
   const todosHechos = todos.filter(t => t.done).length
@@ -615,8 +723,12 @@ function VistaResumen({
 
             return (
               <div key={section.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col">
-                {/* Header tarjeta */}
-                <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-50">
+                {/* Header tarjeta — click para editar inline */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
+                  className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors w-full text-left"
+                >
                   <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                     pct === 100 ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"
                   }`}>
@@ -636,33 +748,59 @@ function VistaResumen({
                     <span className={`text-xs font-bold tabular-nums ${pct === 100 ? "text-green-500" : pct > 0 ? "text-amber-500" : "text-gray-300"}`}>
                       {pct}%
                     </span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                      className="text-gray-300 shrink-0 transition-transform duration-200"
+                      style={{ transform: expandedSection === section.id ? "rotate(180deg)" : "rotate(0deg)" }}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                   </div>
-                </div>
+                </button>
 
-                {/* Campos rellenos */}
-                <div className="px-3.5 py-3 flex-1 space-y-1.5">
-                  {filledFields.length > 0 ? (
-                    <>
-                      {filledFields.slice(0, 5).map(f => (
-                        <div key={f.label} className="flex gap-2 text-xs leading-tight">
-                          <span className="text-gray-400 shrink-0 truncate" style={{ maxWidth: "45%" }}>{f.label}</span>
-                          <span className="text-gray-700 font-medium flex-1 min-w-0 truncate">{f.value}</span>
+                {/* Campos rellenos — vista resumida */}
+                {expandedSection !== section.id && (
+                  <div className="px-3.5 py-3 flex-1 space-y-1.5">
+                    {filledFields.length > 0 ? (
+                      <>
+                        {filledFields.slice(0, 5).map(f => (
+                          <div key={f.label} className="flex gap-2 text-xs leading-tight">
+                            <span className="text-gray-400 shrink-0 truncate" style={{ maxWidth: "45%" }}>{f.label}</span>
+                            <span className="text-gray-700 font-medium flex-1 min-w-0 truncate">{f.value}</span>
+                          </div>
+                        ))}
+                        {filledFields.length > 5 && (
+                          <p className="text-xs text-gray-300 pt-0.5">+{filledFields.length - 5} campos más</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-gray-300 italic">Sin datos aún</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Formulario inline — edición rápida */}
+                {expandedSection === section.id && (
+                  <div className="px-3.5 py-3 flex-1 space-y-3 max-h-80 overflow-y-auto">
+                    {section.fields
+                      .filter(f => shouldShowField(f, datos))
+                      .map(field => (
+                        <div key={field.id}>
+                          <label className="text-[11px] font-medium text-gray-500 mb-1 block">
+                            {field.label}{field.req && <span className="text-red-400 ml-0.5">*</span>}
+                          </label>
+                          <InlineFieldEditor
+                            field={field}
+                            value={datos[field.id]}
+                            onChange={v => onSetField(field.id, v)}
+                          />
                         </div>
                       ))}
-                      {filledFields.length > 5 && (
-                        <p className="text-xs text-gray-300 pt-0.5">+{filledFields.length - 5} campos más</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-gray-300 italic">Sin datos aún</p>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Footer tarjeta */}
                 <button
                   onClick={() => { onClose(); setTimeout(() => onGoToSection(section.id), 50) }}
                   className="flex items-center gap-1 px-3.5 py-2 text-xs border-t border-gray-50 text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
-                  style={{}}
                 >
                   <IconArrowRight size={11} /> Ir a esta sección
                 </button>
@@ -1675,6 +1813,7 @@ export default function VisitaPage() {
           progreso={progreso}
           onClose={() => setVistaResumen(false)}
           onGoToSection={goToSection}
+          onSetField={setField}
         />
       )}
 
