@@ -17,6 +17,29 @@ const ESTADO_COLOR: Record<string, string> = {
   COMPLETADA: "bg-green-50 text-green-600",
   ARCHIVADA:  "bg-gray-100 text-gray-400",
 }
+const ESTADO_BAR: Record<string, string> = {
+  BORRADOR: "#f59e0b", COMPLETADA: "#16a34a", ARCHIVADA: "#9ca3af",
+}
+
+function avatarColor(nombre: string) {
+  const colors = ["#0d9488","#0891b2","#7c3aed","#db2777","#ea580c","#65a30d","#2563eb"]
+  let h = 0; for (let i = 0; i < nombre.length; i++) h = nombre.charCodeAt(i) + ((h << 5) - h)
+  return colors[Math.abs(h) % colors.length]
+}
+
+function fechaRelativa(iso: string) {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  if (d === 0) return "Hoy"
+  if (d === 1) return "Ayer"
+  if (d < 7)  return `Hace ${d} días`
+  if (d < 30) return `Hace ${Math.floor(d/7)} sem.`
+  if (d < 365) return `Hace ${Math.floor(d/30)} mes${Math.floor(d/30)>1?"es":""}`
+  return `Hace ${Math.floor(d/365)} año${Math.floor(d/365)>1?"s":""}`
+}
+
+function mesLabel(iso: string) {
+  return new Date(iso).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+}
 
 interface Visita {
   id: string
@@ -30,10 +53,11 @@ interface Hospital { id: string; nombre: string; ciudad: string }
 
 function SkeletonVisita() {
   return (
-    <div className="flex items-center gap-3 px-5 py-4">
-      <div className="flex-1 space-y-2">
-        <div className="h-4 w-2/3 rounded-lg skeleton-shimmer" />
-        <div className="h-3 w-1/3 rounded-lg skeleton-shimmer" />
+    <div className="flex items-center gap-3 px-4 py-3.5">
+      <div className="w-9 h-9 rounded-full skeleton-shimmer shrink-0" />
+      <div className="flex-1 space-y-1.5">
+        <div className="h-3.5 w-2/3 rounded skeleton-shimmer" />
+        <div className="h-2.5 w-1/3 rounded skeleton-shimmer" />
       </div>
       <div className="h-6 w-20 rounded-full skeleton-shimmer shrink-0" />
     </div>
@@ -176,6 +200,22 @@ export default function MisVisitasPage() {
       active ? "text-white shadow-sm" : "text-gray-500 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
     }`
 
+  // Stats para el banner
+  const hoy = new Date(); hoy.setHours(0,0,0,0)
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const completadasMes = visitas.filter(v => v.estado === "COMPLETADA" && new Date(v.fecha) >= inicioMes).length
+  const borradores = visitas.filter(v => v.estado === "BORRADOR").length
+  const ultimaFecha = visitas.length > 0 ? visitas.reduce((a,b) => new Date(a.fecha) > new Date(b.fecha) ? a : b).fecha : null
+
+  // Agrupación por mes
+  const grupos: { mes: string; items: typeof filtradas }[] = []
+  filtradas.forEach(v => {
+    const mes = mesLabel(v.fecha)
+    const g = grupos.find(g => g.mes === mes)
+    if (g) g.items.push(v)
+    else grupos.push({ mes, items: [v] })
+  })
+
   return (
     <div className="animate-in fade-in duration-200">
 
@@ -275,63 +315,81 @@ export default function MisVisitasPage() {
         ))}
       </div>
 
+      {/* Stats banner */}
+      {!loading && visitas.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {[
+            { label: "Total visitas",       value: visitas.length,     color: "#111827" },
+            { label: "En borrador",         value: borradores,         color: "#d97706" },
+            { label: "Completadas este mes",value: completadasMes,     color: "#16a34a" },
+            { label: "Última visita",       value: ultimaFecha ? fechaRelativa(ultimaFecha) : "—", color: TEAL, isText: true },
+          ].map(s => (
+            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{s.label}</p>
+              <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Lista */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="space-y-1">
         {loading ? (
-          <div className="divide-y divide-gray-100">
+          <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
             {Array.from({ length: 5 }).map((_, i) => <SkeletonVisita key={i} />)}
           </div>
         ) : filtradas.length === 0 ? (
-          <EmptyState
-            icon={busqueda ? "search" : "document"}
-            title={
-              busqueda ? `Sin resultados para "${busqueda}"`
-              : filtro === "TODOS" ? "No tienes visitas registradas"
-              : `No hay visitas "${ESTADO_LABEL[filtro]}"`
-            }
-            description={
-              busqueda ? "Prueba con otro nombre de hospital o ciudad."
-              : filtro === "TODOS" ? "Crea tu primera visita seleccionando un hospital."
-              : undefined
-            }
-            action={
-              busqueda ? { label: "Limpiar busqueda", variant: "ghost", onClick: () => setBusqueda("") }
-              : filtro === "TODOS" ? { label: "Nueva visita", onClick: abrirModal }
-              : undefined
-            }
-          />
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {filtradas.map((v, i) => (
-              <Link
-                key={v.id}
-                href={`/visitas/${v.id}`}
-                className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100 group animate-in fade-in duration-200"
-                style={{ animationDelay: `${i * 30}ms` }}
-              >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "#F3F4F6" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-gray-900">{v.hospital.nombre}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {v.hospital.ciudad} &middot; {new Date(v.fecha).toLocaleDateString("es-ES")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ESTADO_COLOR[v.estado]}`}>
-                    {ESTADO_LABEL[v.estado]}
-                  </span>
-                  <IconChevronRight size={16} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
-                </div>
-              </Link>
-            ))}
+          <div className="bg-white rounded-2xl border border-gray-100">
+            <EmptyState
+              icon={busqueda ? "search" : "document"}
+              title={busqueda ? `Sin resultados para "${busqueda}"` : filtro === "TODOS" ? "No tienes visitas registradas" : `No hay visitas "${ESTADO_LABEL[filtro]}"`}
+              description={busqueda ? "Prueba con otro nombre de hospital o ciudad." : filtro === "TODOS" ? "Crea tu primera visita seleccionando un hospital." : undefined}
+              action={busqueda ? { label: "Limpiar busqueda", variant: "ghost", onClick: () => setBusqueda("") } : filtro === "TODOS" ? { label: "Nueva visita", onClick: abrirModal } : undefined}
+            />
           </div>
+        ) : (
+          grupos.map(({ mes, items }) => (
+            <div key={mes}>
+              {/* Separador de mes */}
+              <div className="flex items-center gap-2 px-1 py-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide capitalize">{mes}</span>
+                <span className="text-xs text-gray-300 font-medium">· {items.length}</span>
+                <div className="flex-1 h-px bg-gray-100 ml-1" />
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+                {items.map((v, i) => {
+                  const color = avatarColor(v.hospital.nombre)
+                  const inicial = v.hospital.nombre.charAt(0).toUpperCase()
+                  return (
+                    <Link key={v.id} href={`/visitas/${v.id}`}
+                      className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/70 transition-colors group relative"
+                      style={{ animationDelay: `${i * 25}ms` }}>
+                      {/* Barra lateral estado */}
+                      <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full" style={{ backgroundColor: ESTADO_BAR[v.estado] ?? "#e5e7eb" }} />
+                      {/* Avatar hospital */}
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ml-2" style={{ backgroundColor: color }}>
+                        {inicial}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-gray-400">{v.hospital.ciudad}</span>
+                          <span className="text-gray-200">·</span>
+                          <span className="text-xs text-gray-400" title={new Date(v.fecha).toLocaleDateString("es-ES")}>{fechaRelativa(v.fecha)}</span>
+                          <span className="text-gray-200">·</span>
+                          <span className="text-xs font-medium" style={{ color: TEAL }}>{v.tipo === "VENTAS" ? "Ventas" : "Proyectos"}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
+                        <IconChevronRight size={15} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))
         )}
       </div>
 

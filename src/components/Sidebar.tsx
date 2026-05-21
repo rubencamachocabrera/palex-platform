@@ -17,14 +17,14 @@ const ROL_LABEL: Record<string, string> = {
 }
 
 // ─── Paleta dark ──────────────────────────────────────────────────────────────
-const BG   = "#1c2b45"
-const BD   = "rgba(255,255,255,0.1)"
-const MUTE = "#7a94b4"
-const HTXT = "#c8d8ea"
-const HBG  = "rgba(255,255,255,0.09)"
-const ABG  = "rgba(0,169,157,0.22)"
+const BG   = "#1e3a5c"
+const BD   = "rgba(255,255,255,0.13)"
+const MUTE = "#8db2ce"
+const HTXT = "#d2e8f5"
+const HBG  = "rgba(255,255,255,0.11)"
+const ABG  = "rgba(0,169,157,0.25)"
 const ATXT = "#2dd4bf"
-const CARD = "#243558"
+const CARD = "#254c78"
 
 // ─── Iconos SVG ───────────────────────────────────────────────────────────────
 const Icons: Record<string, () => React.ReactElement> = {

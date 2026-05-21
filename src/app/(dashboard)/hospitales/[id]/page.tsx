@@ -10,6 +10,20 @@ import {
 } from "@/components/ui/Icons"
 import { EmptyState } from "@/components/ui/EmptyState"
 
+function fechaRel(iso: string) {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  if (d === 0) return "Hoy"; if (d === 1) return "Ayer"
+  if (d < 7) return `Hace ${d} días`
+  if (d < 30) return `Hace ${Math.floor(d/7)} sem.`
+  if (d < 365) return `Hace ${Math.floor(d/30)} mes${Math.floor(d/30)>1?"es":""}`
+  return `Hace ${Math.floor(d/365)} año${Math.floor(d/365)>1?"s":""}`
+}
+function avColor(s: string) {
+  const cs=["#0d9488","#0891b2","#7c3aed","#db2777","#ea580c","#65a30d","#2563eb"]
+  let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h)
+  return cs[Math.abs(h)%cs.length]
+}
+
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "Hospital Publico", HOSPITAL_PRIVADO: "Hospital Privado",
   CLINICA_PRIVADA: "Clinica Privada", LABORATORIO: "Laboratorio",
@@ -73,6 +87,7 @@ export default function HospitalDetailPage() {
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<TimelineFiltro>("todos")
   const [creandoVisita, setCreandoVisita] = useState(false)
+  const [expandidoVisita, setExpandidoVisita] = useState<string | null>(null)
 
   // Estado modal contacto
   const [contactoModal, setContactoModal] = useState(false)
@@ -453,47 +468,116 @@ export default function HospitalDetailPage() {
       {tab === "visitas" && (
         <div>
           {hospital.visitas.length === 0 ? (
-            <EmptyState
-              icon="clipboard"
-              title="Sin visitas registradas"
-              description="Registra tu primera visita a este centro."
-              action={{ label: "Registrar primera visita", onClick: nuevaVisita }}
-            />
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="divide-y divide-gray-100">
-                {hospital.visitas.map(v => (
-                  <Link
-                    key={v.id}
-                    href={`/visitas/${v.id}`}
-                    className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">
-                        {new Date(v.fecha).toLocaleDateString("es-ES")}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {v.usuario.nombre} &#183; {v.tipo}
-                      </p>
+            <EmptyState icon="clipboard" title="Sin visitas registradas" description="Registra tu primera visita a este centro."
+              action={{ label: "Registrar primera visita", onClick: nuevaVisita }} />
+          ) : (() => {
+            const ordenadas = [...hospital.visitas].sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+            const completadas = ordenadas.filter(v => v.estado === "COMPLETADA").length
+            const pctCompleto = Math.round((completadas / ordenadas.length) * 100)
+            const hoy = new Date(); hoy.setHours(0,0,0,0)
+            const inicioAnio = new Date(hoy.getFullYear(), 0, 1)
+            const esteAnio = ordenadas.filter(v => new Date(v.fecha) >= inicioAnio).length
+            const ultima = ordenadas[0]
+
+            // Agrupar por año
+            const grupos: Record<string, typeof ordenadas> = {}
+            ordenadas.forEach(v => {
+              const y = new Date(v.fecha).getFullYear().toString()
+              if (!grupos[y]) grupos[y] = []
+              grupos[y].push(v)
+            })
+
+            return (
+              <div className="space-y-4">
+                {/* Stats contextuales */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{ultima ? fechaRel(ultima.fecha) : "—"}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Última visita</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <p className="text-lg font-bold text-gray-900">{pctCompleto}%</p>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${ESTADO_COLOR[v.estado]}`}>
-                      {ESTADO_LABEL[v.estado]}
-                    </span>
-                  </Link>
+                    <div className="w-full bg-gray-100 rounded-full h-1 mt-1 mb-0.5 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pctCompleto}%`, backgroundColor: "#16a34a" }} />
+                    </div>
+                    <p className="text-[11px] text-gray-400">Completadas</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+                    <p className="text-lg font-bold" style={{ color: TEAL }}>{esteAnio}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Este año</p>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                {Object.entries(grupos).sort((a,b) => Number(b[0]) - Number(a[0])).map(([anio, visitas]) => (
+                  <div key={anio}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{anio}</span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                      <span className="text-xs text-gray-300">{visitas.length}</span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-[17px] top-3 bottom-3 w-px bg-gray-100" />
+                      <div className="space-y-1">
+                        {visitas.map(v => {
+                          const isOpen = expandidoVisita === v.id
+                          const dotColor = v.estado === "COMPLETADA" ? "#16a34a" : v.estado === "BORRADOR" ? "#f59e0b" : "#9ca3af"
+                          const initColor = avColor(v.usuario.nombre)
+                          return (
+                            <div key={v.id} className="relative pl-10">
+                              {/* Dot */}
+                              <div className="absolute left-[13px] top-4 w-2.5 h-2.5 rounded-full border-2 border-white z-10 shadow-sm" style={{ backgroundColor: dotColor }} />
+                              <div className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-teal-200 shadow-md" : "border-gray-100 shadow-sm hover:border-gray-200"}`}>
+                                <button onClick={() => setExpandidoVisita(isOpen ? null : v.id)}
+                                  className="w-full flex items-center gap-3 px-4 py-3 text-left">
+                                  {/* Avatar técnico */}
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: initColor }}>
+                                    {v.usuario.nombre.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="text-sm font-semibold text-gray-800" title={new Date(v.fecha).toLocaleDateString("es-ES")}>{fechaRel(v.fecha)}</p>
+                                      <span className="text-xs text-gray-400">{new Date(v.fecha).toLocaleDateString("es-ES", { day:"2-digit", month:"short" })}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-0.5">{v.usuario.nombre} · {v.tipo === "VENTAS" ? "Ventas" : "Proyectos"}</p>
+                                  </div>
+                                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300 shrink-0" style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms" }}><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                {isOpen && (
+                                  <div className="px-4 pb-4 pt-1 border-t border-gray-50">
+                                    <div className="flex items-center justify-between">
+                                      <div className="space-y-1 text-xs text-gray-500">
+                                        <p>Técnico: <span className="font-medium text-gray-700">{v.usuario.nombre}</span></p>
+                                        <p>Fecha: <span className="font-medium text-gray-700">{new Date(v.fecha).toLocaleDateString("es-ES", { weekday:"long", day:"numeric", month:"long", year:"numeric" })}</span></p>
+                                        <p>Tipo: <span className="font-medium text-gray-700">{v.tipo}</span></p>
+                                      </div>
+                                      <Link href={`/visitas/${v.id}`}
+                                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-white"
+                                        style={{ backgroundColor: TEAL }}>
+                                        <IconFileText size={13} />Abrir
+                                      </Link>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-              <div className="px-5 py-3 border-t border-gray-100">
-                <button
-                  onClick={nuevaVisita}
-                  disabled={creandoVisita}
-                  className="text-sm font-medium disabled:opacity-50"
-                  style={{ color: TEAL }}
-                >
+
+                <button onClick={nuevaVisita} disabled={creandoVisita}
+                  className="w-full py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-400 hover:border-teal-300 hover:text-teal-600 transition-colors disabled:opacity-50">
                   {creandoVisita ? "Creando..." : "+ Nueva visita"}
                 </button>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       )}
 
