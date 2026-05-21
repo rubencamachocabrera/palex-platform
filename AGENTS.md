@@ -190,27 +190,105 @@ public/
 
 ---
 
-## Pendiente (proxima sesion)
+## Completado (sesion 2026-05-22)
+- [x] Quick-create visita desde /visitas (conectado con backend)
+- [x] Exportar CSV en /visitas y /pipeline
+- [x] Notificaciones: dismiss al clic, marcar todas leidas, auto-refresh 3min
+- [x] Vista Resumen edicion inline por seccion (InlineFieldEditor)
+- [x] Sidebar paleta navy #1c2b45 + item Explotacion de datos
+- [x] Nuevo modulo /datos con KPIs en tiempo real + roadmap
+- [x] Atajo teclado / para buscar en TopBar
+- [x] Middleware protege /datos /pre-proyectos /hardware
+- [x] Errores de carga con estado visual + reintentar (hospitales)
+- [x] SVG en lugar de simbolos unicode en admin
 
-### Sprint 5 resto
-- [ ] Quick-create visita desde /visitas (mini-modal ya existe, conectar con backend)
-- [ ] Boton "Exportar CSV" en /visitas y /pipeline (csv.ts ya existe)
-- [ ] Admin pages: revisar emojis restantes en admin/usuarios, admin/hospitales, admin/zonas
+---
 
-### Sprint 6 — CRM avanzado
-- [ ] Drag & drop Kanban con @dnd-kit
-- [ ] Ficha oportunidad con historial de cambios de etapa
-- [ ] Badge sidebar: oportunidades >7 dias sin actividad
-- [ ] Vincular visita -> oportunidad desde formulario
+## Roadmap de funcionalidades — analisis mayo 2026
 
-### Sprint 7 — Nuevas funcionalidades
-- [ ] Modulo Proyectos CRUD completo
-- [ ] Notificaciones internas (bell en TopBar)
-- [ ] QR del hospital
-- [ ] Modo oscuro completo
-- [ ] Plantillas de visita rapida
+> Priorizadas por impacto real en usuarios (no solo tecnologia)
 
-### Sprint 8 — Calidad tecnica
+### TIER 1 — Productividad diaria (mayor ROI para el usuario)
+
+1. **Comentarios en visitas y proyectos** — Sistema de notas internas del equipo vinculadas a cada visita o pre-proyecto. Cada comentario tiene autor, fecha y puede adjuntar hasta 2 fotos. Base para la colaboracion real.
+
+2. **Vista "Mi Dia"** — Widget en Dashboard que muestra: tareas vencidas o de hoy, visitas del dia, deadlines de fases de proyecto. Personalizado por rol. El usuario abre la app y sabe exactamente que tiene que hacer.
+
+3. **Busqueda avanzada con filtros** — Extender /visitas y /pre-proyectos con filtros combinables: fecha (desde/hasta), estado, zona, tecnico asignado, hospital. Actualmente solo se filtra por nombre.
+
+4. **Drag & drop en Kanban CRM** — Con @dnd-kit. Arrastrar oportunidades entre columnas. Actualiza etapa via PATCH inmediato. Es la mejora de UX mas esperada en pipeline.
+
+5. **QR por hospital** — En la ficha de hospital, boton "Ver QR" genera un codigo QR con la URL publica del hospital. El tecnico lo escanea en campo para abrir la ficha rapidamente en movil.
+
+6. **Favoritos / Acceso rapido** — Estrella en hospitales y proyectos para anclarlos al inicio del sidebar o dashboard. Persiste en localStorage (o DB). Muy util para usuarios que trabajan siempre con los mismos 5-10 centros.
+
+### TIER 2 — Colaboracion y visibilidad de equipo
+
+7. **Panel de equipo (ADMIN)** — Vista de "quien hace que": tabla de usuarios con su ultima visita, proyectos activos, tareas vencidas. Sin navegacion profunda, solo el resumen de cada persona. Solo visible para ADMIN.
+
+8. **Historial de cambios en oportunidades CRM** — Timeline de cambios de etapa con fecha, usuario y nota opcional. Cuando una op pasa de Propuesta a Ganado, queda registrado quien lo movio. Critico para trazabilidad comercial.
+
+9. **Timeline de actividad por hospital** — En la ficha de hospital, una pestaña "Actividad" con el historial cronologico: visitas realizadas, oportunidades creadas, proyectos vinculados, contactos anadidos. Una vista completa del historial con ese centro.
+
+10. **Etiquetas / Tags** — Sistema de etiquetas libres para hospitales y visitas. El admin define las etiquetas (p.ej: "Cliente activo", "Sin contrato", "Zona norte") y los usuarios las aplican. Permite filtrar y agrupar de forma flexible.
+
+### TIER 3 — Datos e informes
+
+11. **Informe PDF de pre-proyecto completo** — Generar un PDF profesional Palex con toda la info del pre-proyecto: fases, tareas, hitos, responsables, fechas, notas. Complementa el PDF de visita ya existente.
+
+12. **Exportar proyecto a Excel formateado** — Usando la lib xlsx o similar, generar un Excel con hojas separadas: resumen, fases, tareas, contactos. Mas util que CSV para el cliente final.
+
+13. **KPIs de rendimiento por usuario / zona** — En /datos: tasa conversion visita→oportunidad, tiempo medio de ciclo de venta, visitas por mes por zona. Solo accesible para ADMIN y VENTAS.
+
+14. **Informe de actividad semanal** — PDF o email automatico cada lunes con: visitas de la semana anterior, proyectos avanzados, tareas completadas. Generado bajo demanda desde perfil o enviado por cron.
+
+### TIER 4 — Campo y movilidad
+
+15. **Modo campo simplificado** — Vista minimalista del formulario de visita con solo los campos mas importantes y botones grandes (44px+). Para uso rapido desde movil en campo. Toggle "Modo campo / Modo completo".
+
+16. **Firma digital del cliente** — En el PDF del informe de visita, canvas de firma tactil. El cliente firma en el tablet del tecnico y la firma se incrusta en el PDF final. Profesionaliza enormemente la entrega del informe.
+
+17. **Notificaciones push del navegador** — Web Push API para alertas criticas: tarea vencida, proyecto por vencer manana, nueva asignacion. El usuario recibe notificacion aunque la app este cerrada.
+
+18. **Sincronizacion bidireccional de calendario** — Exportar visitas agendadas a Google Calendar / Outlook via iCal (.ics). El tecnico tiene sus visitas en su calendario personal.
+
+### TIER 5 — Diferenciadores premium
+
+19. **Onboarding guiado (nuevo usuario)** — Wizard de 4 pasos al primer login: 1) Ver tu zona asignada, 2) Crear primera visita, 3) Explorar hospitales, 4) Abrir pipeline. Con tooltips interactivos tipo Intro.js.
+
+20. **Vista Gantt de fases** — En el detalle del pre-proyecto, una vista de timeline horizontal con las fases como barras. Solo lectura inicialmente. Muy visual para presentar al cliente o en reuniones.
+
+21. **Acceso compartido con contrasena** — En los links de compartir (/share/...), opcion de proteger con PIN de 4 digitos configurable por el creador. Mas seguro para informes confidenciales.
+
+22. **Registro rapido de llamada** — Desde la ficha de hospital, boton "Registrar llamada" que abre un micro-formulario (2 campos: motivo + resultado) y crea un log sin abrir el formulario completo de visita. Ideal para comerciales.
+
+23. **Mencion de usuarios en comentarios** — En el sistema de comentarios (feature 1), escribir @nombre autocompleta usuarios del equipo y envia una notificacion interna al mencionado.
+
+24. **Hospitales relacionados / Grupo** — Vincular hospitales del mismo grupo hospitalario entre si. En la ficha de uno se muestran los "hospitales hermanos". Util para grupos como HM, Quiron, etc.
+
+25. **Recordatorios personales** — Desde cualquier hospital u oportunidad, crear un recordatorio con fecha: "Llamar el 15/06". Aparece en "Mi Dia" y en las notificaciones cuando llega la fecha.
+
+---
+
+## Pendiente inmediato (proxima sesion)
+
+### Sprint 6 — Quick wins de alto impacto
+- [ ] Drag & drop Kanban (@dnd-kit) — Ver feature #4
+- [ ] QR por hospital — Ver feature #5
+- [ ] Historial cambios de etapa en oportunidades — Ver feature #8
+- [ ] Vincular visita -> oportunidad desde formulario visita
+
+### Sprint 7 — Colaboracion
+- [ ] Comentarios en visitas y proyectos — Ver feature #1
+- [ ] Vista "Mi Dia" en dashboard — Ver feature #2
+- [ ] Timeline de actividad por hospital — Ver feature #9
+
+### Sprint 8 — Datos y reportes
+- [ ] Informe PDF pre-proyecto completo — Ver feature #11
+- [ ] KPIs de rendimiento en /datos — Ver feature #13
+- [ ] Busqueda avanzada con filtros — Ver feature #3
+
+### Sprint 9 — Calidad tecnica
 - [ ] Error boundaries por modulo
 - [ ] Lighthouse audit (objetivo >90)
 - [ ] Sentry para errores en produccion
