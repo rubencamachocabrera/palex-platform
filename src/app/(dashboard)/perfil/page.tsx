@@ -9,6 +9,7 @@ const ROL_LABEL: Record<string, string> = {
 
 interface Toast { msg: string; tipo: "ok" | "error" }
 interface PerfilData { id: string; nombre: string; email: string; rol: string; creadoEn: string }
+interface ConfigApp { id: number; crmActivo: boolean }
 
 export default function PerfilPage() {
   const [perfil, setPerfil] = useState<PerfilData | null>(null)
@@ -20,6 +21,8 @@ export default function PerfilPage() {
   const [guardandoNombre, setGuardandoNombre] = useState(false)
   const [guardandoPw, setGuardandoPw] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
+  const [config, setConfig] = useState<ConfigApp | null>(null)
+  const [togglingCrm, setTogglingCrm] = useState(false)
 
   useEffect(() => {
     fetch("/api/perfil")
@@ -27,6 +30,9 @@ export default function PerfilPage() {
       .then((d: PerfilData) => {
         setPerfil(d)
         setNombre(d.nombre ?? "")
+        if (d.rol === "ADMIN") {
+          fetch("/api/config").then(r => r.ok ? r.json() : null).then(c => { if (c) setConfig(c) }).catch(() => {})
+        }
       })
       .catch(() => {})
   }, [])
@@ -72,6 +78,26 @@ export default function PerfilPage() {
       mostrarToast("Contraseña actualizada correctamente", "ok")
     } else {
       mostrarToast(d.error ?? "Error al cambiar contraseña", "error")
+    }
+  }
+
+  async function toggleCrm() {
+    if (!config) return
+    setTogglingCrm(true)
+    try {
+      const r = await fetch("/api/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crmActivo: !config.crmActivo }),
+      })
+      if (!r.ok) { mostrarToast("Error al guardar configuración", "error"); return }
+      const updated: ConfigApp = await r.json()
+      setConfig(updated)
+      mostrarToast(updated.crmActivo ? "Módulo CRM activado" : "Módulo CRM desactivado", "ok")
+    } catch {
+      mostrarToast("Error de conexión", "error")
+    } finally {
+      setTogglingCrm(false)
     }
   }
 
@@ -205,6 +231,41 @@ export default function PerfilPage() {
           </form>
         )}
       </div>
+      {/* Configuración del sistema — solo ADMIN */}
+      {perfil?.rol === "ADMIN" && config !== null && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h2 className="text-sm font-semibold text-gray-800 mb-4">Configuración del sistema</h2>
+          <div className="flex items-center justify-between gap-4 py-2">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Módulo CRM / Pipeline de ventas</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {config.crmActivo
+                  ? "Activo — visible en el dashboard y menú lateral"
+                  : "Inactivo — oculto del dashboard y menú lateral"}
+              </p>
+            </div>
+            <button
+              onClick={toggleCrm}
+              disabled={togglingCrm}
+              aria-label={config.crmActivo ? "Desactivar CRM" : "Activar CRM"}
+              className="flex items-center gap-2 shrink-0 disabled:opacity-50"
+            >
+              <span className="text-xs font-semibold text-gray-500 hidden sm:inline">
+                {config.crmActivo ? "Activo" : "Inactivo"}
+              </span>
+              <span
+                className="relative inline-flex items-center rounded-full transition-colors duration-200"
+                style={{ width: 44, height: 24, backgroundColor: config.crmActivo ? TEAL : "#d1d5db", padding: 3 }}
+              >
+                <span
+                  className="inline-block rounded-full bg-white shadow-sm transition-transform duration-200"
+                  style={{ width: 18, height: 18, transform: config.crmActivo ? "translateX(20px)" : "translateX(0)" }}
+                />
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

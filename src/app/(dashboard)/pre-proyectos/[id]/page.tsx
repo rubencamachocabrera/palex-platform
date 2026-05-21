@@ -474,7 +474,7 @@ function GanttFases({ pp }: { pp: PreProyecto }) {
   const ticks: { xv: number; label: string }[] = []
   const cur = new Date(rangeStart); cur.setDate(1)
   while (cur <= rangeEnd) {
-    ticks.push({ xv: xOf(cur), label: cur.toLocaleDateString("es-ES", { month: "short", year: "2-digit" }) })
+    ticks.push({ xv: xOf(cur), label: cur.toLocaleDateString("es-ES", { month: "short", year: "numeric" }) })
     cur.setMonth(cur.getMonth() + 1)
   }
 
@@ -813,7 +813,7 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
     | { kind: "entrada"; data: EntradaTimeline; sortKey: number }
 
   const merged: MergedItem[] = [
-    ...pp.fases.map(f => ({ kind: "fase" as const, data: f, sortKey: f.fechaPlan ? new Date(f.fechaPlan).getTime() : f.orden * 1e12 })),
+    ...pp.fases.map(f => ({ kind: "fase" as const, data: f, sortKey: f.fechaPlan ? new Date(f.fechaPlan).getTime() : Infinity })),
     ...pp.hitos.map(h => ({ kind: "hito" as const, data: h, sortKey: new Date(h.fecha).getTime() })),
     ...(pp.entradas ?? []).map(e => ({
       kind: "entrada" as const, data: e,
@@ -832,7 +832,7 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
   const renderList: RenderItem[] = []
   let lastMonth = ""
   for (const item of merged) {
-    const d = new Date(item.sortKey > 0 && item.sortKey < 2e15 ? item.sortKey : now)
+    const d = new Date(isFinite(item.sortKey) ? item.sortKey : now)
     const month = d.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
     if (month !== lastMonth) {
       renderList.push({ rType: "header", month, rKey: `hdr-${month}` })

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
-import ToggleCRM from "./ToggleCRM"
+
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
   IconCheckCircle, IconFileText, IconMap,
@@ -460,10 +460,7 @@ async function DashboardAdmin() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-1">
-        <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
-        <ToggleCRM crmActivo={crmActivo} />
-      </div>
+      <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
