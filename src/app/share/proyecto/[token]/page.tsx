@@ -124,6 +124,20 @@ export default function ShareProyectoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
+      <style>{`
+        @media print {
+          @page { margin: 1.5cm 2cm; size: A4 portrait; }
+          body { font-size: 11pt; color: #111; }
+          .print-section { break-inside: avoid; }
+          .print-break { break-before: page; }
+          .shadow-sm, .shadow-md, .shadow-2xl { box-shadow: none !important; }
+          .border, .border-gray-100 { border-color: #e5e7eb !important; }
+          a { color: inherit !important; text-decoration: none !important; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border-bottom: 1px solid #e5e7eb; padding: 6px 8px; }
+        }
+      `}</style>
+
       {/* Top bar */}
       <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center gap-3 sticky top-0 z-10 print:hidden">
         <div className="flex items-center gap-2.5 shrink-0">
@@ -150,7 +164,7 @@ export default function ShareProyectoPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 space-y-6 print:px-0 print:py-0 print:space-y-5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 space-y-6 print:px-0 print:py-4 print:space-y-4">
 
         {/* Print header */}
         <div className="hidden print:flex items-start justify-between border-b border-gray-200 pb-5 mb-2">
@@ -165,7 +179,7 @@ export default function ShareProyectoPage() {
         </div>
 
         {/* Project header */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print-section">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -204,7 +218,7 @@ export default function ShareProyectoPage() {
         </div>
 
         {/* KPI grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print-section">
           {[
             { label: "Progreso", value: `${pct}%`, sub: `${fasesOK}/${d.fases.length} fases`, color: pct === 100 ? "#16a34a" : TEAL },
             { label: "Hardware", value: String(d.hardwareUnidades.length), sub: totalHW > 0 ? totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }) : "Sin precios", color: "#7c3aed" },
@@ -263,7 +277,7 @@ export default function ShareProyectoPage() {
 
         {/* Timeline */}
         {d.fases.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print-break print-section">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fases del proyecto</h3>
             <div className="space-y-2">
               {d.fases.map(f => {
@@ -305,7 +319,7 @@ export default function ShareProyectoPage() {
 
         {/* Hardware inventory */}
         {d.hardwareUnidades.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print-break print-section">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Inventario de hardware</h3>
             <div className="space-y-5">
               {Object.entries(byTipo).map(([tipo, units]) => {

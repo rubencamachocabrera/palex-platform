@@ -157,7 +157,18 @@ export default function PreProyectoDetalle() {
   const { success, error: toastError } = useToast()
   const [pp, setPp] = useState<PreProyecto | null>(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>("Info")
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab")
+      if (t && (TABS as readonly string[]).includes(t)) return t as Tab
+    }
+    return "Info"
+  })
+
+  function changeTab(t: Tab) {
+    setTab(t)
+    router.replace(`?tab=${t}`, { scroll: false })
+  }
 
   const cargar = useCallback(async () => {
     const r = await fetch(`/api/pre-proyectos/${params.id}`)
@@ -251,7 +262,7 @@ export default function PreProyectoDetalle() {
         {TABS.map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => changeTab(t)}
             className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
             style={tab === t ? { backgroundColor: "white", color: TEAL, boxShadow: "0 1px 4px rgba(0,0,0,.08)" } : { color: "#6b7280" }}
           >
@@ -1694,6 +1705,11 @@ function TabVisitas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [tipoCrear, setTipoCrear] = useState("PROYECTOS")
   const [creando, setCreando] = useState(false)
+  const [filtroVisita, setFiltroVisita] = useState("TODAS")
+
+  const visitasFiltradas = filtroVisita === "TODAS"
+    ? pp.visitas
+    : pp.visitas.filter(v => v.estado === filtroVisita)
 
   async function crearVisita() {
     setCreando(true)
@@ -1732,6 +1748,28 @@ function TabVisitas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
         </div>
       </div>
 
+      {/* Filtros de estado */}
+      {pp.visitas.length > 0 && (
+        <div className="flex gap-1.5 mb-4 flex-wrap">
+          {(["TODAS", "BORRADOR", "COMPLETADA", "ARCHIVADA"] as const).map(e => {
+            const color = e === "TODAS" ? "#6b7280" : (VISITA_ESTADO_COLOR[e] ?? "#6b7280")
+            const active = filtroVisita === e
+            const count = e === "TODAS" ? pp.visitas.length : pp.visitas.filter(v => v.estado === e).length
+            if (e !== "TODAS" && count === 0) return null
+            return (
+              <button key={e} onClick={() => setFiltroVisita(e)}
+                className="px-3 py-1 rounded-full text-xs font-semibold border transition-all"
+                style={active
+                  ? { backgroundColor: color + "18", borderColor: color, color }
+                  : { backgroundColor: "#f9fafb", borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                {e === "TODAS" ? "Todas" : e === "BORRADOR" ? "Borrador" : e === "COMPLETADA" ? "Completada" : "Archivada"}
+                <span className="ml-1 opacity-70">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {mostrarCrear && (
         <div className="bg-white rounded-2xl border border-teal-200 p-5 shadow-sm mb-4">
           <h4 className="font-semibold text-gray-900 mb-3">Nueva visita vinculada</h4>
@@ -1766,9 +1804,13 @@ function TabVisitas({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyec
           <p className="text-sm">Sin visitas vinculadas</p>
           <p className="text-xs mt-1">Crea una nueva visita con el botón de arriba</p>
         </div>
+      ) : visitasFiltradas.length === 0 ? (
+        <div className="text-center py-10 text-gray-400">
+          <p className="text-sm">Sin visitas con estado <span className="font-medium">{filtroVisita.toLowerCase()}</span></p>
+        </div>
       ) : (
         <div className="space-y-2">
-          {pp.visitas.map(v => (
+          {visitasFiltradas.map(v => (
             <Link key={v.id} href={`/visitas/${v.id}`}
               className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-4 hover:border-teal-200 transition-colors group">
               <div>

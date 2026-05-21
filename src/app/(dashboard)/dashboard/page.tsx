@@ -336,6 +336,7 @@ async function DashboardAdmin() {
   const hace60 = new Date(ahora.getTime() - 60 * 86400000)
   const hace30 = new Date(ahora.getTime() - 30 * 86400000)
   const en7dias = new Date(ahora.getTime() + 7 * 86400000)
+  const en60dias = new Date(ahora.getTime() + 60 * 86400000)
 
   const hConVisitaReciente = await db.visita.findMany({
     where: { fecha: { gte: hace60 } },
@@ -344,7 +345,7 @@ async function DashboardAdmin() {
   })
   const idsConVisita = new Set(hConVisitaReciente.map(v => v.hospitalId))
 
-  const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos, fasesRetrasadasGlobal, hitosRetrasadosGlobal] = await Promise.all([
+  const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos, fasesRetrasadasGlobal, hitosRetrasadosGlobal, hwGarantia] = await Promise.all([
     db.preProyecto.findMany({
       where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
       select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
@@ -377,6 +378,11 @@ async function DashboardAdmin() {
       where: { fecha: { lt: ahora }, completado: false, preProyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
       select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
       orderBy: { fecha: "asc" }, take: 5,
+    }),
+    db.hardwareUnidad.findMany({
+      where: { estado: { notIn: ["BAJA", "RETIRADO"] }, fechaGarantia: { gte: ahora, lte: en60dias } },
+      select: { id: true, numSerie: true, fechaGarantia: true, catalogo: { select: { marca: true, modelo: true } }, preProyecto: { select: { id: true, titulo: true } }, hospital: { select: { nombre: true } } },
+      orderBy: { fechaGarantia: "asc" }, take: 5,
     }),
   ])
 
@@ -437,6 +443,17 @@ async function DashboardAdmin() {
       sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`,
       href: `/pre-proyectos/${h.preProyecto.id}`,
       color: "#f97316", bg: "#fff7ed",
+    })
+  })
+  hwGarantia.forEach(u => {
+    const dias = u.fechaGarantia ? Math.ceil((new Date(u.fechaGarantia).getTime() - ahora.getTime()) / 86400000) : 0
+    const contexto = u.preProyecto ? u.preProyecto.titulo : (u.hospital?.nombre ?? "Sin asignar")
+    alertas.push({
+      key: `hg-${u.id}`,
+      titulo: `${u.catalogo.marca} ${u.catalogo.modelo}${u.numSerie ? ` (S/N ${u.numSerie})` : ""}`,
+      sub: `Garantía vence en ${dias} día${dias !== 1 ? "s" : ""} · ${contexto}`,
+      href: u.preProyecto ? `/pre-proyectos/${u.preProyecto.id}` : "/hardware",
+      color: "#0369a1", bg: "#f0f9ff",
     })
   })
 
