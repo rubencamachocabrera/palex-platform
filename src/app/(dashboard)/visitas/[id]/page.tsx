@@ -12,6 +12,7 @@ import { VoiceNotes } from "@/components/visitas/VoiceNotes"
 import type { AudioNota } from "@/components/visitas/VoiceNotes"
 import { useOfflineSync } from "@/hooks/useOfflineSync"
 import { AnalisisPanel } from "@/components/visitas/AnalisisPanel"
+import { calcularScore } from "@/lib/visita-analysis"
 
 // Dynamic import — PrintView sólo se carga cuando el usuario pulsa "Imprimir"
 const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
@@ -539,9 +540,13 @@ export default function VisitaPage() {
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
   const [showGaleria, setShowGaleria] = useState(false)
 
+  const [sectionToast, setSectionToast] = useState<string | null>(null)
+  const [vistaResumen, setVistaResumen] = useState(false)
+
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevCompletadasRef = useRef(0)
 
   const handleSyncSuccess = useCallback(() => {
     setSavedAt(new Date()); setPendiente(false)
@@ -769,6 +774,21 @@ export default function VisitaPage() {
   const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
   const fotosMap = (datos.fotos as FotosMap) ?? {}
   const totalFotos = Object.values(fotosMap).reduce((acc, arr) => acc + arr.length, 0)
+  const { score, scoreColor, scoreLabel } = visita
+    ? calcularScore(datos)
+    : { score: 0, scoreColor: "#16a34a", scoreLabel: "Bajo" }
+
+  // Toast cuando una sección recién se completa
+  useEffect(() => {
+    if (!visita || completadas <= prevCompletadasRef.current) { prevCompletadasRef.current = completadas; return }
+    prevCompletadasRef.current = completadas
+    const seccion = sections.find(s => calcProgress(s, datos) === 100 && s.id === openSection)
+    if (seccion) {
+      setSectionToast(seccion.title)
+      setTimeout(() => setSectionToast(null), 2200)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completadas])
 
   // ─ Loading ─
   if (loading) return (
@@ -821,7 +841,7 @@ export default function VisitaPage() {
       {/* ═══════════════════════════════════════════════════════════════════════
           Barra sticky de progreso + indicador de guardado (Google Docs style)
       ══════════════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 mb-4">
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-2.5 pb-2 mb-4">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
 
           {/* Botón nav lateral — visible siempre pero más prominente en mobile */}
@@ -852,6 +872,15 @@ export default function VisitaPage() {
             <SaveIndicator saving={saving} pendiente={pendiente} savedAt={savedAt} error={saveError} />
           </div>
 
+          {/* Score de complejidad */}
+          <span
+            className="hidden sm:flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 cursor-default"
+            style={{ color: scoreColor, borderColor: `${scoreColor}55`, backgroundColor: `${scoreColor}12` }}
+            title={`Complejidad de instalación: ${score}/100`}
+          >
+            {score} <span className="font-normal opacity-75">{scoreLabel}</span>
+          </span>
+
           {/* Acciones rápidas */}
           <div className="flex items-center gap-1 shrink-0">
             {!online && (
@@ -879,6 +908,28 @@ export default function VisitaPage() {
               className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
               <IconDownload size={14} />
             </button>
+          </div>
+        </div>
+        {/* Mapa de progreso: 1 segmento por sección */}
+        <div className="max-w-5xl mx-auto mt-1.5 pl-10 lg:pl-8">
+          <div className="flex gap-[3px]">
+            {sections.map((s, i) => {
+              const pct = calcProgress(s, datos)
+              const isAct = openSection === s.id
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  title={`${i + 1}. ${s.title} — ${pct}%`}
+                  onClick={() => goToSection(s.id)}
+                  className="flex-1 rounded-full transition-all hover:opacity-75"
+                  style={{
+                    height: isAct ? 4 : 3,
+                    backgroundColor: pct === 100 ? "#10b981" : isAct ? TEAL : pct > 0 ? `${TEAL}70` : "#e5e7eb",
+                  }}
+                />
+              )
+            })}
           </div>
         </div>
       </div>
@@ -949,21 +1000,56 @@ export default function VisitaPage() {
         {/* ─── Contenido principal ────────────────────────────────────────── */}
         <div className="min-w-0">
 
-          {/* Cabecera de la visita */}
-          <div className="flex items-start gap-2 mb-4">
-            <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
-              <IconArrowLeft size={18} />
+          {/* Context strip */}
+          <div className="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-start gap-3">
+            <button
+              onClick={() => router.back()}
+              className="shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <IconArrowLeft size={16} />
             </button>
+            {/* Avatar hospital */}
+            <div
+              className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white select-none"
+              style={{ backgroundColor: TEAL }}
+            >
+              {visita.hospital.nombre.slice(0, 2).toUpperCase()}
+            </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-800 leading-tight truncate">{visita.hospital.nombre}</h1>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {visita.hospital.ciudad} · {new Date(visita.fecha).toLocaleDateString("es-ES")} · {tipo}
-                {totalFotos > 0 && <span className="ml-2 inline-flex items-center gap-1">· <IconCamera size={11} /> {totalFotos} fotos</span>}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base font-bold text-gray-900 leading-tight truncate">{visita.hospital.nombre}</h1>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ESTADO_COLOR[visita.estado]}`}>
+                  {ESTADO_LABEL[visita.estado]}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {visita.hospital.ciudad}
+                </span>
+                <span className="opacity-40">·</span>
+                <span>{new Date(visita.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                <span className="opacity-40">·</span>
+                <span className="capitalize">{tipo.toLowerCase()}</span>
+                <span className="opacity-40">·</span>
+                <span className="flex items-center gap-1">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  {visita.usuario.nombre}
+                </span>
+                {totalFotos > 0 && (
+                  <><span className="opacity-40">·</span><span className="flex items-center gap-1"><IconCamera size={10} /> {totalFotos} fotos</span></>
+                )}
               </p>
             </div>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${ESTADO_COLOR[visita.estado]}`}>
-              {ESTADO_LABEL[visita.estado]}
-            </span>
+            {/* Score badge */}
+            <div
+              className="hidden sm:flex shrink-0 flex-col items-center justify-center w-12 h-12 rounded-xl border-2 cursor-default"
+              style={{ color: scoreColor, borderColor: `${scoreColor}60`, backgroundColor: `${scoreColor}10` }}
+              title={`Complejidad de instalación: ${score}/100`}
+            >
+              <span className="text-base font-bold leading-none">{score}</span>
+              <span className="text-[9px] font-medium opacity-75 mt-0.5">{scoreLabel}</span>
+            </div>
           </div>
 
           {/* Vincular oportunidad */}
@@ -1339,6 +1425,18 @@ export default function VisitaPage() {
                 {cambiandoEstado ? "Completando..." : "Completar"}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Toast sección completada */}
+      {sectionToast && (
+        <div className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none whitespace-nowrap">
+          <div className="flex items-center gap-2 bg-gray-900/95 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-2xl">
+            <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>«{sectionToast}» completada</span>
           </div>
         </div>
       )}
