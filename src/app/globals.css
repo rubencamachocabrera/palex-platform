@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4 — variante dark basada en clase .dark en <html> */
+@variant dark (&:where(.dark, .dark *));
+
 /* ─── Brand tokens ─────────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
@@ -25,6 +28,102 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ─── Transición suave al cambiar tema ─────────────────────────────────────── */
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition:
+    background-color 250ms ease,
+    border-color     250ms ease,
+    color            200ms ease,
+    box-shadow       250ms ease !important;
+}
+
+/* ─── Dark mode — overrides globales ───────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+}
+.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Fondo de página */
+.dark main { background-color: #0f172a !important; }
+.dark .bg-gray-50 { background-color: #0f172a !important; }
+
+/* Tarjetas / paneles */
+.dark .bg-white  { background-color: #1e293b !important; }
+.dark .bg-gray-100 { background-color: #243147 !important; }
+.dark .bg-gray-200 { background-color: #334155 !important; }
+
+/* Overlay semitransparente */
+.dark .bg-white\/95 { background-color: rgba(30,41,59,0.95) !important; }
+.dark .bg-white\/80 { background-color: rgba(30,41,59,0.80) !important; }
+
+/* Bordes */
+.dark .border-gray-100 { border-color: rgba(255,255,255,0.07) !important; }
+.dark .border-gray-200 { border-color: rgba(255,255,255,0.09) !important; }
+.dark .border-gray-300 { border-color: rgba(255,255,255,0.13) !important; }
+.dark .divide-gray-50  > * + * { border-color: rgba(255,255,255,0.05) !important; }
+.dark .divide-gray-100 > * + * { border-color: rgba(255,255,255,0.07) !important; }
+
+/* Texto */
+.dark .text-gray-900,
+.dark .text-gray-800 { color: #f1f5f9 !important; }
+.dark .text-gray-700,
+.dark .text-gray-600 { color: #cbd5e1 !important; }
+.dark .text-gray-500 { color: #94a3b8 !important; }
+.dark .text-gray-400 { color: #64748b !important; }
+.dark .text-gray-300 { color: #475569 !important; }
+
+/* Inputs / textareas / selects */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: #243147 !important;
+  border-color:     rgba(255,255,255,0.1) !important;
+  color:            #e2e8f0 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #475569 !important; }
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible {
+  border-color: var(--teal) !important;
+  outline-color: rgba(0,169,157,0.4) !important;
+}
+
+/* Colores de estado / tint — versión oscura */
+.dark .bg-teal-50    { background-color: rgba(0,169,157,0.12)  !important; }
+.dark .bg-green-50   { background-color: rgba(16,185,129,0.1)  !important; }
+.dark .bg-amber-50   { background-color: rgba(245,158,11,0.1)  !important; }
+.dark .bg-red-50     { background-color: rgba(239,68,68,0.1)   !important; }
+.dark .bg-blue-50    { background-color: rgba(59,130,246,0.1)  !important; }
+.dark .bg-purple-50  { background-color: rgba(168,85,247,0.1)  !important; }
+.dark .bg-orange-50  { background-color: rgba(249,115,22,0.1)  !important; }
+.dark .bg-indigo-50  { background-color: rgba(99,102,241,0.1)  !important; }
+.dark .bg-violet-50  { background-color: rgba(139,92,246,0.1)  !important; }
+
+/* Hover fondos */
+.dark .hover\:bg-gray-50:hover  { background-color: rgba(255,255,255,0.04) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.07) !important; }
+
+/* Sombras — más sutiles en dark */
+.dark .shadow-sm { box-shadow: 0 1px 3px  rgba(0,0,0,0.5) !important; }
+.dark .shadow    { box-shadow: 0 2px 6px  rgba(0,0,0,0.5) !important; }
+.dark .shadow-md { box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+.dark .shadow-lg { box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important; }
+.dark .shadow-xl { box-shadow: 0 12px 32px rgba(0,0,0,0.65) !important; }
+.dark .shadow-2xl{ box-shadow: 0 16px 48px rgba(0,0,0,0.7) !important; }
+
+/* Scrollbar dark */
+.dark ::-webkit-scrollbar-thumb       { background: #334155; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Selección de texto */
+::selection       { background: rgba(0,169,157,0.25); color: inherit; }
+.dark ::selection { background: rgba(0,169,157,0.35); color: inherit; }
 
 /* ─── Transicion de pagina ─────────────────────────────────────────────────── */
 @keyframes pageIn {
@@ -84,6 +183,10 @@ main > * {
   background-size: 800px 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #243147 50%, #1e293b 75%);
+  background-size: 800px 100%;
+}
 
 /* ─── Focus ring global con teal ──────────────────────────────────────────── */
 input:focus-visible,
@@ -131,18 +234,17 @@ button:not([disabled]):active {
   animation: fadeIn 180ms ease-out both;
 }
 
-/* ─── Login: onda animada (panel izquierdo) ───────────────────────────────── */
+/* ─── Login: onda animada ─────────────────────────────────────────────────── */
 @keyframes waveFlow {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-
 .wave-track {
   animation: waveFlow 10s linear infinite;
   will-change: transform;
 }
 
-/* ─── Login: shake en credenciales incorrectas ────────────────────────────── */
+/* ─── Login: shake ────────────────────────────────────────────────────────── */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   15%       { transform: translateX(-7px); }
@@ -152,36 +254,24 @@ button:not([disabled]):active {
   75%       { transform: translateX(-2px); }
   90%       { transform: translateX(1px); }
 }
-
 .login-shake {
   animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/* ─── Login: overlay de carga tras autenticación correcta ─────────────────── */
-@keyframes overlayIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes logoPulse {
+/* ─── Login: overlay de carga ─────────────────────────────────────────────── */
+@keyframes overlayIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes logoPulse  {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.7; transform: scale(0.97); }
 }
+.login-overlay      { animation: overlayIn 200ms ease-out both; }
+.login-overlay-logo { animation: logoPulse 1.4s ease-in-out infinite; }
 
-.login-overlay {
-  animation: overlayIn 200ms ease-out both;
-}
-
-.login-overlay-logo {
-  animation: logoPulse 1.4s ease-in-out infinite;
-}
-
-/* ─── Stagger grid — children appear in cascade ────────────────────────────── */
+/* ─── Stagger grid ──────────────────────────────────────────────────────────── */
 @keyframes staggerFadeUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .stagger-grid > * {
   animation: staggerFadeUp 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -194,7 +284,6 @@ button:not([disabled]):active {
 .stagger-grid > *:nth-child(7) { animation-delay: 390ms; }
 .stagger-grid > *:nth-child(8) { animation-delay: 455ms; }
 
-/* stagger for nav items within a group */
 .stagger-nav > * {
   animation: staggerFadeUp 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -213,16 +302,22 @@ button:not([disabled]):active {
   transform: translateY(-3px) !important;
   box-shadow: 0 14px 32px -6px rgba(0,0,0,0.10), 0 4px 12px -4px rgba(0,0,0,0.06) !important;
 }
+.dark .card-hover:hover {
+  box-shadow: 0 14px 32px -6px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3) !important;
+}
 
-/* ─── Kanban card — lift without conflicting with dnd translate ─────────────── */
+/* ─── Kanban card ─────────────────────────────────────────────────────────── */
 .kanban-card {
   transition: box-shadow 200ms ease-out, border-color 180ms ease-out !important;
 }
 .kanban-card:hover {
   box-shadow: 0 8px 24px -4px rgba(0,0,0,0.11), 0 2px 8px -2px rgba(0,0,0,0.05) !important;
 }
+.dark .kanban-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3) !important;
+}
 
-/* ─── Primary button press feedback ────────────────────────────────────────── */
+/* ─── Primary button ────────────────────────────────────────────────────────── */
 .btn-primary {
   transition: transform 100ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out !important;
 }
@@ -234,51 +329,41 @@ button:not([disabled]):active {
   box-shadow: none !important;
 }
 
-/* ─── Pop-in for badges / notifications dot ─────────────────────────────────── */
+/* ─── Pop-in badges ─────────────────────────────────────────────────────────── */
 @keyframes popIn {
   0%   { opacity: 0; transform: scale(0.5); }
   70%  { transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
 }
-.pop-in {
-  animation: popIn 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
+.pop-in { animation: popIn 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-/* ─── Slide down for panels / side panels ───────────────────────────────────── */
+/* ─── Slide down ────────────────────────────────────────────────────────────── */
 @keyframes slideDownFade {
   from { opacity: 0; transform: translateY(-8px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.slide-down {
-  animation: slideDownFade 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+.slide-down { animation: slideDownFade 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* ─── Slide up for bottom panels / modals ───────────────────────────────────── */
+/* ─── Slide up ──────────────────────────────────────────────────────────────── */
 @keyframes slideUpFade {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.slide-up {
-  animation: slideUpFade 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+.slide-up { animation: slideUpFade 250ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* ─── Page-level enter (client nav) ─────────────────────────────────────────── */
+/* ─── Page enter ────────────────────────────────────────────────────────────── */
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-enter {
-  animation: pageEnter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+.page-enter { animation: pageEnter 300ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* ─── Pulse glow for notification badges ───────────────────────────────────── */
+/* ─── Pulse glow badges ─────────────────────────────────────────────────────── */
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(247,148,29,0.50); }
   60%       { box-shadow: 0 0 0 5px rgba(247,148,29,0); }
 }
-.badge-pulse {
-  animation: pulseGlow 2.2s ease-in-out infinite;
-}
+.badge-pulse { animation: pulseGlow 2.2s ease-in-out infinite; }
 
 /* ─── KPI number entrance ───────────────────────────────────────────────────── */
 @keyframes numberReveal {
@@ -288,6 +373,70 @@ button:not([disabled]):active {
 .number-reveal {
   animation: numberReveal 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   animation-delay: 200ms;
+}
+
+/* ─── Shine hover (botones / cards especiales) ──────────────────────────────── */
+@keyframes shine {
+  from { left: -75%; }
+  to   { left: 125%; }
+}
+.shine-hover {
+  position: relative;
+  overflow: hidden;
+}
+.shine-hover::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: skewX(-25deg);
+  pointer-events: none;
+}
+.shine-hover:hover::after {
+  animation: shine 700ms ease-out;
+}
+
+/* ─── Glassmorphism panel ───────────────────────────────────────────────────── */
+.glass-panel {
+  background:          rgba(255, 255, 255, 0.80);
+  backdrop-filter:     blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border:              1px solid rgba(255, 255, 255, 0.45);
+}
+.dark .glass-panel {
+  background:   rgba(30, 41, 59, 0.80);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Gradient text teal ────────────────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #00A99D 0%, #00D9CC 60%, #00A99D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Glow teal ─────────────────────────────────────────────────────────────── */
+.glow-teal {
+  box-shadow: 0 0 20px rgba(0,169,157,0.30), 0 0 60px rgba(0,169,157,0.10);
+}
+.glow-teal-sm {
+  box-shadow: 0 0 12px rgba(0,169,157,0.20);
+}
+
+/* ─── Gradient background animado (uso especial) ────────────────────────────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background: linear-gradient(135deg, #00A99D, #007F75, #00D9CC, #00A99D);
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
 }
 
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */

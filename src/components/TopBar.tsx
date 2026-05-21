@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import { useSidebarToggle } from "@/components/Sidebar"
+import { useTheme } from "@/components/ThemeProvider"
 import { TEAL } from "@/lib/brand"
 
 interface Resultado {
@@ -99,6 +100,7 @@ export function TopBar() {
   const [notifs, setNotifs] = useState<Notificacion[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
+  const { theme, toggleTheme } = useTheme()
 
   const buscar = useCallback(async (texto: string) => {
     if (texto.trim().length < 2) { setResultados([]); setAbierto(false); return }
@@ -183,7 +185,7 @@ export function TopBar() {
   }
 
   return (
-    <div className="h-14 bg-white border-b border-gray-100 flex items-center px-4 sm:px-6 gap-3 shrink-0">
+    <div className="h-14 bg-white border-b border-gray-100 flex items-center px-4 sm:px-6 gap-3 shrink-0 dark:bg-[#1e293b] dark:border-[rgba(255,255,255,0.07)]">
 
       {/* Hamburger — solo mobile */}
       <button
@@ -211,9 +213,14 @@ export function TopBar() {
             onChange={e => setQ(e.target.value)}
             onFocus={() => { if (resultados.length > 0) setAbierto(true) }}
             placeholder="Buscar hospitales, visitas..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-colors"
+            className="w-full pl-9 pr-14 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-colors dark:bg-[#243147] dark:border-[rgba(255,255,255,0.1)] dark:text-slate-200 dark:placeholder-slate-500 dark:focus:bg-[#1e293b]"
             style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
           />
+          {!q && !buscando && (
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium text-gray-300 bg-gray-100 dark:bg-[#334155] dark:text-slate-500 px-1.5 py-0.5 rounded pointer-events-none select-none">
+              ⌘K
+            </kbd>
+          )}
           {buscando && (
             <div
               className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 border-2 border-gray-200 rounded-full animate-spin"
@@ -224,7 +231,7 @@ export function TopBar() {
 
         {/* Dropdown resultados */}
         {abierto && resultados.length > 0 && (
-          <div className="slide-down absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50">
+          <div className="slide-down absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-lg overflow-hidden z-50">
             {resultados.map(r => (
               <button
                 key={`${r.tipo}-${r.id}`}
@@ -267,6 +274,37 @@ export function TopBar() {
       {/* Indicador offline */}
       <OfflineIndicator />
 
+      {/* Toggle tema claro / oscuro */}
+      <button
+        onClick={toggleTheme}
+        title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+        className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-[rgba(255,255,255,0.06)] transition-colors shrink-0"
+        aria-label="Cambiar tema"
+      >
+        {/* Sol */}
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          className="absolute inset-0 m-auto transition-all duration-300"
+          style={{ opacity: theme === "dark" ? 1 : 0, transform: theme === "dark" ? "rotate(0deg) scale(1)" : "rotate(90deg) scale(0.5)" }}
+        >
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        {/* Luna */}
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          className="transition-all duration-300"
+          style={{ opacity: theme === "light" ? 1 : 0, transform: theme === "light" ? "rotate(0deg) scale(1)" : "rotate(-90deg) scale(0.5)" }}
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
       {/* Campana de notificaciones */}
       <div ref={notifRef} className="relative">
         <button
@@ -283,7 +321,7 @@ export function TopBar() {
         </button>
 
         {notifOpen && (
-          <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden z-50">
+          <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-xl overflow-hidden z-50">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <p className="text-sm font-bold text-gray-900">Centro de alertas</p>

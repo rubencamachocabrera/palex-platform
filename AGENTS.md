@@ -10,7 +10,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 > Fuente de verdad para cualquier asistente IA (Cowork, Claude Code, etc).
 > Actualizar siempre que cambie el estado del proyecto.
-> Ultima actualizacion: 2026-05-13
+> Ultima actualizacion: 2026-05-22
 
 ---
 
@@ -62,7 +62,7 @@ src/
       hospitales/[id]/page.tsx      -- Detalle + KPIs + contactos + visitas
       visitas/page.tsx              -- Lista visitas, busqueda, ordenacion, quick-create modal
       visitas/calendario/page.tsx   -- Vista calendario mensual, dots por estado
-      visitas/[id]/page.tsx         -- Formulario 13 secciones, fotos, PDF, offline
+      visitas/[id]/page.tsx         -- Formulario 13 secciones, fotos, PDF, offline, context strip, progress map 13 segs, score badge, sectionToast, vista resumen overlay
       ventas/pipeline/page.tsx      -- CRM pipeline KPIs + kanban
       admin/                        -- CRUD usuarios, zonas, hospitales, visitas
       perfil/page.tsx               -- Editar nombre + cambiar contrasena
@@ -81,8 +81,9 @@ src/
       perfil/route.ts
       health/route.ts
   components/
-    Sidebar.tsx                     -- Colapsable 256/64px, nav por rol, useMemo allHrefs
-    TopBar.tsx                      -- Busqueda global via /api/search
+    Sidebar.tsx                     -- Dark sidebar #0f172a, colapsable 256/64px, overflow-hidden fix flash, nav por rol
+    TopBar.tsx                      -- Busqueda global, toggle dark/light (sol/luna), hint ⌘K, dark: variants
+    ThemeProvider.tsx               -- Context dark/light, localStorage palex_theme, clase .dark en <html>, transicion suave
     CommandPalette.tsx              -- Cmd+K, busqueda hospitales+visitas, cache 60s modulo
     KeyboardShortcutsProvider.tsx   -- Monta CommandPalette + useKeyboardShortcuts
     Toast.tsx                       -- Global toast provider
@@ -129,10 +130,19 @@ public/
 ### Auth y navegacion
 - Login split-screen: panel izquierdo teal animado + panel derecho card con shake en error
 - Middleware edge-compatible protegiendo todas las rutas dashboard
-- Sidebar colapsable (256 <-> 64px), persistencia localStorage, mobile hamburger
-- TopBar con busqueda global debounced -> /api/search
+- Sidebar dark pro #0f172a, colapsable 256/64px, nav por rol, overflow-hidden fix flash botones ocultos
+- TopBar: busqueda global debounced, toggle dark/light (sol/luna animado), hint ⌘K en search, dark variants
+- ThemeProvider: dark/light persistido en localStorage (palex_theme), clase .dark en <html>, anti-FOUC script inline, transicion suave 250ms
 - Command Palette (Cmd+K / Ctrl+K): busca hospitales + visitas, atajos teclado G+H/V/P/D
 - Active state preciso en sidebar (sin doble-activo en rutas hijas)
+
+### Dark mode (globals.css)
+- @variant dark — soporte dark: variants Tailwind v4
+- Overrides globales: bg-white/gray, text-gray, border, inputs, tints de estado, sombras, hover
+- Skeleton shimmer adaptado a dark
+- Seleccion de texto en teal
+- Scrollbar dark
+- Nuevas clases: .glass-panel, .text-gradient, .glow-teal, .glow-teal-sm, .shine-hover, .animate-gradient
 
 ### Hospitales
 - Lista con filtro zona, toggle grid/lista, busqueda por nombre
