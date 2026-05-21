@@ -42,6 +42,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('palex_theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}` }} />
       </head>
       <body className="min-h-full flex flex-col">
+        <a href="#main-content" className="skip-link">Saltar al contenido</a>
         <ServiceWorkerRegistrar />
         <ThemeProvider>
           {children}

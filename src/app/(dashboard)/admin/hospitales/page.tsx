@@ -665,6 +665,7 @@ export default function HospitalesAdminPage() {
                       <label className="text-xs font-semibold text-gray-600 block mb-1.5">Núm. de camas</label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         value={form.camas}
                         onChange={e => f("camas", e.target.value)}
                         placeholder="500"
@@ -685,6 +686,7 @@ export default function HospitalesAdminPage() {
                     <input
                       type="number"
                       step="any"
+                      inputMode="decimal"
                       value={form.latitud}
                       onChange={e => f("latitud", e.target.value)}
                       placeholder="40.4168"
@@ -697,6 +699,7 @@ export default function HospitalesAdminPage() {
                     <input
                       type="number"
                       step="any"
+                      inputMode="decimal"
                       value={form.longitud}
                       onChange={e => f("longitud", e.target.value)}
                       placeholder="-3.7038"

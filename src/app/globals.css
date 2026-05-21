@@ -23,10 +23,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  font-size: 16px;
 }
 
 /* ─── Transición suave al cambiar tema ─────────────────────────────────────── */
@@ -188,19 +194,49 @@ main > * {
   background-size: 800px 100%;
 }
 
-/* ─── Focus ring global con teal ──────────────────────────────────────────── */
+/* ─── Focus ring global con teal (WCAG AAA — 3px) ────────────────────────── */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 3px solid var(--teal);
   outline-offset: 1px;
 }
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 3px solid var(--teal);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* ─── Cursor pointer en todos los interactivos ────────────────────────────── */
+button,
+[role="button"],
+label[for],
+summary,
+select {
+  cursor: pointer;
+}
+
+/* ─── Skip-to-content (accesibilidad teclado) ─────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 8px;
+  z-index: 9999;
+  padding: 8px 20px;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 0 0 10px 10px;
+  text-decoration: none;
+  transition: top 150ms ease;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--teal-dark);
+  outline-offset: 2px;
 }
 
 /* ─── Transiciones suaves en interactivos ─────────────────────────────────── */
