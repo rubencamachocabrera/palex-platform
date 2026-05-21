@@ -509,6 +509,228 @@ function SectionNav({ sections, datos, openSection, onSelect, fotosMap }: {
   )
 }
 
+// ─── Vista Resumen ────────────────────────────────────────────────────────────
+function fmtResumenValue(type: string, value: unknown): string {
+  if (value === undefined || value === null || value === "") return ""
+  if (Array.isArray(value)) return value.join(", ")
+  if (type === "rating") return `${value}/5 ★`
+  if (type === "date") {
+    try { return new Date(value as string).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) }
+    catch { return String(value) }
+  }
+  const s = String(value)
+  return s.length > 90 ? s.slice(0, 90) + "…" : s
+}
+
+function VistaResumen({
+  visita, datos, sections, fotosMap, score, scoreColor, scoreLabel,
+  completadas, progreso, onClose, onGoToSection,
+}: {
+  visita: VisitaData
+  datos: Record<string, unknown>
+  sections: FormSection[]
+  fotosMap: FotosMap
+  score: number; scoreColor: string; scoreLabel: string
+  completadas: number; progreso: number
+  onClose: () => void
+  onGoToSection: (id: string) => void
+}) {
+  const totalFotos = Object.values(fotosMap).reduce((a, b) => a + b.length, 0)
+  const todos = (datos.todos as TodoItem[]) ?? []
+  const todosHechos = todos.filter(t => t.done).length
+  const allFotosSample = sections
+    .flatMap(s => (fotosMap[s.id] ?? []).map(f => ({ ...f, seccion: s.title })))
+    .slice(0, 12)
+
+  return (
+    <div className="fixed inset-0 z-50 bg-gray-50 overflow-y-auto">
+      {/* Header sticky */}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors min-h-[36px] px-1"
+          >
+            <IconArrowLeft size={15} /> Volver al formulario
+          </button>
+          <div className="flex-1 h-px bg-gray-100" />
+          <span className="text-sm font-semibold text-gray-800 truncate hidden sm:block">{visita.hospital.nombre}</span>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${ESTADO_COLOR[visita.estado]}`}>
+            {ESTADO_LABEL[visita.estado]}
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-16">
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: "Completado",    value: `${progreso}%`,           color: progreso === 100 ? "#10b981" : TEAL },
+            { label: "Secciones",     value: `${completadas}/${sections.length}`, color: "#374151" },
+            { label: "Fotos",         value: String(totalFotos),        color: "#374151" },
+            { label: scoreLabel + " complejidad", value: String(score), color: scoreColor },
+          ].map(kpi => (
+            <div key={kpi.label} className="bg-white rounded-xl border border-gray-200 px-4 py-3.5 text-center shadow-sm">
+              <div className="text-2xl font-bold tabular-nums leading-none mb-1" style={{ color: kpi.color }}>{kpi.value}</div>
+              <div className="text-xs text-gray-400">{kpi.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Progreso global */}
+        <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-5 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+            <span className="font-medium">Progreso global</span>
+            <span className="tabular-nums">{progreso}%</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
+          </div>
+          <div className="flex gap-1 mt-2.5">
+            {sections.map(s => {
+              const pct = calcProgress(s, datos)
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => { onClose(); setTimeout(() => onGoToSection(s.id), 50) }}
+                  title={`${s.title} — ${pct}%`}
+                  className="flex-1 h-1.5 rounded-full transition-colors hover:opacity-70"
+                  style={{ backgroundColor: pct === 100 ? "#10b981" : pct > 0 ? `${TEAL}80` : "#e5e7eb" }}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Grid de secciones */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+          {sections.map((section, i) => {
+            const pct = calcProgress(section, datos)
+            const nFotos = (fotosMap[section.id] ?? []).length
+            const filledFields = section.fields
+              .filter(f => shouldShowField(f, datos) && fmtResumenValue(f.type, datos[f.id]))
+              .map(f => ({ label: f.label, value: fmtResumenValue(f.type, datos[f.id]) }))
+
+            return (
+              <div key={section.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col">
+                {/* Header tarjeta */}
+                <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-50">
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    pct === 100 ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"
+                  }`}>
+                    {SECTION_ICON[section.icon] ?? <IconClipboard size={14} />}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-800 truncate">
+                      <span className="text-gray-300 mr-1 font-normal">{i + 1}.</span>{section.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {nFotos > 0 && (
+                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                        <IconCamera size={10} />{nFotos}
+                      </span>
+                    )}
+                    <span className={`text-xs font-bold tabular-nums ${pct === 100 ? "text-green-500" : pct > 0 ? "text-amber-500" : "text-gray-300"}`}>
+                      {pct}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Campos rellenos */}
+                <div className="px-3.5 py-3 flex-1 space-y-1.5">
+                  {filledFields.length > 0 ? (
+                    <>
+                      {filledFields.slice(0, 5).map(f => (
+                        <div key={f.label} className="flex gap-2 text-xs leading-tight">
+                          <span className="text-gray-400 shrink-0 truncate" style={{ maxWidth: "45%" }}>{f.label}</span>
+                          <span className="text-gray-700 font-medium flex-1 min-w-0 truncate">{f.value}</span>
+                        </div>
+                      ))}
+                      {filledFields.length > 5 && (
+                        <p className="text-xs text-gray-300 pt-0.5">+{filledFields.length - 5} campos más</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-300 italic">Sin datos aún</p>
+                  )}
+                </div>
+
+                {/* Footer tarjeta */}
+                <button
+                  onClick={() => { onClose(); setTimeout(() => onGoToSection(section.id), 50) }}
+                  className="flex items-center gap-1 px-3.5 py-2 text-xs border-t border-gray-50 text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+                  style={{}}
+                >
+                  <IconArrowRight size={11} /> Ir a esta sección
+                </button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Pendientes */}
+        {todos.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </span>
+              <p className="text-xs font-semibold text-gray-700">Pendientes</p>
+              <span className="ml-auto text-xs text-gray-400">{todosHechos}/{todos.length} hechos</span>
+            </div>
+            <div className="space-y-1.5">
+              {todos.map(t => (
+                <div key={t.id} className="flex items-center gap-2 text-xs">
+                  <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    t.done ? "bg-green-500 border-green-500" : "border-gray-300"
+                  }`}>
+                    {t.done && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </span>
+                  <span className={t.done ? "line-through text-gray-300" : "text-gray-700"}>{t.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Galería */}
+        {totalFotos > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+                <IconCamera size={13} />
+              </span>
+              <p className="text-xs font-semibold text-gray-700">Galería de fotos</p>
+              <span className="ml-auto text-xs text-gray-400">{totalFotos} fotos</span>
+            </div>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              {allFotosSample.map(foto => (
+                <div key={foto.id} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={foto.data} alt={foto.caption || foto.name} className="w-full h-full object-cover" />
+                  {foto.caption && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1">
+                      <p className="text-white text-[9px] leading-tight line-clamp-2">{foto.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {totalFotos > 12 && (
+                <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-400 font-medium">
+                  +{totalFotos - 12}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function VisitaPage() {
   const { id } = useParams<{ id: string }>()
@@ -907,6 +1129,16 @@ export default function VisitaPage() {
             <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar JSON"
               className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
               <IconDownload size={14} />
+            </button>
+            <button
+              onClick={() => setVistaResumen(true)}
+              title="Vista resumen"
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ color: vistaResumen ? TEAL : undefined }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 hover:text-gray-600 transition-colors">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -1427,6 +1659,23 @@ export default function VisitaPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Vista resumen overlay */}
+      {vistaResumen && (
+        <VistaResumen
+          visita={visita}
+          datos={datos}
+          sections={sections}
+          fotosMap={fotosMap}
+          score={score}
+          scoreColor={scoreColor}
+          scoreLabel={scoreLabel}
+          completadas={completadas}
+          progreso={progreso}
+          onClose={() => setVistaResumen(false)}
+          onGoToSection={goToSection}
+        />
       )}
 
       {/* Toast sección completada */}
