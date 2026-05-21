@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
+import { AlertasPanel } from "@/components/AlertasPanel"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -640,46 +641,7 @@ async function DashboardAdmin() {
         </div>
       </div>
 
-      {/* Alertas proactivas */}
-      <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: alertas.length > 0 ? "#fef3c7" : "#f0fdf4" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={alertas.length > 0 ? "#d97706" : "#16a34a"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {alertas.length > 0
-                  ? <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>
-                  : <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>
-                }
-              </svg>
-            </span>
-            <div>
-              <h2 className="text-sm font-bold text-gray-800">Acciones recomendadas</h2>
-              <p className="text-xs text-gray-400">{alertas.length > 0 ? `${alertas.length} situación${alertas.length !== 1 ? "es" : ""} que requieren atención` : "Todo en orden"}</p>
-            </div>
-          </div>
-          {alertas.length > 0 && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{alertas.length}</span>
-          )}
-        </div>
-        {alertas.length === 0 ? (
-          <p className="text-sm text-gray-400 px-5 py-6 text-center">No hay alertas pendientes. ¡Buen trabajo!</p>
-        ) : (
-          <div className="divide-y divide-gray-50">
-            {alertas.map(a => (
-              <Link key={a.key} href={a.href} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-gray-900">{a.titulo}</p>
-                  <p className="text-xs text-gray-400 truncate">{a.sub}</p>
-                </div>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: a.bg, color: a.color }}>
-                  Ver
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      <AlertasPanel alertas={alertas} variant="admin" />
     </div>
   )
 }
@@ -903,28 +865,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
         </div>
       </div>
 
-      {/* Alertas proactivas */}
-      {alertas.length > 0 && (
-        <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-            <p className="text-sm font-semibold text-gray-800">Acciones recomendadas</p>
-            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-500">{alertas.length}</span>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {alertas.map(a => (
-              <Link key={a.key} href={a.href} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
-                <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: a.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{a.titulo}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{a.sub}</p>
-                </div>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-0.5 group-hover:opacity-100" style={{ backgroundColor: a.bg, color: a.color }}>Ver</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      <AlertasPanel alertas={alertas} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mis visitas recientes */}

@@ -394,9 +394,177 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
 
 // ========== TAB TIMELINE ==========
 
+// ========== GANTT ==========
+
+function GanttFases({ pp }: { pp: PreProyecto }) {
+  const now = new Date()
+  const dateCandidates: Date[] = []
+  if (pp.fechaInicio) dateCandidates.push(new Date(pp.fechaInicio))
+  if (pp.fechaFinPlan) dateCandidates.push(new Date(pp.fechaFinPlan))
+  pp.fases.forEach(f => {
+    if (f.fechaPlan) dateCandidates.push(new Date(f.fechaPlan))
+    if (f.fechaReal) dateCandidates.push(new Date(f.fechaReal))
+  })
+  pp.hitos.forEach(h => dateCandidates.push(new Date(h.fecha)))
+
+  if (dateCandidates.length === 0) {
+    return <p className="text-sm text-gray-400 py-10 text-center">Añade fechas a las fases para ver el Gantt</p>
+  }
+
+  const earliest = new Date(Math.min(...dateCandidates.map(d => d.getTime())))
+  const latest = new Date(Math.max(...dateCandidates.map(d => d.getTime())))
+  const rangeStart = new Date(earliest.getTime() - 7 * 86400000)
+  const rangeEnd = new Date(Math.max(latest.getTime(), now.getTime()) + 14 * 86400000)
+  const totalMs = rangeEnd.getTime() - rangeStart.getTime()
+
+  const LABEL_W = 148
+  const ROW_H = 38
+  const BAR_MARGIN = 10
+  const BAR_H = ROW_H - BAR_MARGIN * 2
+  const VB_W = 700
+  const chartW = VB_W - LABEL_W
+
+  const xOf = (d: Date) => LABEL_W + ((d.getTime() - rangeStart.getTime()) / totalMs) * chartW
+  const todayX = xOf(now)
+
+  const faseColor = (estado: string) => {
+    if (estado === "COMPLETADO") return "#16a34a"
+    if (estado === "EN_PROGRESO") return TEAL
+    if (estado === "BLOQUEADO") return "#dc2626"
+    return "#9ca3af"
+  }
+
+  const faseRows = pp.fases.map((f, i) => {
+    const endDate = f.fechaPlan ? new Date(f.fechaPlan) : null
+    const startDate = pp.fases[i - 1]?.fechaPlan
+      ? new Date(pp.fases[i - 1].fechaPlan!)
+      : pp.fechaInicio
+        ? new Date(pp.fechaInicio)
+        : endDate ? new Date(endDate.getTime() - 21 * 86400000) : null
+    return { fase: f, startDate, endDate }
+  })
+
+  const ticks: { xv: number; label: string }[] = []
+  const cur = new Date(rangeStart); cur.setDate(1)
+  while (cur <= rangeEnd) {
+    ticks.push({ xv: xOf(cur), label: cur.toLocaleDateString("es-ES", { month: "short", year: "2-digit" }) })
+    cur.setMonth(cur.getMonth() + 1)
+  }
+
+  const hitoYOffset = pp.fases.length * ROW_H + 28
+  const totalH = hitoYOffset + (pp.hitos.length > 0 ? pp.hitos.length * ROW_H + 4 : 0) + 8
+
+  return (
+    <div className="overflow-x-auto -mx-2 pb-2">
+      <svg viewBox={`0 0 ${VB_W} ${totalH}`} className="w-full" style={{ minWidth: 480, height: totalH }}>
+        <defs>
+          <pattern id="hatch-overdue" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(220,38,38,0.35)" strokeWidth={3}/>
+          </pattern>
+        </defs>
+
+        {/* Grid lines + month labels */}
+        {ticks.map((t, i) => (
+          <g key={i}>
+            <line x1={t.xv} y1={16} x2={t.xv} y2={totalH - 4} stroke="#f3f4f6" strokeWidth={1}/>
+            {t.xv >= LABEL_W && <text x={t.xv + 3} y={14} fontSize={9} fill="#d1d5db" fontWeight="600">{t.label}</text>}
+          </g>
+        ))}
+
+        {/* Fase rows */}
+        {faseRows.map((row, i) => {
+          const y = 20 + i * ROW_H
+          const color = faseColor(row.fase.estado)
+          const x1 = row.startDate ? Math.max(xOf(row.startDate), LABEL_W) : LABEL_W
+          const x2 = row.endDate ? xOf(row.endDate) : Math.min(todayX, VB_W - 4)
+          const bw = Math.max(6, x2 - x1)
+          const overdue = row.endDate && row.fase.estado !== "COMPLETADO" && row.endDate < now
+          return (
+            <g key={row.fase.id}>
+              <text x={LABEL_W - 6} y={y + ROW_H / 2 + 4} textAnchor="end" fontSize={11}
+                fill="#374151" fontWeight={row.fase.estado === "EN_PROGRESO" ? "700" : "400"}>
+                {row.fase.nombre.length > 16 ? row.fase.nombre.slice(0, 16) + "…" : row.fase.nombre}
+              </text>
+              <rect x={LABEL_W} y={y + BAR_MARGIN} width={chartW - 4} height={BAR_H} rx={3} fill="#f9fafb"/>
+              {(row.startDate || row.endDate) && (
+                <rect x={x1} y={y + BAR_MARGIN} width={bw} height={BAR_H} rx={3} fill={color} fillOpacity={0.78}/>
+              )}
+              {overdue && <rect x={x1} y={y + BAR_MARGIN} width={bw} height={BAR_H} rx={3} fill="url(#hatch-overdue)"/>}
+              {row.fase.fechaReal && (
+                <line x1={xOf(new Date(row.fase.fechaReal))} y1={y + BAR_MARGIN - 2}
+                  x2={xOf(new Date(row.fase.fechaReal))} y2={y + ROW_H - BAR_MARGIN + 2}
+                  stroke="#16a34a" strokeWidth={2.5} strokeLinecap="round"/>
+              )}
+              {row.endDate && xOf(row.endDate) < VB_W - 18 && (
+                <text x={Math.min(xOf(row.endDate) + 4, VB_W - 28)} y={y + ROW_H / 2 + 4}
+                  fontSize={9} fill={overdue ? "#dc2626" : "#9ca3af"}>
+                  {row.endDate.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                </text>
+              )}
+            </g>
+          )
+        })}
+
+        {/* Hitos section */}
+        {pp.hitos.length > 0 && (
+          <>
+            <line x1={LABEL_W} y1={hitoYOffset - 6} x2={VB_W - 4} y2={hitoYOffset - 6} stroke="#f3f4f6" strokeWidth={1}/>
+            <text x={LABEL_W - 6} y={hitoYOffset + 10} textAnchor="end" fontSize={9} fill="#9ca3af" fontWeight="700">HITOS</text>
+            {pp.hitos.map((h, i) => {
+              const y = hitoYOffset + 16 + i * ROW_H
+              const hx = xOf(new Date(h.fecha))
+              const lateH = !h.completado && new Date(h.fecha) < now
+              return (
+                <g key={h.id}>
+                  <text x={LABEL_W - 6} y={y + ROW_H / 2 + 4} textAnchor="end" fontSize={11} fill="#374151">
+                    {h.titulo.length > 16 ? h.titulo.slice(0, 16) + "…" : h.titulo}
+                  </text>
+                  <rect x={LABEL_W} y={y + BAR_MARGIN} width={chartW - 4} height={BAR_H} rx={3} fill="#f9fafb"/>
+                  <polygon
+                    points={`${hx},${y + BAR_MARGIN - 2} ${hx + 7},${y + ROW_H / 2} ${hx},${y + ROW_H - BAR_MARGIN + 2} ${hx - 7},${y + ROW_H / 2}`}
+                    fill={h.completado ? "#16a34a" : lateH ? "#dc2626" : "#d97706"} opacity={0.85}/>
+                  <text x={hx + 10} y={y + ROW_H / 2 + 4} fontSize={9} fill={lateH ? "#dc2626" : "#9ca3af"}>
+                    {new Date(h.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                  </text>
+                </g>
+              )
+            })}
+          </>
+        )}
+
+        {/* Today line */}
+        {todayX >= LABEL_W && todayX <= VB_W && (
+          <>
+            <line x1={todayX} y1={16} x2={todayX} y2={totalH - 4} stroke="#f97316" strokeWidth={1.5} strokeDasharray="4,3"/>
+            <text x={todayX} y={13} textAnchor="middle" fontSize={9} fill="#f97316" fontWeight="700">Hoy</text>
+          </>
+        )}
+      </svg>
+
+      <div className="flex flex-wrap gap-3 mt-1 px-2 text-xs text-gray-400">
+        {[{ color: "#9ca3af", label: "Pendiente" }, { color: TEAL, label: "En progreso" }, { color: "#16a34a", label: "Completado" }, { color: "#dc2626", label: "Bloqueado" }].map(item => (
+          <span key={item.label} className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm inline-block shrink-0" style={{ backgroundColor: item.color, opacity: 0.78 }}/>
+            {item.label}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-0.5 h-3 rounded-full bg-orange-400 shrink-0"/>Hoy
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-0.5 h-3 rounded-full bg-green-600 shrink-0"/>Fecha real
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ========== TAB TIMELINE ==========
+
 function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
   const { success, error: toastError } = useToast()
 
+  const [viewMode, setViewMode] = useState<"lista" | "gantt">("lista")
   const [editFaseId, setEditFaseId] = useState<string | null>(null)
   const [fasePatch, setFasePatch] = useState({ estado: "", fechaPlan: "", fechaReal: "", notas: "" })
   const [guardando, setGuardando] = useState(false)
@@ -659,7 +827,7 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
 
   return (
     <div className="space-y-4">
-      {/* Barra de añadir */}
+      {/* Barra de añadir + toggle de vista */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-gray-700 mr-1">Añadir</span>
         {ADD_BTNS.map(({ tipo, label, color }) => (
@@ -694,7 +862,19 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
             {label}
           </button>
         ))}
+        <div className="ml-auto flex gap-1 p-0.5 bg-gray-100 rounded-xl">
+          {(["lista", "gantt"] as const).map(mode => (
+            <button key={mode} onClick={() => setViewMode(mode)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
+              style={viewMode === mode ? { backgroundColor: "white", color: TEAL, boxShadow: "0 1px 4px rgba(0,0,0,.08)" } : { color: "#9ca3af" }}>
+              {mode === "lista" ? "Lista" : "Gantt"}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Gantt view */}
+      {viewMode === "gantt" && <GanttFases pp={pp} />}
 
       {/* Formulario: Evento, Comentario o Cita */}
       {addTipo && addTipo !== "HITO" && (
@@ -809,6 +989,8 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
           </div>
         </div>
       )}
+
+      {viewMode === "lista" && <>
 
       {/* Próximas citas */}
       {citasFuturas.length > 0 && (
@@ -1246,6 +1428,8 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
           })()}
         </div>
       )}
+
+      </>}
     </div>
   )
 }
@@ -1269,6 +1453,35 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
   const [loadingUnidades, setLoadingUnidades] = useState(false)
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set())
   const [asignando, setAsignando] = useState(false)
+  const [modoGestion, setModoGestion] = useState(false)
+  const [selDesasign, setSelDesasign] = useState<Set<string>>(new Set())
+
+  function toggleDesasign(id: string) {
+    setSelDesasign(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  async function desasignarSeleccionados() {
+    if (selDesasign.size === 0) return
+    setAsignando(true)
+    try {
+      await Promise.all(
+        Array.from(selDesasign).map(id =>
+          fetch(`/api/hardware/unidades/${id}`, {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ preProyectoId: null, estado: "DISPONIBLE" }),
+          })
+        )
+      )
+      const ids = selDesasign
+      onUpdate({ ...pp, hardwareUnidades: pp.hardwareUnidades.filter(u => !ids.has(u.id)) })
+      setSelDesasign(new Set()); setModoGestion(false)
+      success(`${ids.size} unidad${ids.size !== 1 ? "es" : ""} desasignada${ids.size !== 1 ? "s" : ""}`)
+    } catch {
+      toastError("Error al desasignar")
+    } finally {
+      setAsignando(false)
+    }
+  }
 
   useEffect(() => {
     fetch("/api/hardware").then(r => r.json()).then(data => {
@@ -1355,15 +1568,26 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-gray-900">Materiales asignados</h3>
-        <button onClick={() => setMostrarPicker(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Añadir del stock
-        </button>
+        <div className="flex items-center gap-2">
+          {pp.hardwareUnidades.length > 0 && (
+            <button onClick={() => { setModoGestion(g => !g); setSelDesasign(new Set()) }}
+              className="px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors"
+              style={modoGestion
+                ? { backgroundColor: "#fef2f2", borderColor: "#fecaca", color: "#dc2626" }
+                : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+              {modoGestion ? "Cancelar" : "Gestionar"}
+            </button>
+          )}
+          <button onClick={() => setMostrarPicker(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Añadir
+          </button>
+        </div>
       </div>
 
       {mostrarPicker && (
@@ -1448,9 +1672,16 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
               <div className="space-y-2">
                 {unidades.map(u => {
                   const hw = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
+                  const seleccionadoDesasign = selDesasign.has(u.id)
                   return (
-                    <div key={u.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3.5">
-                      <div>
+                    <div key={u.id}
+                      className="flex items-center justify-between bg-white rounded-xl border p-3.5 transition-colors"
+                      style={{ borderColor: seleccionadoDesasign ? "#fca5a5" : "#f3f4f6", backgroundColor: seleccionadoDesasign ? "#fff5f5" : "white" }}>
+                      {modoGestion && (
+                        <input type="checkbox" checked={seleccionadoDesasign} onChange={() => toggleDesasign(u.id)}
+                          className="w-4 h-4 rounded mr-3 shrink-0 accent-red-500" />
+                      )}
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: hw.bg, color: hw.color }}>{hw.label}</span>
                           {u.numSerie && <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-0.5 rounded">S/N: {u.numSerie}</span>}
@@ -1458,11 +1689,13 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
                         <p className="text-sm font-medium text-gray-900">{u.catalogo.marca} {u.catalogo.modelo}</p>
                         {u.notas && <p className="text-xs text-gray-400 mt-0.5">{u.notas}</p>}
                       </div>
+                      {!modoGestion && (
                       <button onClick={() => desasignarHW(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors ml-2">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
                       </button>
+                      )}
                     </div>
                   )
                 })}
@@ -1471,6 +1704,80 @@ function TabMateriales({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PrePro
           ))}
         </div>
       )}
+
+      {/* Bulk desasign bar */}
+      {modoGestion && (
+        <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+          <span className="text-sm text-red-600">
+            {selDesasign.size === 0 ? "Selecciona unidades para desasignar" : `${selDesasign.size} unidad${selDesasign.size !== 1 ? "es" : ""} seleccionada${selDesasign.size !== 1 ? "s" : ""}`}
+          </span>
+          <button onClick={desasignarSeleccionados} disabled={asignando || selDesasign.size === 0}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-opacity"
+            style={{ backgroundColor: "#dc2626" }}>
+            {asignando ? "Desasignando…" : "Desasignar"}
+          </button>
+        </div>
+      )}
+
+      {/* Solicitudes de material */}
+      {pp.solicitudes.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <h3 className="font-semibold text-gray-900 mb-3">Solicitudes de material <span className="text-xs font-normal text-gray-400">({pp.solicitudes.length})</span></h3>
+          <div className="space-y-2">
+            {pp.solicitudes.map(sol => (
+              <SolicitudRow key={sol.id} sol={sol} ppId={pp.id} onEstadoChange={(id, estado) =>
+                onUpdate({ ...pp, solicitudes: pp.solicitudes.map(s => s.id === id ? { ...s, estado } : s) })
+              }/>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SolicitudRow({ sol, ppId, onEstadoChange }: {
+  sol: Solicitud; ppId: string; onEstadoChange: (id: string, estado: string) => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [saving, setSaving] = useState(false)
+
+  async function cambiarEstado(nuevoEstado: string) {
+    setSaving(true)
+    try {
+      const r = await fetch(`/api/pre-proyectos/${ppId}/solicitudes/${sol.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      })
+      if (!r.ok) throw new Error()
+      onEstadoChange(sol.id, nuevoEstado)
+      success("Estado actualizado")
+    } catch { toastError("Error al actualizar") }
+    finally { setSaving(false) }
+  }
+
+  const est = SOLICITUD_ESTADO[sol.estado] ?? { label: sol.estado, color: "#6b7280", bg: "#f3f4f6" }
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{sol.titulo}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {new Date(sol.fechaSolicitud).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
+            {sol.lineas.length > 0 && ` · ${sol.lineas.length} línea${sol.lineas.length !== 1 ? "s" : ""}`}
+          </p>
+        </div>
+        <select
+          value={sol.estado}
+          onChange={e => cambiarEstado(e.target.value)}
+          disabled={saving}
+          className="text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-400 shrink-0 border-0"
+          style={{ backgroundColor: est.bg, color: est.color }}>
+          {Object.entries(SOLICITUD_ESTADO).map(([k, v]) => (
+            <option key={k} value={k}>{v.label}</option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }
