@@ -537,6 +537,7 @@ export default function VisitaPage() {
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState("")
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
+  const [showGaleria, setShowGaleria] = useState(false)
 
   const datosRef = useRef<Record<string, unknown>>({})
   const visitaRef = useRef<VisitaData | null>(null)
@@ -1067,6 +1068,50 @@ export default function VisitaPage() {
                     <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>
                   ))}
                 </select>
+              )}
+            </div>
+          )}
+
+          {/* Galería de fotos */}
+          {totalFotos > 0 && (
+            <div className="mb-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setShowGaleria(v => !v)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors min-h-[48px]"
+              >
+                <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 shrink-0">
+                  <IconCamera size={14} className="text-gray-500" />
+                </span>
+                <span className="text-sm font-semibold text-gray-700 flex-1 text-left">Galería de fotos</span>
+                <span className="text-xs text-gray-400 mr-1">{totalFotos}</span>
+                <span className="text-gray-400 shrink-0 transition-transform" style={{ transform: showGaleria ? "rotate(90deg)" : "none", display: "inline-flex" }}>
+                  <IconChevronRight size={14} />
+                </span>
+              </button>
+              {showGaleria && (
+                <div className="border-t border-gray-100 p-4 space-y-4">
+                  {sections.filter(s => (fotosMap[s.id] ?? []).length > 0).map(s => (
+                    <div key={s.id}>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{s.title}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(fotosMap[s.id] ?? []).map(foto => (
+                          <div key={foto.id} className="relative group w-20 h-20 shrink-0">
+                            <img
+                              src={foto.data}
+                              alt={foto.caption || foto.name}
+                              className="w-full h-full object-cover rounded-lg border border-gray-200"
+                            />
+                            {foto.caption && (
+                              <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                                <p className="text-white text-[10px] leading-tight line-clamp-3">{foto.caption}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

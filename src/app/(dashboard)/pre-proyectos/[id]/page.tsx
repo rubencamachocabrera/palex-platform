@@ -66,10 +66,12 @@ interface HardwareUnidad {
 interface Adjunto {
   id: string; nombre: string; tipo: string; tamano: number; creadoPor: string; creadoEn: string
 }
+interface ProyectoRef { id: string; nombre: string }
 interface PreProyecto {
   id: string; titulo: string; descripcion: string | null; estado: string; prioridad: number
   presupuesto: number | null; fechaInicio: string | null; fechaFinPlan: string | null; fechaFinReal: string | null
   notas: string | null; mapaHtml?: string | null; shareToken?: string | null
+  proyectoId?: string | null; proyecto?: ProyectoRef | null
   creadoEn: string; editadoEn: string
   hospital: Hospital; responsable: Responsable | null
   fases: Fase[]; hitos: Hito[]; solicitudes: Solicitud[]
@@ -300,8 +302,16 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
     prioridad: String(pp.prioridad), presupuesto: pp.presupuesto != null ? String(pp.presupuesto) : "",
     fechaInicio: fmtFechaInput(pp.fechaInicio), fechaFinPlan: fmtFechaInput(pp.fechaFinPlan),
     fechaFinReal: fmtFechaInput(pp.fechaFinReal), notas: pp.notas ?? "",
+    proyectoId: pp.proyectoId ?? "",
   })
   const [guardando, setGuardando] = useState(false)
+  const [proyectos, setProyectos] = useState<ProyectoRef[]>([])
+
+  useEffect(() => {
+    fetch("/api/proyectos").then(r => r.ok ? r.json() : []).then(data => {
+      setProyectos(Array.isArray(data) ? data : [])
+    }).catch(() => {})
+  }, [])
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
@@ -314,11 +324,13 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
           ...form,
           prioridad: parseInt(form.prioridad),
           presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null,
+          proyectoId: form.proyectoId || null,
         }),
       })
       if (!r.ok) throw new Error()
+      const proyectoRef = form.proyectoId ? (proyectos.find(p => p.id === form.proyectoId) ?? null) : null
       success("Guardado correctamente")
-      onUpdate({ ...pp, ...form, prioridad: parseInt(form.prioridad), presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null })
+      onUpdate({ ...pp, ...form, prioridad: parseInt(form.prioridad), presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null, proyectoId: form.proyectoId || null, proyecto: proyectoRef })
     } catch {
       toastError("Error al guardar")
     } finally {
@@ -379,6 +391,21 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Notas internas</label>
           <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3}
             className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Proyecto vinculado</label>
+          <select value={form.proyectoId} onChange={e => setForm(p => ({ ...p, proyectoId: e.target.value }))}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
+            <option value="">Sin proyecto vinculado</option>
+            {proyectos.map(p => (
+              <option key={p.id} value={p.id}>{p.nombre}</option>
+            ))}
+          </select>
+          {pp.proyecto && (
+            <p className="text-xs text-teal-600 mt-1">
+              Vinculado a: <span className="font-medium">{pp.proyecto.nombre}</span>
+            </p>
+          )}
         </div>
       </div>
       <div className="flex justify-end">
@@ -600,7 +627,26 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
       })
       if (!r.ok) throw new Error()
       const updated = await r.json()
-      onUpdate({ ...pp, fases: pp.fases.map(f => f.id === faseId ? { ...f, ...updated } : f) })
+      let updatedFases = pp.fases.map(f => f.id === faseId ? { ...f, ...updated } : f)
+      if (fasePatch.estado === "COMPLETADO") {
+        const currentFase = pp.fases.find(f => f.id === faseId)
+        if (currentFase) {
+          const nextFase = pp.fases.find(f => f.orden === currentFase.orden + 1 && f.estado === "BLOQUEADO")
+          if (nextFase) {
+            try {
+              const r2 = await fetch(`/api/pre-proyectos/${pp.id}/fases/${nextFase.id}`, {
+                method: "PATCH", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ estado: "PENDIENTE" }),
+              })
+              if (r2.ok) {
+                const updatedNext = await r2.json()
+                updatedFases = updatedFases.map(f => f.id === nextFase.id ? { ...f, ...updatedNext } : f)
+              }
+            } catch { /* silencioso */ }
+          }
+        }
+      }
+      onUpdate({ ...pp, fases: updatedFases })
       setEditFaseId(null); success("Fase actualizada")
     } catch { toastError("Error al guardar fase") }
     finally { setGuardando(false) }
@@ -1075,6 +1121,17 @@ function TabTimeline({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
                           )}
                         </div>
                         <h4 className="font-semibold text-gray-900 mt-1">{f.nombre}</h4>
+                        {!editing && f.estado === "BLOQUEADO" && (() => {
+                          const prevFase = pp.fases.find(p => p.orden === f.orden - 1)
+                          return prevFase && prevFase.estado !== "COMPLETADO" ? (
+                            <div className="flex items-center gap-1 text-xs text-red-500 mt-1">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                              </svg>
+                              <span>Esperando: {prevFase.nombre}</span>
+                            </div>
+                          ) : null
+                        })()}
                         {!editing && !collapsedItems.has(f.id) && f.fechaReal && (
                           <span className="text-xs text-green-600">Real: {fmtFecha(f.fechaReal)}</span>
                         )}
@@ -1831,6 +1888,24 @@ function TabContactos({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProy
     }
   }
 
+  async function setPrincipal(contactoId: string, isPrincipal: boolean) {
+    try {
+      const r = await fetch(`/api/hospitales/${pp.hospital.id}/contactos/${contactoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ principal: isPrincipal }),
+      })
+      if (!r.ok) throw new Error()
+      onUpdate({
+        ...pp,
+        contactos: pp.contactos.map(({ contacto: c }) => ({
+          contacto: { ...c, principal: c.id === contactoId ? isPrincipal : (isPrincipal ? false : c.principal) },
+        })),
+      })
+      success(isPrincipal ? "Marcado como principal" : "Principal eliminado")
+    } catch { toastError("Error") }
+  }
+
   async function crearYVincular(e: React.FormEvent) {
     e.preventDefault()
     if (!form.nombre.trim()) return
@@ -1957,15 +2032,26 @@ function TabContactos({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProy
                     {c.telefono && <a href={`tel:${c.telefono}`} className="hover:text-teal-600 transition-colors">{c.telefono}</a>}
                   </div>
                 </div>
-                <button
-                  onClick={() => desvincular(c.id)}
-                  title="Desvincular"
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors ml-3 shrink-0"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1 ml-3 shrink-0">
+                  <button
+                    onClick={() => setPrincipal(c.id, !c.principal)}
+                    title={c.principal ? "Quitar principal" : "Marcar como principal"}
+                    className={`p-1.5 rounded-lg transition-colors ${c.principal ? "text-amber-400 hover:text-amber-600" : "text-gray-200 hover:text-amber-400"}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={c.principal ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => desvincular(c.id)}
+                    title="Desvincular"
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
