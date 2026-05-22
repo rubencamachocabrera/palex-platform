@@ -202,7 +202,7 @@ export default function UsuariosPage() {
 
   // Modal editar usuario
   const [editModal, setEditModal] = useState<Usuario | null>(null)
-  const [editForm, setEditForm] = useState({ nombre: "", email: "" })
+  const [editForm, setEditForm] = useState({ nombre: "", email: "", rol: "VENTAS" as Rol })
   const [guardandoEdit, setGuardandoEdit] = useState(false)
   const editNombreRef = useRef<HTMLInputElement>(null)
 
@@ -303,20 +303,9 @@ export default function UsuariosPage() {
     await cargar()
   }
 
-  async function cambiarRol(id: string, rolActual: string, rolNuevo: string) {
-    if (rolNuevo === rolActual) return
-    await fetch(`/api/usuarios/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rol: rolNuevo }),
-    })
-    success("Rol actualizado")
-    await cargar()
-  }
-
   function abrirEdit(u: Usuario) {
     setEditModal(u)
-    setEditForm({ nombre: u.nombre, email: u.email })
+    setEditForm({ nombre: u.nombre, email: u.email, rol: isRol(u.rol) ? u.rol : "VENTAS" })
   }
 
   async function guardarEdit() {
@@ -325,7 +314,7 @@ export default function UsuariosPage() {
     const r = await fetch(`/api/usuarios/${editModal.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: editForm.nombre.trim(), email: editForm.email.trim() }),
+      body: JSON.stringify({ nombre: editForm.nombre.trim(), email: editForm.email.trim(), rol: editForm.rol }),
     })
     setGuardandoEdit(false)
     if (r.ok) {
@@ -578,26 +567,7 @@ export default function UsuariosPage() {
 
                 {/* Col: Rol */}
                 <div className="col-span-2">
-                  {(() => {
-                    const cfg = isRol(u.rol) ? ROL_CONFIG[u.rol] : { bg: "#f3f4f6", text: "#6b7280", dot: "#9ca3af", label: u.rol }
-                    return (
-                      <div className="relative inline-flex items-center">
-                        <span className="pointer-events-none absolute left-2 w-1.5 h-1.5 rounded-full shrink-0 z-10" style={{ backgroundColor: cfg.dot }} />
-                        <select
-                          value={u.rol}
-                          onChange={e => cambiarRol(u.id, u.rol, e.target.value)}
-                          aria-label={`Cambiar rol de ${u.nombre}`}
-                          className="appearance-none text-xs font-semibold pl-5 pr-5 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-2 border-0"
-                          style={{ backgroundColor: cfg.bg, color: cfg.text, "--tw-ring-color": TEAL } as React.CSSProperties}
-                        >
-                          {ROLES.map(r => <option key={r} value={r}>{ROL_CONFIG[r].label}</option>)}
-                        </select>
-                        <svg className="pointer-events-none absolute right-1.5" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: cfg.text, opacity: 0.5 }} aria-hidden="true">
-                          <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                      </div>
-                    )
-                  })()}
+                  <RolPill rol={u.rol} />
                 </div>
 
                 {/* Col: Estado (toggle switch) */}
@@ -851,6 +821,35 @@ export default function UsuariosPage() {
                   className={INPUT}
                   style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
                 />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rol</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {ROLES.map(r => {
+                    const cfg = ROL_CONFIG[r]
+                    const isSelected = editForm.rol === r
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setEditForm(f => ({ ...f, rol: r }))}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all min-h-[44px]"
+                        style={
+                          isSelected
+                            ? { backgroundColor: cfg.bg, borderColor: cfg.dot + "80", color: cfg.text }
+                            : { backgroundColor: "#fff", borderColor: "#e5e7eb", color: "#6b7280" }
+                        }
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: isSelected ? cfg.dot : "#d1d5db" }}
+                        />
+                        <span className="text-sm font-semibold">{cfg.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-1">
