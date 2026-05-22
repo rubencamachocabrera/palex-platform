@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         activo: true,
         creadoEn: true,
       },
-      orderBy: { creadoEn: "desc" },
+      orderBy: [{ creadoEn: "desc" }, { id: "asc" }],
     })
 
     return NextResponse.json(usuarios)

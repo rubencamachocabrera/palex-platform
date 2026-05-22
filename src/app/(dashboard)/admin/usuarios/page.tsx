@@ -294,13 +294,17 @@ export default function UsuariosPage() {
   }
 
   async function toggleActivo(id: string, activo: boolean) {
+    // optimistic: flip in-place so the list never reorders
+    setUsuarios(prev => prev.map(u => u.id === id ? { ...u, activo: !activo } : u))
     const r = await fetch(`/api/usuarios/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: !activo }),
     })
-    if (!r.ok) { toastError("Error al cambiar el estado del usuario"); return }
-    await cargar()
+    if (!r.ok) {
+      setUsuarios(prev => prev.map(u => u.id === id ? { ...u, activo } : u))
+      toastError("Error al cambiar el estado del usuario")
+    }
   }
 
   function abrirEdit(u: Usuario) {
