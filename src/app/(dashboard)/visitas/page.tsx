@@ -195,10 +195,12 @@ export default function MisVisitasPage() {
     h.ciudad.toLowerCase().includes(busqHosp.toLowerCase())
   ).slice(0, 20)
 
-  const btnClass = (active: boolean) =>
-    `text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
-      active ? "text-white shadow-sm" : "text-gray-500 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-    }`
+  const ESTADO_PILL: Record<string, { active: { bg: string; text: string; border: string }; dot: string }> = {
+    TODOS:      { active: { bg: TEAL,      text: "#fff",    border: TEAL      }, dot: "#6b7280" },
+    BORRADOR:   { active: { bg: "#fef3c7", text: "#92400e", border: "#fcd34d" }, dot: "#f59e0b" },
+    COMPLETADA: { active: { bg: "#f0fdf4", text: "#14532d", border: "#86efac" }, dot: "#22c55e" },
+    ARCHIVADA:  { active: { bg: "#f3f4f6", text: "#374151", border: "#d1d5db" }, dot: "#9ca3af" },
+  }
 
   // Stats para el banner
   const hoy = new Date(); hoy.setHours(0,0,0,0)
@@ -298,37 +300,81 @@ export default function MisVisitasPage() {
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap mb-5">
-        {(["TODOS", "BORRADOR", "COMPLETADA", "ARCHIVADA"] as const).map(e => (
-          <button
-            key={e}
-            onClick={() => setFiltro(e)}
-            className={btnClass(filtro === e)}
-            style={filtro === e ? { backgroundColor: TEAL } : {}}
-          >
-            {e === "TODOS" ? "Todas" : ESTADO_LABEL[e]}
-            {!loading && e !== "TODOS" && (
-              <span className="ml-1.5 opacity-60">
-                {visitas.filter(v => v.estado === e).length}
-              </span>
-            )}
-          </button>
-        ))}
+        {(["TODOS", "BORRADOR", "COMPLETADA", "ARCHIVADA"] as const).map(e => {
+          const isActive = filtro === e
+          const pill = ESTADO_PILL[e]
+          const count = e === "TODOS" ? visitas.length : visitas.filter(v => v.estado === e).length
+          return (
+            <button
+              key={e}
+              onClick={() => setFiltro(e)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all min-h-[36px]"
+              style={isActive
+                ? { backgroundColor: pill.active.bg, color: pill.active.text, borderColor: pill.active.border }
+                : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }
+              }
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isActive ? pill.dot : "#d1d5db" }} />
+              {e === "TODOS" ? "Todas" : ESTADO_LABEL[e]}
+              {!loading && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full text-[10px] font-bold w-4 h-4 leading-none"
+                  style={isActive
+                    ? { backgroundColor: "rgba(0,0,0,0.08)", color: isActive ? pill.active.text : "#6b7280" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280" }
+                  }
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Stats banner */}
       {!loading && visitas.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {[
-            { label: "Total visitas",       value: visitas.length,     color: "#111827" },
-            { label: "En borrador",         value: borradores,         color: "#d97706" },
-            { label: "Completadas este mes",value: completadasMes,     color: "#16a34a" },
-            { label: "Última visita",       value: ultimaFecha ? fechaRelativa(ultimaFecha) : "—", color: TEAL, isText: true },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{s.label}</p>
-              <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+          {/* Total */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#f0fdfa" }}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill={TEAL} aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
             </div>
-          ))}
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Total</p>
+              <p className="text-xl font-bold leading-none text-gray-900">{visitas.length}</p>
+            </div>
+          </div>
+          {/* Borrador */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-amber-50">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="#f59e0b" aria-hidden="true"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Borrador</p>
+              <p className="text-xl font-bold text-amber-600 leading-none">{borradores}</p>
+            </div>
+          </div>
+          {/* Completadas mes */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-green-50">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Completadas mes</p>
+              <p className="text-xl font-bold text-green-600 leading-none">{completadasMes}</p>
+            </div>
+          </div>
+          {/* Última visita */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#f0fdfa" }}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill={TEAL} aria-hidden="true"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/></svg>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Última visita</p>
+              <p className="text-base font-bold leading-none" style={{ color: TEAL }}>{ultimaFecha ? fechaRelativa(ultimaFecha) : "—"}</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -409,7 +455,7 @@ export default function MisVisitasPage() {
       {/* Modal quick-create */}
       {mostrarModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}
         >

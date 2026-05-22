@@ -1351,7 +1351,7 @@ export default function VisitaPage() {
 
         {/* ─── Sidebar navegación desktop ─────────────────────────────────── */}
         <aside className="hidden lg:block sticky top-16">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-3 py-2.5 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Secciones</p>
             </div>
@@ -1381,7 +1381,7 @@ export default function VisitaPage() {
             {/* Avatar hospital */}
             <div
               className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white select-none"
-              style={{ backgroundColor: TEAL }}
+              style={{ backgroundColor: (() => { const c=["#0d9488","#0891b2","#7c3aed","#db2777","#ea580c","#65a30d","#2563eb","#9333ea"]; let h=0; for(let i=0;i<visita.hospital.nombre.length;i++) h=(h*31+visita.hospital.nombre.charCodeAt(i))&0xffff; return c[h%c.length] })() }}
             >
               {visita.hospital.nombre.slice(0, 2).toUpperCase()}
             </div>
@@ -1530,7 +1530,7 @@ export default function VisitaPage() {
 
           {/* Galería de fotos */}
           {totalFotos > 0 && (
-            <div className="mb-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
               <button
                 onClick={() => setShowGaleria(v => !v)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors min-h-[48px]"
@@ -1582,7 +1582,7 @@ export default function VisitaPage() {
               const visibleFields = section.fields.filter(f => shouldShowField(f, datos))
 
               return (
-                <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                   <button onClick={() => setOpenSection(isOpen ? "" : section.id)}
                     className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[60px]">
                     {/* Icono de sección con fondo de color según estado */}
@@ -1687,7 +1687,7 @@ export default function VisitaPage() {
           </div>
 
           {/* TO-DO */}
-          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="mt-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-4 py-5">
               <TodoChecklist
                 items={(datos.todos as TodoItem[]) ?? []}
@@ -1698,7 +1698,7 @@ export default function VisitaPage() {
           </div>
 
           {/* Notas libres */}
-          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="mt-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-4 py-5">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
@@ -1719,7 +1719,7 @@ export default function VisitaPage() {
           </div>
 
           {/* Notas de voz */}
-          <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="mt-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-4 py-5">
               <VoiceNotes
                 notas={(datos.audioNotas as AudioNota[]) ?? []}
@@ -1772,7 +1772,7 @@ export default function VisitaPage() {
       {/* Barra flotante desktop */}
       {!readOnly && (
         <div className="hidden lg:block fixed bottom-6 right-6 z-40">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg px-4 py-3 flex items-center gap-3">
+          <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3" style={{ boxShadow: "var(--el-3, 0 10px 24px rgba(0,0,0,.09), 0 4px 8px rgba(0,0,0,.04))" }}>
             {!online && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
