@@ -84,6 +84,42 @@ function BellIcon() {
   )
 }
 
+// ─── Dismissed notifications — localStorage persistence ──────────────────────
+
+const DISMISS_KEY = "palex_notifs_dismissed"
+const DISMISS_TTL = 14 * 24 * 60 * 60 * 1000 // 14 días
+
+function getDismissed(): Set<string> {
+  if (typeof window === "undefined") return new Set()
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY)
+    if (!raw) return new Set()
+    const map: Record<string, number> = JSON.parse(raw)
+    const now = Date.now()
+    const active: Record<string, number> = {}
+    for (const [k, ts] of Object.entries(map)) {
+      if (now - ts < DISMISS_TTL) active[k] = ts
+    }
+    if (Object.keys(active).length !== Object.keys(map).length) {
+      localStorage.setItem(DISMISS_KEY, JSON.stringify(active))
+    }
+    return new Set(Object.keys(active))
+  } catch { return new Set() }
+}
+
+function addDismissed(keys: string[]) {
+  if (typeof window === "undefined") return
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY)
+    const map: Record<string, number> = raw ? JSON.parse(raw) : {}
+    const now = Date.now()
+    for (const k of keys) map[k] = now
+    localStorage.setItem(DISMISS_KEY, JSON.stringify(map))
+  } catch {}
+}
+
+function nKey(n: Notificacion) { return `${n.tipo}:${n.id}` }
+
 // ─── TopBar ────────────────────────────────────────────────────────────────────
 
 export function TopBar() {
@@ -189,13 +225,29 @@ export function TopBar() {
     function fetchNotifs() {
       fetch("/api/notificaciones")
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.items) setNotifs(d.items) })
+        .then(d => {
+          if (d?.items) {
+            const dismissed = getDismissed()
+            setNotifs((d.items as Notificacion[]).filter(n => !dismissed.has(nKey(n))))
+          }
+        })
         .catch(() => {})
     }
     fetchNotifs()
     const interval = setInterval(fetchNotifs, 3 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
+
+  function dismissOne(n: Notificacion) {
+    addDismissed([nKey(n)])
+    setNotifs(prev => prev.filter(x => nKey(x) !== nKey(n)))
+  }
+
+  function dismissAll() {
+    addDismissed(notifs.map(nKey))
+    setNotifs([])
+    setNotifOpen(false)
+  }
 
   function navegar(href: string) {
     setQ("")
@@ -343,22 +395,26 @@ export function TopBar() {
           <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-xl overflow-hidden z-50">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[rgba(255,255,255,0.07)]">
-              <p className="text-sm font-bold text-gray-900 dark:text-slate-200">Centro de alertas</p>
               <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-gray-900 dark:text-slate-200">Notificaciones</p>
                 {notifs.length > 0 && (
-                  <>
-                    <button
-                      onClick={() => setNotifs([])}
-                      className="text-xs text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
-                    >
-                      Marcar todas leídas
-                    </button>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-500">
-                      {notifs.length} {notifs.length === 1 ? "alerta" : "alertas"}
-                    </span>
-                  </>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500">
+                    {notifs.length}
+                  </span>
                 )}
               </div>
+              {notifs.length > 0 && (
+                <button
+                  onClick={dismissAll}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-red-50"
+                  title="Borrar todas las notificaciones"
+                >
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  Borrar todo
+                </button>
+              )}
             </div>
 
             {/* Estado vacío */}
@@ -424,26 +480,42 @@ export function TopBar() {
                   }
                   const s = styles[n.tipo] ?? styles.visita_borrador
                   return (
-                    <Link
-                      key={`${n.tipo}-${n.id}`}
-                      href={n.href}
-                      onClick={() => {
-                        setNotifOpen(false)
-                        setNotifs(prev => prev.filter(x => !(x.tipo === n.tipo && x.id === n.id)))
-                      }}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.04)] transition-colors group"
-                    >
+                    <div key={`${n.tipo}-${n.id}`} className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.04)] transition-colors group border-b border-gray-50 dark:border-[rgba(255,255,255,0.04)] last:border-0">
+                      {/* Icono tipo */}
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${s.bg}`}>
                         {s.icon}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-tight truncate">{n.titulo}</p>
+
+                      {/* Texto — clicar navega y descarta */}
+                      <Link
+                        href={n.href}
+                        onClick={() => { dismissOne(n); setNotifOpen(false) }}
+                        className="flex-1 min-w-0 group/link"
+                      >
+                        <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-tight group-hover/link:text-teal-700 dark:group-hover/link:text-teal-400 transition-colors">
+                          {n.titulo}
+                        </p>
                         <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">{n.mensaje}</p>
-                      </div>
-                      <svg className="shrink-0 mt-2 text-gray-300 group-hover:text-gray-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6"/>
-                      </svg>
-                    </Link>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium mt-1 opacity-0 group-hover/link:opacity-100 transition-opacity" style={{ color: TEAL }}>
+                          Ir al detalle
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </Link>
+
+                      {/* X — descarta sin navegar */}
+                      <button
+                        onClick={() => dismissOne(n)}
+                        className="shrink-0 mt-0.5 w-6 h-6 rounded-md flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors opacity-0 group-hover:opacity-100"
+                        aria-label="Descartar notificación"
+                        title="Descartar"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
                   )
                 })}
               </div>
