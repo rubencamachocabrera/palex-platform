@@ -303,11 +303,12 @@ export default function UsuariosPage() {
     await cargar()
   }
 
-  async function cambiarRol(id: string, rol: string) {
+  async function cambiarRol(id: string, rolActual: string, rolNuevo: string) {
+    if (rolNuevo === rolActual) return
     await fetch(`/api/usuarios/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rol }),
+      body: JSON.stringify({ rol: rolNuevo }),
     })
     success("Rol actualizado")
     await cargar()
@@ -575,19 +576,28 @@ export default function UsuariosPage() {
                   </div>
                 </div>
 
-                {/* Col: Rol (select styled as pill) */}
+                {/* Col: Rol */}
                 <div className="col-span-2">
-                  <div className="relative inline-flex">
-                    <RolPill rol={u.rol} />
-                    <select
-                      value={u.rol}
-                      onChange={e => cambiarRol(u.id, e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                      aria-label={`Cambiar rol de ${u.nombre}`}
-                    >
-                      {ROLES.map(r => <option key={r} value={r}>{ROL_CONFIG[r].label}</option>)}
-                    </select>
-                  </div>
+                  {(() => {
+                    const cfg = isRol(u.rol) ? ROL_CONFIG[u.rol] : { bg: "#f3f4f6", text: "#6b7280", dot: "#9ca3af", label: u.rol }
+                    return (
+                      <div className="relative inline-flex items-center">
+                        <span className="pointer-events-none absolute left-2 w-1.5 h-1.5 rounded-full shrink-0 z-10" style={{ backgroundColor: cfg.dot }} />
+                        <select
+                          value={u.rol}
+                          onChange={e => cambiarRol(u.id, u.rol, e.target.value)}
+                          aria-label={`Cambiar rol de ${u.nombre}`}
+                          className="appearance-none text-xs font-semibold pl-5 pr-5 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-2 border-0"
+                          style={{ backgroundColor: cfg.bg, color: cfg.text, "--tw-ring-color": TEAL } as React.CSSProperties}
+                        >
+                          {ROLES.map(r => <option key={r} value={r}>{ROL_CONFIG[r].label}</option>)}
+                        </select>
+                        <svg className="pointer-events-none absolute right-1.5" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: cfg.text, opacity: 0.5 }} aria-hidden="true">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Col: Estado (toggle switch) */}
