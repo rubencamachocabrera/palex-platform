@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { useToast } from "@/components/Toast"
 import { IconHospital, IconBuilding, IconMicroscope, IconActivity, IconGraduation } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -80,19 +81,42 @@ function scoreStyle(s: number): { bg: string; text: string } {
 type Vista = "lista" | "grid"
 
 export default function HospitalesPage() {
+  const { success, error: toastError } = useToast()
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
   const [busqueda, setBusqueda] = useState("")
   const [filtroZona, setFiltroZona] = useState("TODAS")
   const [vista, setVista] = useState<Vista>("lista")
+  const [esAdmin, setEsAdmin] = useState(false)
+  const [eliminando, setEliminando] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/hospitales")
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(data => { setHospitales(Array.isArray(data) ? data : []); setLoading(false) })
       .catch(e => { console.error("Error cargando hospitales:", e); setFetchError(true); setLoading(false) })
+    fetch("/api/perfil")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.rol === "ADMIN") setEsAdmin(true) })
+      .catch(() => {})
   }, [])
+
+  async function eliminarHospital(e: React.MouseEvent, h: Hospital) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`¿Eliminar "${h.nombre}"? Esta acción no se puede deshacer.`)) return
+    setEliminando(h.id)
+    const r = await fetch(`/api/hospitales/${h.id}`, { method: "DELETE" })
+    setEliminando(null)
+    if (r.ok) {
+      setHospitales(prev => prev.filter(x => x.id !== h.id))
+      success("Hospital eliminado")
+    } else {
+      const d = await r.json() as { error?: string }
+      toastError(d.error ?? "Error al eliminar")
+    }
+  }
 
   const zonas = Array.from(new Set(hospitales.map(h => h.zona.nombre))).sort()
 
@@ -246,36 +270,57 @@ export default function HospitalesPage() {
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="divide-y divide-gray-100">
                   {lista.map(h => (
-                    <Link
-                      key={h.id}
-                      href={`/hospitales/${h.id}`}
-                      className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
-                        {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
-                          {h.camas ? ` · ${h.camas} camas` : ""}
-                        </p>
-                        <p className="text-xs text-gray-300 mt-0.5">{TIPO_LABELS[h.tipo] ?? h.tipo}</p>
-                      </div>
-                      <div className="text-right shrink-0 space-y-0.5">
-                        {h.score !== undefined && (() => {
-                          const ss = scoreStyle(h.score)
-                          return (
-                            <span className="inline-block text-[10px] font-black px-1.5 py-0.5 rounded-full mb-0.5" style={{ backgroundColor: ss.bg, color: ss.text }}>
-                              {h.score}
-                            </span>
-                          )
-                        })()}
-                        <p className="text-xs text-gray-400">{h._count.visitas} visitas</p>
-                        <p className="text-xs text-gray-300">{h._count.contactos} contactos</p>
-                        <span className="text-gray-300 text-sm block">›</span>
-                      </div>
-                    </Link>
+                    <div key={h.id} className="relative group">
+                      <Link
+                        href={`/hospitales/${h.id}`}
+                        className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
+                      >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
+                          {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
+                            {h.camas ? ` · ${h.camas} camas` : ""}
+                          </p>
+                          <p className="text-xs text-gray-300 mt-0.5">{TIPO_LABELS[h.tipo] ?? h.tipo}</p>
+                        </div>
+                        <div className="text-right shrink-0 space-y-0.5">
+                          {h.score !== undefined && (() => {
+                            const ss = scoreStyle(h.score)
+                            return (
+                              <span className="inline-block text-[10px] font-black px-1.5 py-0.5 rounded-full mb-0.5" style={{ backgroundColor: ss.bg, color: ss.text }}>
+                                {h.score}
+                              </span>
+                            )
+                          })()}
+                          <p className="text-xs text-gray-400">{h._count.visitas} visitas</p>
+                          <p className="text-xs text-gray-300">{h._count.contactos} contactos</p>
+                          <span className="text-gray-300 text-sm block">›</span>
+                        </div>
+                      </Link>
+                      {esAdmin && (
+                        <button
+                          onClick={e => eliminarHospital(e, h)}
+                          disabled={eliminando === h.id}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 bg-white"
+                          aria-label={`Eliminar ${h.nombre}`}
+                          title="Eliminar hospital"
+                        >
+                          {eliminando === h.id ? (
+                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -293,41 +338,62 @@ export default function HospitalesPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {lista.map(h => (
-                  <Link
-                    key={h.id}
-                    href={`/hospitales/${h.id}`}
-                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm hover:border-gray-300 transition-all active:bg-gray-50"
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
-                        {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
+                  <div key={h.id} className="relative group">
+                    <Link
+                      href={`/hospitales/${h.id}`}
+                      className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm hover:border-gray-300 transition-all active:bg-gray-50"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
+                          {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">
+                            {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
+                          </p>
+                        </div>
+                        {h.score !== undefined && (() => {
+                          const ss = scoreStyle(h.score)
+                          return (
+                            <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full shrink-0 self-start" style={{ backgroundColor: ss.bg, color: ss.text }}>
+                              {h.score}
+                            </span>
+                          )
+                        })()}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">
-                          {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
-                        </p>
-                      </div>
-                      {h.score !== undefined && (() => {
-                        const ss = scoreStyle(h.score)
-                        return (
-                          <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full shrink-0 self-start" style={{ backgroundColor: ss.bg, color: ss.text }}>
-                            {h.score}
-                          </span>
-                        )
-                      })()}
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
-                        {TIPO_LABELS[h.tipo] ?? h.tipo}
-                      </span>
-                      <div className="text-right">
-                        <span className="text-xs font-semibold" style={{ color: TEAL }}>
-                          {h._count.visitas} visitas
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                          {TIPO_LABELS[h.tipo] ?? h.tipo}
                         </span>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold" style={{ color: TEAL }}>
+                            {h._count.visitas} visitas
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                    {esAdmin && (
+                      <button
+                        onClick={e => eliminarHospital(e, h)}
+                        disabled={eliminando === h.id}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 bg-white"
+                        aria-label={`Eliminar ${h.nombre}`}
+                        title="Eliminar hospital"
+                      >
+                        {eliminando === h.id ? (
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
