@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { exportarCSV } from "@/lib/csv"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { useToast } from "@/components/Toast"
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "H. Público",
@@ -93,6 +94,7 @@ function SkeletonRow() {
 }
 
 export default function HospitalesAdminPage() {
+  const { success, error: toastError } = useToast()
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [zonas, setZonas] = useState<Zona[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,6 +108,7 @@ export default function HospitalesAdminPage() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState("")
   const [fetchError, setFetchError] = useState("")
+  const [eliminando, setEliminando] = useState<string | null>(null)
   const nombreRef = useRef<HTMLInputElement>(null)
 
   const cargar = useCallback(async () => {
@@ -213,6 +216,20 @@ export default function HospitalesAdminPage() {
       if (!r.ok) { const d = await r.json(); setError(d.error ?? "Error al guardar"); return }
       setModalOpen(false); await cargar()
     } finally { setGuardando(false) }
+  }
+
+  async function eliminar(h: Hospital) {
+    if (!confirm(`¿Eliminar "${h.nombre}"? Esta acción no se puede deshacer.`)) return
+    setEliminando(h.id)
+    const r = await fetch(`/api/hospitales/${h.id}`, { method: "DELETE" })
+    setEliminando(null)
+    if (r.ok) {
+      setHospitales(prev => prev.filter(x => x.id !== h.id))
+      success("Hospital eliminado")
+    } else {
+      const d = await r.json() as { error?: string }
+      toastError(d.error ?? "Error al eliminar")
+    }
   }
 
   const f = (k: keyof typeof FORM_EMPTY, v: string | boolean) => setForm(prev => ({ ...prev, [k]: v }))
@@ -522,6 +539,24 @@ export default function HospitalesAdminPage() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                       Editar
+                    </button>
+                    <button
+                      onClick={() => eliminar(h)}
+                      disabled={eliminando === h.id}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      title="Eliminar hospital"
+                      aria-label={`Eliminar ${h.nombre}`}
+                    >
+                      {eliminando === h.id ? (
+                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                      ) : (
+                        <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </div>
