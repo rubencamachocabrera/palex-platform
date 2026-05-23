@@ -19,6 +19,10 @@ export async function GET(
       },
     })
     if (!op) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    const rol = session.user.role
+    if (rol !== "ADMIN" && op.usuarioId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     return NextResponse.json(op)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

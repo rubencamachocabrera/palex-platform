@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import Link from "next/link"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from "@dnd-kit/core"
 import { TEAL } from "@/lib/brand"
 import { IconX, IconCheck, IconPlus, IconSearch, IconTrendingUp } from "@/components/ui/Icons"
@@ -709,13 +708,6 @@ export default function PipelinePage() {
 
           {/* Acciones */}
           <div className="mt-5 space-y-2">
-            <Link
-              href={`/ventas/pipeline/${panelOp.id}`}
-              className="flex items-center justify-center gap-2 w-full text-sm font-medium py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
-            >
-              Ver ficha completa
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </Link>
             {(rol === "VENTAS" || esAdmin) && (
               <div className="flex gap-2">
                 <button

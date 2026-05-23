@@ -46,6 +46,7 @@ const TIPO_COLOR: Record<string, string> = {
   visita: "bg-teal-500", oportunidad: "bg-purple-500", etapa: "bg-amber-400",
   proyecto: "bg-blue-500", preproyecto: "bg-indigo-400",
   fase: "bg-emerald-500", hito: "bg-orange-400", material: "bg-cyan-500",
+  contacto: "bg-gray-400",
 }
 
 const TIMELINE_FILTROS = [

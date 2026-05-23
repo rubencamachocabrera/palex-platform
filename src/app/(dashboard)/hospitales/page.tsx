@@ -304,7 +304,7 @@ export default function HospitalesPage() {
                         <button
                           onClick={e => eliminarHospital(e, h)}
                           disabled={eliminando === h.id}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 bg-white"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-white"
                           aria-label={`Eliminar ${h.nombre}`}
                           title="Eliminar hospital"
                         >
@@ -377,7 +377,7 @@ export default function HospitalesPage() {
                       <button
                         onClick={e => eliminarHospital(e, h)}
                         disabled={eliminando === h.id}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 bg-white"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-white"
                         aria-label={`Eliminar ${h.nombre}`}
                         title="Eliminar hospital"
                       >

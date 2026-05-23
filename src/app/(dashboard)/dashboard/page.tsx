@@ -650,8 +650,11 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const inicioPrevMes = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
+  const inicioDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
+  const finDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1)
+  const en7dias = new Date(ahora.getTime() + 7 * 86400000)
 
-  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw] = await Promise.all([
+  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw, visitasHoy, opsProximas] = await Promise.all([
     db.oportunidad.findMany({ where: { usuarioId: userId }, orderBy: { editadoEn: "desc" }, take: 8, include: { hospital: { select: { nombre: true, ciudad: true } } } }),
     db.visita.findMany({ where: { usuarioId: userId }, take: 5, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -659,6 +662,8 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
     db.visita.findMany({ where: { usuarioId: userId, creadoEn: { gte: inicioSeisM } }, select: { creadoEn: true } }),
     db.oportunidad.groupBy({ by: ["etapa"], where: { usuarioId: userId, etapa: { notIn: ["PERDIDO"] } }, _count: { _all: true } }),
     db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
+    db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
+    db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["GANADO", "PERDIDO"] }, fechaCierre: { gte: ahora, lte: en7dias } }, include: { hospital: { select: { nombre: true } } }, orderBy: { fechaCierre: "asc" }, take: 5 }),
   ])
 
   const opsActivas = misOps.filter(o => o.etapa !== "PERDIDO")
@@ -679,9 +684,52 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
   const hayPrevision = previsionData.some(d => d.v > 0)
 
+  const hayMiDiaVentas = visitasHoy.length > 0 || opsProximas.length > 0
+
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
+      {hayMiDiaVentas && (
+        <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-50">
+            <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+            <span className="text-sm font-bold text-gray-800">Mi día</span>
+            <span className="text-xs text-gray-400">{new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}</span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {visitasHoy.map(v => (
+              <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
+                  <IconClipboard size={13} className="text-teal-600" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{v.hospital.nombre}</p>
+                  <p className="text-xs text-gray-400">Visita de hoy</p>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
+              </Link>
+            ))}
+            {opsProximas.map(o => {
+              const dias = o.fechaCierre ? Math.ceil((new Date(o.fechaCierre).getTime() - ahora.getTime()) / 86400000) : 0
+              return (
+                <Link key={o.id} href="/ventas/pipeline" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: dias <= 2 ? "#fef2f2" : "#fef3c7", color: dias <= 2 ? "#ef4444" : "#f59e0b" }}>
+                    <IconTrendingUp size={13} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{o.titulo}</p>
+                    <p className="text-xs text-gray-400 truncate">{o.hospital.nombre}</p>
+                  </div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: dias <= 2 ? "#fef2f2" : "#fef3c7", color: dias <= 2 ? "#ef4444" : "#f59e0b" }}>
+                    {dias <= 0 ? "Hoy" : `En ${dias}d`}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Pipeline activo" value={fmtEuros(totalPipeline)} sub={`${opsActivas.length} oportunidades`} icon={<IconTrendingUp size={18} />} />
@@ -764,11 +812,14 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
   const en7dias = new Date(ahora.getTime() + 7 * 86400000)
   const en14dias = new Date(ahora.getTime() + 14 * 86400000)
+  const inicioDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
+  const finDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1)
 
   const [
     misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
     proximasVisitas, estadoModulosRaw, totalVisitas,
     misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas, hitosRetrasados,
+    visitasHoy, tareasVencidas,
   ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -807,6 +858,8 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
       orderBy: { fecha: "asc" }, take: 5,
     }),
+    db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
+    db.tarea.findMany({ where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA", "CANCELADA"] }, preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } }, include: { preProyecto: { select: { id: true, titulo: true } } }, orderBy: { fechaVencimiento: "asc" }, take: 5 }),
   ])
 
   const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -832,9 +885,49 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     alertas.push({ key: `hr-${h.id}`, titulo: h.preProyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${h.preProyecto.id}`, color: "#f97316", bg: "#fff7ed" })
   })
 
+  const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0
+
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
+      {hayMiDia && (
+        <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-50">
+            <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+            <span className="text-sm font-bold text-gray-800">Mi día</span>
+            <span className="text-xs text-gray-400">{new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}</span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {visitasHoy.map(v => (
+              <Link key={v.id} href={`/visitas/${v.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
+                  <IconClipboard size={13} className="text-teal-600" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{v.hospital.nombre}</p>
+                  <p className="text-xs text-gray-400">Visita de hoy</p>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
+              </Link>
+            ))}
+            {tareasVencidas.map(t => (
+              <Link key={t.id} href={`/pre-proyectos/${t.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{t.titulo}</p>
+                  <p className="text-xs text-gray-400 truncate">{t.preProyecto.titulo} · Tarea vencida</p>
+                </div>
+                <span className="text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full shrink-0">Vencida</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />

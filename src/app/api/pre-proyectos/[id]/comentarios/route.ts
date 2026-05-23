@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { checkRateLimit } from "@/lib/rate-limit"
-import { randomUUID } from "crypto"
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req, "share_create", { limit: 10, windowMs: 3600000 })
-  if (rl) return rl
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -16,15 +12,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
-    const token = randomUUID()
-    await db.preProyecto.update({ where: { id }, data: { shareToken: token } })
-    return NextResponse.json({ token })
+    const comentarios = await db.comentario.findMany({ where: { preProyectoId: id }, orderBy: { creadoEn: "asc" } })
+    return NextResponse.json(comentarios)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -34,8 +29,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
-    await db.preProyecto.update({ where: { id }, data: { shareToken: null } })
-    return NextResponse.json({ ok: true })
+    const { contenido } = await req.json()
+    if (!contenido?.trim()) return NextResponse.json({ error: "Contenido requerido" }, { status: 400 })
+    const usuario = await db.usuario.findUnique({ where: { id: session.user.id }, select: { nombre: true } })
+    const comentario = await db.comentario.create({
+      data: { preProyectoId: id, autorId: session.user.id, autorNombre: usuario?.nombre ?? "Usuario", contenido: contenido.trim() },
+    })
+    return NextResponse.json(comentario, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

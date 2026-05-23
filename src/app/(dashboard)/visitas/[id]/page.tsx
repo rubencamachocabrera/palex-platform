@@ -27,6 +27,7 @@ const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
   ssr: false,
 })
 
+import { ComentariosPanel } from "@/components/ComentariosPanel"
 import { TEAL, TEAL_DARK } from "@/lib/brand"
 import {
   IconHospital, IconUsers, IconCalendar, IconAlertTriangle, IconMonitor,
@@ -895,6 +896,7 @@ export default function VisitaPage() {
   const [contactos, setContactos] = useState<ContactoItem[]>([])
   const [vinculandoContacto, setVinculandoContacto] = useState(false)
   const [userRol, setUserRol] = useState("")
+  const [userId, setUserId] = useState("")
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState("")
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
@@ -947,7 +949,7 @@ export default function VisitaPage() {
             .catch(() => {})
           fetch("/api/perfil")
             .then(r => r.ok ? r.json() : null)
-            .then(d => { if (d?.rol) setUserRol(d.rol) })
+            .then(d => { if (d?.rol) setUserRol(d.rol); if (d?.id) setUserId(d.id) })
             .catch(() => {})
         }
         setLoading(false)
@@ -1733,6 +1735,17 @@ export default function VisitaPage() {
           <div className="mt-4">
             <AnalisisPanel datos={datos} />
           </div>
+
+          {/* Comentarios del equipo */}
+          {visita && userId && (
+            <div className="mt-4">
+              <ComentariosPanel
+                endpoint={`/api/visitas/${visita.id}/comentarios`}
+                usuarioId={userId}
+                esAdmin={userRol === "ADMIN"}
+              />
+            </div>
+          )}
 
           {readOnly && (
             <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 text-center">

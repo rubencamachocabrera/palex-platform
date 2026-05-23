@@ -256,6 +256,7 @@ model Visita {
   oportunidad        Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
   preProyecto        PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
   contactoPrincipal  Contacto?    @relation("VisitaContactoPrincipal", fields: [contactoPrincipalId], references: [id], onDelete: SetNull)
+  comentarios        Comentario[]
 
   @@map("visitas")
 }
@@ -360,6 +361,7 @@ model PreProyecto {
   entradas         EntradaTimeline[]
   tareas           Tarea[]
   adjuntos         Adjunto[]
+  comentarios      Comentario[]
 
   @@map("pre_proyectos")
 }
@@ -547,6 +549,24 @@ model Adjunto {
 }
 
 // --- PLANTILLAS DE VISITA --------------------------------------------
+
+// --- COMENTARIOS ----------------------------------------------------------
+
+model Comentario {
+  id            String   @id @default(cuid())
+  visitaId      String?
+  preProyectoId String?
+  autorId       String
+  autorNombre   String
+  contenido     String   @db.Text
+  creadoEn      DateTime @default(now())
+  editadoEn     DateTime @updatedAt
+
+  visita      Visita?      @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+  preProyecto PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+
+  @@map("comentarios")
+}
 
 model PlantillaVisita {
   id          String   @id @default(cuid())

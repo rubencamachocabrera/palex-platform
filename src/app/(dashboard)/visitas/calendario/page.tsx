@@ -172,7 +172,7 @@ export default function CalendarioPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Calendario de visitas</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {visitas.length > 0 ? visitas.length + " visitas en total" : "Cargando visitas..."}
+            {cargando ? "Cargando…" : visitas.length > 0 ? visitas.length + " visitas este mes" : "Sin visitas este mes"}
           </p>
         </div>
         <div className="flex items-center gap-2">

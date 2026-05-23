@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { ComentariosPanel } from "@/components/ComentariosPanel"
 import QRCode from "qrcode"
 
 // ---- tipos ----
@@ -148,7 +149,7 @@ function relativo(s: string) {
 
 // ---- tabs ----
 
-const TABS = ["Info", "Tareas", "Timeline", "Materiales", "Contactos", "Visitas", "Adjuntos", "Resumen"] as const
+const TABS = ["Info", "Tareas", "Timeline", "Materiales", "Contactos", "Visitas", "Adjuntos", "Comentarios", "Resumen"] as const
 type Tab = typeof TABS[number]
 
 // ========== COMPONENTE PRINCIPAL ==========
@@ -287,8 +288,9 @@ export default function PreProyectoDetalle() {
       {tab === "Materiales" && <TabMateriales pp={pp} onUpdate={setPp} />}
       {tab === "Contactos"  && <TabContactos pp={pp} onUpdate={setPp} />}
       {tab === "Visitas"    && <TabVisitas pp={pp} onUpdate={setPp} />}
-      {tab === "Adjuntos"   && <TabAdjuntos pp={pp} onUpdate={setPp} />}
-      {tab === "Resumen"    && <TabResumen pp={pp} onUpdate={setPp} />}
+      {tab === "Adjuntos"      && <TabAdjuntos pp={pp} onUpdate={setPp} />}
+      {tab === "Comentarios"   && <TabComentarios pp={pp} />}
+      {tab === "Resumen"       && <TabResumen pp={pp} onUpdate={setPp} />}
     </div>
   )
 }
@@ -2383,6 +2385,29 @@ const TIPO_H_LABEL: Record<string, string> = {
   HOSPITAL_PUBLICO: "Hospital Público", HOSPITAL_PRIVADO: "Hospital Privado",
   CLINICA_PRIVADA: "Clínica Privada", LABORATORIO: "Laboratorio",
   CENTRO_SALUD: "Centro de Salud", UNIVERSIDAD: "Universidad", OTRO: "Otro",
+}
+
+function TabComentarios({ pp }: { pp: PreProyecto }) {
+  const [userInfo, setUserInfo] = useState<{ id: string; rol: string } | null>(null)
+
+  useEffect(() => {
+    fetch("/api/perfil")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.id) setUserInfo({ id: d.id, rol: d.rol }) })
+      .catch(() => {})
+  }, [])
+
+  if (!userInfo) return <div className="py-10 text-center text-sm text-gray-400">Cargando…</div>
+
+  return (
+    <div className="max-w-2xl">
+      <ComentariosPanel
+        endpoint={`/api/pre-proyectos/${pp.id}/comentarios`}
+        usuarioId={userInfo.id}
+        esAdmin={userInfo.rol === "ADMIN"}
+      />
+    </div>
+  )
 }
 
 function TabResumen({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto) => void }) {
