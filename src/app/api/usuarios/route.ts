@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 // POST /api/usuarios — crea un nuevo usuario
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "usuarios", { limit: 20, windowMs: 60000 })
+    const rl = checkRateLimit(req, "usuarios_create", { limit: 5, windowMs: 3600000 })
     if (rl) return rl
 
     const session = await auth()

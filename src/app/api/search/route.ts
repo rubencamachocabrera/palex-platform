@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
+    let q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
+    if (q.length > 100) q = q.slice(0, 100)
     const rol = session.user.role
     const userId = session.user.id
 

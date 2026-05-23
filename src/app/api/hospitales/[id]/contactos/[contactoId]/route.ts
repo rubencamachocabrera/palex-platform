@@ -13,6 +13,9 @@ export async function PATCH(
     const { id: hospitalId, contactoId } = await params
     const body = await req.json()
 
+    const existe = await db.contacto.findFirst({ where: { id: contactoId, hospitalId }, select: { id: true } })
+    if (!existe) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+
     if (body.principal === true) {
       await db.contacto.updateMany({
         where: { hospitalId, principal: true },

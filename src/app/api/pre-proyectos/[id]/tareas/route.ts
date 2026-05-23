@@ -7,6 +7,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     const tareas = await db.tarea.findMany({
       where: { preProyectoId: id },
       orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
@@ -22,6 +27,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     const body = await req.json()
     if (!body.titulo?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 })
     const tarea = await db.tarea.create({

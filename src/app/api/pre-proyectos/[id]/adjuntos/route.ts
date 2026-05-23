@@ -10,6 +10,11 @@ export async function GET(
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     const adjuntos = await db.adjunto.findMany({
       where: { preProyectoId: id },
       select: { id: true, nombre: true, tipo: true, tamano: true, creadoPor: true, creadoEn: true },
@@ -29,6 +34,11 @@ export async function POST(
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     const fd = await req.formData()
     const file = fd.get("file") as File | null
     if (!file) return NextResponse.json({ error: "No se recibió archivo" }, { status: 400 })

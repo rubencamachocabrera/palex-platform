@@ -8,8 +8,16 @@ export async function PATCH(
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const { entradaId } = await params
+  const { id, entradaId } = await params
   try {
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
+    const entrada = await db.entradaTimeline.findFirst({ where: { id: entradaId, preProyectoId: id }, select: { id: true } })
+    if (!entrada) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+
     const body = await req.json()
     const data: Record<string, unknown> = {}
     if ("titulo" in body) data.titulo = body.titulo
@@ -33,9 +41,15 @@ export async function DELETE(
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const { entradaId } = await params
+  const { id, entradaId } = await params
   try {
-    await db.entradaTimeline.delete({ where: { id: entradaId } })
+    const pp = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session?.user?.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
+    const result = await db.entradaTimeline.deleteMany({ where: { id: entradaId, preProyectoId: id } })
+    if (result.count === 0) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
