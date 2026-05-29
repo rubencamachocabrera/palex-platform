@@ -84,17 +84,6 @@ enum EstadoFase {
   BLOQUEADO
 }
 
-enum TipoHardware {
-  BC_ROBOT
-  ZEBRA_MC
-  ZEBRA_PRINTER
-  LECTOR_BARRAS
-  SERVIDOR
-  SWITCH_RED
-  TABLET
-  OTRO
-}
-
 enum EstadoHardware {
   DISPONIBLE
   ASIGNADO
@@ -480,17 +469,33 @@ model LineaMaterial {
 
 // --- HARDWARE --------------------------------------------------------
 
+model HardwareTipo {
+  id       String   @id @default(cuid())
+  nombre   String   @unique
+  color    String   @default("#6b7280")
+  orden    Int      @default(0)
+  activo   Boolean  @default(true)
+  creadoEn DateTime @default(now())
+
+  catalogos HardwareCatalogo[]
+
+  @@map("hardware_tipos")
+}
+
 model HardwareCatalogo {
-  id          String       @id @default(cuid())
-  tipo        TipoHardware
-  marca       String
-  modelo      String
-  descripcion String?
-  precio      Float?
-  fichaUrl    String?
-  activo      Boolean      @default(true)
-  creadoEn    DateTime     @default(now())
-  editadoEn   DateTime     @updatedAt
+  id              String        @id @default(cuid())
+  tipoId          String?       @map("tipo_id")
+  tipo            HardwareTipo? @relation(fields: [tipoId], references: [id])
+  marca           String
+  modelo          String
+  referenciaPalex String?
+  proveedor       String?
+  descripcion     String?
+  precio          Float?
+  fichaUrl        String?
+  activo          Boolean       @default(true)
+  creadoEn        DateTime      @default(now())
+  editadoEn       DateTime      @updatedAt
 
   unidades HardwareUnidad[]
 
