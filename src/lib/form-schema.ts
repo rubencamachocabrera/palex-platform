@@ -155,7 +155,7 @@ export const FORM_SCHEMA: FormSection[] = [
         label: 'Tipo de sistema a implantar',
         type: 'radio',
         req: true,
-        opts: ['Solo temperatura', 'Solo ubicación (RFID / BT)', 'Temperatura y ubicación'],
+        opts: ['Solo temperatura (RFID)', 'Solo ubicación (BT)', 'Temperatura y ubicación'],
         hint: 'Determina qué hardware se necesita: sensor BT, reader RFID o ambos'
       },
       {

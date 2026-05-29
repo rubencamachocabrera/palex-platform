@@ -8,11 +8,19 @@ import { useToast } from "@/components/Toast"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+interface HardwareTipo {
+  id: string; nombre: string; color: string
+}
 interface HardwareCatalogo {
-  id: string; tipo: string; marca: string; modelo: string
+  id: string
+  tipoId: string | null
+  tipo: HardwareTipo | null
+  marca: string; modelo: string
+  referenciaPalex: string | null
+  proveedor: string | null
   descripcion: string | null; precio: number | null; fichaUrl: string | null
   activo: boolean
-  _stock?: { total: number; disponibles: number; asignados: number }
+  _stock?: { total: number; disponibles: number; asignados: number; mantenimiento: number }
 }
 interface HardwareUnidad {
   id: string; numSerie: string | null; estado: string; notas: string | null
@@ -25,17 +33,8 @@ interface HardwareUnidad {
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const HW_TIPOS = [
-  { value: "BC_ROBOT",      label: "BC Robo" },
-  { value: "ZEBRA_MC",      label: "Zebra MC" },
-  { value: "ZEBRA_PRINTER", label: "Zebra Printer" },
-  { value: "LECTOR_BARRAS", label: "Lector Barras" },
-  { value: "SERVIDOR",      label: "Servidor" },
-  { value: "SWITCH_RED",    label: "Switch Red" },
-  { value: "TABLET",        label: "Tablet" },
-  { value: "OTRO",          label: "Otro" },
-]
-const HW_TIPO_LABEL: Record<string, string> = Object.fromEntries(HW_TIPOS.map(t => [t.value, t.label]))
+// tipos se carga dinámicamente desde /api/hardware/tipos
+function tipoLabel(c: HardwareCatalogo): string { return c.tipo?.nombre ?? "Sin tipo" }
 
 const HW_ESTADO: Record<string, { label: string; color: string; bg: string }> = {
   DISPONIBLE:       { label: "Disponible",    color: "#16a34a", bg: "#f0fdf4" },
@@ -366,7 +365,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
           <div className="grid grid-cols-2 gap-2.5">
             {catalogo.slice(0, 6).map(c => (
               <div key={c.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50 hover:border-teal-200 transition-colors">
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{HW_TIPO_LABEL[c.tipo] ?? c.tipo}</span>
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{tipoLabel(c)}</span>
                 <p className="text-sm font-semibold text-gray-800 mt-0.5 truncate">{c.marca} {c.modelo}</p>
                 <div className="flex items-center gap-2 mt-1.5 text-xs">
                   <span className="text-green-700 font-medium">{c._stock?.disponibles ?? 0} disp.</span>
@@ -443,7 +442,7 @@ function EditUnidadModal({ unidad, onClose, onSaved }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-sm font-bold text-gray-900">Editar unidad</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{unidad.catalogo.marca} {unidad.catalogo.modelo} · {HW_TIPO_LABEL[unidad.catalogo.tipo]}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{unidad.catalogo.marca} {unidad.catalogo.modelo} · {tipoLabel(unidad.catalogo)}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -509,11 +508,12 @@ function EditUnidadModal({ unidad, onClose, onSaved }: {
 type SortCol = "tipo" | "modelo" | "estado" | "hospital" | "antiguedad" | "garantia" | null
 type SortDir = "asc" | "desc"
 
-function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
+function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin, tipos }: {
   unidades: HardwareUnidad[]
   onUpdated: (u: HardwareUnidad) => void
   onDeleted: (id: string) => void
   esAdmin: boolean
+  tipos: HardwareTipo[]
 }) {
   const { success, error: toastError } = useToast()
   const [q, setQ] = useState("")
@@ -541,7 +541,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
   const filtered = unidades.filter(u => {
     const matchQ = !q || [u.numSerie, u.catalogo.marca, u.catalogo.modelo, u.notas, u.hospital?.nombre, u.preProyecto?.titulo]
       .some(s => s?.toLowerCase().includes(q.toLowerCase()))
-    const matchTipo    = !filtroTipo    || u.catalogo.tipo === filtroTipo
+    const matchTipo    = !filtroTipo    || u.catalogo.tipoId === filtroTipo
     const matchEstado  = !filtroEstado  || u.estado === filtroEstado
     const matchHosp    = !filtroHospital || u.hospital?.id === filtroHospital
     return matchQ && matchTipo && matchEstado && matchHosp
@@ -550,7 +550,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
   const sorted = [...filtered].sort((a, b) => {
     if (!sortCol) return 0
     let va = "", vb = ""
-    if (sortCol === "tipo")      { va = a.catalogo.tipo;            vb = b.catalogo.tipo }
+    if (sortCol === "tipo")      { va = tipoLabel(a.catalogo);      vb = tipoLabel(b.catalogo) }
     if (sortCol === "modelo")    { va = `${a.catalogo.marca} ${a.catalogo.modelo}`; vb = `${b.catalogo.marca} ${b.catalogo.modelo}` }
     if (sortCol === "estado")    { va = a.estado;                   vb = b.estado }
     if (sortCol === "hospital")  { va = a.hospital?.nombre ?? "";   vb = b.hospital?.nombre ?? "" }
@@ -585,7 +585,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
 
   function exportar() {
     exportarCSV(sorted.map(u => ({
-      Tipo: HW_TIPO_LABEL[u.catalogo.tipo] ?? u.catalogo.tipo,
+      Tipo: tipoLabel(u.catalogo),
       Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
       "Nº Serie": u.numSerie ?? "",
       Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
@@ -625,7 +625,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
         <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
           <option value="">Todos los tipos</option>
-          {HW_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
         </select>
         <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
@@ -654,7 +654,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
       {hayFiltros && (
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-xs text-gray-400">Filtros:</span>
-          {filtroTipo && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{HW_TIPO_LABEL[filtroTipo]}</span>}
+          {filtroTipo && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{filtroTipo}</span>}
           {filtroEstado && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{HW_ESTADO[filtroEstado]?.label}</span>}
           {filtroHospital && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{hospitalesUnicos.find(h => h.id === filtroHospital)?.nombre}</span>}
           {q && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">"{q}"</span>}
@@ -687,7 +687,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
               <div key={u.id} className="kanban-card bg-white rounded-2xl border border-gray-100 p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{HW_TIPO_LABEL[u.catalogo.tipo]}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{tipoLabel(u.catalogo)}</span>
                     <p className="text-sm font-bold text-gray-900 mt-0.5">{u.catalogo.marca} {u.catalogo.modelo}</p>
                     {u.numSerie && <code className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mt-1 inline-block">{u.numSerie}</code>}
                   </div>
@@ -737,7 +737,7 @@ function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin }: {
                   return (
                     <tr key={u.id} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
                       <td className="px-4 py-3.5">
-                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">{HW_TIPO_LABEL[u.catalogo.tipo] ?? u.catalogo.tipo}</span>
+                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">{tipoLabel(u.catalogo)}</span>
                       </td>
                       <td className="px-4 py-3.5">
                         <p className="font-medium text-gray-900">{u.catalogo.marca} {u.catalogo.modelo}</p>
@@ -812,9 +812,10 @@ const SALUD_META: Record<SaludParque, { label: string; color: string; bg: string
   critico: { label: "Crítico", color: "#dc2626", bg: "#fef2f2", dot: "#dc2626" },
 }
 
-function InstalacionesTab({ unidades, onUpdated }: {
+function InstalacionesTab({ unidades, onUpdated, tipos }: {
   unidades: HardwareUnidad[]
   onUpdated: (u: HardwareUnidad) => void
+  tipos: HardwareTipo[]
 }) {
   const [q, setQ] = useState("")
   const [filtroSalud, setFiltroSalud] = useState<"" | SaludParque>("")
@@ -842,14 +843,14 @@ function InstalacionesTab({ unidades, onUpdated }: {
     .filter(h => {
       const matchQ = !q || h.hospital.nombre.toLowerCase().includes(q.toLowerCase()) || h.hospital.ciudad.toLowerCase().includes(q.toLowerCase())
       const matchSalud = !filtroSalud || h.s === filtroSalud
-      const matchTipo = !filtroTipo || h.uds.some(u => u.catalogo.tipo === filtroTipo)
+      const matchTipo = !filtroTipo || h.uds.some(u => u.catalogo.tipoId === filtroTipo)
       return matchQ && matchSalud && matchTipo
     })
     .sort((a, b) => b.uds.length - a.uds.length)
 
   function exportarHospital(hospital: { nombre: string }, uds: HardwareUnidad[]) {
     exportarCSV(uds.map(u => ({
-      Tipo: HW_TIPO_LABEL[u.catalogo.tipo] ?? u.catalogo.tipo,
+      Tipo: tipoLabel(u.catalogo),
       Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
       "Nº Serie": u.numSerie ?? "",
       Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
@@ -899,7 +900,7 @@ function InstalacionesTab({ unidades, onUpdated }: {
         <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
           <option value="">Todos los tipos</option>
-          {HW_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
         </select>
       </div>
 
@@ -980,7 +981,7 @@ function InstalacionesTab({ unidades, onUpdated }: {
                             return (
                               <tr key={u.id} className="border-b border-gray-100 last:border-0">
                                 <td className="py-2 pr-3">
-                                  <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{HW_TIPO_LABEL[u.catalogo.tipo]}</span>
+                                  <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tipoLabel(u.catalogo)}</span>
                                 </td>
                                 <td className="py-2 pr-3 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
                                 <td className="py-2 pr-3">
@@ -1014,7 +1015,7 @@ function InstalacionesTab({ unidades, onUpdated }: {
           <div className="space-y-1.5">
             {enProyecto.map(u => (
               <div key={u.id} className="flex items-center gap-3 text-xs text-gray-600">
-                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{HW_TIPO_LABEL[u.catalogo.tipo]}</span>
+                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tipoLabel(u.catalogo)}</span>
                 <span className="font-medium">{u.catalogo.marca} {u.catalogo.modelo}</span>
                 {u.numSerie && <code className="font-mono text-gray-400">{u.numSerie}</code>}
                 <Link href={`/pre-proyectos/${u.preProyecto!.id}`} className="ml-auto hover:underline shrink-0" style={{ color: TEAL }}>{u.preProyecto!.titulo}</Link>
@@ -1035,7 +1036,7 @@ function InstalacionesTab({ unidades, onUpdated }: {
           <div className="space-y-1.5">
             {huerfanos.map(u => (
               <div key={u.id} className="flex items-center gap-3 text-xs">
-                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{HW_TIPO_LABEL[u.catalogo.tipo]}</span>
+                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tipoLabel(u.catalogo)}</span>
                 <span className="font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</span>
                 {u.numSerie && <code className="font-mono text-gray-400">{u.numSerie}</code>}
                 <span className="ml-auto text-gray-400 shrink-0">{fmtFecha(u.creadoEn)}</span>
@@ -1050,17 +1051,18 @@ function InstalacionesTab({ unidades, onUpdated }: {
 
 // ─── Tab: Catálogo ────────────────────────────────────────────────────────────
 
-const FORM_EMPTY = { tipo: "BC_ROBOT", marca: "", modelo: "", descripcion: "", precio: "", fichaUrl: "" }
-
-function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
+function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
   catalogo: HardwareCatalogo[]
   setCatalogo: React.Dispatch<React.SetStateAction<HardwareCatalogo[]>>
   esAdmin: boolean
+  tipos: HardwareTipo[]
 }) {
   const { success, error: toastError } = useToast()
-  const [filtroTipo, setFiltroTipo] = useState("")
+  const [busqueda, setBusqueda] = useState("")
+  const [filtroTipoId, setFiltroTipoId] = useState("")
   const [mostrarForm, setMostrarForm] = useState(false)
-  const [form, setForm] = useState({ ...FORM_EMPTY })
+  const FORM_VACIO = { tipoId: "", marca: "", modelo: "", referenciaPalex: "", proveedor: "", descripcion: "", precio: "", fichaUrl: "" }
+  const [form, setForm] = useState(FORM_VACIO)
   const [guardando, setGuardando] = useState(false)
   const [expandido, setExpandido] = useState<string | null>(null)
   const [unidadesCache, setUnidadesCache] = useState<Record<string, HardwareUnidad[]>>({})
@@ -1068,10 +1070,22 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
   const [stockForm, setStockForm] = useState<{ catalogoId: string; series: { numSerie: string; notas: string; fechaCompra: string; fechaGarantia: string }[] } | null>(null)
   const [guardandoStock, setGuardandoStock] = useState(false)
   const [editItem, setEditItem] = useState<HardwareCatalogo | null>(null)
-  const [editForm, setEditForm] = useState({ tipo: "", marca: "", modelo: "", descripcion: "", precio: "", fichaUrl: "" })
+  const [editForm, setEditForm] = useState({ tipoId: "", marca: "", modelo: "", referenciaPalex: "", proveedor: "", descripcion: "", precio: "", fichaUrl: "" })
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
-  const filtrados = filtroTipo ? catalogo.filter(c => c.tipo === filtroTipo) : catalogo
+  const filtrados = catalogo.filter(c => {
+    if (filtroTipoId && c.tipoId !== filtroTipoId) return false
+    if (busqueda) {
+      const q = busqueda.toLowerCase()
+      return (
+        c.marca.toLowerCase().includes(q) ||
+        c.modelo.toLowerCase().includes(q) ||
+        (c.referenciaPalex?.toLowerCase().includes(q) ?? false) ||
+        (c.proveedor?.toLowerCase().includes(q) ?? false)
+      )
+    }
+    return true
+  })
 
   async function toggleExpandido(id: string) {
     if (expandido === id) { setExpandido(null); return }
@@ -1094,12 +1108,12 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
       const r = await fetch("/api/hardware", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, tipoId: form.tipoId || null, precio: form.precio || null }),
       })
       if (!r.ok) throw new Error()
       const nuevo = await r.json()
-      setCatalogo(prev => [...prev, { ...nuevo, _stock: { total: 0, disponibles: 0, asignados: 0 } }])
-      setForm({ ...FORM_EMPTY })
+      setCatalogo(prev => [{ ...nuevo, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, ...prev])
+      setForm(FORM_VACIO)
       setMostrarForm(false)
       success("Modelo creado")
     } catch {
@@ -1112,8 +1126,13 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
   function abrirEditar(item: HardwareCatalogo) {
     setEditItem(item)
     setEditForm({
-      tipo: item.tipo, marca: item.marca, modelo: item.modelo,
-      descripcion: item.descripcion ?? "", precio: item.precio != null ? String(item.precio) : "",
+      tipoId: item.tipoId ?? "",
+      marca: item.marca,
+      modelo: item.modelo,
+      referenciaPalex: item.referenciaPalex ?? "",
+      proveedor: item.proveedor ?? "",
+      descripcion: item.descripcion ?? "",
+      precio: item.precio != null ? String(item.precio) : "",
       fichaUrl: item.fichaUrl ?? "",
     })
   }
@@ -1126,7 +1145,7 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
       const r = await fetch(`/api/hardware/${editItem.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editForm, precio: editForm.precio || null }),
+        body: JSON.stringify({ ...editForm, tipoId: editForm.tipoId || null, precio: editForm.precio || null }),
       })
       if (!r.ok) throw new Error()
       const updated = await r.json()
@@ -1176,7 +1195,7 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
       const nuevas: HardwareUnidad[] = await r.json()
       setUnidadesCache(prev => ({ ...prev, [stockForm.catalogoId]: [...(prev[stockForm.catalogoId] ?? []), ...nuevas] }))
       setCatalogo(prev => prev.map(c => c.id === stockForm.catalogoId
-        ? { ...c, _stock: { total: (c._stock?.total ?? 0) + nuevas.length, disponibles: (c._stock?.disponibles ?? 0) + nuevas.length, asignados: c._stock?.asignados ?? 0 } }
+        ? { ...c, _stock: { total: (c._stock?.total ?? 0) + nuevas.length, disponibles: (c._stock?.disponibles ?? 0) + nuevas.length, asignados: c._stock?.asignados ?? 0, mantenimiento: c._stock?.mantenimiento ?? 0 } }
         : c))
       setStockForm(null)
       success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""}`)
@@ -1190,22 +1209,43 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
   const emptyStockRow = { numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "" }
 
   return (
-    <div>
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-2">
-          {[{ value: "", label: "Todos" }, ...HW_TIPOS].map(t => (
-            <button key={t.value}
-              onClick={() => setFiltroTipo(t.value)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors"
-              style={{ backgroundColor: filtroTipo === t.value ? `${TEAL}18` : "#f9fafb", borderColor: filtroTipo === t.value ? TEAL : "#e5e7eb", color: filtroTipo === t.value ? TEAL : "#374151" }}>
-              {t.label}
+    <div className="space-y-4">
+      {/* Barra de filtros y acciones */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Buscador */}
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IcoSearch /></span>
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar modelo, marca, referencia…"
+              className="pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white w-52"
+            />
+          </div>
+          {/* Tipo pills */}
+          <button
+            onClick={() => setFiltroTipoId("")}
+            className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer"
+            style={{ backgroundColor: !filtroTipoId ? `${TEAL}18` : "#f9fafb", borderColor: !filtroTipoId ? TEAL : "#e5e7eb", color: !filtroTipoId ? TEAL : "#374151" }}>
+            Todos
+          </button>
+          {tipos.map(t => (
+            <button key={t.id}
+              onClick={() => setFiltroTipoId(filtroTipoId === t.id ? "" : t.id)}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer"
+              style={{
+                backgroundColor: filtroTipoId === t.id ? `${t.color}22` : "#f9fafb",
+                borderColor: filtroTipoId === t.id ? t.color : "#e5e7eb",
+                color: filtroTipoId === t.id ? t.color : "#374151",
+              }}>
+              {t.nombre}
             </button>
           ))}
         </div>
         {esAdmin && (
           <button onClick={() => setMostrarForm(v => !v)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shrink-0 hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
             style={{ backgroundColor: TEAL }}>
             <IcoPlus />
             Nuevo modelo
@@ -1215,111 +1255,159 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
 
       {/* Form nuevo modelo */}
       {mostrarForm && (
-        <form onSubmit={crear} className="slide-down bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-4 space-y-3">
+        <form onSubmit={crear} className="slide-down bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-3">
           <h3 className="text-sm font-semibold text-gray-700">Añadir modelo al catálogo</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div><label className={LABEL}>Tipo *</label>
-              <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} className={INPUT}>
-                {HW_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div><label className={LABEL}>Tipo</label>
+              <select value={form.tipoId} onChange={e => setForm(p => ({ ...p, tipoId: e.target.value }))} className={INPUT}>
+                <option value="">Sin tipo</option>
+                {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
             </div>
             <div><label className={LABEL}>Marca *</label>
-              <input value={form.marca} onChange={e => setForm(p => ({ ...p, marca: e.target.value }))} placeholder="Ej: Zebra…" className={INPUT} /></div>
+              <input value={form.marca} onChange={e => setForm(p => ({ ...p, marca: e.target.value }))} placeholder="Zebra, Honeywell…" className={INPUT} required />
+            </div>
             <div><label className={LABEL}>Modelo *</label>
-              <input value={form.modelo} onChange={e => setForm(p => ({ ...p, modelo: e.target.value }))} placeholder="Ej: MC3300…" className={INPUT} /></div>
+              <input value={form.modelo} onChange={e => setForm(p => ({ ...p, modelo: e.target.value }))} placeholder="MC3300, DS2208…" className={INPUT} required />
+            </div>
+            <div><label className={LABEL}>Ref. Palex</label>
+              <input value={form.referenciaPalex} onChange={e => setForm(p => ({ ...p, referenciaPalex: e.target.value }))} placeholder="PAL-XXXX" className={INPUT + " font-mono"} />
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div><label className={LABEL}>Proveedor</label>
+              <input value={form.proveedor} onChange={e => setForm(p => ({ ...p, proveedor: e.target.value }))} placeholder="Nombre proveedor" className={INPUT} />
+            </div>
             <div><label className={LABEL}>Precio unitario (€)</label>
-              <input type="number" step="0.01" min="0" value={form.precio} onChange={e => setForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} /></div>
+              <input type="number" step="0.01" min="0" value={form.precio} onChange={e => setForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} />
+            </div>
             <div><label className={LABEL}>URL ficha técnica</label>
-              <input type="url" value={form.fichaUrl} onChange={e => setForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} /></div>
+              <input type="url" value={form.fichaUrl} onChange={e => setForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} />
+            </div>
             <div><label className={LABEL}>Descripción</label>
-              <input value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} /></div>
+              <input value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} />
+            </div>
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={() => setMostrarForm(false)}
-              className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">Cancelar</button>
             <button type="submit" disabled={guardando}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity cursor-pointer"
               style={{ backgroundColor: TEAL }}>{guardando ? "Guardando…" : "Guardar modelo"}</button>
           </div>
         </form>
       )}
 
-      {/* Lista */}
+      {/* Grid de tarjetas */}
       {filtrados.length === 0 ? (
-        <div className="text-center py-10 text-sm text-gray-400 bg-white rounded-2xl border border-gray-100">
-          {catalogo.length === 0 ? "Sin modelos en el catálogo. Crea el primero arriba." : "Sin modelos para el tipo seleccionado."}
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+            <IcoSearch />
+          </div>
+          <p className="text-sm font-medium text-gray-600">Sin resultados</p>
+          <p className="text-xs text-gray-400 mt-1">{catalogo.length === 0 ? "El catálogo está vacío. Añade el primer modelo." : "Prueba a cambiar los filtros de búsqueda."}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map(item => {
-            const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0 }
+            const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
             const isOpen = expandido === item.id
             const unidades = unidadesCache[item.id] ?? []
+            const tipoColor = item.tipo?.color ?? "#6b7280"
+            const pctDisp = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+
             return (
-              <div key={item.id}>
-                <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 transition-colors">
-                  <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg shrink-0">
-                    {HW_TIPO_LABEL[item.tipo] ?? item.tipo}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900 text-sm">{item.marca} {item.modelo}</p>
-                      {item.precio != null && (
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {item.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                {/* Franja de color tipo */}
+                <div className="h-1 w-full" style={{ backgroundColor: item.activo ? tipoColor : "#e5e7eb" }} />
+
+                <div className="p-4 flex-1 flex flex-col gap-3">
+                  {/* Cabecera tarjeta */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      {/* Badge tipo */}
+                      {item.tipo && (
+                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5"
+                          style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>
+                          {item.tipo.nombre}
                         </span>
                       )}
-                      {item.fichaUrl && (
-                        <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-xs font-medium transition-colors hover:opacity-70" style={{ color: TEAL }}>
-                          Ver ficha
-                        </a>
+                      <p className="font-bold text-gray-900 text-sm leading-snug">{item.marca} {item.modelo}</p>
+                      {item.referenciaPalex && (
+                        <code className="text-[11px] font-mono font-semibold mt-0.5 block" style={{ color: TEAL }}>
+                          {item.referenciaPalex}
+                        </code>
                       )}
                     </div>
-                    {item.descripcion && <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">{item.descripcion}</p>}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 text-xs">
-                    <span className="text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-medium">{stock.disponibles} disp.</span>
-                    <span className="text-gray-400">{stock.total} total</span>
-                  </div>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ backgroundColor: item.activo ? `${TEAL}18` : "#f3f4f6", color: item.activo ? TEAL : "#9ca3af" }}>
-                    {item.activo ? "Activo" : "Inactivo"}
-                  </span>
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    {esAdmin && (
-                      <>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {esAdmin && (
                         <button onClick={() => abrirEditar(item)} title="Editar modelo"
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"><IcoEdit /></button>
-                        <button onClick={() => toggleActivo(item)} title={item.activo ? "Desactivar" : "Activar"}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs font-medium px-2">
-                          {item.activo ? "Desact." : "Activar"}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer">
+                          <IcoEdit />
                         </button>
-                      </>
+                      )}
+                      <button onClick={() => toggleExpandido(item.id)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                        title={isOpen ? "Cerrar stock" : "Ver stock"}>
+                        <IcoChevron open={isOpen} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Metadatos */}
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                    {item.proveedor && (
+                      <span className="bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 text-gray-600">{item.proveedor}</span>
                     )}
-                    <button onClick={() => toggleExpandido(item.id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                      title={isOpen ? "Cerrar" : "Ver stock"}>
-                      <IcoChevron open={isOpen} />
-                    </button>
+                    {item.precio != null && (
+                      <span className="bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5">
+                        {item.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                      </span>
+                    )}
+                    {item.fichaUrl && (
+                      <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 hover:border-teal-300 transition-colors"
+                        style={{ color: TEAL }}>
+                        <IcoDownload />
+                        Ficha
+                      </a>
+                    )}
+                  </div>
+
+                  {item.descripcion && (
+                    <p className="text-xs text-gray-400 line-clamp-2">{item.descripcion}</p>
+                  )}
+
+                  {/* Barra de stock */}
+                  <div className="mt-auto pt-2 border-t border-gray-50">
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="font-medium text-gray-600">{stock.total} unidades</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-600 font-semibold">{stock.disponibles} disp.</span>
+                        <span className="text-gray-400">{stock.asignados} asig.</span>
+                        {!item.activo && <span className="text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-medium">Inactivo</span>}
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${pctDisp}%`, backgroundColor: pctDisp > 50 ? "#16a34a" : pctDisp > 20 ? TEAL : "#d97706" }} />
+                    </div>
                   </div>
                 </div>
 
-                {/* Panel de stock */}
+                {/* Panel stock expandido */}
                 {isOpen && (
-                  <div className="bg-gray-50 border-t border-gray-100 px-4 py-4">
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        {stock.disponibles} disponibles · {stock.asignados} asignadas · {stock.total} total
+                        {stock.disponibles} disp. · {stock.asignados} asig. · {stock.total} total
                       </p>
                       <button
                         onClick={() => setStockForm(stockForm?.catalogoId === item.id ? null : { catalogoId: item.id, series: [{ ...emptyStockRow }] })}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
                         style={{ backgroundColor: TEAL }}>
                         <IcoPlus />
-                        Añadir al stock
+                        Añadir stock
                       </button>
                     </div>
 
@@ -1357,7 +1445,7 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
                                 {stockForm.series.length > 1 && (
                                   <button type="button"
                                     onClick={() => setStockForm(p => p ? { ...p, series: p.series.filter((_, j) => j !== i) } : p)}
-                                    className="mb-0 p-2 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 self-end transition-colors"><IcoTrash /></button>
+                                    className="mb-0 p-2 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 self-end transition-colors cursor-pointer"><IcoTrash /></button>
                                 )}
                               </div>
                             </div>
@@ -1365,14 +1453,14 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
                         </div>
                         <button type="button"
                           onClick={() => setStockForm(p => p ? { ...p, series: [...p.series, { ...emptyStockRow }] } : p)}
-                          className="text-xs font-medium transition-colors hover:opacity-80" style={{ color: TEAL }}>
+                          className="text-xs font-medium transition-colors hover:opacity-80 cursor-pointer" style={{ color: TEAL }}>
                           + Añadir fila
                         </button>
                         <div className="flex gap-2 pt-1">
                           <button type="button" onClick={() => setStockForm(null)}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:bg-gray-50">Cancelar</button>
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:bg-gray-50 cursor-pointer">Cancelar</button>
                           <button type="submit" disabled={guardandoStock}
-                            className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90"
+                            className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
                             style={{ backgroundColor: TEAL }}>
                             {guardandoStock ? "Guardando…" : `Añadir ${stockForm.series.length} ud.`}
                           </button>
@@ -1393,14 +1481,13 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
                               <th className="text-left pb-2 font-medium">Estado</th>
                               <th className="text-left pb-2 font-medium">Asignado a</th>
                               <th className="text-left pb-2 font-medium">Garantía</th>
-                              <th className="text-left pb-2 font-medium">Notas</th>
                             </tr>
                           </thead>
                           <tbody>
                             {unidades.map(u => {
                               const es = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
                               return (
-                                <tr key={u.id} className="border-b border-gray-100 last:border-0 hover:bg-white/50">
+                                <tr key={u.id} className="border-b border-gray-100 last:border-0">
                                   <td className="py-2 pr-3">
                                     {u.numSerie
                                       ? <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{u.numSerie}</code>
@@ -1414,8 +1501,7 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
                                       ? <Link href={`/pre-proyectos/${u.preProyecto.id}`} className="hover:underline" style={{ color: TEAL }}>{u.preProyecto.titulo}</Link>
                                       : u.hospital?.nombre ?? <span className="text-gray-300">—</span>}
                                   </td>
-                                  <td className="py-2 pr-3 text-gray-400">{fmtFecha(u.fechaGarantia)}</td>
-                                  <td className="py-2 text-gray-400 max-w-[120px] truncate">{u.notas ?? "—"}</td>
+                                  <td className="py-2 text-gray-400">{fmtFecha(u.fechaGarantia)}</td>
                                 </tr>
                               )
                             })}
@@ -1437,37 +1523,67 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin }: {
           <div className="slide-up bg-white rounded-2xl shadow-xl w-full max-w-lg">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-900">Editar modelo</h2>
-              <button onClick={() => setEditItem(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setEditItem(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <form onSubmit={guardarEditar} className="p-6 space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div><label className={LABEL}>Tipo</label>
-                  <select value={editForm.tipo} onChange={e => setEditForm(p => ({ ...p, tipo: e.target.value }))} className={INPUT}>
-                    {HW_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  <select value={editForm.tipoId} onChange={e => setEditForm(p => ({ ...p, tipoId: e.target.value }))} className={INPUT}>
+                    <option value="">Sin tipo</option>
+                    {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                   </select>
                 </div>
                 <div><label className={LABEL}>Marca</label>
-                  <input value={editForm.marca} onChange={e => setEditForm(p => ({ ...p, marca: e.target.value }))} className={INPUT} /></div>
+                  <input value={editForm.marca} onChange={e => setEditForm(p => ({ ...p, marca: e.target.value }))} className={INPUT} required />
+                </div>
                 <div><label className={LABEL}>Modelo</label>
-                  <input value={editForm.modelo} onChange={e => setEditForm(p => ({ ...p, modelo: e.target.value }))} className={INPUT} /></div>
+                  <input value={editForm.modelo} onChange={e => setEditForm(p => ({ ...p, modelo: e.target.value }))} className={INPUT} required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={LABEL}>Ref. Palex</label>
+                  <input value={editForm.referenciaPalex} onChange={e => setEditForm(p => ({ ...p, referenciaPalex: e.target.value }))} placeholder="PAL-XXXX" className={INPUT + " font-mono"} />
+                </div>
+                <div><label className={LABEL}>Proveedor</label>
+                  <input value={editForm.proveedor} onChange={e => setEditForm(p => ({ ...p, proveedor: e.target.value }))} className={INPUT} />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={LABEL}>Precio (€)</label>
-                  <input type="number" step="0.01" value={editForm.precio} onChange={e => setEditForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} /></div>
+                  <input type="number" step="0.01" value={editForm.precio} onChange={e => setEditForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} />
+                </div>
                 <div><label className={LABEL}>URL ficha</label>
-                  <input type="url" value={editForm.fichaUrl} onChange={e => setEditForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} /></div>
+                  <input type="url" value={editForm.fichaUrl} onChange={e => setEditForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} />
+                </div>
               </div>
               <div><label className={LABEL}>Descripción</label>
-                <input value={editForm.descripcion} onChange={e => setEditForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} /></div>
-              <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => setEditItem(null)}
-                  className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
-                <button type="submit" disabled={guardandoEdit}
-                  className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90"
-                  style={{ backgroundColor: TEAL }}>{guardandoEdit ? "Guardando…" : "Guardar cambios"}</button>
+                <input value={editForm.descripcion} onChange={e => setEditForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} />
               </div>
+              {esAdmin && (
+                <div className="flex items-center gap-2 pt-1">
+                  <button type="button" onClick={() => toggleActivo(editItem).then(() => setEditItem(null))}
+                    className="px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">
+                    {editItem.activo ? "Desactivar modelo" : "Activar modelo"}
+                  </button>
+                  <div className="flex-1" />
+                  <button type="button" onClick={() => setEditItem(null)}
+                    className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancelar</button>
+                  <button type="submit" disabled={guardandoEdit}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
+                    style={{ backgroundColor: TEAL }}>{guardandoEdit ? "Guardando…" : "Guardar cambios"}</button>
+                </div>
+              )}
+              {!esAdmin && (
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setEditItem(null)}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancelar</button>
+                  <button type="submit" disabled={guardandoEdit}
+                    className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
+                    style={{ backgroundColor: TEAL }}>{guardandoEdit ? "Guardando…" : "Guardar cambios"}</button>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -1509,7 +1625,7 @@ function AlertasTab({ unidades, onUpdated }: {
     ]
     const unicos = Array.from(new Map(todas.map(u => [u.id, u])).values())
     exportarCSV(unicos.map(u => ({
-      Tipo: HW_TIPO_LABEL[u.catalogo.tipo] ?? u.catalogo.tipo,
+      Tipo: tipoLabel(u.catalogo),
       Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
       "Nº Serie": u.numSerie ?? "",
       Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
@@ -1561,7 +1677,7 @@ function AlertasTab({ unidades, onUpdated }: {
                   <p className="text-sm font-semibold text-gray-800 truncate">{u.catalogo.marca} {u.catalogo.modelo}</p>
                   <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
                     {u.numSerie && <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{u.numSerie}</code>}
-                    <span>{HW_TIPO_LABEL[u.catalogo.tipo]}</span>
+                    <span>{tipoLabel(u.catalogo)}</span>
                     {(u.hospital || u.preProyecto) && <span>· {u.hospital?.nombre ?? u.preProyecto?.titulo}</span>}
                   </div>
                 </div>
@@ -1622,6 +1738,7 @@ export default function HardwarePage() {
   const [rol, setRol] = useState("")
   const [unidades, setUnidades] = useState<HardwareUnidad[]>([])
   const [catalogo, setCatalogo] = useState<HardwareCatalogo[]>([])
+  const [tipos, setTipos] = useState<HardwareTipo[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -1630,12 +1747,14 @@ export default function HardwarePage() {
 
   const cargar = useCallback(async () => {
     setLoading(true)
-    const [ru, rc] = await Promise.all([
+    const [ru, rc, rt] = await Promise.all([
       fetch("/api/hardware/unidades").then(r => r.ok ? r.json() : []),
       fetch("/api/hardware?activo=false").then(r => r.ok ? r.json() : []),
+      fetch("/api/hardware/tipos").then(r => r.ok ? r.json() : []),
     ])
     if (Array.isArray(ru)) setUnidades(ru)
     if (Array.isArray(rc)) setCatalogo(rc)
+    if (Array.isArray(rt)) setTipos(rt)
     setLoading(false)
   }, [])
 
@@ -1704,16 +1823,18 @@ export default function HardwarePage() {
               onUpdated={u => setUnidades(prev => prev.map(x => x.id === u.id ? u : x))}
               onDeleted={id => setUnidades(prev => prev.filter(x => x.id !== id))}
               esAdmin={esAdmin}
+              tipos={tipos}
             />
           )}
           {tab === "instalaciones" && (
             <InstalacionesTab
               unidades={unidades}
               onUpdated={u => setUnidades(prev => prev.map(x => x.id === u.id ? u : x))}
+              tipos={tipos}
             />
           )}
           {tab === "catalogo" && (
-            <CatalogoTab catalogo={catalogo} setCatalogo={setCatalogo} esAdmin={esAdmin} />
+            <CatalogoTab catalogo={catalogo} setCatalogo={setCatalogo} esAdmin={esAdmin} tipos={tipos} />
           )}
           {tab === "alertas" && (
             <AlertasTab
