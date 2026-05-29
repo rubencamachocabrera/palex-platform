@@ -4,7 +4,7 @@
 
 export type FieldType =
   | 'text' | 'email' | 'tel' | 'number' | 'date' | 'month' | 'time'
-  | 'textarea' | 'select' | 'radio' | 'checks' | 'rating'
+  | 'textarea' | 'select' | 'radio' | 'checks' | 'rating' | 'subheader'
 
 export interface FormField {
   id: string
@@ -146,6 +146,81 @@ export const FORM_SCHEMA: FormSection[] = [
     ]
   },
   {
+    id: 's_termo', title: 'Neveras y Termografía', icon: 'thermometer',
+    fields: [
+      // ── Bloque 1: Sistema ──────────────────────────────────────────
+      { id: 'sh_sistema',  label: 'Sistema',                      type: 'subheader' },
+      {
+        id: 'termo_tipo',
+        label: 'Tipo de sistema a implantar',
+        type: 'radio',
+        req: true,
+        opts: ['Solo temperatura', 'Solo ubicación (RFID / BT)', 'Temperatura y ubicación'],
+        hint: 'Determina qué hardware se necesita: sensor BT, reader RFID o ambos'
+      },
+      {
+        id: 'termo_n_rutas',
+        label: 'Nº de rutas de recogida',
+        type: 'number',
+        req: true,
+        ph: '0',
+        hint: 'Cada ruta es un circuito independiente que parte del laboratorio y visita varios centros'
+      },
+      {
+        id: 'termo_rutas_detalle',
+        label: 'Detalle por ruta',
+        type: 'textarea',
+        ph: 'Ruta 1 — 6 pueblos · 3 neveras\nRuta 2 — 4 pueblos · 2 neveras\n...',
+        hint: 'Una línea por ruta: nombre o nº de ruta, pueblos que cubre y neveras asignadas'
+      },
+      {
+        id: 'termo_total_neveras',
+        label: 'Total de neveras necesarias',
+        type: 'number',
+        ph: '0',
+        hint: 'Suma total de neveras en todas las rutas'
+      },
+      // ── Bloque 2: Infraestructura — Centros de Salud ──────────────
+      { id: 'sh_cs',  label: 'Infraestructura — Centros de Salud', type: 'subheader' },
+      {
+        id: 'cs_toma_datos',
+        label: 'Toma de datos en centros de salud',
+        type: 'radio',
+        opts: ['Sí, en todos', 'Sí, en cabeceras', 'No', 'Por instalar'],
+        hint: 'Necesaria para conectar el Gateway Bluetooth en cada centro o cabecera de zona'
+      },
+      {
+        id: 'cs_toma_corriente',
+        label: 'Toma de corriente en centros de salud',
+        type: 'radio',
+        opts: ['Sí, en todos', 'Sí, en cabeceras', 'No', 'Por instalar'],
+        hint: 'El Gateway BT requiere alimentación eléctrica en el punto de instalación'
+      },
+      // ── Bloque 3: Infraestructura — Laboratorio ───────────────────
+      { id: 'sh_lab',  label: 'Infraestructura — Laboratorio',    type: 'subheader' },
+      {
+        id: 'lab_tomas_datos',
+        label: 'Tomas de datos en laboratorio',
+        type: 'radio',
+        opts: ['Sí (3 disponibles)', 'Parcialmente', 'No', 'Por instalar'],
+        hint: 'Se necesitan 3 tomas: una para el Reader RFID, una para el Gateway BT y una para el mini-PC'
+      },
+      {
+        id: 'lab_tomas_corriente',
+        label: 'Tomas de corriente en laboratorio',
+        type: 'radio',
+        opts: ['Sí (3–4 disponibles)', 'Parcialmente', 'No', 'Por instalar'],
+        hint: 'Se necesitan entre 3 y 4 enchufes: Reader RFID, Gateway BT, mini-PC (y pantalla si aplica)'
+      },
+      {
+        id: 'termo_obs',
+        label: 'Observaciones de infraestructura',
+        type: 'textarea',
+        ph: 'Incidencias detectadas, restricciones de obra, accesos condicionados…'
+      },
+    ]
+  },
+  {
     id: 's9', title: 'Etiquetado', icon: 'tag',
     fields: [
       { id: 'etiq_metodo',     label: 'Método actual de etiquetado',       type: 'select', opts: ['Manual (bolígrafo)', 'Impresora A4 por punto', 'Tubo preetiquetado', 'Planilla preimpresa', 'Sin sistema definido'] },
@@ -231,6 +306,7 @@ export function initFormData(tipo: 'PROYECTOS' | 'VENTAS'): Record<string, unkno
   const data: Record<string, unknown> = {}
   getSections(tipo).forEach(s =>
     s.fields.forEach(f => {
+      if (f.type === 'subheader') return
       data[f.id] = f.type === 'checks' ? [] : f.type === 'rating' ? 0 : ''
     })
   )

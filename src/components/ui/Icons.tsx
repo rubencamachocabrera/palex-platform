@@ -409,3 +409,32 @@ export function IconPhone({ size = 20, className = "" }: IconProps) {
     </svg>
   )
 }
+
+export function IconThermometer({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+    </svg>
+  )
+}
+
+export function IconRoute({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="6" cy="19" r="3"/>
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+      <circle cx="18" cy="5" r="3"/>
+    </svg>
+  )
+}
+
+export function IconPlug({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 22v-5"/>
+      <path d="M9 8V2"/>
+      <path d="M15 8V2"/>
+      <path d="M18 8H6a1 1 0 0 0-1 1v3a4 4 0 0 0 8 0 4 4 0 0 0 8 0V9a1 1 0 0 0-1-1z"/>
+    </svg>
+  )
+}

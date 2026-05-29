@@ -35,6 +35,7 @@ import {
   IconAward, IconBriefcase, IconPenLine, IconDroplet, IconClipboard,
   IconCamera, IconStar, IconArrowLeft, IconArrowRight, IconChevronRight,
   IconCheck, IconSearch, IconPrint, IconDownload, IconMenu, IconX, IconTrash,
+  IconThermometer,
 } from "@/components/ui/Icons"
 
 // Mapa de iconos SVG para cada sección del formulario
@@ -54,6 +55,7 @@ const SECTION_ICON: Record<string, React.ReactNode> = {
   award:          <IconAward size={18} />,
   "pen-line":     <IconPenLine size={18} />,
   briefcase:      <IconBriefcase size={18} />,
+  thermometer:    <IconThermometer size={18} />,
 }
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -338,8 +340,8 @@ function CampoField({ field, value, onChange, onBlur, error, readOnly }: {
 
 // ─── Progreso ──────────────────────────────────────────────────────────────────
 function calcProgress(section: FormSection, datos: Record<string, unknown>): number {
-  // Solo contar campos visibles (respetando showIf)
-  const visibleFields = section.fields.filter(f => shouldShowField(f, datos))
+  // Solo contar campos visibles (respetando showIf), excluir subheaders
+  const visibleFields = section.fields.filter(f => f.type !== 'subheader' && shouldShowField(f, datos))
   const reqFields = visibleFields.filter(f => f.req)
   const toCheck = reqFields.length > 0 ? reqFields : visibleFields
   if (toCheck.length === 0) return 100
@@ -531,6 +533,17 @@ function InlineFieldEditor({ field, value, onChange }: {
 }) {
   const base = "text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 w-full focus:outline-none focus:ring-1 bg-gray-50 transition-colors"
   const ringStyle = { "--tw-ring-color": TEAL } as React.CSSProperties
+
+  if (field.type === "subheader") {
+    return (
+      <div className="flex items-center gap-2 mt-1 mb-0.5 col-span-full">
+        <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: TEAL }}>
+          {field.label}
+        </span>
+        <div className="flex-1 h-px bg-teal-100" />
+      </div>
+    )
+  }
 
   if (field.type === "radio" && field.opts) {
     return (
@@ -783,18 +796,23 @@ function VistaResumen({
                   <div className="px-3.5 py-3 flex-1 space-y-3 max-h-80 overflow-y-auto">
                     {section.fields
                       .filter(f => shouldShowField(f, datos))
-                      .map(field => (
-                        <div key={field.id}>
-                          <label className="text-[11px] font-medium text-gray-500 mb-1 block">
-                            {field.label}{field.req && <span className="text-red-400 ml-0.5">*</span>}
-                          </label>
-                          <InlineFieldEditor
-                            field={field}
-                            value={datos[field.id]}
-                            onChange={v => onSetField(field.id, v)}
-                          />
-                        </div>
-                      ))}
+                      .map(field => {
+                        if (field.type === 'subheader') {
+                          return <InlineFieldEditor key={field.id} field={field} value={undefined} onChange={() => {}} />
+                        }
+                        return (
+                          <div key={field.id}>
+                            <label className="text-[11px] font-medium text-gray-500 mb-1 block">
+                              {field.label}{field.req && <span className="text-red-400 ml-0.5">*</span>}
+                            </label>
+                            <InlineFieldEditor
+                              field={field}
+                              value={datos[field.id]}
+                              onChange={v => onSetField(field.id, v)}
+                            />
+                          </div>
+                        )
+                      })}
                   </div>
                 )}
 
@@ -1624,6 +1642,17 @@ export default function VisitaPage() {
                   {isOpen && (
                     <div className="border-t border-gray-100 px-4 py-5 space-y-6">
                       {visibleFields.map(field => {
+                        // Sub-cabecera de bloque — separador visual dentro de la sección
+                        if (field.type === 'subheader') {
+                          return (
+                            <div key={field.id} className="flex items-center gap-3 !mt-8 !mb-0 first:!mt-0">
+                              <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: TEAL }}>
+                                {field.label}
+                              </span>
+                              <div className="flex-1 h-px bg-teal-100" />
+                            </div>
+                          )
+                        }
                         const err = fieldErrors[field.id]
                         return (
                           <div key={field.id}>
@@ -1631,7 +1660,14 @@ export default function VisitaPage() {
                               {field.label}
                               {field.req && <span className="text-red-400 ml-1">*</span>}
                             </label>
-                            {field.hint && <p className="text-xs text-gray-400 mb-2">{field.hint}</p>}
+                            {field.hint && (
+                              <p className="text-xs text-gray-400 mb-2.5 flex items-start gap-1.5">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5 text-gray-300">
+                                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                                </svg>
+                                {field.hint}
+                              </p>
+                            )}
                             <CampoField
                               field={field}
                               value={datos[field.id]}

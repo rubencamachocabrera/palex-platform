@@ -19,8 +19,9 @@ interface VisitaData {
 }
 
 function calcProgress(section: FormSection, datos: Record<string, unknown>): number {
-  const reqFields = section.fields.filter(f => f.req)
-  const toCheck = reqFields.length > 0 ? reqFields : section.fields
+  const dataFields = section.fields.filter(f => f.type !== 'subheader')
+  const reqFields = dataFields.filter(f => f.req)
+  const toCheck = reqFields.length > 0 ? reqFields : dataFields
   if (toCheck.length === 0) return 100
   const filled = toCheck.filter(f => {
     const v = datos[f.id]
@@ -138,6 +139,7 @@ export default function PrintView({ visita, datos, sections }: PrintViewProps) {
       {/* SECCIONES */}
       {sections.map((section, idx) => {
         const camposRellenos = section.fields.filter(f => {
+          if (f.type === 'subheader') return false
           const v = datos[f.id]
           if (Array.isArray(v)) return v.length > 0
           if (typeof v === "number") return v > 0
