@@ -10,6 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const item = await db.hardwareCatalogo.findUnique({
       where: { id },
       include: {
+        tipo: true,
         unidades: {
           include: {
             hospital: { select: { id: true, nombre: true, ciudad: true } },
@@ -34,14 +35,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const body = await req.json()
     const data: Record<string, unknown> = {}
-    if ("tipo" in body) data.tipo = body.tipo
+    if ("tipoId" in body) data.tipoId = body.tipoId || null
     if ("marca" in body) data.marca = body.marca
     if ("modelo" in body) data.modelo = body.modelo
-    if ("descripcion" in body) data.descripcion = body.descripcion
+    if ("referenciaPalex" in body) data.referenciaPalex = body.referenciaPalex || null
+    if ("proveedor" in body) data.proveedor = body.proveedor || null
+    if ("descripcion" in body) data.descripcion = body.descripcion || null
     if ("precio" in body) data.precio = body.precio != null ? parseFloat(body.precio) : null
     if ("fichaUrl" in body) data.fichaUrl = body.fichaUrl || null
+    if ("garantiaMeses" in body) data.garantiaMeses = body.garantiaMeses != null ? parseInt(body.garantiaMeses) : null
     if ("activo" in body) data.activo = body.activo
-    const updated = await db.hardwareCatalogo.update({ where: { id }, data })
+    const updated = await db.hardwareCatalogo.update({
+      where: { id },
+      data,
+      include: { tipo: true },
+    })
     return NextResponse.json(updated)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       include: {
         tipo: true,
         unidades: { select: { estado: true } },
+        _count: { select: { docs: true } },
       },
       orderBy: [{ tipo: { nombre: "asc" } }, { marca: "asc" }, { modelo: "asc" }],
     })
@@ -28,7 +29,9 @@ export async function GET(req: Request) {
         asignados: item.unidades.filter(u => u.estado === "ASIGNADO").length,
         mantenimiento: item.unidades.filter(u => u.estado === "EN_MANTENIMIENTO").length,
       },
+      docsCount: item._count.docs,
       unidades: undefined,
+      _count: undefined,
     }))
     return NextResponse.json(result)
   } catch {
@@ -52,6 +55,7 @@ export async function POST(req: Request) {
         proveedor: body.proveedor || null,
         descripcion: body.descripcion || null,
         precio: body.precio ? parseFloat(body.precio) : null,
+        garantiaMeses: body.garantiaMeses ? parseInt(body.garantiaMeses) : null,
         fichaUrl: body.fichaUrl || null,
       },
       include: { tipo: true },

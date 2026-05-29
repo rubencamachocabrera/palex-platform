@@ -492,14 +492,30 @@ model HardwareCatalogo {
   proveedor       String?
   descripcion     String?
   precio          Float?
+  garantiaMeses   Int?
   fichaUrl        String?
   activo          Boolean       @default(true)
   creadoEn        DateTime      @default(now())
   editadoEn       DateTime      @updatedAt
 
   unidades HardwareUnidad[]
+  docs     HardwareCatalogoDoc[]
 
   @@map("hardware_catalogo")
+}
+
+model HardwareCatalogoDoc {
+  id         String           @id @default(cuid())
+  catalogoId String
+  nombre     String
+  tipo       String
+  tamano     Int
+  contenido  String           @db.Text
+  creadoEn   DateTime         @default(now())
+
+  catalogo HardwareCatalogo @relation(fields: [catalogoId], references: [id], onDelete: Cascade)
+
+  @@map("hardware_catalogo_docs")
 }
 
 model HardwareUnidad {
