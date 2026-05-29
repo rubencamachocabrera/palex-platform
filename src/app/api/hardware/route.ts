@@ -6,18 +6,19 @@ export async function GET(req: Request) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { searchParams } = new URL(req.url)
-  const tipo = searchParams.get("tipo")
+  const tipoId = searchParams.get("tipoId")
   const soloActivos = searchParams.get("activo") !== "false"
   try {
     const items = await db.hardwareCatalogo.findMany({
       where: {
         ...(soloActivos ? { activo: true } : {}),
-        ...(tipo ? { tipo: tipo as never } : {}),
+        ...(tipoId ? { tipoId } : {}),
       },
       include: {
+        tipo: true,
         unidades: { select: { estado: true } },
       },
-      orderBy: [{ tipo: "asc" }, { marca: "asc" }, { modelo: "asc" }],
+      orderBy: [{ tipo: { nombre: "asc" } }, { marca: "asc" }, { modelo: "asc" }],
     })
     const result = items.map(item => ({
       ...item,
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
         total: item.unidades.length,
         disponibles: item.unidades.filter(u => u.estado === "DISPONIBLE").length,
         asignados: item.unidades.filter(u => u.estado === "ASIGNADO").length,
+        mantenimiento: item.unidades.filter(u => u.estado === "EN_MANTENIMIENTO").length,
       },
       unidades: undefined,
     }))
@@ -40,18 +42,21 @@ export async function POST(req: Request) {
   if (!session?.user || role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   try {
     const body = await req.json()
-    if (!body.tipo || !body.marca || !body.modelo) return NextResponse.json({ error: "Faltan campos" }, { status: 400 })
+    if (!body.marca || !body.modelo) return NextResponse.json({ error: "Marca y modelo son obligatorios" }, { status: 400 })
     const item = await db.hardwareCatalogo.create({
       data: {
-        tipo: body.tipo,
+        tipoId: body.tipoId || null,
         marca: body.marca,
         modelo: body.modelo,
+        referenciaPalex: body.referenciaPalex || null,
+        proveedor: body.proveedor || null,
         descripcion: body.descripcion || null,
         precio: body.precio ? parseFloat(body.precio) : null,
         fichaUrl: body.fichaUrl || null,
       },
+      include: { tipo: true },
     })
-    return NextResponse.json(item, { status: 201 })
+    return NextResponse.json({ ...item, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
