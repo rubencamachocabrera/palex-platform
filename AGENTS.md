@@ -10,7 +10,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 > Fuente de verdad para cualquier asistente IA (Cowork, Claude Code, etc).
 > Actualizar siempre que cambie el estado del proyecto.
-> Ultima actualizacion: 2026-05-22
+> Ultima actualizacion: 2026-05-29
 
 ---
 
@@ -29,6 +29,13 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 - NO usar `url` en el bloque `datasource` (usa adapter-pg, la URL va en env)
 - Prisma Client se importa SIEMPRE desde @/lib/db.ts
 - Para schema changes: `npx prisma db push` (nunca migrate en produccion sin revisar)
+- El config real de Prisma 7 esta en `prisma.config.ts` (raiz del proyecto)
+- Railway ejecuta `prisma db push` en el START (no en el build) — ver railway.toml
+- `--accept-data-loss` solo cubre DROP de columnas con datos, NO cubre anadir columna NOT NULL sin default
+- NUNCA nombrar un campo de relacion igual que una columna DB existente (ej: relacion `tipo` + columna antigua `tipo`) → Prisma 7 se confunde y genera ADD COLUMN tipo NOT NULL
+- Cuando haya conflicto de nombre entre relacion y columna DB: usar `@map("nombre_diferente")` en el campo FK escalar (ej: `tipoId String? @map("tipo_id")`)
+- `orderBy` sobre campo de relacion necesita sintaxis anidada: `{ tipo: { nombre: "asc" } }` — NO `{ tipo: "asc" }`
+- Ejecutar `npx prisma generate` despues de cualquier cambio en schema.prisma
 
 ### NextAuth v5 — CRITICO
 - auth() solo en servidor / server components / API routes
@@ -202,6 +209,23 @@ public/
 - [x] Errores de carga con estado visual + reintentar (hospitales)
 - [x] SVG en lugar de simbolos unicode en admin
 
+## Completado (sesion 2026-05-29)
+- [x] Seccion "Neveras y Termografia" en formulario visita (s_termo):
+  - SubHeaders visuales (label teal + linea divisoria), sin valor en DB, excluidos del progreso
+  - Icono termometro SVG en SECTION_ICON
+  - Opciones correctas: "Solo temperatura (RFID)", "Solo ubicacion (BT)", "Temperatura y ubicacion"
+  - Hints con dispositivos necesarios en cada campo de infraestructura
+- [x] Modulo Hardware COMPLETO rediseno SUPER PRO:
+  - Schema Prisma: TipoHardware enum → HardwareTipo model dinamico
+  - HardwareCatalogo: tipoId @map("tipo_id"), referenciaPalex, proveedor, fichaUrl
+  - APIs: /api/hardware/tipos (GET+POST), /api/hardware/tipos/[id] (PATCH+DELETE)
+  - Admin /admin/hardware: drawer lateral, color picker tipos, card grid catalogo, tab inventario
+  - User /hardware: tabs Resumen/Inventario/Instalaciones/Catalogo/Alertas
+  - CatalogoTab: card grid con franja de color tipo, referenciaPalex en teal mono, pills dinamicos
+- [x] railway.toml corregido: --accept-data-loss + healthcheckTimeout 120s
+- [x] Fix Prisma 7: @map("tipo_id") en tipoId para evitar conflicto nombre relacion/columna
+- [x] Fix TypeScript: orderBy relacion necesita { tipo: { nombre: "asc" } } no { tipo: "asc" }
+
 ---
 
 ## Roadmap de funcionalidades — analisis mayo 2026
@@ -293,6 +317,63 @@ public/
 - [ ] Lighthouse audit (objetivo >90)
 - [ ] Sentry para errores en produccion
 - [ ] Tests E2E con Playwright (login, crear visita, pipeline)
+
+---
+
+## Checklist obligatorio antes de cada deploy a produccion
+
+1. `git status` — verificar que TODOS los archivos modificados estan staged. Un archivo editado localmente pero no commiteado rompe el build en Railway.
+2. `npx tsc --noEmit` — debe terminar sin output (cero errores). Si hay errores, NO hacer push.
+3. `npx next build` — opcional pero recomendado si el cambio toca API routes o server components.
+4. Solo entonces: `git push origin main`
+
+NUNCA asumir que porque "funciona local" esta commiteado. Siempre `git status` antes del push.
+
+---
+
+## Railway — configuracion de deploy
+
+- El archivo de config real es `railway.toml` (raiz del proyecto) — NO `railway.json` (ignorado)
+- `railway.toml` actual:
+  - build: `npx prisma generate && next build`
+  - start: `npx prisma db push --accept-data-loss && npm start`
+  - healthcheck: `/api/health`, timeout 120s
+- `railway.json` NO existe (fue eliminado, causaba confusion)
+- Si el healthcheck falla: revisar Deploy Logs → buscar el error REAL antes del "healthcheck timeout"
+
+---
+
+## Nomenclatura hardware Palex (APRENDER — usar siempre estos nombres exactos)
+
+Productos que Palex instala en hospitales y laboratorios:
+
+| Nombre correcto    | Descripcion                                              | Notas                          |
+|--------------------|----------------------------------------------------------|--------------------------------|
+| BC Robo            | Automat de dispensacion de tubos (Blood Collection Robot)| NO "BCRobot" ni "BC Robot"     |
+| Zebra MC           | Terminal movil / handheld (lector codigos + Android)     | Ej: Zebra MC3300, MC9300       |
+| Zebra Impresora    | Impresora de etiquetas de codigo de barras               | Ej: Zebra ZD421, ZT411         |
+| Reader RFID        | Lector RFID fijo (conectado por red al laboratorio)      | Necesita toma de datos + corriente |
+| Gateway BT         | Gateway Bluetooth (conecta neveras BT al sistema)        | Necesita toma de datos + corriente en centro de salud |
+| Mini-PC            | PC industrial para el software de termografia en lab     | Necesita toma de datos + corriente |
+| Nevera             | Nevera de cadena de frio para muestras biologicas        | Monitorizacion via RFID o BT   |
+| Pantalla           | Monitor conectado al mini-PC en laboratorio              | Opcional, necesita corriente adicional |
+
+### Sistema de termografia / neveras (s_termo en formulario visita)
+- "Solo temperatura (RFID)": sensor RFID en nevera + Reader RFID en laboratorio
+- "Solo ubicacion (BT)": sensor BT en nevera + Gateway BT en centros de salud
+- "Temperatura y ubicacion": ambos sistemas combinados
+- Cada ruta = circuito de recogida que parte del laboratorio y visita varios centros de salud
+- Infraestructura laboratorio necesita: 3 tomas de datos (Reader RFID + Gateway BT + mini-PC) y 3-4 enchufes
+
+### Modulo Hardware en la plataforma
+- `HardwareTipo`: tipos dinamicos creables desde admin (no enum hardcodeado)
+  - Ejemplos: "BC Robo", "Zebra MC", "Zebra Impresora", "Reader RFID", "Gateway BT", "Nevera", "Mini-PC"
+  - Cada tipo tiene color hex para badge visual
+- `HardwareCatalogo`: catalogo de modelos (marca + modelo + referenciaPalex + proveedor + precio + fichaUrl)
+  - `referenciaPalex`: codigo interno Palex del modelo (ej: PAL-1234) — mostrar siempre en teal monospace
+  - `tipoId String? @map("tipo_id")`: FK a HardwareTipo — el @map es CRITICO para evitar conflicto con columnas antiguas
+- `HardwareUnidad`: unidades fisicas (nº serie, estado, hospital asignado, garantia)
+  - Estados: DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, RETIRADO, BAJA
 
 ---
 
