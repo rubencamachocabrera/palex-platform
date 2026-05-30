@@ -366,7 +366,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-700">Catálogo de modelos</h3>
-            <button onClick={() => onTabChange("catalogo")} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>Gestionar catálogo</button>
+            <button onClick={() => onTabChange("materiales")} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>Gestionar materiales</button>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             {catalogo.slice(0, 6).map(c => (
@@ -382,423 +382,6 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-// ─── Modal edición de unidad ──────────────────────────────────────────────────
-
-function EditUnidadModal({ unidad, onClose, onSaved }: {
-  unidad: HardwareUnidad
-  onClose: () => void
-  onSaved: (u: HardwareUnidad) => void
-}) {
-  const { success, error: toastError } = useToast()
-  const [form, setForm] = useState({
-    numSerie: unidad.numSerie ?? "",
-    estado: unidad.estado,
-    notas: unidad.notas ?? "",
-    fechaCompra: unidad.fechaCompra ? unidad.fechaCompra.slice(0, 10) : "",
-    fechaGarantia: unidad.fechaGarantia ? unidad.fechaGarantia.slice(0, 10) : "",
-    proximoMantenimiento: unidad.proximoMantenimiento ? unidad.proximoMantenimiento.slice(0, 10) : "",
-    hospitalId: unidad.hospital?.id ?? "",
-  })
-  const [guardando, setGuardando] = useState(false)
-  const [hospitales, setHospitales] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
-
-  useEffect(() => {
-    fetch("/api/hospitales").then(r => r.ok ? r.json() : []).then(d => {
-      if (Array.isArray(d)) setHospitales(d.sort((a: { nombre: string }, b: { nombre: string }) => a.nombre.localeCompare(b.nombre)))
-    }).catch(() => {})
-  }, [])
-
-  async function guardar(e: React.FormEvent) {
-    e.preventDefault()
-    setGuardando(true)
-    try {
-      const r = await fetch(`/api/hardware/unidades/${unidad.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          numSerie: form.numSerie || null,
-          estado: form.estado,
-          notas: form.notas || null,
-          fechaCompra: form.fechaCompra || null,
-          fechaGarantia: form.fechaGarantia || null,
-          proximoMantenimiento: form.proximoMantenimiento || null,
-          hospitalId: form.hospitalId || null,
-        }),
-      })
-      if (!r.ok) throw new Error()
-      const updated = await r.json()
-      const hosp = hospitales.find(h => h.id === form.hospitalId) ?? null
-      onSaved({ ...unidad, ...updated, hospital: hosp ? { id: hosp.id, nombre: hosp.nombre, ciudad: hosp.ciudad } : (form.hospitalId ? unidad.hospital : null) })
-      success("Unidad actualizada")
-      onClose()
-    } catch {
-      toastError("Error al guardar")
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 animate-in fade-in duration-150">
-      <div className="slide-up bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div>
-            <h2 className="text-sm font-bold text-gray-900">Editar unidad</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{unidad.catalogo.marca} {unidad.catalogo.modelo} · {tipoLabel(unidad.catalogo)}</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <form onSubmit={guardar} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className={LABEL}>Nº de serie</label>
-              <input value={form.numSerie} onChange={e => setForm(p => ({ ...p, numSerie: e.target.value }))}
-                placeholder="S/N opcional" className={INPUT + " font-mono"} />
-            </div>
-            <div className="col-span-2">
-              <label className={LABEL}>Estado</label>
-              <select value={form.estado} onChange={e => setForm(p => ({ ...p, estado: e.target.value }))} className={INPUT}>
-                {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className={LABEL}>Hospital asignado</label>
-              <select value={form.hospitalId} onChange={e => setForm(p => ({ ...p, hospitalId: e.target.value }))} className={INPUT}>
-                <option value="">— Sin asignar —</option>
-                {hospitales.map(h => <option key={h.id} value={h.id}>{h.nombre} ({h.ciudad})</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={LABEL}>Fecha de compra</label>
-              <input type="date" value={form.fechaCompra} onChange={e => setForm(p => ({ ...p, fechaCompra: e.target.value }))} className={INPUT} />
-            </div>
-            <div>
-              <label className={LABEL}>Fin de garantía</label>
-              <input type="date" value={form.fechaGarantia} onChange={e => setForm(p => ({ ...p, fechaGarantia: e.target.value }))} className={INPUT} />
-            </div>
-            <div className="col-span-2">
-              <label className={LABEL}>Próximo mantenimiento</label>
-              <input type="date" value={form.proximoMantenimiento} onChange={e => setForm(p => ({ ...p, proximoMantenimiento: e.target.value }))} className={INPUT} />
-            </div>
-            <div className="col-span-2">
-              <label className={LABEL}>Notas</label>
-              <textarea rows={2} value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
-                placeholder="Observaciones…" className={INPUT + " resize-none"} />
-            </div>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={guardando}
-              className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-              style={{ backgroundColor: TEAL }}>
-              {guardando ? "Guardando…" : "Guardar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// ─── Tab: Inventario ──────────────────────────────────────────────────────────
-
-type SortCol = "tipo" | "modelo" | "estado" | "hospital" | "antiguedad" | "garantia" | null
-type SortDir = "asc" | "desc"
-
-function InventarioTab({ unidades, onUpdated, onDeleted, esAdmin, tipos }: {
-  unidades: HardwareUnidad[]
-  onUpdated: (u: HardwareUnidad) => void
-  onDeleted: (id: string) => void
-  esAdmin: boolean
-  tipos: HardwareTipo[]
-}) {
-  const { success, error: toastError } = useToast()
-  const [q, setQ] = useState("")
-  const [filtroTipo, setFiltroTipo] = useState("")
-  const [filtroEstado, setFiltroEstado] = useState("")
-  const [filtroHospital, setFiltroHospital] = useState("")
-  const [sortCol, setSortCol] = useState<SortCol>(null)
-  const [sortDir, setSortDir] = useState<SortDir>("asc")
-  const [vistaCards, setVistaCards] = useState(false)
-  const [editando, setEditando] = useState<HardwareUnidad | null>(null)
-
-  const hospitalesUnicos = Array.from(new Map(
-    unidades.filter(u => u.hospital).map(u => [u.hospital!.id, u.hospital!])
-  ).values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
-
-  function toggleSort(col: SortCol) {
-    if (sortCol === col) {
-      if (sortDir === "asc") setSortDir("desc")
-      else { setSortCol(null) }
-    } else {
-      setSortCol(col); setSortDir("asc")
-    }
-  }
-
-  const filtered = unidades.filter(u => {
-    const matchQ = !q || [u.numSerie, u.catalogo.marca, u.catalogo.modelo, u.notas, u.hospital?.nombre, u.preProyecto?.titulo]
-      .some(s => s?.toLowerCase().includes(q.toLowerCase()))
-    const matchTipo    = !filtroTipo    || u.catalogo.tipoId === filtroTipo
-    const matchEstado  = !filtroEstado  || u.estado === filtroEstado
-    const matchHosp    = !filtroHospital || u.hospital?.id === filtroHospital
-    return matchQ && matchTipo && matchEstado && matchHosp
-  })
-
-  const sorted = [...filtered].sort((a, b) => {
-    if (!sortCol) return 0
-    let va = "", vb = ""
-    if (sortCol === "tipo")      { va = tipoLabel(a.catalogo);      vb = tipoLabel(b.catalogo) }
-    if (sortCol === "modelo")    { va = `${a.catalogo.marca} ${a.catalogo.modelo}`; vb = `${b.catalogo.marca} ${b.catalogo.modelo}` }
-    if (sortCol === "estado")    { va = a.estado;                   vb = b.estado }
-    if (sortCol === "hospital")  { va = a.hospital?.nombre ?? "";   vb = b.hospital?.nombre ?? "" }
-    if (sortCol === "antiguedad") {
-      const da = diasDesde(a.fechaCompra) ?? -1
-      const db = diasDesde(b.fechaCompra) ?? -1
-      return sortDir === "asc" ? da - db : db - da
-    }
-    if (sortCol === "garantia") {
-      const da = a.fechaGarantia ? new Date(a.fechaGarantia).getTime() : Infinity
-      const db = b.fechaGarantia ? new Date(b.fechaGarantia).getTime() : Infinity
-      return sortDir === "asc" ? da - db : db - da
-    }
-    return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va)
-  })
-
-  async function cambiarEstado(u: HardwareUnidad, nuevoEstado: string) {
-    const r = await fetch(`/api/hardware/unidades/${u.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    })
-    if (r.ok) { onUpdated({ ...u, estado: nuevoEstado }); success("Estado actualizado") }
-    else toastError("Error al actualizar")
-  }
-
-  async function eliminar(u: HardwareUnidad) {
-    if (!confirm(`¿Eliminar ${u.catalogo.marca} ${u.catalogo.modelo}${u.numSerie ? ` (${u.numSerie})` : ""}?`)) return
-    const r = await fetch(`/api/hardware/unidades/${u.id}`, { method: "DELETE" })
-    if (r.ok) { onDeleted(u.id); success("Unidad eliminada") }
-    else toastError("Error al eliminar")
-  }
-
-  function exportar() {
-    exportarCSV(sorted.map(u => ({
-      Tipo: tipoLabel(u.catalogo),
-      Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
-      "Nº Serie": u.numSerie ?? "",
-      Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
-      Hospital: u.hospital?.nombre ?? "", Ciudad: u.hospital?.ciudad ?? "",
-      Proyecto: u.preProyecto?.titulo ?? "",
-      "Fecha Compra": fmtFecha(u.fechaCompra),
-      "Fin Garantía": fmtFecha(u.fechaGarantia),
-      "Próx. Mantenimiento": fmtFecha(u.proximoMantenimiento),
-      "Precio Unitario (€)": u.catalogo.precio ?? "",
-      Notas: u.notas ?? "",
-    })), "hardware_inventario")
-  }
-
-  const hayFiltros = q || filtroTipo || filtroEstado || filtroHospital
-
-  function ThSort({ col, children }: { col: SortCol; children: React.ReactNode }) {
-    return (
-      <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">
-        <button onClick={() => toggleSort(col)} className="flex items-center gap-1 hover:text-gray-600 transition-colors">
-          {children}
-          <IcoSort dir={sortCol === col ? sortDir : null} />
-        </button>
-      </th>
-    )
-  }
-
-  return (
-    <div>
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"><IcoSearch /></span>
-          <input value={q} onChange={e => setQ(e.target.value)}
-            placeholder="Buscar modelo, marca, nº serie, hospital…"
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
-        </div>
-        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-          <option value="">Todos los tipos</option>
-          {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-        </select>
-        <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-          <option value="">Todos los estados</option>
-          {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select value={filtroHospital} onChange={e => setFiltroHospital(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-          <option value="">Todos los hospitales</option>
-          {hospitalesUnicos.map(h => <option key={h.id} value={h.id}>{h.nombre}</option>)}
-        </select>
-        <div className="flex gap-2 shrink-0">
-          <button onClick={() => setVistaCards(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            title={vistaCards ? "Vista tabla" : "Vista tarjetas"}>
-            {vistaCards ? <IcoList /> : <IcoGrid />}
-          </button>
-          <button onClick={exportar}
-            className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-            <IcoDownload /><span className="hidden sm:inline">CSV</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Breadcrumb filtros activos */}
-      {hayFiltros && (
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs text-gray-400">Filtros:</span>
-          {filtroTipo && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{filtroTipo}</span>}
-          {filtroEstado && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{HW_ESTADO[filtroEstado]?.label}</span>}
-          {filtroHospital && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-medium">{hospitalesUnicos.find(h => h.id === filtroHospital)?.nombre}</span>}
-          {q && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">"{q}"</span>}
-          <button onClick={() => { setQ(""); setFiltroTipo(""); setFiltroEstado(""); setFiltroHospital("") }}
-            className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-1">Limpiar</button>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {sorted.length === 0 ? (
-        <div className="text-center py-14 bg-white rounded-2xl border border-gray-100">
-          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
-            <IcoSearch />
-          </div>
-          <p className="text-sm font-medium text-gray-600">
-            {unidades.length === 0 ? "Sin unidades registradas" : hayFiltros ? "Sin resultados para los filtros activos" : "Sin unidades"}
-          </p>
-          {unidades.length > 0 && hayFiltros && (
-            <p className="text-xs text-gray-400 mt-1">Prueba a cambiar o limpiar los filtros</p>
-          )}
-        </div>
-      ) : vistaCards ? (
-        /* Vista Tarjetas */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {sorted.map(u => {
-            const hw = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
-            const dias = diasHasta(u.fechaGarantia)
-            const garantiaAlerta = dias !== null && dias <= 30
-            return (
-              <div key={u.id} className="kanban-card bg-white rounded-2xl border border-gray-100 p-4">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{tipoLabel(u.catalogo)}</span>
-                    <p className="text-sm font-bold text-gray-900 mt-0.5">{u.catalogo.marca} {u.catalogo.modelo}</p>
-                    {u.numSerie && <code className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mt-1 inline-block">{u.numSerie}</code>}
-                  </div>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0" style={{ backgroundColor: hw.bg, color: hw.color }}>{hw.label}</span>
-                </div>
-                <div className="space-y-1 text-xs text-gray-500">
-                  {(u.hospital || u.preProyecto) && (
-                    <div className="flex items-center gap-1.5"><IcoHospital /><span className="truncate">{u.hospital?.nombre ?? u.preProyecto?.titulo}</span></div>
-                  )}
-                  {u.fechaGarantia && (
-                    <div className={`flex items-center gap-1.5 ${garantiaAlerta ? "text-red-600 font-semibold" : ""}`}>
-                      <IcoWarning /><span>Garantía: {fmtFecha(u.fechaGarantia)}{garantiaAlerta ? ` (${dias}d)` : ""}</span>
-                    </div>
-                  )}
-                  {u.fechaCompra && <div className="text-gray-400">Antigüedad: {fmtAntiguedad(u.fechaCompra)}</div>}
-                </div>
-                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-50 justify-end">
-                  <button onClick={() => setEditando(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors" title="Editar"><IcoEdit /></button>
-                  {esAdmin && <button onClick={() => eliminar(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar"><IcoTrash /></button>}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        /* Vista Tabla */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <ThSort col="tipo">Tipo</ThSort>
-                  <ThSort col="modelo">Dispositivo</ThSort>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">Nº Serie</th>
-                  <ThSort col="estado">Estado</ThSort>
-                  <ThSort col="hospital">Hospital / Proyecto</ThSort>
-                  <ThSort col="antiguedad">Antigüedad</ThSort>
-                  <ThSort col="garantia">Garantía</ThSort>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((u, i) => {
-                  const hw = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
-                  const dias = diasHasta(u.fechaGarantia)
-                  const garantiaAlerta = dias !== null && dias <= 30
-                  return (
-                    <tr key={u.id} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
-                      <td className="px-4 py-3.5">
-                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">{tipoLabel(u.catalogo)}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="font-medium text-gray-900">{u.catalogo.marca} {u.catalogo.modelo}</p>
-                        {u.catalogo.precio && <p className="text-xs text-gray-400">{fmtEuros(u.catalogo.precio)}</p>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {u.numSerie ? <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700">{u.numSerie}</code> : <span className="text-gray-300 text-xs">—</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <select value={u.estado} onChange={e => cambiarEstado(u, e.target.value)}
-                          className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400"
-                          style={{ backgroundColor: hw.bg, color: hw.color }}>
-                          {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {u.hospital
-                          ? <div><p className="text-xs font-medium text-gray-700">{u.hospital.nombre}</p><p className="text-xs text-gray-400">{u.hospital.ciudad}</p></div>
-                          : u.preProyecto
-                          ? <Link href={`/pre-proyectos/${u.preProyecto.id}`} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>{u.preProyecto.titulo}</Link>
-                          : <span className="text-gray-300 text-xs">—</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="text-xs text-gray-500">{fmtAntiguedad(u.fechaCompra)}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {u.fechaGarantia
-                          ? <span className={`text-xs font-medium ${garantiaAlerta ? "text-red-600" : "text-gray-500"}`}>
-                              {fmtFecha(u.fechaGarantia)}
-                              {garantiaAlerta && <span className="ml-1 font-bold">{` (${dias}d)`}</span>}
-                            </span>
-                          : <span className="text-gray-300 text-xs">—</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => setEditando(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors" title="Editar / Asignar"><IcoEdit /></button>
-                          {esAdmin && <button onClick={() => eliminar(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar"><IcoTrash /></button>}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
-            {sorted.length} unidad{sorted.length !== 1 ? "es" : ""}
-            {sorted.length !== unidades.length && ` (de ${unidades.length} en total)`}
-          </div>
-        </div>
-      )}
-
-      {editando && (
-        <EditUnidadModal unidad={editando} onClose={() => setEditando(null)} onSaved={u => { onUpdated(u); setEditando(null) }} />
-      )}
     </div>
   )
 }
@@ -1368,374 +951,942 @@ function CatTiposModal({ tipos, onClose, onChanged }: {
   )
 }
 
-// ─── Modal: Unidades de un modelo ────────────────────────────────────────────
+// ─── Asignar / reasignar unidad ──────────────────────────────────────────────
 
-function CatStockModal({ item, onClose, onStockChanged }: {
-  item: HardwareCatalogo
+function AsignarUnidadModal({ unidad, onClose, onSaved }: {
+  unidad: HardwareUnidad
   onClose: () => void
-  onStockChanged: (delta: number) => void
+  onSaved: (u: HardwareUnidad) => void
 }) {
   const { success, error: toastError } = useToast()
-  const [unidades, setUnidades] = useState<HardwareUnidad[]>([])
-  const [loading, setLoading] = useState(true)
-  const EMPTY_ROW = { numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "" }
-  const [rows, setRows] = useState([{ ...EMPTY_ROW }])
-  const [saving, setSaving] = useState(false)
-  const tipoColor = item.tipo?.color ?? TEAL
+  const [hospitales, setHospitales] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
+  const [proyectos,  setProyectos]  = useState<{ id: string; titulo: string }[]>([])
+  const [destino, setDestino] = useState<"hospital"|"proyecto"|"libre">(
+    unidad.hospital ? "hospital" : unidad.preProyecto ? "proyecto" : "libre"
+  )
+  const [hospitalId,  setHospitalId]  = useState(unidad.hospital?.id ?? "")
+  const [proyectoId,  setProyectoId]  = useState(unidad.preProyecto?.id ?? "")
+  const [estado,      setEstado]      = useState(unidad.estado)
+  const [saving,      setSaving]      = useState(false)
+  const [busqHosp,    setBusqHosp]    = useState("")
+  const [busqProy,    setBusqProy]    = useState("")
 
-  const cargar = useCallback(async () => {
-    setLoading(true)
-    const r = await fetch(`/api/hardware/${item.id}`)
-    if (r.ok) { const d = await r.json(); setUnidades(d.unidades ?? []) }
-    setLoading(false)
-  }, [item.id])
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/hospitales").then(r => r.ok ? r.json() : []),
+      fetch("/api/pre-proyectos").then(r => r.ok ? r.json() : []),
+    ]).then(([h, p]) => {
+      if (Array.isArray(h)) setHospitales(h.sort((a: { nombre: string }, b: { nombre: string }) => a.nombre.localeCompare(b.nombre)))
+      if (Array.isArray(p)) setProyectos(p.sort((a: { titulo: string }, b: { titulo: string }) => a.titulo.localeCompare(b.titulo)))
+    })
+  }, [])
 
-  useEffect(() => { cargar() }, [cargar])
-
-  async function añadir(e: React.FormEvent) {
-    e.preventDefault()
+  async function guardar() {
     setSaving(true)
     try {
-      const payload = rows
-        .filter((r, i) => rows.length === 1 || r.numSerie.trim())
-        .map(r => ({
-          catalogoId: item.id,
-          numSerie: r.numSerie.trim() || null,
-          notas: r.notas.trim() || null,
-          fechaCompra: r.fechaCompra || null,
-          fechaGarantia: r.fechaGarantia || null,
-          estado: "DISPONIBLE",
-        }))
-      const resp = await fetch("/api/hardware/unidades", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const payload = {
+        hospitalId:    destino === "hospital"  ? (hospitalId || null) : null,
+        preProyectoId: destino === "proyecto"  ? (proyectoId || null) : null,
+        estado:        destino === "libre"     ? "DISPONIBLE"         : estado,
+      }
+      const r = await fetch(`/api/hardware/unidades/${unidad.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      if (!resp.ok) throw new Error()
-      const nuevas: HardwareUnidad[] = await resp.json()
-      setUnidades(p => [...nuevas, ...p])
-      setRows([{ ...EMPTY_ROW }])
-      onStockChanged(nuevas.length)
-      success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""}`)
-    } catch { toastError("Error al añadir stock") }
+      if (!r.ok) throw new Error()
+      const updated = await r.json()
+      const hosp = destino === "hospital" && hospitalId
+        ? (hospitales.find(h => h.id === hospitalId) ?? null) : null
+      const proy = destino === "proyecto" && proyectoId
+        ? (proyectos.find(p => p.id === proyectoId) ? { id: proyectoId, titulo: proyectos.find(p => p.id === proyectoId)!.titulo } : null) : null
+      onSaved({ ...unidad, ...updated, hospital: hosp, preProyecto: proy })
+      success("Asignación actualizada")
+      onClose()
+    } catch { toastError("Error al guardar") }
     finally { setSaving(false) }
   }
 
-  async function eliminarUnidad(id: string) {
-    try {
-      await fetch(`/api/hardware/unidades/${id}`, { method: "DELETE" })
-      setUnidades(p => p.filter(u => u.id !== id))
-      onStockChanged(-1)
-      success("Unidad eliminada")
-    } catch { toastError("Error") }
-  }
+  const tipoColor = unidad.catalogo.tipo?.color ?? TEAL
+  const FL = "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white"
+  const ring = { "--tw-ring-color": tipoColor } as React.CSSProperties
 
-  const FROW = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+  const hospFiltrados = hospitales.filter(h =>
+    !busqHosp || h.nombre.toLowerCase().includes(busqHosp.toLowerCase()) || h.ciudad.toLowerCase().includes(busqHosp.toLowerCase()))
+  const proyFiltrados = proyectos.filter(p =>
+    !busqProy || p.titulo.toLowerCase().includes(busqProy.toLowerCase()))
+
+  const DEST_OPTS: { k: "hospital"|"proyecto"|"libre"; label: string; sub: string }[] = [
+    { k: "hospital",  label: "Hospital",    sub: "Instalar en un centro" },
+    { k: "proyecto",  label: "Proyecto",    sub: "Pre-proyecto activo"   },
+    { k: "libre",     label: "Sin asignar", sub: "Stock disponible"      },
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0"
-          style={{ borderTop: `3px solid ${tipoColor}` }}>
-          {item.tipo && (
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+          {unidad.catalogo.tipo && (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white shrink-0"
-              style={{ backgroundColor: tipoColor }}>{item.tipo.nombre}</span>
+              style={{ backgroundColor: tipoColor }}>{unidad.catalogo.tipo.nombre}</span>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-gray-900">{item.marca} {item.modelo}</h2>
-            {item.referenciaPalex && (
-              <span className="text-xs font-mono font-semibold" style={{ color: TEAL }}>{item.referenciaPalex}</span>
-            )}
+            <p className="text-sm font-bold text-gray-900">{unidad.catalogo.marca} {unidad.catalogo.modelo}</p>
+            {unidad.numSerie && <code className="text-xs text-gray-400 font-mono">{unidad.numSerie}</code>}
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-xl font-bold text-gray-900">{unidades.length}</p>
-            <p className="text-[10px] text-gray-400 -mt-0.5">unidades</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Destino de la unidad</p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEST_OPTS.map(o => (
+                <button key={o.k} type="button" onClick={() => setDestino(o.k)}
+                  className="flex flex-col items-center gap-0.5 py-3 px-2 rounded-xl border text-center transition-all cursor-pointer"
+                  style={destino === o.k
+                    ? { backgroundColor: tipoColor, borderColor: tipoColor, color: "white" }
+                    : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  <span className="text-xs font-bold">{o.label}</span>
+                  <span className="text-[10px] opacity-70">{o.sub}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer shrink-0"><IcoX /></button>
+
+          {destino === "hospital" && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Hospital</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"><IcoSearch /></span>
+                <input value={busqHosp} onChange={e => setBusqHosp(e.target.value)} placeholder="Filtrar hospitales…"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white mb-1"
+                  style={ring} />
+              </div>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-50">
+                {hospFiltrados.length === 0
+                  ? <p className="text-xs text-gray-400 text-center py-4">Sin resultados</p>
+                  : hospFiltrados.map(h => (
+                    <button key={h.id} type="button" onClick={() => setHospitalId(h.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                      style={hospitalId === h.id ? { backgroundColor: `${tipoColor}10` } : {}}>
+                      <span className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{h.nombre}</p>
+                        <p className="text-xs text-gray-400">{h.ciudad}</p>
+                      </span>
+                      {hospitalId === h.id && <span style={{ color: tipoColor }}><IcoCheck /></span>}
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+          )}
+
+          {destino === "proyecto" && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Pre-proyecto</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"><IcoSearch /></span>
+                <input value={busqProy} onChange={e => setBusqProy(e.target.value)} placeholder="Filtrar proyectos…"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white mb-1"
+                  style={ring} />
+              </div>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-50">
+                {proyFiltrados.length === 0
+                  ? <p className="text-xs text-gray-400 text-center py-4">Sin resultados</p>
+                  : proyFiltrados.map(p => (
+                    <button key={p.id} type="button" onClick={() => setProyectoId(p.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                      style={proyectoId === p.id ? { backgroundColor: `${tipoColor}10` } : {}}>
+                      <span className="flex-1 text-sm font-medium text-gray-800 truncate">{p.titulo}</span>
+                      {proyectoId === p.id && <span style={{ color: tipoColor }}><IcoCheck /></span>}
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+          )}
+
+          {destino === "libre" && (
+            <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 text-xs text-green-700 flex items-center gap-2">
+              <IcoCheck /> La unidad quedará como <strong>Disponible</strong> sin destino asignado.
+            </div>
+          )}
+
+          {destino !== "libre" && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Estado</label>
+              <select value={estado} onChange={e => setEstado(e.target.value)} className={FL} style={ring}>
+                {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-2 bg-gray-50 rounded-b-2xl shrink-0">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white cursor-pointer transition-colors">Cancelar</button>
+          <button onClick={guardar}
+            disabled={saving || (destino === "hospital" && !hospitalId) || (destino === "proyecto" && !proyectoId)}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: tipoColor }}>
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Drawer: editar todos los campos de una unidad ───────────────────────────
+
+function EditUnidadDrawer({ unidad, onClose, onSaved }: {
+  unidad: HardwareUnidad
+  onClose: () => void
+  onSaved: (u: HardwareUnidad) => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [form, setForm] = useState({
+    numSerie:            unidad.numSerie ?? "",
+    estado:              unidad.estado,
+    hospitalId:          unidad.hospital?.id ?? "",
+    notas:               unidad.notas ?? "",
+    fechaCompra:         unidad.fechaCompra         ? unidad.fechaCompra.slice(0,10)         : "",
+    fechaGarantia:       unidad.fechaGarantia       ? unidad.fechaGarantia.slice(0,10)       : "",
+    proximoMantenimiento: unidad.proximoMantenimiento ? unidad.proximoMantenimiento.slice(0,10) : "",
+  })
+  const [hospitales, setHospitales] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/hospitales").then(r => r.ok ? r.json() : []).then((d: { id: string; nombre: string; ciudad: string }[]) => {
+      if (Array.isArray(d)) setHospitales(d.sort((a, b) => a.nombre.localeCompare(b.nombre)))
+    })
+  }, [])
+
+  function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const r = await fetch(`/api/hardware/unidades/${unidad.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          numSerie:             form.numSerie || null,
+          estado:               form.estado,
+          hospitalId:           form.hospitalId || null,
+          notas:                form.notas || null,
+          fechaCompra:          form.fechaCompra || null,
+          fechaGarantia:        form.fechaGarantia || null,
+          proximoMantenimiento: form.proximoMantenimiento || null,
+        }),
+      })
+      if (!r.ok) throw new Error()
+      const updated = await r.json()
+      const hosp = form.hospitalId ? (hospitales.find(h => h.id === form.hospitalId) ?? null) : null
+      onSaved({ ...unidad, ...updated, hospital: hosp })
+      success("Unidad actualizada")
+      onClose()
+    } catch { toastError("Error al guardar") }
+    finally { setSaving(false) }
+  }
+
+  const tipoColor = unidad.catalogo.tipo?.color ?? TEAL
+  const FL   = "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white placeholder:text-gray-300 transition-colors"
+  const FLBL = "block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5"
+  const ring = { "--tw-ring-color": tipoColor } as React.CSSProperties
+  const hw   = HW_ESTADO[form.estado] ?? { label: form.estado, color: "#6b7280", bg: "#f3f4f6" }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 shrink-0"
+          style={{ borderTop: `3px solid ${tipoColor}` }}>
+          {unidad.catalogo.tipo && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white shrink-0"
+              style={{ backgroundColor: tipoColor }}>{unidad.catalogo.tipo.nombre}</span>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-gray-900">{unidad.catalogo.marca} {unidad.catalogo.modelo}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {unidad.catalogo.referenciaPalex && (
+                <code className="font-mono font-semibold mr-2" style={{ color: tipoColor }}>{unidad.catalogo.referenciaPalex}</code>
+              )}
+              Editar unidad
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
+        </div>
+
+        <form id="edit-unit-form" onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+          {/* Estado — destacado */}
+          <div>
+            <label className={FLBL}>Estado actual</label>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              {Object.entries(HW_ESTADO).map(([k, v]) => (
+                <button key={k} type="button" onClick={() => set("estado", k)}
+                  className="py-2 px-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer text-center"
+                  style={form.estado === k
+                    ? { backgroundColor: v.bg, borderColor: v.color, color: v.color }
+                    : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: hw.color }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: hw.color, display: "inline-block" }} />
+              Estado actual: <strong>{hw.label}</strong>
+            </div>
+          </div>
+
+          <div className="h-px bg-gray-100" />
+
+          {/* Nº serie */}
+          <div>
+            <label className={FLBL}>Número de serie</label>
+            <input value={form.numSerie} onChange={e => set("numSerie", e.target.value)}
+              placeholder="S/N del dispositivo (opcional)" className={`${FL} font-mono`} style={ring} />
+          </div>
+
+          {/* Hospital asignado */}
+          <div>
+            <label className={FLBL}>Hospital asignado</label>
+            <select value={form.hospitalId} onChange={e => {
+              set("hospitalId", e.target.value)
+              if (e.target.value && form.estado === "DISPONIBLE") set("estado", "ASIGNADO")
+              if (!e.target.value && form.estado === "ASIGNADO") set("estado", "DISPONIBLE")
+            }} className={FL} style={ring}>
+              <option value="">— Sin asignar a hospital —</option>
+              {hospitales.map(h => <option key={h.id} value={h.id}>{h.nombre} ({h.ciudad})</option>)}
+            </select>
+          </div>
+
+          <div className="h-px bg-gray-100" />
+
+          {/* Fechas */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={FLBL}>Fecha de compra</label>
+              <input type="date" value={form.fechaCompra} onChange={e => set("fechaCompra", e.target.value)} className={FL} style={ring} />
+            </div>
+            <div>
+              <label className={FLBL}>Fin de garantía</label>
+              <input type="date" value={form.fechaGarantia} onChange={e => set("fechaGarantia", e.target.value)} className={FL} style={ring} />
+              {form.fechaGarantia && (() => {
+                const d = diasHasta(form.fechaGarantia)
+                return d !== null && d <= 90 ? (
+                  <p className="text-[11px] mt-1" style={{ color: d <= 30 ? "#dc2626" : "#d97706" }}>
+                    {d < 0 ? `Vencida hace ${Math.abs(d)}d` : d === 0 ? "Vence hoy" : `Vence en ${d}d`}
+                  </p>
+                ) : null
+              })()}
+            </div>
+          </div>
+
+          {/* Próximo mantenimiento */}
+          <div>
+            <label className={FLBL}>Próximo mantenimiento</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"><IcoShield /></span>
+              <input type="date" value={form.proximoMantenimiento} onChange={e => set("proximoMantenimiento", e.target.value)}
+                className={`${FL} pl-8`} style={ring} />
+            </div>
+          </div>
+
+          {/* Notas */}
+          <div>
+            <label className={FLBL}>Notas internas</label>
+            <textarea value={form.notas} onChange={e => set("notas", e.target.value)}
+              placeholder="Observaciones, incidencias, historial relevante…"
+              rows={3} className={`${FL} resize-none`} style={ring} />
+          </div>
+
+          {/* Info del modelo */}
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-1">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Modelo</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+              <div><span className="text-gray-400">Marca: </span>{unidad.catalogo.marca}</div>
+              <div><span className="text-gray-400">Modelo: </span>{unidad.catalogo.modelo}</div>
+              {unidad.catalogo.proveedor && <div><span className="text-gray-400">Proveedor: </span>{unidad.catalogo.proveedor}</div>}
+              {unidad.catalogo.precio != null && <div><span className="text-gray-400">Precio: </span>{fmtEuros(unidad.catalogo.precio)}</div>}
+            </div>
+          </div>
+        </form>
+
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0 bg-gray-50/80">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white cursor-pointer transition-colors">Cancelar</button>
+          <button form="edit-unit-form" type="submit" disabled={saving}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: tipoColor }}>
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Modal: añadir nueva unidad (con selector de modelo) ─────────────────────
+
+function NuevaUnidadModal({ catalogo, onClose, onCreated }: {
+  catalogo: HardwareCatalogo[]
+  onClose: () => void
+  onCreated: (u: HardwareUnidad) => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [busqModelo, setBusqModelo] = useState("")
+  const [modeloId, setModeloId]   = useState("")
+  const [hospitales, setHospitales] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
+  const EMPTY = { numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "", estado: "DISPONIBLE", hospitalId: "" }
+  const [rows, setRows] = useState([{ ...EMPTY }])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/hospitales").then(r => r.ok ? r.json() : []).then((d: { id: string; nombre: string; ciudad: string }[]) => {
+      if (Array.isArray(d)) setHospitales(d.sort((a, b) => a.nombre.localeCompare(b.nombre)))
+    })
+  }, [])
+
+  const modeloSel  = catalogo.find(c => c.id === modeloId)
+  const tipoColor  = modeloSel?.tipo?.color ?? TEAL
+  const catActivos = catalogo.filter(c => c.activo && (!busqModelo ||
+    [c.marca, c.modelo, c.referenciaPalex].some(v => v?.toLowerCase().includes(busqModelo.toLowerCase()))))
+
+  function setRow(i: number, k: string, v: string) {
+    setRows(p => p.map((r, j) => j === i ? { ...r, [k]: v } : r))
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!modeloId) { toastError("Selecciona un modelo"); return }
+    setSaving(true)
+    try {
+      const payload = rows.filter((r, i) => rows.length === 1 || r.numSerie.trim()).map(r => ({
+        catalogoId:   modeloId,
+        numSerie:     r.numSerie.trim() || null,
+        estado:       r.estado || "DISPONIBLE",
+        hospitalId:   r.hospitalId || null,
+        notas:        r.notas.trim() || null,
+        fechaCompra:  r.fechaCompra || null,
+        fechaGarantia: r.fechaGarantia || null,
+      }))
+      const r = await fetch("/api/hardware/unidades", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload.length === 1 ? payload[0] : payload),
+      })
+      if (!r.ok) throw new Error()
+      const result = await r.json()
+      const nuevas: HardwareUnidad[] = Array.isArray(result) ? result : [result]
+      nuevas.forEach(u => onCreated(u))
+      success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""}`)
+      onClose()
+    } catch { toastError("Error al crear") }
+    finally { setSaving(false) }
+  }
+
+  const FL = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
+        style={{ borderTop: `3px solid ${tipoColor}` }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Nueva unidad de hardware</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Registra una o varias unidades físicas en el inventario</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Form añadir stock */}
-          <form onSubmit={añadir} className="bg-gray-50 rounded-xl border border-gray-100 p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Registrar nuevas unidades</p>
-            <div className="space-y-2">
-              {rows.map((row, i) => (
-                <div key={i} className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-                  <div>
-                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Nº serie</label>}
-                    <input value={row.numSerie} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, numSerie: e.target.value } : x))}
-                      placeholder="Opcional" className={FROW + " font-mono text-xs"} />
-                  </div>
-                  <div>
-                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Fecha compra</label>}
-                    <input type="date" value={row.fechaCompra} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, fechaCompra: e.target.value } : x))}
-                      className={FROW + " text-xs"} />
-                  </div>
-                  <div>
-                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Fin garantía</label>}
-                    <input type="date" value={row.fechaGarantia} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, fechaGarantia: e.target.value } : x))}
-                      className={FROW + " text-xs"} />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Notas</label>}
-                      <input value={row.notas} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, notas: e.target.value } : x))}
-                        placeholder="—" className={FROW + " text-xs"} />
-                    </div>
-                    {rows.length > 1 && (
-                      <button type="button" onClick={() => setRows(p => p.filter((_, j) => j !== i))}
-                        className="p-2 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 self-end cursor-pointer"><IcoTrash /></button>
-                    )}
-                  </div>
-                </div>
-              ))}
+          {/* Selector de modelo */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">1. Seleccionar modelo</p>
+            <div className="relative mb-2">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"><IcoSearch /></span>
+              <input value={busqModelo} onChange={e => setBusqModelo(e.target.value)} placeholder="Buscar por marca, modelo o referencia…"
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
             </div>
-            <div className="flex items-center justify-between mt-3">
-              <button type="button" onClick={() => setRows(p => [...p, { ...EMPTY_ROW }])}
-                className="text-xs font-medium cursor-pointer hover:opacity-80" style={{ color: TEAL }}>
-                + Añadir fila
-              </button>
-              <button type="submit" disabled={saving}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer"
-                style={{ backgroundColor: tipoColor }}>
-                {saving ? "Añadiendo…" : `Añadir ${rows.length} ud.`}
-              </button>
+            <div className="max-h-44 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-50">
+              {catActivos.length === 0
+                ? <p className="text-xs text-gray-400 text-center py-4">Sin modelos activos{busqModelo ? " para esta búsqueda" : ""}</p>
+                : catActivos.map(c => {
+                  const tc = c.tipo?.color ?? "#9ca3af"
+                  return (
+                    <button key={c.id} type="button" onClick={() => setModeloId(c.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                      style={modeloId === c.id ? { backgroundColor: `${tc}10` } : {}}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: tc, flexShrink: 0 }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">{c.marca} {c.modelo}</p>
+                        <p className="text-xs text-gray-400">{c.tipo?.nombre ?? "Sin tipo"}{c.referenciaPalex ? ` · ${c.referenciaPalex}` : ""}</p>
+                      </div>
+                      {c.precio != null && <span className="text-xs text-gray-400 shrink-0">{fmtEuros(c.precio)}</span>}
+                      {modeloId === c.id && <span style={{ color: tc }}><IcoCheck /></span>}
+                    </button>
+                  )
+                })
+              }
             </div>
-          </form>
+          </div>
 
-          {/* Lista unidades */}
-          {loading ? (
-            <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-11 bg-gray-100 rounded-xl animate-pulse" />)}</div>
-          ) : unidades.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm">Sin unidades registradas para este modelo</div>
-          ) : (
-            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
-                    <th className="text-left px-4 py-2.5 font-semibold">Nº Serie</th>
-                    <th className="text-left px-4 py-2.5 font-semibold">Estado</th>
-                    <th className="text-left px-4 py-2.5 font-semibold hidden sm:table-cell">Asignado a</th>
-                    <th className="text-left px-4 py-2.5 font-semibold hidden md:table-cell">Garantía</th>
-                    <th className="px-4 py-2.5 w-10" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {unidades.map((u, i) => {
-                    const est = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
-                    return (
-                      <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/30" : ""}`}>
-                        <td className="px-4 py-3">
-                          {u.numSerie
-                            ? <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{u.numSerie}</code>
-                            : <span className="text-gray-300 text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: est.bg, color: est.color }}>
-                            <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: est.color, display: "inline-block" }} />
-                            {est.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500 hidden sm:table-cell max-w-[160px] truncate">
-                          {u.hospital?.nombre ?? u.preProyecto?.titulo ?? <span className="text-gray-300">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-400 hidden md:table-cell">
-                          {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => eliminarUnidad(u.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 cursor-pointer"><IcoTrash /></button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+          {/* Filas de unidades */}
+          {modeloId && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">2. Detalles de la{rows.length > 1 ? "s" : ""} unidad{rows.length > 1 ? "es" : ""}</p>
+              <div className="space-y-3">
+                {rows.map((row, i) => (
+                  <div key={i} className="bg-gray-50 rounded-xl border border-gray-100 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-500">Unidad {i + 1}</p>
+                      {rows.length > 1 && (
+                        <button type="button" onClick={() => setRows(p => p.filter((_, j) => j !== i))}
+                          className="p-1 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 cursor-pointer"><IcoTrash /></button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Nº serie</label>
+                        <input value={row.numSerie} onChange={e => setRow(i, "numSerie", e.target.value)}
+                          placeholder="Opcional" className={FL + " font-mono text-xs"} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Estado</label>
+                        <select value={row.estado} onChange={e => setRow(i, "estado", e.target.value)} className={FL + " text-xs"}>
+                          {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Hospital</label>
+                        <select value={row.hospitalId} onChange={e => setRow(i, "hospitalId", e.target.value)} className={FL + " text-xs"}>
+                          <option value="">Sin asignar</option>
+                          {hospitales.map(h => <option key={h.id} value={h.id}>{h.nombre}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Fecha compra</label>
+                        <input type="date" value={row.fechaCompra} onChange={e => setRow(i, "fechaCompra", e.target.value)} className={FL + " text-xs"} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Fin garantía</label>
+                        <input type="date" value={row.fechaGarantia} onChange={e => setRow(i, "fechaGarantia", e.target.value)} className={FL + " text-xs"} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Notas</label>
+                        <input value={row.notas} onChange={e => setRow(i, "notas", e.target.value)} placeholder="—" className={FL + " text-xs"} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => setRows(p => [...p, { ...EMPTY }])}
+                className="mt-2 text-xs font-medium cursor-pointer hover:opacity-80" style={{ color: tipoColor }}>
+                + Añadir otra unidad
+              </button>
             </div>
           )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0 bg-gray-50/80">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white cursor-pointer">Cancelar</button>
+          <button onClick={submit} disabled={saving || !modeloId}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90"
+            style={{ backgroundColor: tipoColor }}>
+            {saving ? "Creando…" : `Crear ${rows.length} unidad${rows.length !== 1 ? "es" : ""}`}
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Tarjeta de catálogo ──────────────────────────────────────────────────────
+// ─── Tarjeta de modelo con unidades expandibles ───────────────────────────────
 
-function CatCard({ item, esAdmin, onEdit, onStock, onToggle }: {
+function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUnitDeleted, onUnitCreated }: {
   item: HardwareCatalogo
+  units: HardwareUnidad[]
   esAdmin: boolean
   onEdit: () => void
-  onStock: () => void
   onToggle: () => void
+  onUnitUpdated: (u: HardwareUnidad) => void
+  onUnitDeleted: (id: string) => void
+  onUnitCreated: (u: HardwareUnidad) => void
 }) {
-  const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
+  const { success, error: toastError } = useToast()
+  const [expanded, setExpanded]       = useState(false)
+  const [editUnit, setEditUnit]       = useState<HardwareUnidad | null>(null)
+  const [assignUnit, setAssignUnit]   = useState<HardwareUnidad | null>(null)
+  const [addingRow, setAddingRow]     = useState(false)
+  const [addForm, setAddForm] = useState({ numSerie:"", notas:"", fechaCompra:"", fechaGarantia:"", estado:"DISPONIBLE" })
+  const [saving, setSaving]           = useState(false)
+
+  const stock    = item._stock ?? { total: units.length, disponibles: units.filter(u => u.estado === "DISPONIBLE").length, asignados: units.filter(u => u.estado === "ASIGNADO").length, mantenimiento: units.filter(u => u.estado === "EN_MANTENIMIENTO").length }
   const tipoColor = item.tipo?.color ?? "#9ca3af"
-  const pctDisp = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
-  const barColor = pctDisp >= 70 ? "#16a34a" : pctDisp >= 30 ? TEAL : "#f59e0b"
+  const pct      = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+  const barColor  = pct >= 70 ? "#16a34a" : pct >= 30 ? TEAL : "#f59e0b"
+
+  async function cambiarEstadoInline(u: HardwareUnidad, nuevoEstado: string) {
+    const r = await fetch(`/api/hardware/unidades/${u.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado: nuevoEstado }),
+    })
+    if (r.ok) { onUnitUpdated({ ...u, estado: nuevoEstado }); success("Estado actualizado") }
+    else toastError("Error")
+  }
+
+  async function eliminarUnidad(id: string) {
+    if (!confirm("¿Eliminar esta unidad?")) return
+    const r = await fetch(`/api/hardware/unidades/${id}`, { method: "DELETE" })
+    if (r.ok) { onUnitDeleted(id); success("Unidad eliminada") }
+    else toastError("Error")
+  }
+
+  async function addUnit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const r = await fetch("/api/hardware/unidades", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          catalogoId: item.id,
+          numSerie: addForm.numSerie || null,
+          notas: addForm.notas || null,
+          fechaCompra: addForm.fechaCompra || null,
+          fechaGarantia: addForm.fechaGarantia || null,
+          estado: addForm.estado || "DISPONIBLE",
+        }),
+      })
+      if (!r.ok) throw new Error()
+      const nueva: HardwareUnidad = await r.json()
+      onUnitCreated(nueva)
+      setAddForm({ numSerie:"", notas:"", fechaCompra:"", fechaGarantia:"", estado:"DISPONIBLE" })
+      setAddingRow(false)
+      success("Unidad añadida")
+    } catch { toastError("Error al añadir") }
+    finally { setSaving(false) }
+  }
+
+  const FL = "w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 bg-white"
 
   return (
-    <div className={`group relative bg-white rounded-2xl border flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md cursor-default
-      ${item.activo ? "border-gray-100 shadow-sm hover:border-gray-200" : "border-gray-100 shadow-sm opacity-60"}`}>
-      {/* Franja de color tipo */}
-      <div className="h-1 w-full shrink-0" style={{ backgroundColor: item.activo ? tipoColor : "#e5e7eb" }} />
+    <>
+      <div className={`group bg-white rounded-2xl border flex flex-col overflow-hidden transition-all duration-200
+        ${item.activo ? "border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200" : "border-gray-100 shadow-sm opacity-60"}`}>
+        <div className="h-1 w-full shrink-0" style={{ backgroundColor: item.activo ? tipoColor : "#e5e7eb" }} />
 
-      <div className="p-4 flex-1 flex flex-col">
-        {/* Badge tipo + acciones hover */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {item.tipo
-              ? <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>{item.tipo.nombre}</span>
-              : <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Sin tipo</span>}
-            {!item.activo && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-50 text-red-400">Inactivo</span>}
+        <div className="p-4 flex-1 flex flex-col">
+          {/* Badge tipo + hover actions */}
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {item.tipo
+                ? <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>{item.tipo.nombre}</span>
+                : <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Sin tipo</span>}
+              {!item.activo && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-50 text-red-400">Inactivo</span>}
+            </div>
+            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 cursor-pointer" title="Editar modelo"><IcoEdit /></button>
+              {esAdmin && <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400 cursor-pointer" title={item.activo ? "Desactivar" : "Activar"}><IcoTrash /></button>}
+            </div>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 transition-colors cursor-pointer" aria-label="Editar"><IcoEdit /></button>
-            {esAdmin && <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors cursor-pointer" aria-label={item.activo ? "Desactivar" : "Activar"}><IcoTrash /></button>}
+
+          {/* Marca + Modelo */}
+          <div className="mb-2">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{item.marca}</p>
+            <h3 className="text-base font-bold text-gray-900 leading-tight mt-0.5">{item.modelo}</h3>
+            {item.descripcion && <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">{item.descripcion}</p>}
+          </div>
+
+          {/* Ref. Palex */}
+          {item.referenciaPalex && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl mb-2 w-fit" style={{ backgroundColor: `${TEAL}0e` }}>
+              <span style={{ color: TEAL }}><IcoTag /></span>
+              <span className="text-xs font-mono font-bold" style={{ color: TEAL }}>{item.referenciaPalex}</span>
+            </div>
+          )}
+
+          {/* Chips: proveedor, precio, ficha, garantía */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {item.proveedor && <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 text-gray-600 truncate max-w-[140px]">{item.proveedor}</span>}
+            {item.precio != null && <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 font-semibold text-gray-700">{fmtEuros(item.precio)}</span>}
+            {item.fichaUrl && (
+              <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-xs rounded-lg px-2 py-0.5 border cursor-pointer"
+                style={{ borderColor: `${TEAL}40`, color: TEAL }}>
+                <IcoLink /> Datasheet
+              </a>
+            )}
+          </div>
+
+          {/* Stock bar */}
+          <div className="mt-auto pt-3 border-t border-gray-50">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex items-center gap-1">
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#16a34a", display: "inline-block" }} />
+                  <span className="text-gray-600 font-medium">{stock.disponibles} disp.</span>
+                </span>
+                {stock.asignados > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: TEAL, display: "inline-block" }} />
+                    <span className="text-gray-500">{stock.asignados} asig.</span>
+                  </span>
+                )}
+                {stock.mantenimiento > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b", display: "inline-block" }} />
+                    <span className="text-amber-600">{stock.mantenimiento} mant.</span>
+                  </span>
+                )}
+              </div>
+              <span className="text-gray-400">{stock.total} total</span>
+            </div>
+            {stock.total > 0
+              ? <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: barColor }} /></div>
+              : <div className="h-1.5 bg-gray-100 rounded-full" />}
           </div>
         </div>
 
-        {/* Marca + Modelo */}
-        <div className="mb-3">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{item.marca}</p>
-          <h3 className="text-base font-bold text-gray-900 leading-tight mt-0.5">{item.modelo}</h3>
-          {item.descripcion && <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">{item.descripcion}</p>}
+        {/* Footer: expand + add */}
+        <div className="px-4 pb-4 flex gap-2">
+          <button onClick={() => setExpanded(v => !v)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer">
+            <IcoChevron open={expanded} />
+            {expanded ? "Ocultar" : "Ver"} unidades ({units.length})
+          </button>
+          <button onClick={() => { setExpanded(true); setAddingRow(true) }}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            style={{ color: tipoColor, border: "1px solid", borderColor: `${tipoColor}40` }}>
+            <IcoPlus /> Añadir
+          </button>
         </div>
 
-        {/* Ref. Palex badge */}
-        {item.referenciaPalex && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl mb-3 w-fit" style={{ backgroundColor: `${TEAL}0e` }}>
-            <span style={{ color: TEAL, flexShrink: 0 }}><IcoTag /></span>
-            <span className="text-xs font-mono font-bold" style={{ color: TEAL }}>{item.referenciaPalex}</span>
+        {/* Expansión: unidades del modelo */}
+        {expanded && (
+          <div className="border-t border-gray-100 bg-gray-50/60 px-4 pt-4 pb-4">
+            {/* Form añadir unidad */}
+            {addingRow && (
+              <form onSubmit={addUnit} className="bg-white border border-gray-200 rounded-xl p-3 mb-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nueva unidad</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">Nº serie</label>
+                    <input value={addForm.numSerie} onChange={e => setAddForm(p => ({ ...p, numSerie: e.target.value }))}
+                      placeholder="Opcional" className={FL + " font-mono"} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">Estado</label>
+                    <select value={addForm.estado} onChange={e => setAddForm(p => ({ ...p, estado: e.target.value }))} className={FL}>
+                      {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">Fecha compra</label>
+                    <input type="date" value={addForm.fechaCompra} onChange={e => setAddForm(p => ({ ...p, fechaCompra: e.target.value }))} className={FL} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">Fin garantía</label>
+                    <input type="date" value={addForm.fechaGarantia} onChange={e => setAddForm(p => ({ ...p, fechaGarantia: e.target.value }))} className={FL} />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setAddingRow(false)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-white cursor-pointer">Cancelar</button>
+                  <button type="submit" disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50"
+                    style={{ backgroundColor: tipoColor }}>{saving ? "…" : "Añadir"}</button>
+                </div>
+              </form>
+            )}
+
+            {units.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">Sin unidades — usa el botón Añadir para registrar la primera.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
+                      <th className="text-left pb-2 font-semibold">Nº serie</th>
+                      <th className="text-left pb-2 font-semibold">Estado</th>
+                      <th className="text-left pb-2 font-semibold hidden sm:table-cell">Asignado a</th>
+                      <th className="text-left pb-2 font-semibold hidden md:table-cell">Garantía</th>
+                      <th className="pb-2 w-24" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {units.map(u => {
+                      const es = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
+                      return (
+                        <tr key={u.id} className="border-b border-gray-100 last:border-0 hover:bg-white/70 transition-colors">
+                          <td className="py-2 pr-3">
+                            {u.numSerie
+                              ? <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{u.numSerie}</code>
+                              : <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="py-2 pr-3">
+                            <select value={u.estado} onChange={e => cambiarEstadoInline(u, e.target.value)}
+                              className="text-xs font-bold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1"
+                              style={{ backgroundColor: es.bg, color: es.color }}>
+                              {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
+                            </select>
+                          </td>
+                          <td className="py-2 pr-3 text-gray-500 hidden sm:table-cell max-w-[130px] truncate">
+                            {u.hospital?.nombre ?? u.preProyecto?.titulo ?? <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="py-2 pr-3 text-gray-400 hidden md:table-cell">
+                            {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <button onClick={() => setAssignUnit(u)} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 cursor-pointer" title="Asignar"><IcoHospital /></button>
+                              <button onClick={() => setEditUnit(u)} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 cursor-pointer" title="Editar"><IcoEdit /></button>
+                              {esAdmin && <button onClick={() => eliminarUnidad(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 cursor-pointer" title="Eliminar"><IcoTrash /></button>}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Chips: proveedor, precio, datasheet */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {item.proveedor && (
-            <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 text-gray-600 truncate max-w-[160px]">
-              {item.proveedor}
-            </span>
-          )}
-          {item.precio != null && (
-            <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 font-semibold text-gray-700">
-              {fmtEuros(item.precio)}
-            </span>
-          )}
-          {item.fichaUrl && (
-            <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs rounded-lg px-2 py-0.5 border transition-colors hover:opacity-80 cursor-pointer"
-              style={{ borderColor: `${TEAL}40`, color: TEAL }}>
-              <IcoLink /> Datasheet
-            </a>
-          )}
-        </div>
-
-        {/* Stock bar */}
-        <div className="mt-auto pt-3 border-t border-gray-50">
-          <div className="flex items-center justify-between text-xs mb-2">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#16a34a", display: "inline-block" }} />
-                <span className="text-gray-600 font-medium">{stock.disponibles} disp.</span>
-              </span>
-              {stock.asignados > 0 && (
-                <span className="flex items-center gap-1">
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: TEAL, display: "inline-block" }} />
-                  <span className="text-gray-500">{stock.asignados} asig.</span>
-                </span>
-              )}
-              {stock.mantenimiento > 0 && (
-                <span className="flex items-center gap-1">
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b", display: "inline-block" }} />
-                  <span className="text-amber-600">{stock.mantenimiento} mant.</span>
-                </span>
-              )}
-            </div>
-            <span className="text-gray-400 font-medium">{stock.total} total</span>
-          </div>
-          {stock.total > 0 ? (
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pctDisp}%`, backgroundColor: barColor }} />
-            </div>
-          ) : (
-            <div className="h-1.5 bg-gray-100 rounded-full" />
-          )}
-        </div>
       </div>
 
-      {/* Footer acciones */}
-      <div className="px-4 pb-4 flex gap-2">
-        <button onClick={onStock}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer">
-          <IcoBox /> Unidades ({stock.total})
-        </button>
-        <button onClick={onEdit}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-          style={{ color: tipoColor, border: "1px solid", borderColor: `${tipoColor}40` }}>
-          <IcoEdit /> Editar
-        </button>
-      </div>
-    </div>
+      {editUnit && <EditUnidadDrawer unidad={editUnit} onClose={() => setEditUnit(null)} onSaved={u => { onUnitUpdated(u); setEditUnit(null) }} />}
+      {assignUnit && <AsignarUnidadModal unidad={assignUnit} onClose={() => setAssignUnit(null)} onSaved={u => { onUnitUpdated(u); setAssignUnit(null) }} />}
+    </>
   )
 }
 
-// ─── Tab: Catálogo ────────────────────────────────────────────────────────────
+// ─── Tab: Materiales (catálogo + inventario unificado) ────────────────────────
 
-type CatSortKey = "nombre" | "stock_desc" | "stock_asc" | "precio_desc" | "precio_asc"
+type MatSortKey = "nombre"|"tipo"|"estado"|"hospital"|"antiguedad"|"garantia"|"stock_desc"|"precio_desc"
+type MatVista   = "modelos"|"unidades"
 
-function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
-  catalogo: HardwareCatalogo[]
+function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, setCatalogo, esAdmin, tipos }: {
+  unidades:    HardwareUnidad[]
+  onUpdated:   (u: HardwareUnidad) => void
+  onDeleted:   (id: string) => void
+  onCreated:   (u: HardwareUnidad) => void
+  catalogo:    HardwareCatalogo[]
   setCatalogo: React.Dispatch<React.SetStateAction<HardwareCatalogo[]>>
-  esAdmin: boolean
-  tipos: HardwareTipo[]
+  esAdmin:     boolean
+  tipos:       HardwareTipo[]
 }) {
   const { success, error: toastError } = useToast()
-  const [busqueda, setBusqueda] = useState("")
+  const [vista,        setVista]        = useState<MatVista>("modelos")
+  const [busqueda,     setBusqueda]     = useState("")
   const [filtroTipoId, setFiltroTipoId] = useState("")
-  const [sort, setSort] = useState<CatSortKey>("nombre")
-  const [vistaGrid, setVistaGrid] = useState(true)
-  const [drawer, setDrawer] = useState<HardwareCatalogo | "new" | null>(null)
-  const [stockItem, setStockItem] = useState<HardwareCatalogo | null>(null)
-  const [tiposModal, setTiposModal] = useState(false)
-  const [tiposLocal, setTiposLocal] = useState<HardwareTipo[]>(tipos)
+  const [filtroEstado, setFiltroEstado] = useState("")
+  const [filtroHosp,   setFiltroHosp]   = useState("")
+  const [sortKey,      setSortKey]      = useState<MatSortKey>("nombre")
+  const [vistaGrid,    setVistaGrid]    = useState(true)
+  const [drawer,       setDrawer]       = useState<HardwareCatalogo|"new"|null>(null)
+  const [tiposModal,   setTiposModal]   = useState(false)
+  const [tiposLocal,   setTiposLocal]   = useState<HardwareTipo[]>(tipos)
+  const [nuevaUnidad,  setNuevaUnidad]  = useState(false)
+  const [editUnitGlobal, setEditUnitGlobal] = useState<HardwareUnidad|null>(null)
+  const [assignUnitGlobal, setAssignUnitGlobal] = useState<HardwareUnidad|null>(null)
 
   useEffect(() => { setTiposLocal(tipos) }, [tipos])
-
-  async function toggleActivo(item: HardwareCatalogo) {
-    try {
-      await fetch(`/api/hardware/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activo: !item.activo }) })
-      setCatalogo(p => p.map(c => c.id === item.id ? { ...c, activo: !c.activo } : c))
-      success(item.activo ? "Material desactivado" : "Material activado")
-    } catch { toastError("Error") }
-  }
 
   // Stats
   const activos    = catalogo.filter(c => c.activo)
   const totalMod   = activos.length
-  const totalUds   = activos.reduce((s, c) => s + (c._stock?.total ?? 0), 0)
-  const totalDisp  = activos.reduce((s, c) => s + (c._stock?.disponibles ?? 0), 0)
+  const totalUds   = unidades.length
+  const totalDisp  = unidades.filter(u => u.estado === "DISPONIBLE").length
+  const totalAsig  = unidades.filter(u => u.estado === "ASIGNADO").length
   const pctDisp    = totalUds > 0 ? Math.round((totalDisp / totalUds) * 100) : 0
-  const valorTotal = activos.reduce((s, c) => s + ((c._stock?.total ?? 0) * (c.precio ?? 0)), 0)
+  const valorFlota = unidades.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
 
-  // Filter + sort
-  const filtered = catalogo
-    .filter(c => !filtroTipoId || c.tipoId === filtroTipoId)
-    .filter(c => !busqueda || [c.marca, c.modelo, c.referenciaPalex, c.proveedor]
+  // Hospitales únicos para filtro
+  const hospsUnicos = Array.from(new Map(
+    unidades.filter(u => u.hospital).map(u => [u.hospital!.id, u.hospital!])
+  ).values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
+
+  // ── Toggle activo/inactivo modelo ──────────────────────────────────────────
+  async function toggleActivo(item: HardwareCatalogo) {
+    try {
+      await fetch(`/api/hardware/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activo: !item.activo }) })
+      setCatalogo(p => p.map(c => c.id === item.id ? { ...c, activo: !c.activo } : c))
+      success(item.activo ? "Desactivado" : "Activado")
+    } catch { toastError("Error") }
+  }
+
+  // ── Cambiar estado inline (unidades view) ─────────────────────────────────
+  async function cambiarEstado(u: HardwareUnidad, nuevoEstado: string) {
+    const r = await fetch(`/api/hardware/unidades/${u.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado: nuevoEstado }),
+    })
+    if (r.ok) { onUpdated({ ...u, estado: nuevoEstado }); success("Estado actualizado") }
+    else toastError("Error")
+  }
+
+  // ── Eliminar unidad ────────────────────────────────────────────────────────
+  async function eliminarUnidad(id: string) {
+    if (!confirm("¿Eliminar esta unidad del inventario?")) return
+    const r = await fetch(`/api/hardware/unidades/${id}`, { method: "DELETE" })
+    if (r.ok) { onDeleted(id); success("Unidad eliminada") }
+    else toastError("Error")
+  }
+
+  // ── CSV export unidades ────────────────────────────────────────────────────
+  function exportarCSVUnidades() {
+    exportarCSV(unidadesFiltradas.map(u => ({
+      Tipo: u.catalogo.tipo?.nombre ?? "",
+      Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
+      "Ref. Palex": u.catalogo.referenciaPalex ?? "",
+      "Nº Serie": u.numSerie ?? "",
+      Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
+      Hospital: u.hospital?.nombre ?? "",
+      Ciudad: u.hospital?.ciudad ?? "",
+      Proyecto: u.preProyecto?.titulo ?? "",
+      "Fecha Compra": fmtFecha(u.fechaCompra),
+      "Fin Garantía": fmtFecha(u.fechaGarantia),
+      "Próx. Mantenimiento": fmtFecha(u.proximoMantenimiento),
+      "Precio (€)": u.catalogo.precio ?? "",
+      Proveedor: u.catalogo.proveedor ?? "",
+      Notas: u.notas ?? "",
+    })), "hardware_materiales")
+  }
+
+  // ── Filtros y sort para VISTA UNIDADES ─────────────────────────────────────
+  const unidadesFiltradas = unidades
+    .filter(u => !filtroTipoId  || u.catalogo.tipoId === filtroTipoId)
+    .filter(u => !filtroEstado  || u.estado === filtroEstado)
+    .filter(u => !filtroHosp   || u.hospital?.id === filtroHosp)
+    .filter(u => !busqueda     || [u.numSerie, u.catalogo.marca, u.catalogo.modelo, u.catalogo.referenciaPalex, u.notas, u.hospital?.nombre, u.preProyecto?.titulo]
       .some(v => v?.toLowerCase().includes(busqueda.toLowerCase())))
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sort === "nombre")      return `${a.marca} ${a.modelo}`.localeCompare(`${b.marca} ${b.modelo}`)
-    if (sort === "stock_desc")  return (b._stock?.total ?? 0) - (a._stock?.total ?? 0)
-    if (sort === "stock_asc")   return (a._stock?.total ?? 0) - (b._stock?.total ?? 0)
-    if (sort === "precio_desc") return (b.precio ?? 0) - (a.precio ?? 0)
-    if (sort === "precio_asc")  return (a.precio ?? 0) - (b.precio ?? 0)
+  const unidadesOrdenadas = [...unidadesFiltradas].sort((a, b) => {
+    if (sortKey === "tipo")        return (a.catalogo.tipo?.nombre ?? "").localeCompare(b.catalogo.tipo?.nombre ?? "")
+    if (sortKey === "nombre")      return `${a.catalogo.marca} ${a.catalogo.modelo}`.localeCompare(`${b.catalogo.marca} ${b.catalogo.modelo}`)
+    if (sortKey === "estado")      return a.estado.localeCompare(b.estado)
+    if (sortKey === "hospital")    return (a.hospital?.nombre ?? "").localeCompare(b.hospital?.nombre ?? "")
+    if (sortKey === "antiguedad")  return (diasDesde(a.fechaCompra) ?? -1) - (diasDesde(b.fechaCompra) ?? -1)
+    if (sortKey === "garantia")    return (a.fechaGarantia ? new Date(a.fechaGarantia).getTime() : Infinity) - (b.fechaGarantia ? new Date(b.fechaGarantia).getTime() : Infinity)
+    if (sortKey === "stock_desc")  return (b.catalogo._stock?.total ?? 0) - (a.catalogo._stock?.total ?? 0)
+    if (sortKey === "precio_desc") return (b.catalogo.precio ?? 0) - (a.catalogo.precio ?? 0)
     return 0
   })
 
-  const activosFiltrados   = sorted.filter(c => c.activo)
-  const inactivosFiltrados = sorted.filter(c => !c.activo)
+  // ── Filtros para VISTA MODELOS ─────────────────────────────────────────────
+  const catalogoFiltrado = catalogo
+    .filter(c => !filtroTipoId || c.tipoId === filtroTipoId)
+    .filter(c => !busqueda || [c.marca, c.modelo, c.referenciaPalex, c.proveedor]
+      .some(v => v?.toLowerCase().includes(busqueda.toLowerCase())))
+    .sort((a, b) => {
+      if (sortKey === "stock_desc")  return (b._stock?.total ?? 0) - (a._stock?.total ?? 0)
+      if (sortKey === "precio_desc") return (b.precio ?? 0) - (a.precio ?? 0)
+      return `${a.marca} ${a.modelo}`.localeCompare(`${b.marca} ${b.modelo}`)
+    })
+
+  const catalogoActivos   = catalogoFiltrado.filter(c => c.activo)
+  const catalogoInactivos = catalogoFiltrado.filter(c => !c.activo)
+
+  const RNGSTY = { "--tw-ring-color": TEAL } as React.CSSProperties
 
   return (
     <div className="space-y-5">
@@ -1743,79 +1894,115 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
       {/* ── Stats bar ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Modelos activos",  value: String(totalMod),                              sub: `${catalogo.length - totalMod} inactivos`,       color: TEAL      },
-          { label: "Unidades totales", value: String(totalUds),                              sub: "en inventario",                                   color: "#6366f1" },
-          { label: "Disponibilidad",   value: `${pctDisp}%`,                                sub: `${totalDisp} de ${totalUds} disponibles`,          color: "#16a34a" },
-          { label: "Valor catálogo",   value: valorTotal > 0 ? fmtEuros(valorTotal) : "—", sub: "coste teórico del inventario",                     color: "#f59e0b" },
+          { label: "Modelos en catálogo",  value: String(totalMod),                              sub: `${catalogo.length - totalMod} inactivos`,           color: TEAL      },
+          { label: "Unidades registradas", value: String(totalUds),                              sub: "en inventario total",                               color: "#6366f1" },
+          { label: "Disponibles",          value: `${totalDisp} (${pctDisp}%)`,                  sub: `${totalAsig} asignadas a clientes`,                  color: "#16a34a" },
+          { label: "Valor de la flota",    value: valorFlota > 0 ? fmtEuros(valorFlota) : "—",  sub: "coste acumulado de unidades",                       color: "#f59e0b" },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm" style={{ borderTop: `3px solid ${s.color}` }}>
-            <p className="text-2xl font-bold leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className="text-xl font-bold leading-none" style={{ color: s.color }}>{s.value}</p>
             <p className="text-xs font-semibold text-gray-700 mt-1.5">{s.label}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Toolbar ── */}
+      {/* ── Vista toggle + toolbar ── */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Vista modelos / unidades */}
+        <div className="flex bg-gray-100 p-0.5 rounded-xl shrink-0">
+          <button onClick={() => setVista("modelos")}
+            className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${vista === "modelos" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}>
+            Por modelo
+          </button>
+          <button onClick={() => setVista("unidades")}
+            className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${vista === "unidades" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}>
+            Todas las unidades
+          </button>
+        </div>
+
+        {/* Search */}
         <div className="relative flex-1 min-w-[180px]">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IcoSearch /></span>
           <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por marca, modelo, referencia…"
+            placeholder={vista === "modelos" ? "Buscar modelo, marca, referencia…" : "Buscar modelo, nº serie, hospital…"}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white"
-            style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+            style={RNGSTY} />
         </div>
-        <select value={sort} onChange={e => setSort(e.target.value as CatSortKey)}
+
+        {/* Sort */}
+        <select value={sortKey} onChange={e => setSortKey(e.target.value as MatSortKey)}
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 cursor-pointer"
-          style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+          style={RNGSTY}>
           <option value="nombre">Nombre A→Z</option>
+          <option value="tipo">Tipo</option>
+          {vista === "unidades" && <>
+            <option value="estado">Estado</option>
+            <option value="hospital">Hospital</option>
+            <option value="antiguedad">Antigüedad</option>
+            <option value="garantia">Garantía próxima</option>
+          </>}
           <option value="stock_desc">Más stock</option>
-          <option value="stock_asc">Menos stock</option>
           <option value="precio_desc">Mayor precio</option>
-          <option value="precio_asc">Menor precio</option>
         </select>
-        <div className="flex bg-gray-100 p-0.5 rounded-xl">
-          <button onClick={() => setVistaGrid(true)} title="Vista cuadrícula"
-            className={`p-2 rounded-lg transition-all cursor-pointer ${vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}>
-            <IcoGrid />
+
+        {/* Grid/List toggle (modelos view) */}
+        {vista === "modelos" && (
+          <div className="flex bg-gray-100 p-0.5 rounded-xl">
+            <button onClick={() => setVistaGrid(true)} title="Cuadrícula"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}><IcoGrid /></button>
+            <button onClick={() => setVistaGrid(false)} title="Lista"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${!vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}><IcoList /></button>
+          </div>
+        )}
+
+        {vista === "unidades" && (
+          <button onClick={exportarCSVUnidades}
+            className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors">
+            <IcoDownload /> CSV
           </button>
-          <button onClick={() => setVistaGrid(false)} title="Vista lista"
-            className={`p-2 rounded-lg transition-all cursor-pointer ${!vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}>
-            <IcoList />
-          </button>
-        </div>
+        )}
+
         <button onClick={() => setTiposModal(true)}
-          className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">
+          className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors">
           <IcoGear /> Tipos
         </button>
-        <button onClick={() => setDrawer("new")}
-          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity cursor-pointer"
-          style={{ backgroundColor: TEAL }}>
-          <IcoPlus /> Nuevo material
-        </button>
+
+        {/* Nuevo dropdown */}
+        <div className="flex gap-1.5">
+          <button onClick={() => setDrawer("new")}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 cursor-pointer transition-opacity"
+            style={{ backgroundColor: TEAL }}>
+            <IcoPlus /> Modelo
+          </button>
+          <button onClick={() => setNuevaUnidad(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 cursor-pointer transition-opacity"
+            style={{ backgroundColor: ORANGE }}>
+            <IcoPlus /> Unidad
+          </button>
+        </div>
       </div>
 
-      {/* ── Type filter pills ── */}
+      {/* ── Tipo pills ── */}
       {tiposLocal.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => setFiltroTipoId("")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
-            style={!filtroTipoId
-              ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" }
-              : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
-            Todos <span className="text-[10px] font-bold opacity-80">{activos.length}</span>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer"
+            style={!filtroTipoId ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" } : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+            Todos <span className="text-[10px] font-bold opacity-80">{vista === "modelos" ? activos.length : unidades.length}</span>
           </button>
           {tiposLocal.map(t => {
-            const count = catalogo.filter(c => c.tipoId === t.id && c.activo).length
-            const active = filtroTipoId === t.id
+            const count = vista === "modelos"
+              ? catalogo.filter(c => c.tipoId === t.id && c.activo).length
+              : unidades.filter(u => u.catalogo.tipoId === t.id).length
             return (
-              <button key={t.id} onClick={() => setFiltroTipoId(active ? "" : t.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
-                style={active
+              <button key={t.id} onClick={() => setFiltroTipoId(filtroTipoId === t.id ? "" : t.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer"
+                style={filtroTipoId === t.id
                   ? { backgroundColor: t.color, borderColor: t.color, color: "white" }
                   : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block", flexShrink: 0,
-                  backgroundColor: active ? "rgba(255,255,255,0.6)" : t.color }} />
+                  backgroundColor: filtroTipoId === t.id ? "rgba(255,255,255,0.6)" : t.color }} />
                 {t.nombre} <span className="text-[10px] font-bold opacity-70">{count}</span>
               </button>
             )
@@ -1823,173 +2010,258 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
         </div>
       )}
 
-      {/* ── Content ── */}
-      {sorted.length === 0 ? (
-        /* Empty state */
-        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300">
-            <IcoBox />
-          </div>
-          <h3 className="text-base font-bold text-gray-700 mb-1">
-            {busqueda || filtroTipoId ? "Sin resultados" : "Catálogo vacío"}
-          </h3>
-          <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
-            {busqueda || filtroTipoId
-              ? "Prueba a cambiar la búsqueda o los filtros activos."
-              : "Comienza añadiendo los primeros modelos de hardware al catálogo Palex."}
-          </p>
-          {!busqueda && !filtroTipoId && (
-            <button onClick={() => setDrawer("new")}
-              className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
-              style={{ backgroundColor: TEAL }}>
-              <IcoPlus /> Añadir primer material
+      {/* ── Filtros extra (vista unidades) ── */}
+      {vista === "unidades" && (
+        <div className="flex flex-wrap gap-2">
+          <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 cursor-pointer"
+            style={RNGSTY}>
+            <option value="">Todos los estados</option>
+            {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          <select value={filtroHosp} onChange={e => setFiltroHosp(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 cursor-pointer"
+            style={RNGSTY}>
+            <option value="">Todos los hospitales</option>
+            {hospsUnicos.map(h => <option key={h.id} value={h.id}>{h.nombre}</option>)}
+          </select>
+          {(filtroEstado || filtroHosp) && (
+            <button onClick={() => { setFiltroEstado(""); setFiltroHosp("") }}
+              className="px-3 py-2 text-xs text-gray-400 hover:text-red-500 cursor-pointer transition-colors">
+              Limpiar filtros
             </button>
           )}
+          <span className="text-xs text-gray-400 self-center ml-1">
+            {unidadesFiltradas.length} unidad{unidadesFiltradas.length !== 1 ? "es" : ""}
+          </span>
         </div>
-      ) : vistaGrid ? (
-        /* Vista Cuadrícula */
-        <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activosFiltrados.map(item => (
-              <CatCard key={item.id} item={item} esAdmin={esAdmin}
-                onEdit={() => setDrawer(item)}
-                onStock={() => setStockItem(item)}
-                onToggle={() => toggleActivo(item)} />
-            ))}
+      )}
+
+      {/* ══ VISTA: POR MODELO ══════════════════════════════════════════════════ */}
+      {vista === "modelos" && (
+        catalogoFiltrado.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300"><IcoBox /></div>
+            <h3 className="text-base font-bold text-gray-700 mb-1">{busqueda || filtroTipoId ? "Sin resultados" : "Catálogo vacío"}</h3>
+            <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
+              {busqueda || filtroTipoId ? "Prueba a cambiar los filtros." : "Añade el primer modelo con el botón Modelo."}
+            </p>
+            {!busqueda && !filtroTipoId && (
+              <button onClick={() => setDrawer("new")}
+                className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: TEAL }}>
+                <IcoPlus /> Nuevo modelo
+              </button>
+            )}
           </div>
-          {inactivosFiltrados.length > 0 && (
-            <details className="mt-2">
-              <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none py-2 flex items-center gap-1.5 list-none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                {inactivosFiltrados.length} modelo{inactivosFiltrados.length !== 1 ? "s" : ""} inactivo{inactivosFiltrados.length !== 1 ? "s" : ""}
-              </summary>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-                {inactivosFiltrados.map(item => (
-                  <CatCard key={item.id} item={item} esAdmin={esAdmin}
-                    onEdit={() => setDrawer(item)}
-                    onStock={() => setStockItem(item)}
-                    onToggle={() => toggleActivo(item)} />
-                ))}
-              </div>
-            </details>
-          )}
-        </>
-      ) : (
-        /* Vista Lista */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Ref. Palex</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Proveedor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Precio</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Stock</th>
-                  <th className="px-4 py-3 w-20" />
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((item, i) => {
-                  const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
-                  const tipoColor = item.tipo?.color ?? "#9ca3af"
-                  const pct = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
-                  const barC = pct >= 70 ? "#16a34a" : pct >= 30 ? TEAL : "#f59e0b"
-                  return (
-                    <tr key={item.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${!item.activo ? "opacity-50" : ""} ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
-                      <td className="px-4 py-3.5">
-                        {item.tipo
-                          ? <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-                              style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>{item.tipo.nombre}</span>
-                          : <span className="text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full font-semibold">Sin tipo</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="font-semibold text-gray-900 text-sm">{item.modelo}</p>
-                        <p className="text-xs text-gray-400">{item.marca}</p>
-                      </td>
-                      <td className="px-4 py-3.5 hidden sm:table-cell">
-                        {item.referenciaPalex
-                          ? <code className="text-xs font-mono font-semibold" style={{ color: TEAL }}>{item.referenciaPalex}</code>
-                          : <span className="text-gray-300 text-xs">—</span>}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-gray-500 hidden md:table-cell">{item.proveedor || "—"}</td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-gray-700 hidden lg:table-cell">
-                        {item.precio != null ? fmtEuros(item.precio) : "—"}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2 min-w-[90px]">
-                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barC }} />
-                          </div>
-                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">{stock.disponibles}/{stock.total}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => setStockItem(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer" title="Ver unidades"><IcoBox /></button>
-                          <button onClick={() => setDrawer(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer" title="Editar"><IcoEdit /></button>
-                        </div>
-                      </td>
+        ) : (
+          <>
+            {vistaGrid ? (
+              <>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {catalogoActivos.map(item => (
+                    <ModelCard key={item.id} item={item} esAdmin={esAdmin}
+                      units={unidades.filter(u => u.catalogo.id === item.id)}
+                      onEdit={() => setDrawer(item)}
+                      onToggle={() => toggleActivo(item)}
+                      onUnitUpdated={onUpdated}
+                      onUnitDeleted={onDeleted}
+                      onUnitCreated={u => {
+                        onCreated(u)
+                        setCatalogo(p => p.map(c => c.id === item.id
+                          ? { ...c, _stock: { total: (c._stock?.total ?? 0) + 1, disponibles: (c._stock?.disponibles ?? 0) + 1, asignados: c._stock?.asignados ?? 0, mantenimiento: c._stock?.mantenimiento ?? 0 } }
+                          : c))
+                      }}
+                    />
+                  ))}
+                </div>
+                {catalogoInactivos.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none py-2 flex items-center gap-1.5 list-none">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                      {catalogoInactivos.length} modelo{catalogoInactivos.length !== 1 ? "s" : ""} inactivo{catalogoInactivos.length !== 1 ? "s" : ""}
+                    </summary>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                      {catalogoInactivos.map(item => (
+                        <ModelCard key={item.id} item={item} esAdmin={esAdmin}
+                          units={unidades.filter(u => u.catalogo.id === item.id)}
+                          onEdit={() => setDrawer(item)}
+                          onToggle={() => toggleActivo(item)}
+                          onUnitUpdated={onUpdated}
+                          onUnitDeleted={onDeleted}
+                          onUnitCreated={u => { onCreated(u) }}
+                        />
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </>
+            ) : (
+              /* Vista lista de modelos */
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/60">
+                      {["Tipo","Dispositivo","Ref. Palex","Proveedor","Precio","Stock",""].map((h, i) => (
+                        <th key={i} className={`px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide ${i >= 3 ? "hidden md:table-cell" : i >= 2 ? "hidden sm:table-cell" : ""}`}>{h}</th>
+                      ))}
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
-            {sorted.length} modelo{sorted.length !== 1 ? "s" : ""}
-            {sorted.length !== catalogo.length && ` (de ${catalogo.length} en total)`}
-          </div>
-        </div>
+                  </thead>
+                  <tbody>
+                    {catalogoFiltrado.map((item, i) => {
+                      const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
+                      const tc = item.tipo?.color ?? "#9ca3af"
+                      const pct = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+                      return (
+                        <tr key={item.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${!item.activo ? "opacity-50" : ""} ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
+                          <td className="px-4 py-3.5">
+                            {item.tipo
+                              ? <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${tc}18`, color: tc }}>{item.tipo.nombre}</span>
+                              : <span className="text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full font-semibold">Sin tipo</span>}
+                          </td>
+                          <td className="px-4 py-3.5"><p className="font-semibold text-gray-900">{item.modelo}</p><p className="text-xs text-gray-400">{item.marca}</p></td>
+                          <td className="px-4 py-3.5 hidden sm:table-cell">{item.referenciaPalex ? <code className="text-xs font-mono font-semibold" style={{ color: TEAL }}>{item.referenciaPalex}</code> : <span className="text-gray-300 text-xs">—</span>}</td>
+                          <td className="px-4 py-3.5 text-xs text-gray-500 hidden md:table-cell">{item.proveedor || "—"}</td>
+                          <td className="px-4 py-3.5 text-xs font-semibold text-gray-700 hidden md:table-cell">{item.precio != null ? fmtEuros(item.precio) : "—"}</td>
+                          <td className="px-4 py-3.5 hidden md:table-cell">
+                            <div className="flex items-center gap-2 min-w-[80px]">
+                              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct >= 70 ? "#16a34a" : pct >= 30 ? TEAL : "#f59e0b" }} />
+                              </div>
+                              <span className="text-xs text-gray-500 shrink-0">{stock.disponibles}/{stock.total}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center justify-end gap-1">
+                              <button onClick={() => setDrawer(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 cursor-pointer"><IcoEdit /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )
       )}
 
-      {/* ── Drawer crear/editar ── */}
+      {/* ══ VISTA: TODAS LAS UNIDADES ══════════════════════════════════════════ */}
+      {vista === "unidades" && (
+        unidadesOrdenadas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 text-center">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300"><IcoBox /></div>
+            <p className="text-sm font-semibold text-gray-600">{unidades.length === 0 ? "Sin unidades registradas" : "Sin resultados para los filtros activos"}</p>
+            {unidades.length === 0 && <button onClick={() => setNuevaUnidad(true)} className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer" style={{ backgroundColor: ORANGE }}><IcoPlus /> Nueva unidad</button>}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Nº Serie</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Hospital / Proyecto</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Antigüedad</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Garantía</th>
+                    <th className="px-4 py-3 w-28" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {unidadesOrdenadas.map((u, i) => {
+                    const es = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
+                    const tc = u.catalogo.tipo?.color ?? "#9ca3af"
+                    const dias = diasHasta(u.fechaGarantia)
+                    const gAlerta = dias !== null && dias <= 30
+                    return (
+                      <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
+                        <td className="px-4 py-3.5">
+                          {u.catalogo.tipo
+                            ? <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: `${tc}18`, color: tc }}>{u.catalogo.tipo.nombre}</span>
+                            : <span className="w-2.5 h-2.5 rounded-full bg-gray-200 inline-block" />}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="font-semibold text-gray-900 text-xs">{u.catalogo.modelo}</p>
+                          <p className="text-[10px] text-gray-400">{u.catalogo.marca}</p>
+                          {u.catalogo.referenciaPalex && <code className="text-[10px] font-mono" style={{ color: TEAL }}>{u.catalogo.referenciaPalex}</code>}
+                        </td>
+                        <td className="px-4 py-3.5 hidden sm:table-cell">
+                          {u.numSerie ? <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{u.numSerie}</code> : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <select value={u.estado} onChange={e => cambiarEstado(u, e.target.value)}
+                            className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400"
+                            style={{ backgroundColor: es.bg, color: es.color }}>
+                            {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3.5 hidden md:table-cell">
+                          {u.hospital
+                            ? <div><p className="text-xs font-medium text-gray-700">{u.hospital.nombre}</p><p className="text-[10px] text-gray-400">{u.hospital.ciudad}</p></div>
+                            : u.preProyecto
+                            ? <span className="text-xs font-medium" style={{ color: TEAL }}>{u.preProyecto.titulo}</span>
+                            : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-gray-500 hidden lg:table-cell">{fmtAntiguedad(u.fechaCompra)}</td>
+                        <td className="px-4 py-3.5 hidden lg:table-cell">
+                          {u.fechaGarantia
+                            ? <span className={`text-xs font-medium ${gAlerta ? "text-red-600" : "text-gray-500"}`}>
+                                {fmtFecha(u.fechaGarantia)}{gAlerta && <span className="ml-1 font-bold">({dias}d)</span>}
+                              </span>
+                            : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <button onClick={() => setAssignUnitGlobal(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 cursor-pointer transition-colors" title="Asignar a hospital/proyecto"><IcoHospital /></button>
+                            <button onClick={() => setEditUnitGlobal(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 cursor-pointer transition-colors" title="Editar unidad"><IcoEdit /></button>
+                            {esAdmin && <button onClick={() => eliminarUnidad(u.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors" title="Eliminar"><IcoTrash /></button>}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+              {unidadesOrdenadas.length} unidad{unidadesOrdenadas.length !== 1 ? "es" : ""}
+              {unidadesOrdenadas.length !== unidades.length && ` (de ${unidades.length} en total)`}
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ── Modales y drawers globales ── */}
       {drawer !== null && (
-        <MaterialDrawer
-          tipos={tiposLocal}
-          item={drawer === "new" ? null : drawer}
-          onClose={() => setDrawer(null)}
+        <MaterialDrawer tipos={tiposLocal} item={drawer === "new" ? null : drawer} onClose={() => setDrawer(null)}
           onSaved={saved => {
-            if (drawer === "new") {
-              setCatalogo(p => [{ ...saved, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, ...p])
-            } else {
-              setCatalogo(p => p.map(c => c.id === saved.id ? { ...c, ...saved } : c))
-            }
+            if (drawer === "new") setCatalogo(p => [{ ...saved, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, ...p])
+            else setCatalogo(p => p.map(c => c.id === saved.id ? { ...c, ...saved } : c))
             setDrawer(null)
-          }}
-        />
+          }} />
       )}
-
-      {/* ── Modal unidades/stock ── */}
-      {stockItem && (
-        <CatStockModal
-          item={stockItem}
-          onClose={() => setStockItem(null)}
-          onStockChanged={delta => {
-            setCatalogo(p => p.map(c => c.id === stockItem.id
-              ? { ...c, _stock: {
-                  total: Math.max(0, (c._stock?.total ?? 0) + delta),
-                  disponibles: Math.max(0, (c._stock?.disponibles ?? 0) + (delta > 0 ? delta : 0)),
-                  asignados: c._stock?.asignados ?? 0,
-                  mantenimiento: c._stock?.mantenimiento ?? 0,
-                }}
+      {nuevaUnidad && (
+        <NuevaUnidadModal catalogo={catalogo.filter(c => c.activo)} onClose={() => setNuevaUnidad(false)}
+          onCreated={u => {
+            onCreated(u)
+            setCatalogo(p => p.map(c => c.id === u.catalogo.id
+              ? { ...c, _stock: { total: (c._stock?.total ?? 0) + 1, disponibles: (c._stock?.disponibles ?? 0) + 1, asignados: c._stock?.asignados ?? 0, mantenimiento: c._stock?.mantenimiento ?? 0 } }
               : c))
-          }}
-        />
+          }} />
       )}
-
-      {/* ── Modal tipos ── */}
+      {editUnitGlobal && <EditUnidadDrawer unidad={editUnitGlobal} onClose={() => setEditUnitGlobal(null)} onSaved={u => { onUpdated(u); setEditUnitGlobal(null) }} />}
+      {assignUnitGlobal && <AsignarUnidadModal unidad={assignUnitGlobal} onClose={() => setAssignUnitGlobal(null)} onSaved={u => { onUpdated(u); setAssignUnitGlobal(null) }} />}
       {tiposModal && (
-        <CatTiposModal
-          tipos={tiposLocal}
-          onClose={() => setTiposModal(false)}
+        <CatTiposModal tipos={tiposLocal} onClose={() => setTiposModal(false)}
           onChanged={async () => {
             const r = await fetch("/api/hardware/tipos")
             if (r.ok) setTiposLocal(await r.json())
             setTiposModal(false)
-          }}
-        />
+          }} />
       )}
     </div>
   )
@@ -2130,9 +2402,8 @@ function AlertasTab({ unidades, onUpdated }: {
 
 const TABS = [
   { id: "resumen",        label: "Resumen" },
-  { id: "inventario",     label: "Inventario" },
+  { id: "materiales",     label: "Materiales" },
   { id: "instalaciones",  label: "Instalaciones" },
-  { id: "catalogo",       label: "Catálogo" },
   { id: "alertas",        label: "Alertas" },
 ]
 
@@ -2220,11 +2491,14 @@ export default function HardwarePage() {
           {tab === "resumen" && (
             <ResumenTab unidades={unidades} catalogo={catalogo} onTabChange={setTab} />
           )}
-          {tab === "inventario" && (
-            <InventarioTab
+          {tab === "materiales" && (
+            <MaterialesTab
               unidades={unidades}
               onUpdated={u => setUnidades(prev => prev.map(x => x.id === u.id ? u : x))}
               onDeleted={id => setUnidades(prev => prev.filter(x => x.id !== id))}
+              onCreated={u => setUnidades(prev => [u, ...prev])}
+              catalogo={catalogo}
+              setCatalogo={setCatalogo}
               esAdmin={esAdmin}
               tipos={tipos}
             />
@@ -2235,9 +2509,6 @@ export default function HardwarePage() {
               onUpdated={u => setUnidades(prev => prev.map(x => x.id === u.id ? u : x))}
               tipos={tipos}
             />
-          )}
-          {tab === "catalogo" && (
-            <CatalogoTab catalogo={catalogo} setCatalogo={setCatalogo} esAdmin={esAdmin} tipos={tipos} />
           )}
           {tab === "alertas" && (
             <AlertasTab
