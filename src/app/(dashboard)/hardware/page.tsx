@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
@@ -90,6 +90,12 @@ function IcoSort({ dir }: { dir: "asc"|"desc"|null }) {
     ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5l-7 7h14z"/></svg>
     : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19l7-7H5z"/></svg>
 }
+function IcoX()      { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> }
+function IcoLink()   { return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> }
+function IcoShield() { return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> }
+function IcoTag()    { return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> }
+function IcoBox()    { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> }
+function IcoGear()   { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> }
 
 // ─── DonutChart ──────────────────────────────────────────────────────────────
 
@@ -1049,7 +1055,635 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
   )
 }
 
+// ─── Colores preset para tipos ───────────────────────────────────────────────
+
+const TIPO_COLORES_PRESET = ["#6366f1","#3b82f6","#06b6d4","#10b981","#f59e0b","#f97316","#ef4444","#8b5cf6","#ec4899","#6b7280"]
+
+// ─── MaterialDrawer — crear / editar un modelo de catálogo ───────────────────
+
+const CAT_FORM_EMPTY = { tipoId:"", marca:"", modelo:"", referenciaPalex:"", proveedor:"", descripcion:"", precio:"", garantiaMeses:"", fichaUrl:"" }
+
+function MaterialDrawer({ tipos, item, onClose, onSaved }: {
+  tipos: HardwareTipo[]
+  item: HardwareCatalogo | null
+  onClose: () => void
+  onSaved: (saved: HardwareCatalogo) => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [form, setForm] = useState(item ? {
+    tipoId: item.tipoId ?? "",
+    marca: item.marca,
+    modelo: item.modelo,
+    referenciaPalex: item.referenciaPalex ?? "",
+    proveedor: item.proveedor ?? "",
+    descripcion: item.descripcion ?? "",
+    precio: item.precio != null ? String(item.precio) : "",
+    garantiaMeses: "",
+    fichaUrl: item.fichaUrl ?? "",
+  } : { ...CAT_FORM_EMPTY })
+  const [saving, setSaving] = useState(false)
+  const tipoSel = tipos.find(t => t.id === form.tipoId)
+
+  function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.marca.trim() || !form.modelo.trim()) { toastError("Marca y modelo son obligatorios"); return }
+    setSaving(true)
+    try {
+      const payload = {
+        tipoId: form.tipoId || null,
+        marca: form.marca,
+        modelo: form.modelo,
+        referenciaPalex: form.referenciaPalex || null,
+        proveedor: form.proveedor || null,
+        descripcion: form.descripcion || null,
+        precio: form.precio || null,
+        fichaUrl: form.fichaUrl || null,
+      }
+      const r = item
+        ? await fetch(`/api/hardware/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        : await fetch("/api/hardware", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      if (!r.ok) throw new Error()
+      const saved = await r.json()
+      onSaved(saved)
+      success(item ? "Material actualizado" : "Material creado en catálogo")
+      onClose()
+    } catch { toastError("Error al guardar") }
+    finally { setSaving(false) }
+  }
+
+  const FLDCLS = "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white placeholder:text-gray-300 transition-colors"
+  const FLBL   = "block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5"
+  const ringCss = { "--tw-ring-color": tipoSel?.color ?? TEAL } as React.CSSProperties
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
+        {/* Header con franja de color del tipo */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0"
+          style={{ borderTop: `3px solid ${tipoSel?.color ?? TEAL}` }}>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">{item ? "Editar material" : "Nuevo material"}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{item ? `${item.marca} ${item.modelo}` : "Añadir al catálogo Palex"}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" aria-label="Cerrar">
+            <IcoX />
+          </button>
+        </div>
+
+        {/* Body scrollable */}
+        <form id="mat-drawer-form" onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+          {/* Tipo — pill selector */}
+          <div>
+            <label className={FLBL}>Tipo de hardware</label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {tipos.length === 0
+                ? <p className="text-xs text-gray-400 italic">Sin tipos — créalos con el botón Tipos</p>
+                : tipos.map(t => (
+                  <button key={t.id} type="button"
+                    onClick={() => set("tipoId", form.tipoId === t.id ? "" : t.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
+                    style={form.tipoId === t.id
+                      ? { backgroundColor: t.color, borderColor: t.color, color: "white" }
+                      : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#374151" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block", flexShrink: 0,
+                      backgroundColor: form.tipoId === t.id ? "rgba(255,255,255,0.6)" : t.color }} />
+                    {t.nombre}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-gray-100" />
+
+          {/* Marca + Modelo */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={FLBL}>Marca <span className="text-red-400">*</span></label>
+              <input value={form.marca} onChange={e => set("marca", e.target.value)}
+                placeholder="Zebra, Honeywell…" required className={FLDCLS} style={ringCss} />
+            </div>
+            <div>
+              <label className={FLBL}>Modelo <span className="text-red-400">*</span></label>
+              <input value={form.modelo} onChange={e => set("modelo", e.target.value)}
+                placeholder="MC3300, ZD421…" required className={FLDCLS} style={ringCss} />
+            </div>
+          </div>
+
+          {/* Ref. Palex */}
+          <div>
+            <label className={FLBL}>Referencia interna Palex</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: tipoSel?.color ?? TEAL }}>
+                <IcoTag />
+              </span>
+              <input value={form.referenciaPalex} onChange={e => set("referenciaPalex", e.target.value)}
+                placeholder="PAL-001234" className={`${FLDCLS} pl-8 font-mono`} style={ringCss} />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              Código SAP / ERP interno de Palex para este modelo
+            </p>
+          </div>
+
+          {/* Proveedor + Precio */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={FLBL}>Proveedor</label>
+              <input value={form.proveedor} onChange={e => set("proveedor", e.target.value)}
+                placeholder="Nombre del proveedor" className={FLDCLS} style={ringCss} />
+            </div>
+            <div>
+              <label className={FLBL}>Precio unitario (€)</label>
+              <input type="number" min="0" step="0.01" value={form.precio} onChange={e => set("precio", e.target.value)}
+                placeholder="0.00" className={FLDCLS} style={ringCss} />
+            </div>
+          </div>
+
+          {/* Garantía + Datasheet */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={FLBL}>Garantía fabricante (meses)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><IcoShield /></span>
+                <input type="number" min="0" step="1" value={form.garantiaMeses} onChange={e => set("garantiaMeses", e.target.value)}
+                  placeholder="24" className={`${FLDCLS} pl-8`} style={ringCss} />
+              </div>
+            </div>
+            <div>
+              <label className={FLBL}>URL Datasheet / Ficha técnica</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><IcoLink /></span>
+                <input value={form.fichaUrl} onChange={e => set("fichaUrl", e.target.value)}
+                  placeholder="https://…" className={`${FLDCLS} pl-8`} style={ringCss} />
+              </div>
+            </div>
+          </div>
+
+          {/* Descripción */}
+          <div>
+            <label className={FLBL}>Descripción / Notas técnicas</label>
+            <textarea value={form.descripcion} onChange={e => set("descripcion", e.target.value)}
+              placeholder="Características relevantes, versión de firmware, observaciones…"
+              rows={3} className={`${FLDCLS} resize-none`} style={ringCss} />
+          </div>
+        </form>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0 bg-gray-50/80">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white transition-colors cursor-pointer">
+            Cancelar
+          </button>
+          <button form="mat-drawer-form" type="submit" disabled={saving}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-opacity cursor-pointer hover:opacity-90"
+            style={{ backgroundColor: tipoSel?.color ?? TEAL }}>
+            {saving ? "Guardando…" : item ? "Guardar cambios" : "Crear material"}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Modal: Gestionar tipos ───────────────────────────────────────────────────
+
+function CatTiposModal({ tipos, onClose, onChanged }: {
+  tipos: HardwareTipo[]
+  onClose: () => void
+  onChanged: () => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [nombre, setNombre] = useState("")
+  const [color, setColor] = useState(TIPO_COLORES_PRESET[0])
+  const [creando, setCreando] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editNombre, setEditNombre] = useState("")
+  const [editColor, setEditColor] = useState("")
+
+  async function crear() {
+    if (!nombre.trim()) return
+    setCreando(true)
+    try {
+      const r = await fetch("/api/hardware/tipos", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nombre.trim(), color }),
+      })
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
+      setNombre(""); onChanged(); success("Tipo creado")
+    } catch (e: unknown) { toastError((e as Error).message || "Error") }
+    finally { setCreando(false) }
+  }
+
+  async function guardarEdit(id: string) {
+    try {
+      const r = await fetch(`/api/hardware/tipos/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: editNombre, color: editColor }),
+      })
+      if (!r.ok) throw new Error()
+      setEditId(null); onChanged(); success("Tipo actualizado")
+    } catch { toastError("Error") }
+  }
+
+  async function eliminarTipo(id: string) {
+    try {
+      const r = await fetch(`/api/hardware/tipos/${id}`, { method: "DELETE" })
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
+      onChanged(); success("Tipo eliminado")
+    } catch (e: unknown) { toastError((e as Error).message || "Error") }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Tipos de hardware</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Categorías para clasificar los materiales del catálogo</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
+        </div>
+        <div className="overflow-y-auto flex-1 px-5 py-3 space-y-1">
+          {tipos.length === 0
+            ? <p className="text-sm text-gray-400 text-center py-8">Sin tipos creados aún</p>
+            : tipos.map(t => (
+              <div key={t.id} className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                {editId === t.id ? (
+                  <>
+                    <div className="flex gap-1 flex-wrap">
+                      {TIPO_COLORES_PRESET.map(c => (
+                        <button key={c} type="button" onClick={() => setEditColor(c)}
+                          className="w-5 h-5 rounded-full border-2 transition-all cursor-pointer"
+                          style={{ backgroundColor: c, borderColor: editColor === c ? "#374151" : "transparent" }} />
+                      ))}
+                    </div>
+                    <input value={editNombre} onChange={e => setEditNombre(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 min-w-0"
+                      onKeyDown={e => e.key === "Enter" && guardarEdit(t.id)} />
+                    <button onClick={() => guardarEdit(t.id)}
+                      className="text-xs font-semibold px-2.5 py-1.5 rounded-lg text-white cursor-pointer shrink-0"
+                      style={{ backgroundColor: TEAL }}>OK</button>
+                    <button onClick={() => setEditId(null)} className="text-xs text-gray-400 cursor-pointer shrink-0">✕</button>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                    <span className="flex-1 text-sm font-medium text-gray-800">{t.nombre}</span>
+                    <button onClick={() => { setEditId(t.id); setEditNombre(t.nombre); setEditColor(t.color) }}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoEdit /></button>
+                    <button onClick={() => eliminarTipo(t.id)}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 cursor-pointer"><IcoTrash /></button>
+                  </>
+                )}
+              </div>
+            ))
+          }
+        </div>
+        <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl shrink-0">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5">Nuevo tipo</p>
+          <div className="flex gap-1.5 mb-2.5 flex-wrap">
+            {TIPO_COLORES_PRESET.map(c => (
+              <button key={c} type="button" onClick={() => setColor(c)}
+                className="w-6 h-6 rounded-full border-2 transition-all cursor-pointer"
+                style={{ backgroundColor: c, borderColor: color === c ? "#374151" : "transparent" }} />
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre del tipo…"
+              onKeyDown={e => e.key === "Enter" && !creando && crear()}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+            <button onClick={crear} disabled={creando || !nombre.trim()}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40 cursor-pointer"
+              style={{ backgroundColor: TEAL }}>
+              {creando ? "…" : "Añadir"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Modal: Unidades de un modelo ────────────────────────────────────────────
+
+function CatStockModal({ item, onClose, onStockChanged }: {
+  item: HardwareCatalogo
+  onClose: () => void
+  onStockChanged: (delta: number) => void
+}) {
+  const { success, error: toastError } = useToast()
+  const [unidades, setUnidades] = useState<HardwareUnidad[]>([])
+  const [loading, setLoading] = useState(true)
+  const EMPTY_ROW = { numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "" }
+  const [rows, setRows] = useState([{ ...EMPTY_ROW }])
+  const [saving, setSaving] = useState(false)
+  const tipoColor = item.tipo?.color ?? TEAL
+
+  const cargar = useCallback(async () => {
+    setLoading(true)
+    const r = await fetch(`/api/hardware/${item.id}`)
+    if (r.ok) { const d = await r.json(); setUnidades(d.unidades ?? []) }
+    setLoading(false)
+  }, [item.id])
+
+  useEffect(() => { cargar() }, [cargar])
+
+  async function añadir(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const payload = rows
+        .filter((r, i) => rows.length === 1 || r.numSerie.trim())
+        .map(r => ({
+          catalogoId: item.id,
+          numSerie: r.numSerie.trim() || null,
+          notas: r.notas.trim() || null,
+          fechaCompra: r.fechaCompra || null,
+          fechaGarantia: r.fechaGarantia || null,
+          estado: "DISPONIBLE",
+        }))
+      const resp = await fetch("/api/hardware/unidades", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!resp.ok) throw new Error()
+      const nuevas: HardwareUnidad[] = await resp.json()
+      setUnidades(p => [...nuevas, ...p])
+      setRows([{ ...EMPTY_ROW }])
+      onStockChanged(nuevas.length)
+      success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""}`)
+    } catch { toastError("Error al añadir stock") }
+    finally { setSaving(false) }
+  }
+
+  async function eliminarUnidad(id: string) {
+    try {
+      await fetch(`/api/hardware/unidades/${id}`, { method: "DELETE" })
+      setUnidades(p => p.filter(u => u.id !== id))
+      onStockChanged(-1)
+      success("Unidad eliminada")
+    } catch { toastError("Error") }
+  }
+
+  const FROW = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0"
+          style={{ borderTop: `3px solid ${tipoColor}` }}>
+          {item.tipo && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white shrink-0"
+              style={{ backgroundColor: tipoColor }}>{item.tipo.nombre}</span>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-gray-900">{item.marca} {item.modelo}</h2>
+            {item.referenciaPalex && (
+              <span className="text-xs font-mono font-semibold" style={{ color: TEAL }}>{item.referenciaPalex}</span>
+            )}
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xl font-bold text-gray-900">{unidades.length}</p>
+            <p className="text-[10px] text-gray-400 -mt-0.5">unidades</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer shrink-0"><IcoX /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Form añadir stock */}
+          <form onSubmit={añadir} className="bg-gray-50 rounded-xl border border-gray-100 p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Registrar nuevas unidades</p>
+            <div className="space-y-2">
+              {rows.map((row, i) => (
+                <div key={i} className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+                  <div>
+                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Nº serie</label>}
+                    <input value={row.numSerie} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, numSerie: e.target.value } : x))}
+                      placeholder="Opcional" className={FROW + " font-mono text-xs"} />
+                  </div>
+                  <div>
+                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Fecha compra</label>}
+                    <input type="date" value={row.fechaCompra} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, fechaCompra: e.target.value } : x))}
+                      className={FROW + " text-xs"} />
+                  </div>
+                  <div>
+                    {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Fin garantía</label>}
+                    <input type="date" value={row.fechaGarantia} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, fechaGarantia: e.target.value } : x))}
+                      className={FROW + " text-xs"} />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      {i === 0 && <label className="block text-[11px] text-gray-400 mb-1">Notas</label>}
+                      <input value={row.notas} onChange={e => setRows(p => p.map((x, j) => j === i ? { ...x, notas: e.target.value } : x))}
+                        placeholder="—" className={FROW + " text-xs"} />
+                    </div>
+                    {rows.length > 1 && (
+                      <button type="button" onClick={() => setRows(p => p.filter((_, j) => j !== i))}
+                        className="p-2 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 self-end cursor-pointer"><IcoTrash /></button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <button type="button" onClick={() => setRows(p => [...p, { ...EMPTY_ROW }])}
+                className="text-xs font-medium cursor-pointer hover:opacity-80" style={{ color: TEAL }}>
+                + Añadir fila
+              </button>
+              <button type="submit" disabled={saving}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer"
+                style={{ backgroundColor: tipoColor }}>
+                {saving ? "Añadiendo…" : `Añadir ${rows.length} ud.`}
+              </button>
+            </div>
+          </form>
+
+          {/* Lista unidades */}
+          {loading ? (
+            <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-11 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+          ) : unidades.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 text-sm">Sin unidades registradas para este modelo</div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
+                    <th className="text-left px-4 py-2.5 font-semibold">Nº Serie</th>
+                    <th className="text-left px-4 py-2.5 font-semibold">Estado</th>
+                    <th className="text-left px-4 py-2.5 font-semibold hidden sm:table-cell">Asignado a</th>
+                    <th className="text-left px-4 py-2.5 font-semibold hidden md:table-cell">Garantía</th>
+                    <th className="px-4 py-2.5 w-10" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {unidades.map((u, i) => {
+                    const est = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
+                    return (
+                      <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/30" : ""}`}>
+                        <td className="px-4 py-3">
+                          {u.numSerie
+                            ? <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{u.numSerie}</code>
+                            : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: est.bg, color: est.color }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: est.color, display: "inline-block" }} />
+                            {est.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 hidden sm:table-cell max-w-[160px] truncate">
+                          {u.hospital?.nombre ?? u.preProyecto?.titulo ?? <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-400 hidden md:table-cell">
+                          {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button onClick={() => eliminarUnidad(u.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 cursor-pointer"><IcoTrash /></button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tarjeta de catálogo ──────────────────────────────────────────────────────
+
+function CatCard({ item, esAdmin, onEdit, onStock, onToggle }: {
+  item: HardwareCatalogo
+  esAdmin: boolean
+  onEdit: () => void
+  onStock: () => void
+  onToggle: () => void
+}) {
+  const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
+  const tipoColor = item.tipo?.color ?? "#9ca3af"
+  const pctDisp = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+  const barColor = pctDisp >= 70 ? "#16a34a" : pctDisp >= 30 ? TEAL : "#f59e0b"
+
+  return (
+    <div className={`group relative bg-white rounded-2xl border flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md cursor-default
+      ${item.activo ? "border-gray-100 shadow-sm hover:border-gray-200" : "border-gray-100 shadow-sm opacity-60"}`}>
+      {/* Franja de color tipo */}
+      <div className="h-1 w-full shrink-0" style={{ backgroundColor: item.activo ? tipoColor : "#e5e7eb" }} />
+
+      <div className="p-4 flex-1 flex flex-col">
+        {/* Badge tipo + acciones hover */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {item.tipo
+              ? <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>{item.tipo.nombre}</span>
+              : <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Sin tipo</span>}
+            {!item.activo && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-50 text-red-400">Inactivo</span>}
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 transition-colors cursor-pointer" aria-label="Editar"><IcoEdit /></button>
+            {esAdmin && <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors cursor-pointer" aria-label={item.activo ? "Desactivar" : "Activar"}><IcoTrash /></button>}
+          </div>
+        </div>
+
+        {/* Marca + Modelo */}
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{item.marca}</p>
+          <h3 className="text-base font-bold text-gray-900 leading-tight mt-0.5">{item.modelo}</h3>
+          {item.descripcion && <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">{item.descripcion}</p>}
+        </div>
+
+        {/* Ref. Palex badge */}
+        {item.referenciaPalex && (
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl mb-3 w-fit" style={{ backgroundColor: `${TEAL}0e` }}>
+            <span style={{ color: TEAL, flexShrink: 0 }}><IcoTag /></span>
+            <span className="text-xs font-mono font-bold" style={{ color: TEAL }}>{item.referenciaPalex}</span>
+          </div>
+        )}
+
+        {/* Chips: proveedor, precio, datasheet */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {item.proveedor && (
+            <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 text-gray-600 truncate max-w-[160px]">
+              {item.proveedor}
+            </span>
+          )}
+          {item.precio != null && (
+            <span className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 font-semibold text-gray-700">
+              {fmtEuros(item.precio)}
+            </span>
+          )}
+          {item.fichaUrl && (
+            <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-xs rounded-lg px-2 py-0.5 border transition-colors hover:opacity-80 cursor-pointer"
+              style={{ borderColor: `${TEAL}40`, color: TEAL }}>
+              <IcoLink /> Datasheet
+            </a>
+          )}
+        </div>
+
+        {/* Stock bar */}
+        <div className="mt-auto pt-3 border-t border-gray-50">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#16a34a", display: "inline-block" }} />
+                <span className="text-gray-600 font-medium">{stock.disponibles} disp.</span>
+              </span>
+              {stock.asignados > 0 && (
+                <span className="flex items-center gap-1">
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: TEAL, display: "inline-block" }} />
+                  <span className="text-gray-500">{stock.asignados} asig.</span>
+                </span>
+              )}
+              {stock.mantenimiento > 0 && (
+                <span className="flex items-center gap-1">
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b", display: "inline-block" }} />
+                  <span className="text-amber-600">{stock.mantenimiento} mant.</span>
+                </span>
+              )}
+            </div>
+            <span className="text-gray-400 font-medium">{stock.total} total</span>
+          </div>
+          {stock.total > 0 ? (
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pctDisp}%`, backgroundColor: barColor }} />
+            </div>
+          ) : (
+            <div className="h-1.5 bg-gray-100 rounded-full" />
+          )}
+        </div>
+      </div>
+
+      {/* Footer acciones */}
+      <div className="px-4 pb-4 flex gap-2">
+        <button onClick={onStock}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer">
+          <IcoBox /> Unidades ({stock.total})
+        </button>
+        <button onClick={onEdit}
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+          style={{ color: tipoColor, border: "1px solid", borderColor: `${tipoColor}40` }}>
+          <IcoEdit /> Editar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Tab: Catálogo ────────────────────────────────────────────────────────────
+
+type CatSortKey = "nombre" | "stock_desc" | "stock_asc" | "precio_desc" | "precio_asc"
 
 function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
   catalogo: HardwareCatalogo[]
@@ -1060,533 +1694,302 @@ function CatalogoTab({ catalogo, setCatalogo, esAdmin, tipos }: {
   const { success, error: toastError } = useToast()
   const [busqueda, setBusqueda] = useState("")
   const [filtroTipoId, setFiltroTipoId] = useState("")
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const FORM_VACIO = { tipoId: "", marca: "", modelo: "", referenciaPalex: "", proveedor: "", descripcion: "", precio: "", fichaUrl: "" }
-  const [form, setForm] = useState(FORM_VACIO)
-  const [guardando, setGuardando] = useState(false)
-  const [expandido, setExpandido] = useState<string | null>(null)
-  const [unidadesCache, setUnidadesCache] = useState<Record<string, HardwareUnidad[]>>({})
-  const [loadingUnidades, setLoadingUnidades] = useState<string | null>(null)
-  const [stockForm, setStockForm] = useState<{ catalogoId: string; series: { numSerie: string; notas: string; fechaCompra: string; fechaGarantia: string }[] } | null>(null)
-  const [guardandoStock, setGuardandoStock] = useState(false)
-  const [editItem, setEditItem] = useState<HardwareCatalogo | null>(null)
-  const [editForm, setEditForm] = useState({ tipoId: "", marca: "", modelo: "", referenciaPalex: "", proveedor: "", descripcion: "", precio: "", fichaUrl: "" })
-  const [guardandoEdit, setGuardandoEdit] = useState(false)
+  const [sort, setSort] = useState<CatSortKey>("nombre")
+  const [vistaGrid, setVistaGrid] = useState(true)
+  const [drawer, setDrawer] = useState<HardwareCatalogo | "new" | null>(null)
+  const [stockItem, setStockItem] = useState<HardwareCatalogo | null>(null)
+  const [tiposModal, setTiposModal] = useState(false)
+  const [tiposLocal, setTiposLocal] = useState<HardwareTipo[]>(tipos)
 
-  const filtrados = catalogo.filter(c => {
-    if (filtroTipoId && c.tipoId !== filtroTipoId) return false
-    if (busqueda) {
-      const q = busqueda.toLowerCase()
-      return (
-        c.marca.toLowerCase().includes(q) ||
-        c.modelo.toLowerCase().includes(q) ||
-        (c.referenciaPalex?.toLowerCase().includes(q) ?? false) ||
-        (c.proveedor?.toLowerCase().includes(q) ?? false)
-      )
-    }
-    return true
-  })
-
-  async function toggleExpandido(id: string) {
-    if (expandido === id) { setExpandido(null); return }
-    setExpandido(id)
-    if (unidadesCache[id]) return
-    setLoadingUnidades(id)
-    const r = await fetch(`/api/hardware/${id}`)
-    if (r.ok) {
-      const data = await r.json()
-      setUnidadesCache(prev => ({ ...prev, [id]: data.unidades ?? [] }))
-    }
-    setLoadingUnidades(null)
-  }
-
-  async function crear(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.marca.trim() || !form.modelo.trim()) { toastError("Marca y modelo son obligatorios"); return }
-    setGuardando(true)
-    try {
-      const r = await fetch("/api/hardware", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, tipoId: form.tipoId || null, precio: form.precio || null }),
-      })
-      if (!r.ok) throw new Error()
-      const nuevo = await r.json()
-      setCatalogo(prev => [{ ...nuevo, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, ...prev])
-      setForm(FORM_VACIO)
-      setMostrarForm(false)
-      success("Modelo creado")
-    } catch {
-      toastError("Error al crear el modelo")
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  function abrirEditar(item: HardwareCatalogo) {
-    setEditItem(item)
-    setEditForm({
-      tipoId: item.tipoId ?? "",
-      marca: item.marca,
-      modelo: item.modelo,
-      referenciaPalex: item.referenciaPalex ?? "",
-      proveedor: item.proveedor ?? "",
-      descripcion: item.descripcion ?? "",
-      precio: item.precio != null ? String(item.precio) : "",
-      fichaUrl: item.fichaUrl ?? "",
-    })
-  }
-
-  async function guardarEditar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!editItem) return
-    setGuardandoEdit(true)
-    try {
-      const r = await fetch(`/api/hardware/${editItem.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editForm, tipoId: editForm.tipoId || null, precio: editForm.precio || null }),
-      })
-      if (!r.ok) throw new Error()
-      const updated = await r.json()
-      setCatalogo(prev => prev.map(c => c.id === editItem.id ? { ...c, ...updated } : c))
-      setEditItem(null)
-      success("Modelo actualizado")
-    } catch {
-      toastError("Error al actualizar")
-    } finally {
-      setGuardandoEdit(false)
-    }
-  }
+  useEffect(() => { setTiposLocal(tipos) }, [tipos])
 
   async function toggleActivo(item: HardwareCatalogo) {
-    const r = await fetch(`/api/hardware/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activo: !item.activo }),
-    })
-    if (r.ok) {
-      setCatalogo(prev => prev.map(c => c.id === item.id ? { ...c, activo: !c.activo } : c))
-      success(item.activo ? "Desactivado" : "Activado")
-    }
-  }
-
-  async function añadirStock(e: React.FormEvent) {
-    e.preventDefault()
-    if (!stockForm) return
-    setGuardandoStock(true)
     try {
-      const payload = stockForm.series
-        .filter(s => stockForm.series.length === 1 || s.numSerie.trim())
-        .map(s => ({
-          catalogoId: stockForm.catalogoId,
-          numSerie: s.numSerie.trim() || null,
-          notas: s.notas.trim() || null,
-          fechaCompra: s.fechaCompra || null,
-          fechaGarantia: s.fechaGarantia || null,
-          estado: "DISPONIBLE",
-        }))
-      const r = await fetch("/api/hardware/unidades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-      if (!r.ok) throw new Error()
-      const nuevas: HardwareUnidad[] = await r.json()
-      setUnidadesCache(prev => ({ ...prev, [stockForm.catalogoId]: [...(prev[stockForm.catalogoId] ?? []), ...nuevas] }))
-      setCatalogo(prev => prev.map(c => c.id === stockForm.catalogoId
-        ? { ...c, _stock: { total: (c._stock?.total ?? 0) + nuevas.length, disponibles: (c._stock?.disponibles ?? 0) + nuevas.length, asignados: c._stock?.asignados ?? 0, mantenimiento: c._stock?.mantenimiento ?? 0 } }
-        : c))
-      setStockForm(null)
-      success(`${nuevas.length} unidad${nuevas.length !== 1 ? "es" : ""} añadida${nuevas.length !== 1 ? "s" : ""}`)
-    } catch {
-      toastError("Error al añadir al stock")
-    } finally {
-      setGuardandoStock(false)
-    }
+      await fetch(`/api/hardware/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activo: !item.activo }) })
+      setCatalogo(p => p.map(c => c.id === item.id ? { ...c, activo: !c.activo } : c))
+      success(item.activo ? "Material desactivado" : "Material activado")
+    } catch { toastError("Error") }
   }
 
-  const emptyStockRow = { numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "" }
+  // Stats
+  const activos    = catalogo.filter(c => c.activo)
+  const totalMod   = activos.length
+  const totalUds   = activos.reduce((s, c) => s + (c._stock?.total ?? 0), 0)
+  const totalDisp  = activos.reduce((s, c) => s + (c._stock?.disponibles ?? 0), 0)
+  const pctDisp    = totalUds > 0 ? Math.round((totalDisp / totalUds) * 100) : 0
+  const valorTotal = activos.reduce((s, c) => s + ((c._stock?.total ?? 0) * (c.precio ?? 0)), 0)
+
+  // Filter + sort
+  const filtered = catalogo
+    .filter(c => !filtroTipoId || c.tipoId === filtroTipoId)
+    .filter(c => !busqueda || [c.marca, c.modelo, c.referenciaPalex, c.proveedor]
+      .some(v => v?.toLowerCase().includes(busqueda.toLowerCase())))
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "nombre")      return `${a.marca} ${a.modelo}`.localeCompare(`${b.marca} ${b.modelo}`)
+    if (sort === "stock_desc")  return (b._stock?.total ?? 0) - (a._stock?.total ?? 0)
+    if (sort === "stock_asc")   return (a._stock?.total ?? 0) - (b._stock?.total ?? 0)
+    if (sort === "precio_desc") return (b.precio ?? 0) - (a.precio ?? 0)
+    if (sort === "precio_asc")  return (a.precio ?? 0) - (b.precio ?? 0)
+    return 0
+  })
+
+  const activosFiltrados   = sorted.filter(c => c.activo)
+  const inactivosFiltrados = sorted.filter(c => !c.activo)
 
   return (
-    <div className="space-y-4">
-      {/* Barra de filtros y acciones */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex flex-wrap gap-2 items-center">
-          {/* Buscador */}
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IcoSearch /></span>
-            <input
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              placeholder="Buscar modelo, marca, referencia…"
-              className="pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white w-52"
-            />
+    <div className="space-y-5">
+
+      {/* ── Stats bar ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Modelos activos",  value: String(totalMod),                              sub: `${catalogo.length - totalMod} inactivos`,       color: TEAL      },
+          { label: "Unidades totales", value: String(totalUds),                              sub: "en inventario",                                   color: "#6366f1" },
+          { label: "Disponibilidad",   value: `${pctDisp}%`,                                sub: `${totalDisp} de ${totalUds} disponibles`,          color: "#16a34a" },
+          { label: "Valor catálogo",   value: valorTotal > 0 ? fmtEuros(valorTotal) : "—", sub: "coste teórico del inventario",                     color: "#f59e0b" },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm" style={{ borderTop: `3px solid ${s.color}` }}>
+            <p className="text-2xl font-bold leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className="text-xs font-semibold text-gray-700 mt-1.5">{s.label}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
           </div>
-          {/* Tipo pills */}
-          <button
-            onClick={() => setFiltroTipoId("")}
-            className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer"
-            style={{ backgroundColor: !filtroTipoId ? `${TEAL}18` : "#f9fafb", borderColor: !filtroTipoId ? TEAL : "#e5e7eb", color: !filtroTipoId ? TEAL : "#374151" }}>
-            Todos
-          </button>
-          {tipos.map(t => (
-            <button key={t.id}
-              onClick={() => setFiltroTipoId(filtroTipoId === t.id ? "" : t.id)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer"
-              style={{
-                backgroundColor: filtroTipoId === t.id ? `${t.color}22` : "#f9fafb",
-                borderColor: filtroTipoId === t.id ? t.color : "#e5e7eb",
-                color: filtroTipoId === t.id ? t.color : "#374151",
-              }}>
-              {t.nombre}
-            </button>
-          ))}
-        </div>
-        {esAdmin && (
-          <button onClick={() => setMostrarForm(v => !v)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
-            style={{ backgroundColor: TEAL }}>
-            <IcoPlus />
-            Nuevo modelo
-          </button>
-        )}
+        ))}
       </div>
 
-      {/* Form nuevo modelo */}
-      {mostrarForm && (
-        <form onSubmit={crear} className="slide-down bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">Añadir modelo al catálogo</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div><label className={LABEL}>Tipo</label>
-              <select value={form.tipoId} onChange={e => setForm(p => ({ ...p, tipoId: e.target.value }))} className={INPUT}>
-                <option value="">Sin tipo</option>
-                {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-              </select>
-            </div>
-            <div><label className={LABEL}>Marca *</label>
-              <input value={form.marca} onChange={e => setForm(p => ({ ...p, marca: e.target.value }))} placeholder="Zebra, Honeywell…" className={INPUT} required />
-            </div>
-            <div><label className={LABEL}>Modelo *</label>
-              <input value={form.modelo} onChange={e => setForm(p => ({ ...p, modelo: e.target.value }))} placeholder="MC3300, DS2208…" className={INPUT} required />
-            </div>
-            <div><label className={LABEL}>Ref. Palex</label>
-              <input value={form.referenciaPalex} onChange={e => setForm(p => ({ ...p, referenciaPalex: e.target.value }))} placeholder="PAL-XXXX" className={INPUT + " font-mono"} />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div><label className={LABEL}>Proveedor</label>
-              <input value={form.proveedor} onChange={e => setForm(p => ({ ...p, proveedor: e.target.value }))} placeholder="Nombre proveedor" className={INPUT} />
-            </div>
-            <div><label className={LABEL}>Precio unitario (€)</label>
-              <input type="number" step="0.01" min="0" value={form.precio} onChange={e => setForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} />
-            </div>
-            <div><label className={LABEL}>URL ficha técnica</label>
-              <input type="url" value={form.fichaUrl} onChange={e => setForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} />
-            </div>
-            <div><label className={LABEL}>Descripción</label>
-              <input value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} />
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setMostrarForm(false)}
-              className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={guardando}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity cursor-pointer"
-              style={{ backgroundColor: TEAL }}>{guardando ? "Guardando…" : "Guardar modelo"}</button>
-          </div>
-        </form>
-      )}
-
-      {/* Grid de tarjetas */}
-      {filtrados.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-            <IcoSearch />
-          </div>
-          <p className="text-sm font-medium text-gray-600">Sin resultados</p>
-          <p className="text-xs text-gray-400 mt-1">{catalogo.length === 0 ? "El catálogo está vacío. Añade el primer modelo." : "Prueba a cambiar los filtros de búsqueda."}</p>
+      {/* ── Toolbar ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[180px]">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IcoSearch /></span>
+          <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por marca, modelo, referencia…"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white"
+            style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtrados.map(item => {
-            const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
-            const isOpen = expandido === item.id
-            const unidades = unidadesCache[item.id] ?? []
-            const tipoColor = item.tipo?.color ?? "#6b7280"
-            const pctDisp = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+        <select value={sort} onChange={e => setSort(e.target.value as CatSortKey)}
+          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 cursor-pointer"
+          style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+          <option value="nombre">Nombre A→Z</option>
+          <option value="stock_desc">Más stock</option>
+          <option value="stock_asc">Menos stock</option>
+          <option value="precio_desc">Mayor precio</option>
+          <option value="precio_asc">Menor precio</option>
+        </select>
+        <div className="flex bg-gray-100 p-0.5 rounded-xl">
+          <button onClick={() => setVistaGrid(true)} title="Vista cuadrícula"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}>
+            <IcoGrid />
+          </button>
+          <button onClick={() => setVistaGrid(false)} title="Vista lista"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${!vistaGrid ? "bg-white shadow-sm text-gray-700" : "text-gray-400 hover:text-gray-600"}`}>
+            <IcoList />
+          </button>
+        </div>
+        <button onClick={() => setTiposModal(true)}
+          className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">
+          <IcoGear /> Tipos
+        </button>
+        <button onClick={() => setDrawer("new")}
+          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity cursor-pointer"
+          style={{ backgroundColor: TEAL }}>
+          <IcoPlus /> Nuevo material
+        </button>
+      </div>
 
+      {/* ── Type filter pills ── */}
+      {tiposLocal.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setFiltroTipoId("")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
+            style={!filtroTipoId
+              ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" }
+              : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+            Todos <span className="text-[10px] font-bold opacity-80">{activos.length}</span>
+          </button>
+          {tiposLocal.map(t => {
+            const count = catalogo.filter(c => c.tipoId === t.id && c.activo).length
+            const active = filtroTipoId === t.id
             return (
-              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                {/* Franja de color tipo */}
-                <div className="h-1 w-full" style={{ backgroundColor: item.activo ? tipoColor : "#e5e7eb" }} />
-
-                <div className="p-4 flex-1 flex flex-col gap-3">
-                  {/* Cabecera tarjeta */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      {/* Badge tipo */}
-                      {item.tipo && (
-                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5"
-                          style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>
-                          {item.tipo.nombre}
-                        </span>
-                      )}
-                      <p className="font-bold text-gray-900 text-sm leading-snug">{item.marca} {item.modelo}</p>
-                      {item.referenciaPalex && (
-                        <code className="text-[11px] font-mono font-semibold mt-0.5 block" style={{ color: TEAL }}>
-                          {item.referenciaPalex}
-                        </code>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      {esAdmin && (
-                        <button onClick={() => abrirEditar(item)} title="Editar modelo"
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer">
-                          <IcoEdit />
-                        </button>
-                      )}
-                      <button onClick={() => toggleExpandido(item.id)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                        title={isOpen ? "Cerrar stock" : "Ver stock"}>
-                        <IcoChevron open={isOpen} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Metadatos */}
-                  <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                    {item.proveedor && (
-                      <span className="bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 text-gray-600">{item.proveedor}</span>
-                    )}
-                    {item.precio != null && (
-                      <span className="bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5">
-                        {item.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
-                      </span>
-                    )}
-                    {item.fichaUrl && (
-                      <a href={item.fichaUrl} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-lg px-2 py-0.5 hover:border-teal-300 transition-colors"
-                        style={{ color: TEAL }}>
-                        <IcoDownload />
-                        Ficha
-                      </a>
-                    )}
-                  </div>
-
-                  {item.descripcion && (
-                    <p className="text-xs text-gray-400 line-clamp-2">{item.descripcion}</p>
-                  )}
-
-                  {/* Barra de stock */}
-                  <div className="mt-auto pt-2 border-t border-gray-50">
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="font-medium text-gray-600">{stock.total} unidades</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-600 font-semibold">{stock.disponibles} disp.</span>
-                        <span className="text-gray-400">{stock.asignados} asig.</span>
-                        {!item.activo && <span className="text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-medium">Inactivo</span>}
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${pctDisp}%`, backgroundColor: pctDisp > 50 ? "#16a34a" : pctDisp > 20 ? TEAL : "#d97706" }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Panel stock expandido */}
-                {isOpen && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        {stock.disponibles} disp. · {stock.asignados} asig. · {stock.total} total
-                      </p>
-                      <button
-                        onClick={() => setStockForm(stockForm?.catalogoId === item.id ? null : { catalogoId: item.id, series: [{ ...emptyStockRow }] })}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
-                        style={{ backgroundColor: TEAL }}>
-                        <IcoPlus />
-                        Añadir stock
-                      </button>
-                    </div>
-
-                    {stockForm?.catalogoId === item.id && (
-                      <form onSubmit={añadirStock} className="slide-down bg-white border border-teal-100 rounded-xl p-4 mb-3 space-y-3">
-                        <p className="text-xs font-semibold text-gray-700">Nueva entrada de stock</p>
-                        <div className="space-y-2">
-                          {stockForm.series.map((s, i) => (
-                            <div key={i} className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-                              <div>
-                                {i === 0 && <label className={LABEL}>Nº serie</label>}
-                                <input value={s.numSerie}
-                                  onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, numSerie: e.target.value } : x) } : p)}
-                                  placeholder="Opcional" className={INPUT + " font-mono text-xs"} />
-                              </div>
-                              <div>
-                                {i === 0 && <label className={LABEL}>Fecha compra</label>}
-                                <input type="date" value={s.fechaCompra}
-                                  onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, fechaCompra: e.target.value } : x) } : p)}
-                                  className={INPUT + " text-xs"} />
-                              </div>
-                              <div>
-                                {i === 0 && <label className={LABEL}>Fin garantía</label>}
-                                <input type="date" value={s.fechaGarantia}
-                                  onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, fechaGarantia: e.target.value } : x) } : p)}
-                                  className={INPUT + " text-xs"} />
-                              </div>
-                              <div className="flex gap-2">
-                                <div className="flex-1">
-                                  {i === 0 && <label className={LABEL}>Notas</label>}
-                                  <input value={s.notas}
-                                    onChange={e => setStockForm(p => p ? { ...p, series: p.series.map((x, j) => j === i ? { ...x, notas: e.target.value } : x) } : p)}
-                                    placeholder="—" className={INPUT + " text-xs"} />
-                                </div>
-                                {stockForm.series.length > 1 && (
-                                  <button type="button"
-                                    onClick={() => setStockForm(p => p ? { ...p, series: p.series.filter((_, j) => j !== i) } : p)}
-                                    className="mb-0 p-2 rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 self-end transition-colors cursor-pointer"><IcoTrash /></button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <button type="button"
-                          onClick={() => setStockForm(p => p ? { ...p, series: [...p.series, { ...emptyStockRow }] } : p)}
-                          className="text-xs font-medium transition-colors hover:opacity-80 cursor-pointer" style={{ color: TEAL }}>
-                          + Añadir fila
-                        </button>
-                        <div className="flex gap-2 pt-1">
-                          <button type="button" onClick={() => setStockForm(null)}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:bg-gray-50 cursor-pointer">Cancelar</button>
-                          <button type="submit" disabled={guardandoStock}
-                            className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
-                            style={{ backgroundColor: TEAL }}>
-                            {guardandoStock ? "Guardando…" : `Añadir ${stockForm.series.length} ud.`}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    {loadingUnidades === item.id ? (
-                      <div className="space-y-1">{[1, 2].map(i => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
-                    ) : unidades.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-4">Sin unidades en stock.</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="text-gray-400 border-b border-gray-200">
-                              <th className="text-left pb-2 font-medium">Nº serie</th>
-                              <th className="text-left pb-2 font-medium">Estado</th>
-                              <th className="text-left pb-2 font-medium">Asignado a</th>
-                              <th className="text-left pb-2 font-medium">Garantía</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {unidades.map(u => {
-                              const es = HW_ESTADO[u.estado] ?? { label: u.estado, color: "#6b7280", bg: "#f3f4f6" }
-                              return (
-                                <tr key={u.id} className="border-b border-gray-100 last:border-0">
-                                  <td className="py-2 pr-3">
-                                    {u.numSerie
-                                      ? <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{u.numSerie}</code>
-                                      : <span className="text-gray-300">—</span>}
-                                  </td>
-                                  <td className="py-2 pr-3">
-                                    <span className="px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: es.bg, color: es.color }}>{es.label}</span>
-                                  </td>
-                                  <td className="py-2 pr-3 text-gray-500">
-                                    {u.preProyecto
-                                      ? <Link href={`/pre-proyectos/${u.preProyecto.id}`} className="hover:underline" style={{ color: TEAL }}>{u.preProyecto.titulo}</Link>
-                                      : u.hospital?.nombre ?? <span className="text-gray-300">—</span>}
-                                  </td>
-                                  <td className="py-2 text-gray-400">{fmtFecha(u.fechaGarantia)}</td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <button key={t.id} onClick={() => setFiltroTipoId(active ? "" : t.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
+                style={active
+                  ? { backgroundColor: t.color, borderColor: t.color, color: "white" }
+                  : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block", flexShrink: 0,
+                  backgroundColor: active ? "rgba(255,255,255,0.6)" : t.color }} />
+                {t.nombre} <span className="text-[10px] font-bold opacity-70">{count}</span>
+              </button>
             )
           })}
         </div>
       )}
 
-      {/* Modal editar modelo */}
-      {editItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 animate-in fade-in duration-150">
-          <div className="slide-up bg-white rounded-2xl shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-bold text-gray-900">Editar modelo</h2>
-              <button onClick={() => setEditItem(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <form onSubmit={guardarEditar} className="p-6 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div><label className={LABEL}>Tipo</label>
-                  <select value={editForm.tipoId} onChange={e => setEditForm(p => ({ ...p, tipoId: e.target.value }))} className={INPUT}>
-                    <option value="">Sin tipo</option>
-                    {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                  </select>
-                </div>
-                <div><label className={LABEL}>Marca</label>
-                  <input value={editForm.marca} onChange={e => setEditForm(p => ({ ...p, marca: e.target.value }))} className={INPUT} required />
-                </div>
-                <div><label className={LABEL}>Modelo</label>
-                  <input value={editForm.modelo} onChange={e => setEditForm(p => ({ ...p, modelo: e.target.value }))} className={INPUT} required />
-                </div>
+      {/* ── Content ── */}
+      {sorted.length === 0 ? (
+        /* Empty state */
+        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300">
+            <IcoBox />
+          </div>
+          <h3 className="text-base font-bold text-gray-700 mb-1">
+            {busqueda || filtroTipoId ? "Sin resultados" : "Catálogo vacío"}
+          </h3>
+          <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
+            {busqueda || filtroTipoId
+              ? "Prueba a cambiar la búsqueda o los filtros activos."
+              : "Comienza añadiendo los primeros modelos de hardware al catálogo Palex."}
+          </p>
+          {!busqueda && !filtroTipoId && (
+            <button onClick={() => setDrawer("new")}
+              className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
+              style={{ backgroundColor: TEAL }}>
+              <IcoPlus /> Añadir primer material
+            </button>
+          )}
+        </div>
+      ) : vistaGrid ? (
+        /* Vista Cuadrícula */
+        <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {activosFiltrados.map(item => (
+              <CatCard key={item.id} item={item} esAdmin={esAdmin}
+                onEdit={() => setDrawer(item)}
+                onStock={() => setStockItem(item)}
+                onToggle={() => toggleActivo(item)} />
+            ))}
+          </div>
+          {inactivosFiltrados.length > 0 && (
+            <details className="mt-2">
+              <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none py-2 flex items-center gap-1.5 list-none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                {inactivosFiltrados.length} modelo{inactivosFiltrados.length !== 1 ? "s" : ""} inactivo{inactivosFiltrados.length !== 1 ? "s" : ""}
+              </summary>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                {inactivosFiltrados.map(item => (
+                  <CatCard key={item.id} item={item} esAdmin={esAdmin}
+                    onEdit={() => setDrawer(item)}
+                    onStock={() => setStockItem(item)}
+                    onToggle={() => toggleActivo(item)} />
+                ))}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className={LABEL}>Ref. Palex</label>
-                  <input value={editForm.referenciaPalex} onChange={e => setEditForm(p => ({ ...p, referenciaPalex: e.target.value }))} placeholder="PAL-XXXX" className={INPUT + " font-mono"} />
-                </div>
-                <div><label className={LABEL}>Proveedor</label>
-                  <input value={editForm.proveedor} onChange={e => setEditForm(p => ({ ...p, proveedor: e.target.value }))} className={INPUT} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className={LABEL}>Precio (€)</label>
-                  <input type="number" step="0.01" value={editForm.precio} onChange={e => setEditForm(p => ({ ...p, precio: e.target.value }))} placeholder="0.00" className={INPUT} />
-                </div>
-                <div><label className={LABEL}>URL ficha</label>
-                  <input type="url" value={editForm.fichaUrl} onChange={e => setEditForm(p => ({ ...p, fichaUrl: e.target.value }))} placeholder="https://…" className={INPUT} />
-                </div>
-              </div>
-              <div><label className={LABEL}>Descripción</label>
-                <input value={editForm.descripcion} onChange={e => setEditForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Opcional…" className={INPUT} />
-              </div>
-              {esAdmin && (
-                <div className="flex items-center gap-2 pt-1">
-                  <button type="button" onClick={() => toggleActivo(editItem).then(() => setEditItem(null))}
-                    className="px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">
-                    {editItem.activo ? "Desactivar modelo" : "Activar modelo"}
-                  </button>
-                  <div className="flex-1" />
-                  <button type="button" onClick={() => setEditItem(null)}
-                    className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancelar</button>
-                  <button type="submit" disabled={guardandoEdit}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
-                    style={{ backgroundColor: TEAL }}>{guardandoEdit ? "Guardando…" : "Guardar cambios"}</button>
-                </div>
-              )}
-              {!esAdmin && (
-                <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={() => setEditItem(null)}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancelar</button>
-                  <button type="submit" disabled={guardandoEdit}
-                    className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 cursor-pointer"
-                    style={{ backgroundColor: TEAL }}>{guardandoEdit ? "Guardando…" : "Guardar cambios"}</button>
-                </div>
-              )}
-            </form>
+            </details>
+          )}
+        </>
+      ) : (
+        /* Vista Lista */
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Ref. Palex</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Proveedor</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Precio</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Stock</th>
+                  <th className="px-4 py-3 w-20" />
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((item, i) => {
+                  const stock = item._stock ?? { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 }
+                  const tipoColor = item.tipo?.color ?? "#9ca3af"
+                  const pct = stock.total > 0 ? Math.round((stock.disponibles / stock.total) * 100) : 0
+                  const barC = pct >= 70 ? "#16a34a" : pct >= 30 ? TEAL : "#f59e0b"
+                  return (
+                    <tr key={item.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${!item.activo ? "opacity-50" : ""} ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
+                      <td className="px-4 py-3.5">
+                        {item.tipo
+                          ? <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                              style={{ backgroundColor: `${tipoColor}18`, color: tipoColor }}>{item.tipo.nombre}</span>
+                          : <span className="text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full font-semibold">Sin tipo</span>}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="font-semibold text-gray-900 text-sm">{item.modelo}</p>
+                        <p className="text-xs text-gray-400">{item.marca}</p>
+                      </td>
+                      <td className="px-4 py-3.5 hidden sm:table-cell">
+                        {item.referenciaPalex
+                          ? <code className="text-xs font-mono font-semibold" style={{ color: TEAL }}>{item.referenciaPalex}</code>
+                          : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-gray-500 hidden md:table-cell">{item.proveedor || "—"}</td>
+                      <td className="px-4 py-3.5 text-xs font-semibold text-gray-700 hidden lg:table-cell">
+                        {item.precio != null ? fmtEuros(item.precio) : "—"}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2 min-w-[90px]">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barC }} />
+                          </div>
+                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">{stock.disponibles}/{stock.total}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => setStockItem(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer" title="Ver unidades"><IcoBox /></button>
+                          <button onClick={() => setDrawer(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer" title="Editar"><IcoEdit /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+            {sorted.length} modelo{sorted.length !== 1 ? "s" : ""}
+            {sorted.length !== catalogo.length && ` (de ${catalogo.length} en total)`}
           </div>
         </div>
+      )}
+
+      {/* ── Drawer crear/editar ── */}
+      {drawer !== null && (
+        <MaterialDrawer
+          tipos={tiposLocal}
+          item={drawer === "new" ? null : drawer}
+          onClose={() => setDrawer(null)}
+          onSaved={saved => {
+            if (drawer === "new") {
+              setCatalogo(p => [{ ...saved, _stock: { total: 0, disponibles: 0, asignados: 0, mantenimiento: 0 } }, ...p])
+            } else {
+              setCatalogo(p => p.map(c => c.id === saved.id ? { ...c, ...saved } : c))
+            }
+            setDrawer(null)
+          }}
+        />
+      )}
+
+      {/* ── Modal unidades/stock ── */}
+      {stockItem && (
+        <CatStockModal
+          item={stockItem}
+          onClose={() => setStockItem(null)}
+          onStockChanged={delta => {
+            setCatalogo(p => p.map(c => c.id === stockItem.id
+              ? { ...c, _stock: {
+                  total: Math.max(0, (c._stock?.total ?? 0) + delta),
+                  disponibles: Math.max(0, (c._stock?.disponibles ?? 0) + (delta > 0 ? delta : 0)),
+                  asignados: c._stock?.asignados ?? 0,
+                  mantenimiento: c._stock?.mantenimiento ?? 0,
+                }}
+              : c))
+          }}
+        />
+      )}
+
+      {/* ── Modal tipos ── */}
+      {tiposModal && (
+        <CatTiposModal
+          tipos={tiposLocal}
+          onClose={() => setTiposModal(false)}
+          onChanged={async () => {
+            const r = await fetch("/api/hardware/tipos")
+            if (r.ok) setTiposLocal(await r.json())
+            setTiposModal(false)
+          }}
+        />
       )}
     </div>
   )
