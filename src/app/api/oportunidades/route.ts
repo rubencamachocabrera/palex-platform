@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         etapa: etapa ?? "IDENTIFICADO",
         valorEstimado: valorEstimado ? parseFloat(valorEstimado) : null,
         probabilidad: probabilidad ? parseInt(probabilidad) : null,
-        fechaCierre: fechaCierre ? new Date(fechaCierre) : null,
+        fechaCierre: fechaCierre && !isNaN(Date.parse(fechaCierre)) ? new Date(fechaCierre) : null,
         productos: productos ?? [],
         notas: notas?.trim() || null,
       },

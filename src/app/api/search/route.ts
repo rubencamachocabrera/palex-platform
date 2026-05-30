@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
       }),
       db.preProyecto.findMany({
         where: {
+          ...(rol !== "ADMIN" ? { responsableId: userId } : {}),
           OR: [
             { titulo: { contains: q, mode: "insensitive" } },
             { hospital: { nombre: { contains: q, mode: "insensitive" } } },

@@ -25,9 +25,13 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")
   const prioridad = searchParams.get("prioridad")
   const responsableId = searchParams.get("responsableId")
+  const rol    = session.user.role
+  const userId = session.user.id
   try {
     const items = await db.preProyecto.findMany({
       where: {
+        // ADMIN ve todo; otros roles solo ven proyectos donde son responsable
+        ...(rol !== "ADMIN" ? { responsableId: userId } : {}),
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
         ...(prioridad !== null && prioridad !== "" ? { prioridad: parseInt(prioridad) } : {}),

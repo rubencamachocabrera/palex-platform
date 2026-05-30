@@ -67,7 +67,7 @@ export async function PATCH(
     }
     if (body.valorEstimado !== undefined) data.valorEstimado = body.valorEstimado ? parseFloat(body.valorEstimado) : null
     if (body.probabilidad  !== undefined) data.probabilidad  = body.probabilidad ? parseInt(body.probabilidad) : null
-    if (body.fechaCierre   !== undefined) data.fechaCierre   = body.fechaCierre ? new Date(body.fechaCierre) : null
+    if (body.fechaCierre   !== undefined) data.fechaCierre   = body.fechaCierre && !isNaN(Date.parse(body.fechaCierre)) ? new Date(body.fechaCierre) : null
     if (body.productos     !== undefined) data.productos     = body.productos
     if (body.notas         !== undefined) data.notas         = body.notas?.trim() || null
     if (body.motivoPerdida !== undefined) data.motivoPerdida = body.motivoPerdida?.trim() || null

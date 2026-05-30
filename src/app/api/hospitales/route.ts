@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         provincia,
         pais: pais ?? "España",
         tipo: tipo ?? "HOSPITAL_PUBLICO",
-        camas: camas ? Number(camas) : null,
+        camas: camas ? (Number.isFinite(Number(camas)) ? Math.max(0, Math.round(Number(camas))) : null) : null,
         direccion,
         zonaId,
         latitud: latitud != null ? Number(latitud) : null,

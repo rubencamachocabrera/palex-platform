@@ -110,6 +110,9 @@ export default function HospitalesAdminPage() {
   const [fetchError, setFetchError] = useState("")
   const [eliminando, setEliminando] = useState<string | null>(null)
   const nombreRef = useRef<HTMLInputElement>(null)
+  const [geoStatus, setGeoStatus] = useState<"idle"|"buscando"|"ok"|"notfound">("idle")
+  const [geoLabel,  setGeoLabel]  = useState("")
+  const geoAbortRef = useRef<AbortController | null>(null)
 
   const cargar = useCallback(async () => {
     setLoading(true); setFetchError("")
@@ -179,9 +182,50 @@ export default function HospitalesAdminPage() {
     })), "hospitales")
   }
 
+  async function geocodificar(nombreOverride?: string, ciudadOverride?: string) {
+    const nombre = (nombreOverride ?? form.nombre).trim()
+    const ciudad  = (ciudadOverride  ?? form.ciudad).trim()
+    if (!ciudad) return
+
+    // Cancela búsqueda previa si sigue en curso
+    geoAbortRef.current?.abort()
+    const ctrl = new AbortController()
+    geoAbortRef.current = ctrl
+
+    setGeoStatus("buscando"); setGeoLabel("")
+
+    // Intentos: nombre+ciudad primero, luego solo ciudad
+    const intentos = nombre ? [`${nombre} ${ciudad} España`, `${ciudad} España`] : [`${ciudad} España`]
+    try {
+      for (const q of intentos) {
+        const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        if (!r.ok) continue
+        const data = await r.json()
+        if (Array.isArray(data) && data.length > 0) {
+          const hit = data[0]
+          setForm(p => ({
+            ...p,
+            latitud:  parseFloat(hit.lat).toFixed(6),
+            longitud: parseFloat(hit.lon).toFixed(6),
+          }))
+          setGeoStatus("ok")
+          setGeoLabel(hit.display_name ?? "")
+          return
+        }
+      }
+      setGeoStatus("notfound")
+      setGeoLabel(`Sin resultados para "${ciudad}"`)
+    } catch (e: unknown) {
+      if ((e as Error)?.name === "AbortError") return
+      setGeoStatus("notfound")
+      setGeoLabel("Error de conexión. Introduce las coordenadas manualmente.")
+    }
+  }
+
   function abrirCrear() {
     setEditId(null)
     setForm({ ...FORM_EMPTY, zonaId: zonas[0]?.id ?? "" })
+    setGeoStatus("idle"); setGeoLabel("")
     setError(""); setModalOpen(true)
   }
 
@@ -193,6 +237,8 @@ export default function HospitalesAdminPage() {
       zonaId: h.zona.id, activo: h.activo,
       latitud: h.latitud?.toString() ?? "", longitud: h.longitud?.toString() ?? "",
     })
+    setGeoStatus(h.latitud != null && h.longitud != null ? "ok" : "idle")
+    setGeoLabel(h.latitud != null && h.longitud != null ? "Coordenadas guardadas en el sistema" : "")
     setError(""); setModalOpen(true)
   }
 
@@ -637,6 +683,10 @@ export default function HospitalesAdminPage() {
                       <input
                         value={form.ciudad}
                         onChange={e => f("ciudad", e.target.value)}
+                        onBlur={e => {
+                          if (!editId && e.target.value.trim() && form.nombre.trim() && !form.latitud && !form.longitud)
+                            geocodificar(form.nombre, e.target.value)
+                        }}
                         placeholder="Madrid"
                         className={INPUT}
                         style={RING}
@@ -712,33 +762,111 @@ export default function HospitalesAdminPage() {
                 </div>
               </div>
 
-              {/* Sección: Coordenadas (colapsable / secundaria) */}
+              {/* Sección: Coordenadas GPS con geocoding automático */}
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Coordenadas GPS <span className="text-gray-300 normal-case font-normal">(opcional)</span></p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Coordenadas GPS</p>
+                  <button
+                    type="button"
+                    onClick={() => geocodificar()}
+                    disabled={geoStatus === "buscando" || !form.ciudad.trim()}
+                    title={!form.ciudad.trim() ? "Introduce una ciudad primero" : "Obtener coordenadas de OpenStreetMap"}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80"
+                    style={{ color: TEAL, borderColor: TEAL + "50", backgroundColor: TEAL + "0c" }}
+                  >
+                    {geoStatus === "buscando" ? (
+                      <>
+                        <svg className="animate-spin w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Buscando…
+                      </>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 0 0-8-8z"/>
+                        </svg>
+                        {geoStatus === "ok" ? "Actualizar" : "Obtener automáticamente"}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Estado geocoding */}
+                {geoStatus === "ok" && (
+                  <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2.5 mb-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                      <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-emerald-700">Ubicación encontrada</p>
+                      <p className="text-[10px] text-emerald-600 truncate leading-relaxed mt-0.5">{geoLabel}</p>
+                      <p className="text-[9px] text-emerald-500 mt-1 opacity-70">
+                        Datos de{" "}
+                        <a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer"
+                          className="underline underline-offset-1">
+                          OpenStreetMap
+                        </a>{" "}
+                        contributors via Nominatim · <button type="button" onClick={() => { f("latitud",""); f("longitud",""); setGeoStatus("idle"); setGeoLabel("") }}
+                          className="underline underline-offset-1 hover:text-emerald-700 cursor-pointer">
+                          Limpiar y editar manualmente
+                        </button>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {geoStatus === "notfound" && (
+                  <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 mb-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div>
+                      <p className="text-xs font-semibold text-amber-700">No encontrado automáticamente</p>
+                      <p className="text-[10px] text-amber-600 mt-0.5">{geoLabel || "Introduce las coordenadas manualmente o prueba con otro nombre/ciudad."}</p>
+                    </div>
+                  </div>
+                )}
+
+                {geoStatus === "idle" && !form.latitud && !form.longitud && (
+                  <p className="text-[10px] text-gray-400 mb-2.5">
+                    Rellena nombre y ciudad, luego pulsa <strong>Obtener automáticamente</strong> o{" "}
+                    escribe las coordenadas a mano.
+                  </p>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Latitud</label>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">
+                      Latitud
+                      {geoStatus === "ok" && <span className="ml-1.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">AUTO</span>}
+                    </label>
                     <input
                       type="number"
                       step="any"
                       inputMode="decimal"
                       value={form.latitud}
-                      onChange={e => f("latitud", e.target.value)}
+                      onChange={e => { f("latitud", e.target.value); if (geoStatus === "ok") setGeoStatus("idle") }}
                       placeholder="40.4168"
-                      className={INPUT}
+                      className={INPUT + (geoStatus === "ok" ? " bg-emerald-50/50 border-emerald-200" : "")}
                       style={RING}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Longitud</label>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">
+                      Longitud
+                      {geoStatus === "ok" && <span className="ml-1.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">AUTO</span>}
+                    </label>
                     <input
                       type="number"
                       step="any"
                       inputMode="decimal"
                       value={form.longitud}
-                      onChange={e => f("longitud", e.target.value)}
+                      onChange={e => { f("longitud", e.target.value); if (geoStatus === "ok") setGeoStatus("idle") }}
                       placeholder="-3.7038"
-                      className={INPUT}
+                      className={INPUT + (geoStatus === "ok" ? " bg-emerald-50/50 border-emerald-200" : "")}
                       style={RING}
                     />
                   </div>
