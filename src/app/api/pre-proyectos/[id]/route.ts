@@ -75,7 +75,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const body = await req.json()
     const allowed = ["titulo", "descripcion", "estado", "prioridad", "presupuesto",
-                     "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "responsableId", "mapaHtml", "proyectoId"]
+                     "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "refContrato", "responsableId", "mapaHtml", "proyectoId"]
     const data: Record<string, unknown> = {}
     for (const key of allowed) {
       if (key in body) {

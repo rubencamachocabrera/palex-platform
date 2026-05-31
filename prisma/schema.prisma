@@ -333,6 +333,7 @@ model PreProyecto {
   fechaFinPlan  DateTime?
   fechaFinReal  DateTime?
   notas         String?           @db.Text
+  refContrato   String?
   mapaHtml      String?           @db.Text
   shareToken    String?           @unique
   creadoEn      DateTime          @default(now())

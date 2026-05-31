@@ -73,7 +73,7 @@ interface PreProyecto {
   id: string; titulo: string; descripcion: string | null; estado: string; prioridad: number
   presupuesto: number | null; fechaInicio: string | null; fechaFinPlan: string | null; fechaFinReal: string | null
   notas: string | null; mapaHtml?: string | null; shareToken?: string | null
-  proyectoId?: string | null; proyecto?: ProyectoRef | null
+  proyectoId?: string | null; refContrato?: string | null
   creadoEn: string; editadoEn: string
   hospital: Hospital; responsable: Responsable | null
   fases: Fase[]; hitos: Hito[]; solicitudes: Solicitud[]
@@ -240,6 +240,14 @@ export default function PreProyectoDetalle() {
             {pp.responsable && (
               <p className="text-sm text-gray-400 mt-0.5">Responsable: <span className="text-gray-700 font-medium">{pp.responsable.nombre}</span></p>
             )}
+            {pp.refContrato && (
+              <p className="text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Ref: <span className="text-gray-700 font-medium font-mono">{pp.refContrato}</span>
+              </p>
+            )}
           </div>
           <div className="shrink-0 text-sm text-right space-y-1">
             {pp.presupuesto != null && (
@@ -308,16 +316,9 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
     prioridad: String(pp.prioridad), presupuesto: pp.presupuesto != null ? String(pp.presupuesto) : "",
     fechaInicio: fmtFechaInput(pp.fechaInicio), fechaFinPlan: fmtFechaInput(pp.fechaFinPlan),
     fechaFinReal: fmtFechaInput(pp.fechaFinReal), notas: pp.notas ?? "",
-    proyectoId: pp.proyectoId ?? "",
+    proyectoId: pp.proyectoId ?? "", refContrato: pp.refContrato ?? "",
   })
   const [guardando, setGuardando] = useState(false)
-  const [proyectos, setProyectos] = useState<ProyectoRef[]>([])
-
-  useEffect(() => {
-    fetch("/api/proyectos").then(r => r.ok ? r.json() : []).then(data => {
-      setProyectos(Array.isArray(data) ? data : [])
-    }).catch(() => {})
-  }, [])
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
@@ -330,13 +331,12 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
           ...form,
           prioridad: parseInt(form.prioridad),
           presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null,
-          proyectoId: form.proyectoId || null,
+          refContrato: form.refContrato.trim() || null,
         }),
       })
       if (!r.ok) throw new Error()
-      const proyectoRef = form.proyectoId ? (proyectos.find(p => p.id === form.proyectoId) ?? null) : null
       success("Guardado correctamente")
-      onUpdate({ ...pp, ...form, prioridad: parseInt(form.prioridad), presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null, proyectoId: form.proyectoId || null, proyecto: proyectoRef })
+      onUpdate({ ...pp, ...form, prioridad: parseInt(form.prioridad), presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null, refContrato: form.refContrato.trim() || null })
     } catch {
       toastError("Error al guardar")
     } finally {
@@ -398,41 +398,16 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
           <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3}
             className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
         </div>
-        {/* Proyecto InLab vinculado — solo visible si existen proyectos formales */}
-        {(proyectos.length > 0 || pp.proyecto) && (
-          <div className="sm:col-span-2">
-            <div className="flex items-center gap-2 mb-2">
-              <label className="block text-sm font-medium text-gray-700">Proyecto InLab vinculado</label>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Opcional</span>
-            </div>
-            <p className="text-xs text-gray-400 mb-2 leading-relaxed">
-              Cuando este pre-proyecto pase a instalación activa, vincúlalo aquí al proyecto InLab correspondiente para consolidar el seguimiento de módulos y contrato.
-            </p>
-            {pp.proyecto && !form.proyectoId ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4338ca" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                </svg>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-indigo-800 truncate">{pp.proyecto.nombre}</p>
-                  <p className="text-xs text-indigo-500">Proyecto InLab activo</p>
-                </div>
-                <Link href={`/proyectos/${pp.proyectoId}`} className="text-xs font-semibold text-indigo-600 hover:underline shrink-0">Ver →</Link>
-                <button type="button" onClick={() => setForm(p => ({ ...p, proyectoId: "" }))}
-                  className="text-xs text-gray-400 hover:text-red-500 cursor-pointer transition-colors shrink-0">Desvincular</button>
-              </div>
-            ) : (
-              <select value={form.proyectoId} onChange={e => setForm(p => ({ ...p, proyectoId: e.target.value }))}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
-                <option value="">— Sin proyecto InLab vinculado —</option>
-                {proyectos.map(p => (
-                  <option key={p.id} value={p.id}>{p.nombre}</option>
-                ))}
-              </select>
-            )}
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Referencia de contrato</label>
+          <input
+            value={form.refContrato}
+            onChange={e => setForm(p => ({ ...p, refContrato: e.target.value }))}
+            placeholder="Ej. EXP-2025-0042, Contrato 456/2025…"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+          <p className="text-xs text-gray-400 mt-1">Número de expediente, licitación o referencia del contrato asociado</p>
+        </div>
       </div>
       <div className="flex justify-end">
         <button type="submit" disabled={guardando}
