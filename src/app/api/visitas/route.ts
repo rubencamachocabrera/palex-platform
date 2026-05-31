@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
 
     const { hospitalId, tipo, fecha, datos, preProyectoId } = await req.json()
     if (!hospitalId || !tipo) return NextResponse.json({ error: "Faltan campos" }, { status: 400 })
+    const fechaValida = fecha && !isNaN(Date.parse(fecha)) ? new Date(fecha) : new Date()
 
     const visita = await db.visita.create({
       data: {
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
         tipo,
         estado: "BORRADOR",
         datos: datos && typeof datos === "object" ? datos : {},
-        ...(fecha ? { fecha: new Date(fecha) } : {}),
+        fecha:   fechaValida,
         ...(preProyectoId ? { preProyectoId } : {}),
       },
     })

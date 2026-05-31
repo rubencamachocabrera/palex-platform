@@ -83,20 +83,24 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { nombre, ciudad, provincia, pais, tipo, camas, direccion, zonaId, latitud, longitud } = body
-    if (!nombre || !ciudad || !zonaId) return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
+    if (!nombre?.trim() || !ciudad?.trim() || !zonaId)
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
+
+    const latNum = latitud != null ? Number(latitud) : null
+    const lonNum = longitud != null ? Number(longitud) : null
 
     const hospital = await db.hospital.create({
       data: {
-        nombre,
-        ciudad,
-        provincia,
-        pais: pais ?? "España",
-        tipo: tipo ?? "HOSPITAL_PUBLICO",
-        camas: camas ? (Number.isFinite(Number(camas)) ? Math.max(0, Math.round(Number(camas))) : null) : null,
-        direccion,
+        nombre:    nombre.trim(),
+        ciudad:    ciudad.trim(),
+        provincia: provincia?.trim() || null,
+        pais:      pais ?? "España",
+        tipo:      tipo ?? "HOSPITAL_PUBLICO",
+        camas:     camas ? (Number.isFinite(Number(camas)) ? Math.max(0, Math.round(Number(camas))) : null) : null,
+        direccion: direccion?.trim() || null,
         zonaId,
-        latitud: latitud != null ? Number(latitud) : null,
-        longitud: longitud != null ? Number(longitud) : null,
+        latitud:   latNum != null && Number.isFinite(latNum) && Math.abs(latNum)  <= 90  ? latNum  : null,
+        longitud:  lonNum != null && Number.isFinite(lonNum) && Math.abs(lonNum)  <= 180 ? lonNum  : null,
       },
     })
     return NextResponse.json(hospital, { status: 201 })

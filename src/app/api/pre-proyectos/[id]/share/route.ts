@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { randomUUID } from "crypto"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req, "share_create", { limit: 10, windowMs: 3600000 })
+  const rl = checkRateLimit(req, "share_create", { limit: 3, windowMs: 3600000 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

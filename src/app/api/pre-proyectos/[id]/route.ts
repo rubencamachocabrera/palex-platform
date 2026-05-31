@@ -52,8 +52,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    // Solo ADMIN o el responsable pueden ver el detalle
+    if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     return NextResponse.json(pp)
-  } catch {
+  } catch (err) {
+    console.error("[GET /api/pre-proyectos/[id]]", err)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
@@ -63,6 +67,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    // IDOR: solo ADMIN o el responsable pueden editar
+    const existing = await db.preProyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session.user.role !== "ADMIN" && existing.responsableId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+
     const body = await req.json()
     const allowed = ["titulo", "descripcion", "estado", "prioridad", "presupuesto",
                      "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "responsableId", "mapaHtml", "proyectoId"]
@@ -70,9 +80,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     for (const key of allowed) {
       if (key in body) {
         if (["fechaInicio", "fechaFinPlan", "fechaFinReal"].includes(key)) {
-          data[key] = body[key] ? new Date(body[key]) : null
+          data[key] = body[key] && !isNaN(Date.parse(body[key])) ? new Date(body[key]) : null
         } else if (key === "presupuesto") {
-          data[key] = body[key] != null ? parseFloat(body[key]) : null
+          const n = parseFloat(body[key])
+          data[key] = Number.isFinite(n) ? n : null
+        } else if (key === "titulo") {
+          data[key] = String(body[key] ?? "").trim() || undefined
         } else {
           data[key] = body[key]
         }
@@ -80,7 +93,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     const updated = await db.preProyecto.update({ where: { id }, data })
     return NextResponse.json(updated)
-  } catch {
+  } catch (err) {
+    console.error("[PATCH /api/pre-proyectos/[id]]", err)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }

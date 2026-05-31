@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...(body.datos !== undefined && { datos: body.datos }),
         ...(body.estado !== undefined && { estado: body.estado }),
-        ...(body.fecha !== undefined && { fecha: new Date(body.fecha) }),
+        ...(body.fecha !== undefined && body.fecha && !isNaN(Date.parse(body.fecha)) && { fecha: new Date(body.fecha) }),
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
         ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),
         ...("contactoPrincipalId" in body && { contactoPrincipalId: body.contactoPrincipalId ?? null }),
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           create: { preProyectoId: updated.preProyectoId, contactoId: body.contactoPrincipalId },
           update: {},
         })
-      } catch { /* silencioso si ya existe */ }
+      } catch (e) { console.warn("[PATCH visitas/[id]] upsert contacto pre-proyecto:", e) }
     }
 
     return NextResponse.json(updated)

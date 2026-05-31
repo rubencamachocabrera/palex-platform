@@ -51,6 +51,12 @@ export async function POST(req: NextRequest) {
     if (!nombre || !email || !password || !rol) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
     }
+    if (typeof password !== "string" || password.length < 8) {
+      return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres" }, { status: 400 })
+    }
+    if (typeof email !== "string" || !email.includes("@")) {
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 })
+    }
 
     const existe = await db.usuario.findUnique({ where: { email } })
     if (existe) {
