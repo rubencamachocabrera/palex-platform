@@ -80,6 +80,43 @@ function scoreStyle(s: number): { bg: string; text: string } {
 
 type Vista = "lista" | "grid"
 
+// ─── Favoritos (localStorage) ────────────────────────────────────────────────
+function useFavoritos(clave: string) {
+  const [ids, setIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set()
+    try {
+      const raw = localStorage.getItem(clave)
+      return new Set<string>(raw ? JSON.parse(raw) : [])
+    } catch { return new Set() }
+  })
+  function toggle(id: string) {
+    setIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      localStorage.setItem(clave, JSON.stringify([...next]))
+      return next
+    })
+  }
+  return { ids, toggle }
+}
+
+function StarBtn({ activo, onClick }: { activo: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={activo ? "Quitar de favoritos" : "Añadir a favoritos"}
+      className="p-1.5 rounded-lg transition-colors cursor-pointer shrink-0"
+      style={activo ? { color: "#f59e0b" } : { color: "#d1d5db" }}
+      onMouseEnter={e => { if (!activo) (e.currentTarget as HTMLButtonElement).style.color = "#f59e0b" }}
+      onMouseLeave={e => { if (!activo) (e.currentTarget as HTMLButtonElement).style.color = "#d1d5db" }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill={activo ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    </button>
+  )
+}
+
 export default function HospitalesPage() {
   const { success, error: toastError } = useToast()
   const [hospitales, setHospitales] = useState<Hospital[]>([])
@@ -90,6 +127,7 @@ export default function HospitalesPage() {
   const [vista, setVista] = useState<Vista>("lista")
   const [esAdmin, setEsAdmin] = useState(false)
   const [eliminando, setEliminando] = useState<string | null>(null)
+  const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("palex_favoritos_hospitales")
 
   useEffect(() => {
     fetch("/api/hospitales")
@@ -133,6 +171,8 @@ export default function HospitalesPage() {
     acc[zona].push(h)
     return acc
   }, {})
+
+  const favHospitales = hospitales.filter(h => favoritos.has(h.id))
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
@@ -258,7 +298,43 @@ export default function HospitalesPage() {
             }
           />
         </div>
-      ) : vista === "lista" ? (
+      ) : (
+        <div className="space-y-5">
+          {/* ── Sección Anclados ── */}
+          {favHospitales.length > 0 && !busqueda && filtroZona === "TODAS" && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Anclados</span>
+                <span className="text-xs text-gray-300">({favHospitales.length})</span>
+              </div>
+              <div className="bg-white rounded-xl border border-amber-100 overflow-hidden shadow-sm">
+                <div className="divide-y divide-gray-50">
+                  {favHospitales.map(h => (
+                    <div key={h.id} className="relative group flex items-center">
+                      <Link href={`/hospitales/${h.id}`} className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0 hover:bg-amber-50/30 transition-colors">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-amber-600 shrink-0 bg-amber-50">
+                          {TIPO_ICON[h.tipo] ?? <IconHospital size={16} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
+                          <p className="text-xs text-gray-400">{h.ciudad}{h.zona ? ` · ${h.zona.nombre}` : ""}</p>
+                        </div>
+                        <span className="text-xs text-gray-400 shrink-0">{h._count.visitas} visitas</span>
+                      </Link>
+                      <StarBtn activo={true} onClick={e => { e.preventDefault(); toggleFavorito(h.id) }} />
+                      <span className="pr-3" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Vista ── */}
+          {vista === "lista" ? (
         /* ── VISTA LISTA ── */
         <div className="space-y-6">
           {Object.entries(porZona).map(([zona, lista]) => (
@@ -300,26 +376,29 @@ export default function HospitalesPage() {
                           <span className="text-gray-300 text-sm block">›</span>
                         </div>
                       </Link>
-                      {esAdmin && (
-                        <button
-                          onClick={e => eliminarHospital(e, h)}
-                          disabled={eliminando === h.id}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-white"
-                          aria-label={`Eliminar ${h.nombre}`}
-                          title="Eliminar hospital"
-                        >
-                          {eliminando === h.id ? (
-                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                          ) : (
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-                            </svg>
-                          )}
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <StarBtn activo={favoritos.has(h.id)} onClick={e => { e.preventDefault(); toggleFavorito(h.id) }} />
+                        {esAdmin && (
+                          <button
+                            onClick={e => eliminarHospital(e, h)}
+                            disabled={eliminando === h.id}
+                            className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all bg-white"
+                            aria-label={`Eliminar ${h.nombre}`}
+                            title="Eliminar hospital"
+                          >
+                            {eliminando === h.id ? (
+                              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -373,31 +452,37 @@ export default function HospitalesPage() {
                         </div>
                       </div>
                     </Link>
-                    {esAdmin && (
-                      <button
-                        onClick={e => eliminarHospital(e, h)}
-                        disabled={eliminando === h.id}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-white"
-                        aria-label={`Eliminar ${h.nombre}`}
-                        title="Eliminar hospital"
-                      >
-                        {eliminando === h.id ? (
-                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                          </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-                          </svg>
-                        )}
-                      </button>
-                    )}
+                    {/* Star + delete overlay */}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <StarBtn activo={favoritos.has(h.id)} onClick={e => { e.preventDefault(); toggleFavorito(h.id) }} />
+                      {esAdmin && (
+                        <button
+                          onClick={e => eliminarHospital(e, h)}
+                          disabled={eliminando === h.id}
+                          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all bg-white"
+                          aria-label={`Eliminar ${h.nombre}`}
+                          title="Eliminar hospital"
+                        >
+                          {eliminando === h.id ? (
+                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
+        </div>
+          )}
         </div>
       )}
     </div>

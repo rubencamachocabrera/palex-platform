@@ -76,6 +76,10 @@ export default function MisVisitasPage() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [filtroDesde, setFiltroDesde] = useState("")
+  const [filtroHasta, setFiltroHasta] = useState("")
+  const [filtroTipo, setFiltroTipo] = useState("TODOS")
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
 
   // Modal quick-create
   const [mostrarModal, setMostrarModal] = useState(false)
@@ -90,8 +94,26 @@ export default function MisVisitasPage() {
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
+  // Carga inicial (perfil + visitas)
   useEffect(() => {
-    fetch("/api/visitas?limit=50&page=1")
+    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol) }).catch(() => {})
+    cargarVisitas()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Re-fetch cuando cambia el rango de fechas
+  useEffect(() => {
+    cargarVisitas()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroDesde, filtroHasta])
+
+  function cargarVisitas() {
+    setLoading(true)
+    setPage(1)
+    const url = (filtroDesde && filtroHasta)
+      ? `/api/visitas?desde=${filtroDesde}&hasta=${filtroHasta}`
+      : "/api/visitas?limit=50&page=1"
+    fetch(url)
       .then(r => {
         const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
         return r.ok ? r.json().then((data: Visita[]) => ({ data, total })) : null
@@ -99,16 +121,12 @@ export default function MisVisitasPage() {
       .then(res => {
         if (res && Array.isArray(res.data)) {
           setVisitas(res.data)
-          setHasMore(res.data.length < res.total)
+          setHasMore(!filtroDesde && res.data.length < res.total)
         }
         setLoading(false)
       })
       .catch(() => setLoading(false))
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.rol) setUserRol(d.rol) })
-      .catch(() => {})
-  }, [])
+  }
 
   // Abrir modal automáticamente si viene desde el calendario con ?abrir=1&fecha=
   useEffect(() => {
@@ -180,6 +198,7 @@ export default function MisVisitasPage() {
 
   const filtradas = visitas
     .filter(v => filtro === "TODOS" || v.estado === filtro)
+    .filter(v => filtroTipo === "TODOS" || v.tipo === filtroTipo)
     .filter(v => !busqueda ||
       v.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       v.hospital.ciudad.toLowerCase().includes(busqueda.toLowerCase()))
@@ -296,9 +315,57 @@ export default function MisVisitasPage() {
           </svg>
           CSV
         </button>
+        {/* Toggle filtros avanzados */}
+        <button
+          onClick={() => setFiltrosAbiertos(v => !v)}
+          className="flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border transition-colors shrink-0"
+          style={filtrosAbiertos || filtroDesde || filtroHasta || filtroTipo !== "TODOS"
+            ? { borderColor: TEAL, color: TEAL, backgroundColor: `${TEAL}0c` }
+            : { borderColor: "#e5e7eb", color: "#6b7280", backgroundColor: "white" }}
+          title="Filtros avanzados"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filtros
+          {(filtroDesde || filtroHasta || filtroTipo !== "TODOS") && (
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />
+          )}
+        </button>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros avanzados */}
+      {filtrosAbiertos && (
+        <div className="flex flex-wrap gap-3 mb-4 p-3.5 bg-gray-50/80 rounded-xl border border-gray-100">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-gray-500">Tipo:</span>
+            {(["TODOS", "VENTAS", "PROYECTOS"] as const).map(t => (
+              <button key={t} onClick={() => setFiltroTipo(t)}
+                className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+                style={filtroTipo === t
+                  ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" }
+                  : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                {t === "TODOS" ? "Todos" : t === "VENTAS" ? "Ventas" : "Técnica"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-gray-500">Desde:</span>
+            <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer" />
+            <span className="text-xs text-gray-400">hasta</span>
+            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)}
+              min={filtroDesde}
+              className="text-sm border border-gray-200 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer" />
+          </div>
+          {(filtroDesde || filtroHasta || filtroTipo !== "TODOS") && (
+            <button onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroTipo("TODOS") }}
+              className="text-xs text-red-400 hover:text-red-600 font-semibold cursor-pointer transition-colors ml-auto">
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Filtros de estado */}
       <div className="flex gap-2 flex-wrap mb-5">
         {(["TODOS", "BORRADOR", "COMPLETADA", "ARCHIVADA"] as const).map(e => {
           const isActive = filtro === e
