@@ -179,7 +179,9 @@ export default function PreProyectoDetalle() {
     if (r.status === 404) { router.push("/pre-proyectos"); return }
     if (r.ok) setPp(await r.json())
     setLoading(false)
-  }, [params.id, router])
+  // router excluded from deps — including it causes re-fetch on every tab change via router.replace()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -396,21 +398,41 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
           <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3}
             className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
         </div>
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Proyecto vinculado</label>
-          <select value={form.proyectoId} onChange={e => setForm(p => ({ ...p, proyectoId: e.target.value }))}
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
-            <option value="">Sin proyecto vinculado</option>
-            {proyectos.map(p => (
-              <option key={p.id} value={p.id}>{p.nombre}</option>
-            ))}
-          </select>
-          {pp.proyecto && (
-            <p className="text-xs text-teal-600 mt-1">
-              Vinculado a: <span className="font-medium">{pp.proyecto.nombre}</span>
+        {/* Proyecto InLab vinculado — solo visible si existen proyectos formales */}
+        {(proyectos.length > 0 || pp.proyecto) && (
+          <div className="sm:col-span-2">
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700">Proyecto InLab vinculado</label>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Opcional</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-2 leading-relaxed">
+              Cuando este pre-proyecto pase a instalación activa, vincúlalo aquí al proyecto InLab correspondiente para consolidar el seguimiento de módulos y contrato.
             </p>
-          )}
-        </div>
+            {pp.proyecto && !form.proyectoId ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4338ca" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-indigo-800 truncate">{pp.proyecto.nombre}</p>
+                  <p className="text-xs text-indigo-500">Proyecto InLab activo</p>
+                </div>
+                <Link href={`/proyectos/${pp.proyectoId}`} className="text-xs font-semibold text-indigo-600 hover:underline shrink-0">Ver →</Link>
+                <button type="button" onClick={() => setForm(p => ({ ...p, proyectoId: "" }))}
+                  className="text-xs text-gray-400 hover:text-red-500 cursor-pointer transition-colors shrink-0">Desvincular</button>
+              </div>
+            ) : (
+              <select value={form.proyectoId} onChange={e => setForm(p => ({ ...p, proyectoId: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white">
+                <option value="">— Sin proyecto InLab vinculado —</option>
+                {proyectos.map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex justify-end">
         <button type="submit" disabled={guardando}
