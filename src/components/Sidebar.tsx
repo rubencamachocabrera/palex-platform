@@ -157,6 +157,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Gestión",
     items: [
+      { href: "/admin/equipo",         label: "Equipo",            icon: "Usuarios" },
       { href: "/admin/usuarios",      label: "Usuarios",          icon: "Usuarios" },
       { href: "/admin/zonas",         label: "Zonas",             icon: "Zonas" },
       { href: "/admin/hospitales",    label: "Hospitales",        icon: "Hospitales" },

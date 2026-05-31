@@ -101,6 +101,11 @@ export default function HospitalDetailPage() {
   const [showQR, setShowQR] = useState(false)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Registro rápido de llamada
+  const [showLlamada, setShowLlamada] = useState(false)
+  const [llamadaForm, setLlamadaForm] = useState({ motivo: "", resultado: "", contacto: "", duracion: "" })
+  const [registrandoLlamada, setRegistrandoLlamada] = useState(false)
+
   const isAdmin = userRol === "ADMIN"
 
   async function cargar() {
@@ -206,6 +211,49 @@ export default function HospitalDetailPage() {
     await cargar()
   }
 
+  async function registrarLlamada(e: React.FormEvent) {
+    e.preventDefault()
+    if (!llamadaForm.motivo.trim()) return
+    setRegistrandoLlamada(true)
+    try {
+      // Buscar el pre-proyecto más reciente activo de este hospital
+      const rPP = await fetch(`/api/pre-proyectos?hospitalId=${id}`)
+      const pps = rPP.ok ? await rPP.json() : []
+      const ppActivo = Array.isArray(pps)
+        ? pps.find((p: { estado: string }) => ["EN_CURSO","NUEVO","PAUSADO"].includes(p.estado))
+        : null
+
+      const contenido = [
+        llamadaForm.motivo.trim(),
+        llamadaForm.resultado.trim() ? `Resultado: ${llamadaForm.resultado.trim()}` : "",
+        llamadaForm.contacto.trim() ? `Contacto: ${llamadaForm.contacto.trim()}` : "",
+        llamadaForm.duracion.trim() ? `Duración: ${llamadaForm.duracion.trim()} min` : "",
+      ].filter(Boolean).join("\n")
+
+      if (ppActivo) {
+        await fetch(`/api/pre-proyectos/${ppActivo.id}/entradas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipo: "EVENTO", titulo: `Llamada — ${hospital!.nombre}`, contenido }),
+        })
+      } else {
+        // Sin proyecto activo: crear visita archivada como registro
+        await fetch("/api/visitas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hospitalId: id, tipo: "VENTAS", estado: "ARCHIVADA",
+            datos: { notas: contenido, tipo_registro: "llamada" },
+          }),
+        })
+      }
+      setShowLlamada(false)
+      setLlamadaForm({ motivo: "", resultado: "", contacto: "", duracion: "" })
+      await cargar()
+    } catch (e) { console.error(e) }
+    finally { setRegistrandoLlamada(false) }
+  }
+
   // Genera el QR cuando se abre el modal
   useEffect(() => {
     if (!showQR || !hospital || !qrCanvasRef.current) return
@@ -275,6 +323,17 @@ export default function HospitalDetailPage() {
             {hospital.ciudad}{hospital.provincia ? `, ${hospital.provincia}` : ""} &#183; {hospital.zona.nombre}
           </p>
         </div>
+        {/* Registrar llamada */}
+        <button
+          onClick={() => setShowLlamada(true)}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors shrink-0"
+          title="Registrar llamada rápida"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 10.3a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 0h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/>
+          </svg>
+          <span className="hidden sm:inline">Llamada</span>
+        </button>
         <button
           onClick={() => setShowQR(true)}
           className="p-2.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors shrink-0 flex items-center justify-center min-w-[40px] min-h-[40px]"
@@ -659,6 +718,62 @@ export default function HospitalDetailPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal Llamada rápida ── */}
+      {showLlamada && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Registrar llamada</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{hospital?.nombre}</p>
+              </div>
+              <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <form onSubmit={registrarLlamada} className="px-5 py-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Motivo / Asunto <span className="text-red-400">*</span></label>
+                <input value={llamadaForm.motivo} onChange={e => setLlamadaForm(p => ({ ...p, motivo: e.target.value }))} required
+                  placeholder="¿Sobre qué se llamó?" autoFocus
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Resultado / Siguiente paso</label>
+                <textarea value={llamadaForm.resultado} onChange={e => setLlamadaForm(p => ({ ...p, resultado: e.target.value }))} rows={2}
+                  placeholder="Qué se acordó, qué hay que hacer a continuación…"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Contacto</label>
+                  <input value={llamadaForm.contacto} onChange={e => setLlamadaForm(p => ({ ...p, contacto: e.target.value }))}
+                    placeholder="Nombre del contacto"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Duración (min)</label>
+                  <input type="number" min="1" value={llamadaForm.duracion} onChange={e => setLlamadaForm(p => ({ ...p, duracion: e.target.value }))}
+                    placeholder="15"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white" />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowLlamada(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={registrandoLlamada || !llamadaForm.motivo.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: TEAL }}>
+                  {registrandoLlamada ? "Guardando…" : "Registrar"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -329,9 +329,28 @@ function ModalCrear({
 
 // ---- página principal ----
 
+// ── Favoritos ──────────────────────────────────────────────────────────────────
+function useFavoritosPP() {
+  const [ids, setIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set()
+    try { return new Set<string>(JSON.parse(localStorage.getItem("palex_favoritos_preproyectos") ?? "[]")) }
+    catch { return new Set() }
+  })
+  function toggle(id: string) {
+    setIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      localStorage.setItem("palex_favoritos_preproyectos", JSON.stringify([...next]))
+      return next
+    })
+  }
+  return { ids, toggle }
+}
+
 export default function PreProyectosPage() {
   const [items, setItems] = useState<PreProyecto[]>([])
   const [loading, setLoading] = useState(true)
+  const { ids: favPP, toggle: toggleFavPP } = useFavoritosPP()
   const [q, setQ] = useState("")
   const [filtroEstado, setFiltroEstado] = useState("")
   const [filtroPrioridad, setFiltroPrioridad] = useState("")
@@ -624,10 +643,18 @@ export default function PreProyectosPage() {
                       />
                     </div>
                   </div>
-                  <div className="mt-3 flex gap-4 text-xs text-gray-400">
+                  <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
                     <span>{item.visitas.length} visita{item.visitas.length !== 1 ? "s" : ""}</span>
                     <span>{item.solicitudes.length} solicitud{item.solicitudes.length !== 1 ? "es" : ""}</span>
-                    <span>{item.hardwareUnidades.length} HW asignado{item.hardwareUnidades.length !== 1 ? "s" : ""}</span>
+                    <span>{item.hardwareUnidades.length} HW</span>
+                    <button onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavPP(item.id) }}
+                      className="ml-auto p-1 rounded cursor-pointer transition-colors"
+                      title={favPP.has(item.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      style={{ color: favPP.has(item.id) ? "#f59e0b" : "#e5e7eb" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill={favPP.has(item.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </button>
                   </div>
                 </Link>
               )

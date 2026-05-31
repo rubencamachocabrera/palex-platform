@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { exportarCSV } from "@/lib/csv"
+import { exportarExcel } from "@/lib/excel"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 
@@ -168,18 +169,25 @@ export default function HospitalesAdminPage() {
     return true
   })
 
-  function exportar() {
-    exportarCSV(filtrados.map(h => ({
+  function exportar(formato: "csv" | "xlsx" = "csv") {
+    const datos = filtrados.map(h => ({
       Nombre: h.nombre,
       Ciudad: h.ciudad,
       Provincia: h.provincia ?? "",
       Tipo: TIPO_LABELS_FULL[h.tipo] ?? h.tipo,
       Zona: h.zona.nombre,
       Camas: h.camas ?? "",
+      "Lat.": h.latitud ?? "",
+      "Lon.": h.longitud ?? "",
       Activo: h.activo ? "Sí" : "No",
       Visitas: h._count?.visitas ?? 0,
       Contactos: h._count?.contactos ?? 0,
-    })), "hospitales")
+    }))
+    if (formato === "xlsx") {
+      exportarExcel([{ nombre: "Hospitales", datos: datos as Record<string, unknown>[] }], "hospitales")
+    } else {
+      exportarCSV(datos, "hospitales")
+    }
   }
 
   async function geocodificar(nombreOverride?: string, ciudadOverride?: string) {
@@ -295,14 +303,19 @@ export default function HospitalesAdminPage() {
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <button
-            onClick={exportar}
-            className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-          >
+          <button onClick={() => exportar("csv")}
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             CSV
+          </button>
+          <button onClick={() => exportar("xlsx")}
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span style={{ color: "#16a34a" }}>Excel</span>
           </button>
           <button
             onClick={abrirCrear}
