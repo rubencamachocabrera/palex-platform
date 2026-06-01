@@ -113,7 +113,6 @@ export default function ShareProyectoPage() {
   const d = data
   const pct = d.fases.length ? Math.round(d.fases.filter(f => f.estado === "COMPLETADO").length / d.fases.length * 100) : 0
   const fasesOK = d.fases.filter(f => f.estado === "COMPLETADO").length
-  const totalHW = d.hardwareUnidades.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
   const visitasOK = d.visitas.filter(v => v.estado === "COMPLETADA").length
   const estadoStyle = ESTADO_COLOR[d.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
 
@@ -221,7 +220,7 @@ export default function ShareProyectoPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print-section">
           {[
             { label: "Progreso", value: `${pct}%`, sub: `${fasesOK}/${d.fases.length} fases`, color: pct === 100 ? "#16a34a" : TEAL },
-            { label: "Hardware", value: String(d.hardwareUnidades.length), sub: totalHW > 0 ? totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }) : "Sin precios", color: "#7c3aed" },
+            { label: "Hardware", value: String(d.hardwareUnidades.length), sub: `${d.hardwareUnidades.length === 1 ? "unidad instalada" : "unidades instaladas"}`, color: "#7c3aed" },
             { label: "Visitas", value: String(d.visitas.length), sub: `${visitasOK} completadas`, color: "#0369a1" },
             { label: "Contactos", value: String(d.contactos.length), sub: "del proyecto", color: ORANGE },
           ].map(k => (
@@ -322,60 +321,39 @@ export default function ShareProyectoPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print-break print-section">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Inventario de hardware</h3>
             <div className="space-y-5">
-              {Object.entries(byTipo).map(([tipo, units]) => {
-                const subtotal = units.reduce((s, u) => s + (u.catalogo.precio ?? 0), 0)
-                return (
-                  <div key={tipo}>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                      {HW_TIPO[tipo] ?? tipo} <span className="font-normal text-gray-400">({units.length})</span>
-                    </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-100">
-                            <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Modelo</th>
-                            <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">N/S</th>
-                            <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Estado</th>
-                            <th className="text-right text-xs font-semibold text-gray-400 pb-2">Precio/ud</th>
+              {Object.entries(byTipo).map(([tipo, units]) => (
+                <div key={tipo}>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    {HW_TIPO[tipo] ?? tipo} <span className="font-normal text-gray-400">({units.length})</span>
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100">
+                          <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Modelo</th>
+                          <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">N/S</th>
+                          <th className="text-left text-xs font-semibold text-gray-400 pb-2">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {units.map(u => (
+                          <tr key={u.id} className="border-b border-gray-50 last:border-0">
+                            <td className="py-2 pr-4 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
+                            <td className="py-2 pr-4 font-mono text-xs text-gray-500">{u.numSerie ?? <span className="text-gray-300">—</span>}</td>
+                            <td className="py-2">
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
+                                {u.estado === "ASIGNADO" ? "Asignado" : u.estado}
+                              </span>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {units.map(u => (
-                            <tr key={u.id} className="border-b border-gray-50 last:border-0">
-                              <td className="py-2 pr-4 font-medium text-gray-800">{u.catalogo.marca} {u.catalogo.modelo}</td>
-                              <td className="py-2 pr-4 font-mono text-xs text-gray-500">{u.numSerie ?? <span className="text-gray-300">—</span>}</td>
-                              <td className="py-2 pr-4">
-                                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                  style={u.estado === "ASIGNADO" ? { backgroundColor: `${TEAL}18`, color: TEAL } : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
-                                  {u.estado === "ASIGNADO" ? "Asignado" : u.estado}
-                                </span>
-                              </td>
-                              <td className="py-2 text-right text-gray-600">
-                                {u.catalogo.precio != null ? u.catalogo.precio.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : <span className="text-gray-300">—</span>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        {subtotal > 0 && (
-                          <tfoot>
-                            <tr className="border-t border-gray-200">
-                              <td colSpan={3} className="pt-2 text-xs font-semibold text-gray-500">Subtotal {HW_TIPO[tipo] ?? tipo}</td>
-                              <td className="pt-2 text-right text-sm font-bold text-gray-800">{subtotal.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</td>
-                            </tr>
-                          </tfoot>
-                        )}
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
-            {totalHW > 0 && (
-              <div className="mt-5 pt-4 border-t-2 border-gray-200 flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-700">Total hardware</span>
-                <span className="text-xl font-bold" style={{ color: TEAL }}>{totalHW.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}</span>
-              </div>
-            )}
           </div>
         )}
 
