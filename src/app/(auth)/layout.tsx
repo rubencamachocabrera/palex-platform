@@ -1,197 +1,156 @@
 import Image from "next/image"
-
-// ─── Parámetros de la red molecular ──────────────────────────────────────────
-const NODES = [
-  { cx: 18,  cy: 22,  r: 3,   glow: true,  color: "#00A99D" },
-  { cx: 42,  cy: 14,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 62,  cy: 30,  r: 3.5, glow: true,  color: "#F7941D" },
-  { cx: 78,  cy: 18,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 88,  cy: 46,  r: 2.5, glow: false, color: "#00A99D" },
-  { cx: 70,  cy: 58,  r: 4,   glow: true,  color: "#00A99D" },
-  { cx: 50,  cy: 52,  r: 2,   glow: false, color: "#F7941D" },
-  { cx: 30,  cy: 44,  r: 3,   glow: false, color: "#00A99D" },
-  { cx: 12,  cy: 60,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 22,  cy: 76,  r: 3.5, glow: true,  color: "#F7941D" },
-  { cx: 46,  cy: 70,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 68,  cy: 78,  r: 2.5, glow: false, color: "#00A99D" },
-  { cx: 86,  cy: 68,  r: 3,   glow: true,  color: "#00A99D" },
-  { cx: 38,  cy: 88,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 60,  cy: 92,  r: 3,   glow: false, color: "#F7941D" },
-  { cx: 82,  cy: 88,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 8,   cy: 40,  r: 2,   glow: false, color: "#00A99D" },
-  { cx: 94,  cy: 30,  r: 2,   glow: false, color: "#00A99D" },
-]
-const EDGES = [
-  [0,1],[1,2],[2,3],[3,4],[4,5],[2,5],[5,6],[6,7],[7,0],[7,8],[8,9],
-  [9,10],[10,6],[10,11],[11,12],[5,12],[9,13],[13,14],[14,10],[14,15],
-  [12,15],[7,16],[3,17],[4,17],
-]
+import { TEAL, ORANGE } from "@/lib/brand"
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex" style={{ background: "#060d18" }}>
+    <div className="min-h-screen flex" style={{ background: "#05111d" }}>
 
-      {/* ── PANEL IZQUIERDO — Arte abstracto molecular ───────────────────── */}
-      <div className="hidden lg:flex lg:w-[55%] flex-col relative overflow-hidden">
+      {/* ════════════════════════════════════════════════
+          PANEL IZQUIERDO — Diseño lineal con profundidad
+      ════════════════════════════════════════════════ */}
+      <div className="hidden lg:flex lg:w-[52%] flex-col relative overflow-hidden">
 
-        {/* Fondo de base con gradiente */}
+        {/* Base oscura con tinte verde corporativo */}
         <div className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, #040b15 0%, #071525 40%, #0a1e32 70%, #071525 100%)" }} />
+          style={{ background: "linear-gradient(160deg, #040e1a 0%, #061422 50%, #071928 100%)" }} />
 
-        {/* Grid hexagonal de fondo — muy sutil */}
-        <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.04 }} aria-hidden="true">
-          <defs>
-            <pattern id="hex" x="0" y="0" width="52" height="60" patternUnits="userSpaceOnUse">
-              <polygon points="26,4 48,16 48,44 26,56 4,44 4,16" fill="none" stroke="white" strokeWidth="0.8" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hex)" />
+        {/* ── Elemento de profundidad: círculos concéntricos ── */}
+        <svg className="absolute" aria-hidden="true"
+          style={{ top: "50%", left: "50%", transform: "translate(-44%, -52%)", width: "90%", maxWidth: 520, opacity: 1 }}
+          viewBox="0 0 520 520">
+          {/* Círculo exterior — muy sutil */}
+          <circle cx="260" cy="260" r="248" fill="none" stroke={TEAL} strokeWidth="0.4" opacity="0.12" />
+          {/* Círculo medio */}
+          <circle cx="260" cy="260" r="192" fill="none" stroke={TEAL} strokeWidth="0.5" opacity="0.18" />
+          {/* Círculo interior — más visible */}
+          <circle cx="260" cy="260" r="136" fill="none" stroke={TEAL} strokeWidth="0.7" opacity="0.25" />
+          {/* Pequeño núcleo */}
+          <circle cx="260" cy="260" r="72" fill="none" stroke={ORANGE} strokeWidth="0.6" opacity="0.2" />
+          {/* Cruz de precisión */}
+          <line x1="260" y1="20" x2="260" y2="500" stroke={TEAL} strokeWidth="0.3" opacity="0.08" />
+          <line x1="20" y1="260" x2="500" y2="260" stroke={TEAL} strokeWidth="0.3" opacity="0.08" />
+          {/* Cuatro puntos cardinales en el círculo medio */}
+          <circle cx="260" cy="68" r="2.5" fill={ORANGE} opacity="0.5" />
+          <circle cx="452" cy="260" r="2.5" fill={TEAL} opacity="0.5" />
+          <circle cx="260" cy="452" r="2" fill={TEAL} opacity="0.35" />
+          <circle cx="68" cy="260" r="2" fill={ORANGE} opacity="0.35" />
         </svg>
 
-        {/* Red molecular SVG (responsive, viewBox % ) */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <defs>
-            <radialGradient id="gTeal" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#00A99D" stopOpacity="1" />
-              <stop offset="100%" stopColor="#00A99D" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="gOrange" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#F7941D" stopOpacity="1" />
-              <stop offset="100%" stopColor="#F7941D" stopOpacity="0" />
-            </radialGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="0.8" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <filter id="glow-lg" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-
-          {/* Edges — líneas de conexión */}
-          {EDGES.map(([a, b], i) => (
-            <line key={i}
-              x1={NODES[a].cx} y1={NODES[a].cy}
-              x2={NODES[b].cx} y2={NODES[b].cy}
-              stroke="rgba(0,169,157,0.18)" strokeWidth="0.3" strokeLinecap="round" />
+        {/* ── Líneas verticales de profundidad (perspectiva) ── */}
+        <svg className="absolute inset-0 w-full h-full" aria-hidden="true" style={{ opacity: 0.06 }}>
+          {[0, 14, 28, 42, 57, 71, 85, 100].map((x, i) => (
+            <line key={i} x1={`${x}%`} y1="0" x2={`${x}%`} y2="100%"
+              stroke="white" strokeWidth="0.5" />
           ))}
-
-          {/* Nodos — con animaciones escalonadas */}
-          {NODES.map((n, i) => (
-            <g key={i}>
-              {n.glow && (
-                <circle cx={n.cx} cy={n.cy} r={n.r * 3}
-                  fill={n.color} opacity="0.06"
-                  filter="url(#glow-lg)"
-                  style={{ animation: `pulseNode ${3 + (i % 3)}s ease-in-out infinite`, animationDelay: `${i * 0.4}s` }} />
-              )}
-              <circle cx={n.cx} cy={n.cy} r={n.r}
-                fill={n.color}
-                opacity={n.glow ? "0.9" : "0.5"}
-                filter={n.glow ? "url(#glow)" : undefined}
-                style={n.glow ? { animation: `pulseNode ${2.5 + (i % 4)}s ease-in-out infinite`, animationDelay: `${i * 0.3}s` } : {}} />
-            </g>
-          ))}
-
-          {/* Anillos orbitales abstractos */}
-          <circle cx="70" cy="58" r="8" fill="none" stroke="#00A99D" strokeWidth="0.2" opacity="0.3"
-            style={{ animation: "rotateSlow 20s linear infinite", transformOrigin: "70px 58px" }} />
-          <circle cx="70" cy="58" r="14" fill="none" stroke="#00A99D" strokeWidth="0.15" opacity="0.15"
-            style={{ animation: "rotateSlow 35s linear infinite reverse", transformOrigin: "70px 58px" }} />
-          <circle cx="22" cy="76" r="6" fill="none" stroke="#F7941D" strokeWidth="0.2" opacity="0.25"
-            style={{ animation: "rotateSlow 25s linear infinite", transformOrigin: "22px 76px" }} />
         </svg>
 
-        {/* Glow central teal grande */}
-        <div className="absolute pointer-events-none"
-          style={{ top: "35%", left: "55%", width: 320, height: 320, borderRadius: "50%", transform: "translate(-50%,-50%)", background: "radial-gradient(circle, rgba(0,169,157,0.08) 0%, transparent 70%)" }} />
+        {/* ── Línea acento naranja horizontal ── */}
+        <div className="absolute left-0 right-0" style={{ top: "38%", height: "1px",
+          background: `linear-gradient(90deg, transparent 0%, ${ORANGE} 30%, ${ORANGE} 70%, transparent 100%)`,
+          opacity: 0.15 }} />
 
-        {/* Glow orange inferior izquierda */}
+        {/* ── Glow verde tenue desde el centro-izquierda ── */}
         <div className="absolute pointer-events-none"
-          style={{ bottom: "-60px", left: "10%", width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,148,29,0.07) 0%, transparent 70%)" }} />
+          style={{ top: "30%", left: "20%", width: 400, height: 400, borderRadius: "50%",
+            background: `radial-gradient(circle, ${TEAL}12 0%, transparent 65%)`,
+            transform: "translate(-30%, -30%)" }} />
 
-        {/* Logo — top left */}
+        {/* ── Logo — esquina superior izquierda ── */}
         <div className="relative z-10 p-10">
-          <div className="inline-flex items-center bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-2.5">
-            <Image src="/logo-palex.png" alt="Palex Medical" width={120} height={40} priority />
+          <div className="inline-flex items-center gap-2">
+            <div className="h-7 w-px" style={{ backgroundColor: TEAL, opacity: 0.6 }} />
+            <Image src="/logo-palex.png" alt="Palex Medical" width={110} height={38} priority
+              style={{ filter: "brightness(0) invert(1)", opacity: 0.75 }} />
           </div>
         </div>
 
-        {/* Texto hero central */}
+        {/* ── Contenido central ── */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-12">
-          <p className="text-[10px] font-bold tracking-[0.35em] uppercase mb-6" style={{ color: "rgba(0,169,157,0.6)" }}>
-            Plataforma interna · {new Date().getFullYear()}
-          </p>
 
-          {/* InLab con gradiente */}
-          <div className="mb-2">
-            <span className="font-black leading-none tracking-tighter select-none"
-              style={{
-                fontSize: "clamp(64px, 6vw, 88px)",
-                background: "linear-gradient(135deg, #00A99D 0%, #00d4c8 40%, #F7941D 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                filter: "drop-shadow(0 0 24px rgba(0,169,157,0.35))",
-              }}>
-              InLab
-            </span>
+          {/* Etiqueta superior */}
+          <div className="flex items-center gap-3 mb-8">
+            <span className="w-5 h-px" style={{ backgroundColor: ORANGE, opacity: 0.8 }} />
+            <p className="text-[10px] font-bold tracking-[0.35em] uppercase"
+              style={{ color: "rgba(255,255,255,0.38)" }}>
+              Plataforma interna · {new Date().getFullYear()}
+            </p>
           </div>
 
-          <p className="text-lg font-light tracking-widest mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
-            PALEX MEDICAL
+          {/* INLAB — el protagonista */}
+          <h1 className="font-black leading-none tracking-tighter select-none mb-1"
+            style={{
+              fontSize: "clamp(80px, 8vw, 104px)",
+              color: TEAL,
+              letterSpacing: "-0.03em",
+            }}>
+            InLab
+          </h1>
+
+          {/* PALEX MEDICAL debajo, más pequeño */}
+          <p className="font-semibold tracking-[0.22em] uppercase mb-8"
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.22em" }}>
+            Palex Medical
           </p>
 
-          {/* Separator */}
-          <div className="flex items-center gap-3 mb-6 w-64">
-            <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, rgba(0,169,157,0.5), transparent)" }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#F7941D" }} />
+          {/* Separador con línea naranja */}
+          <div className="flex items-center gap-0 mb-8" style={{ width: 200 }}>
+            <div className="h-px flex-1" style={{ backgroundColor: ORANGE, opacity: 0.7 }} />
+            <div className="w-1.5 h-1.5 rounded-full shrink-0 ml-1.5" style={{ backgroundColor: ORANGE, opacity: 0.7 }} />
           </div>
 
-          <p className="text-sm leading-relaxed max-w-xs" style={{ color: "rgba(255,255,255,0.28)", letterSpacing: "0.02em" }}>
-            Gestión integral de proyectos hospitalarios,<br />inventario de hardware y trazabilidad preanalítica.
-          </p>
+          {/* Descripción */}
+          <div className="space-y-2 max-w-xs">
+            <p className="text-sm leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.01em" }}>
+              Gestión integral de proyectos hospitalarios,
+            </p>
+            <p className="text-sm leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.3)" }}>
+              inventario de hardware y trazabilidad preanalítica.
+            </p>
+            <p className="text-xs mt-3 pt-3" style={{ color: "rgba(255,255,255,0.2)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              Herramienta de uso interno · Acceso restringido
+            </p>
+          </div>
         </div>
 
-        {/* Stats — bottom */}
-        <div className="relative z-10 flex gap-8 px-12 py-7"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.15)" }}>
+        {/* ── Stats — parte inferior ── */}
+        <div className="relative z-10 px-12 py-7 flex items-center gap-8"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           {[
             { num: "200+", label: "Hospitales" },
             { num: "100%", label: "Trazabilidad" },
-            { num: "24/7",  label: "Acceso" },
-          ].map(s => (
-            <div key={s.label}>
-              <p className="font-bold text-lg leading-none" style={{ color: "#00A99D" }}>{s.num}</p>
-              <p className="text-[10px] mt-1.5 tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.3)" }}>{s.label}</p>
+            { num: "24/7", label: "Acceso" },
+          ].map((s, i) => (
+            <div key={i} className="flex items-center gap-3">
+              {i > 0 && <div className="w-px h-7 shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.07)" }} />}
+              <div>
+                <p className="font-bold text-lg leading-none tabular-nums" style={{ color: TEAL }}>{s.num}</p>
+                <p className="text-[10px] mt-1.5 uppercase tracking-widest"
+                  style={{ color: "rgba(255,255,255,0.28)" }}>{s.label}</p>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── PANEL DERECHO — Formulario ───────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-8 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #070f1c 0%, #0a1525 100%)" }}>
+      {/* ════════════════════════════════════════════════
+          PANEL DERECHO — Formulario
+      ════════════════════════════════════════════════ */}
+      <div className="flex-1 flex items-center justify-center p-8 relative"
+        style={{ background: "linear-gradient(160deg, #040e1a 0%, #060f1d 100%)" }}>
 
-        {/* Glow decorativo en el panel del formulario */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(0,169,157,0.05) 0%, transparent 70%)" }} />
+        {/* Línea divisoria sutil entre paneles */}
+        <div className="absolute left-0 top-12 bottom-12 w-px hidden lg:block"
+          style={{ background: `linear-gradient(180deg, transparent, ${TEAL}30, ${ORANGE}30, transparent)` }} />
+
+        {/* Pequeño glow de profundidad detrás del form */}
+        <div className="absolute pointer-events-none"
+          style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 340, height: 340, borderRadius: "50%",
+            background: `radial-gradient(circle, ${TEAL}08 0%, transparent 70%)` }} />
 
         {children}
       </div>
-
-      {/* ── Animaciones CSS ─────────────────────────────────────────────── */}
-      <style>{`
-        @keyframes pulseNode {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.15); }
-        }
-        @keyframes rotateSlow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   )
 }
