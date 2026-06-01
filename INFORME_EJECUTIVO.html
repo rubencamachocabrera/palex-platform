@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InLab Palex Medical — Informe Ejecutivo</title>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  /* ─── Reset y base ─────────────────────────────────────────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    color: #1a1a2e;
+    background: #fff;
+    line-height: 1.6;
+  }
+
+  /* ─── Página A4 ────────────────────────────────────────────── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 20mm;
+    padding: 20mm 22mm 20mm 25mm;
+    background: white;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+    page-break-after: always;
+  }
+
+  /* ─── Colores corporativos ──────────────────────────────────── */
+  :root {
+    --teal: #00A99D;
+    --orange: #F7941D;
+    --dark: #0a1525;
+    --gray: #6b7280;
+    --light: #f8fafc;
+    --border: #e5e7eb;
+  }
+
+  /* ─── PORTADA ───────────────────────────────────────────────── */
+  .cover {
+    background: linear-gradient(160deg, #040e1a 0%, #061422 50%, #071928 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-bg-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    transform: translate(-20%, -55%);
+    border: 0.5px solid rgba(0,169,157,0.2);
+    pointer-events: none;
+  }
+  .cover-bg-ring-2 {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    transform: translate(-15%, -52%);
+    border: 0.5px solid rgba(0,169,157,0.3);
+    pointer-events: none;
+  }
+  .cover-header { position: relative; z-index: 1; }
+  .cover-logo-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+  }
+  .cover-logo-text {
+    font-size: 13pt;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--teal);
+  }
+  .cover-logo-sub {
+    font-size: 8pt;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .cover-main { position: relative; z-index: 1; }
+  .cover-tag {
+    font-size: 8pt;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(0,169,157,0.8);
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .cover-title {
+    font-size: 42pt;
+    font-weight: 900;
+    color: var(--teal);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 600;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .cover-divider {
+    width: 160px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--orange), transparent);
+    margin-bottom: 28px;
+  }
+  .cover-desc {
+    font-size: 11pt;
+    color: rgba(255,255,255,0.45);
+    max-width: 360px;
+    line-height: 1.7;
+  }
+  .cover-footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 16px;
+  }
+  .cover-footer-label { font-size: 8pt; color: rgba(255,255,255,0.2); letter-spacing: 0.2em; text-transform: uppercase; }
+  .cover-footer-date { font-size: 9pt; color: rgba(255,255,255,0.35); }
+  .cover-doc-type {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(247,148,29,0.15);
+    border: 1px solid rgba(247,148,29,0.3);
+    border-radius: 20px;
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ─── Tipografía general ─────────────────────────────────────── */
+  h1 {
+    font-size: 20pt;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 8px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--teal);
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    color: var(--dark);
+    margin-top: 24px;
+    margin-bottom: 8px;
+    padding-left: 10px;
+    border-left: 3px solid var(--teal);
+  }
+  h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--teal);
+    margin-top: 16px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  h4 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+  p { margin-bottom: 8px; line-height: 1.65; }
+  ul, ol { margin-left: 20px; margin-bottom: 8px; }
+  li { margin-bottom: 4px; line-height: 1.6; }
+  strong { color: var(--dark); }
+
+  /* ─── Componentes ────────────────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    margin-top: 32px;
+  }
+  .section-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--teal);
+    color: white;
+    font-weight: 800;
+    font-size: 12pt;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .kpi-card {
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .kpi-value {
+    font-size: 22pt;
+    font-weight: 900;
+    color: var(--teal);
+    display: block;
+    line-height: 1;
+  }
+  .kpi-label {
+    font-size: 8pt;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .feature-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+  }
+  .feature-card.orange { border-left-color: var(--orange); }
+  .feature-title { font-weight: 700; color: var(--dark); font-size: 10.5pt; margin-bottom: 4px; }
+  .feature-desc { font-size: 9.5pt; color: #4b5563; line-height: 1.55; margin: 0; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-teal { background: rgba(0,169,157,0.1); color: var(--teal); border: 1px solid rgba(0,169,157,0.3); }
+  .badge-orange { background: rgba(247,148,29,0.1); color: var(--orange); border: 1px solid rgba(247,148,29,0.3); }
+  .badge-green { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+  .badge-purple { background: #f5f3ff; color: #7c3aed; border: 1px solid #c4b5fd; }
+  .badge-blue { background: #eff6ff; color: #2563eb; border: 1px solid #93c5fd; }
+  .badge-red { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  th {
+    background: var(--dark);
+    color: white;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9pt;
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--light); }
+  tr:hover td { background: rgba(0,169,157,0.04); }
+
+  .screenshot-box {
+    background: var(--light);
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin: 12px 0;
+    color: var(--gray);
+    font-size: 9pt;
+    font-style: italic;
+  }
+  .screenshot-box strong { display: block; margin-bottom: 4px; color: #374151; font-style: normal; font-size: 10pt; }
+
+  .callout {
+    background: rgba(0,169,157,0.06);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  .callout.warning { background: rgba(247,148,29,0.06); border-left-color: var(--orange); }
+  .callout.success { background: #f0fdf4; border-left-color: #16a34a; }
+  .callout.critical { background: #fef2f2; border-left-color: #dc2626; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0; }
+
+  .toc-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 10pt;
+  }
+  .toc-entry.main { font-weight: 700; color: var(--dark); margin-top: 8px; }
+  .toc-entry.sub { padding-left: 20px; color: var(--gray); font-size: 9.5pt; }
+  .toc-page { color: var(--teal); font-weight: 600; }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 8.5pt;
+    font-weight: 700;
+    margin: 2px;
+  }
+
+  .arch-box {
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 4px;
+  }
+  .arch-arrow { text-align: center; font-size: 14pt; color: var(--teal); margin: 4px 0; }
+
+  /* ─── Print ────────────────────────────────────────────────── */
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; margin: 0; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 1 — PORTADA
+════════════════════════════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-bg-ring"></div>
+  <div class="cover-bg-ring-2"></div>
+
+  <div class="cover-header">
+    <div class="cover-logo-bar">
+      <span class="cover-logo-text">InLab</span>
+      <span class="cover-logo-sub">Palex Medical</span>
+    </div>
+  </div>
+
+  <div class="cover-main">
+    <div class="cover-doc-type">Informe Ejecutivo</div>
+    <div class="cover-tag">Plataforma interna · 2026</div>
+    <div class="cover-title">InLab</div>
+    <div class="cover-subtitle">Palex Medical</div>
+    <div class="cover-divider"></div>
+    <p class="cover-desc">
+      Gestión integral de proyectos hospitalarios,<br>
+      inventario de hardware y trazabilidad preanalítica.<br><br>
+      <span style="color:rgba(255,255,255,0.25); font-size:9.5pt;">
+        Herramienta de uso interno · Acceso restringido
+      </span>
+    </p>
+  </div>
+
+  <div class="cover-footer">
+    <div>
+      <div class="cover-footer-label">Estado del documento</div>
+      <div class="cover-footer-date">Versión 1.0 · Junio 2026 · Confidencial</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="cover-footer-label">Desarrollado sobre</div>
+      <div class="cover-footer-date">Next.js 14 · TypeScript · PostgreSQL · Railway</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 2 — ÍNDICE
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <h1>Índice de contenidos</h1>
+  <br>
+
+  <div class="toc-entry main"><span>1. Resumen ejecutivo</span><span class="toc-page">3</span></div>
+  <div class="toc-entry main"><span>2. Descripción general de la plataforma</span><span class="toc-page">4</span></div>
+  <div class="toc-entry sub"><span>2.1 Propósito y contexto</span><span class="toc-page">4</span></div>
+  <div class="toc-entry sub"><span>2.2 Roles de usuario</span><span class="toc-page">4</span></div>
+  <div class="toc-entry sub"><span>2.3 URL y acceso</span><span class="toc-page">4</span></div>
+  <div class="toc-entry main"><span>3. Arquitectura técnica</span><span class="toc-page">5</span></div>
+  <div class="toc-entry sub"><span>3.1 Stack tecnológico</span><span class="toc-page">5</span></div>
+  <div class="toc-entry sub"><span>3.2 Modelo de datos</span><span class="toc-page">5</span></div>
+  <div class="toc-entry sub"><span>3.3 Infraestructura y despliegue</span><span class="toc-page">6</span></div>
+  <div class="toc-entry main"><span>4. Módulos y funcionalidades</span><span class="toc-page">7</span></div>
+  <div class="toc-entry sub"><span>4.1 Autenticación y acceso</span><span class="toc-page">7</span></div>
+  <div class="toc-entry sub"><span>4.2 Dashboard ejecutivo</span><span class="toc-page">7</span></div>
+  <div class="toc-entry sub"><span>4.3 Gestión de hospitales</span><span class="toc-page">8</span></div>
+  <div class="toc-entry sub"><span>4.4 Formulario de visita (14 secciones)</span><span class="toc-page">9</span></div>
+  <div class="toc-entry sub"><span>4.5 CRM / Pipeline de ventas</span><span class="toc-page">10</span></div>
+  <div class="toc-entry sub"><span>4.6 Gestión de proyectos (InLab)</span><span class="toc-page">11</span></div>
+  <div class="toc-entry sub"><span>4.7 Hardware y materiales</span><span class="toc-page">12</span></div>
+  <div class="toc-entry sub"><span>4.8 Explotación de datos</span><span class="toc-page">13</span></div>
+  <div class="toc-entry sub"><span>4.9 Mapa interactivo</span><span class="toc-page">14</span></div>
+  <div class="toc-entry sub"><span>4.10 Módulo de administración</span><span class="toc-page">14</span></div>
+  <div class="toc-entry main"><span>5. Seguridad y calidad</span><span class="toc-page">15</span></div>
+  <div class="toc-entry main"><span>6. Estado actual y métricas</span><span class="toc-page">15</span></div>
+  <div class="toc-entry main"><span>7. Roadmap y próximos pasos</span><span class="toc-page">16</span></div>
+  <div class="toc-entry main"><span>8. Conclusiones</span><span class="toc-page">16</span></div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 3 — RESUMEN EJECUTIVO
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h1 style="border:none; padding:0; margin:0;">Resumen ejecutivo</h1>
+  </div>
+
+  <div class="callout success">
+    <strong>InLab Palex Medical</strong> es una plataforma web de gestión interna desarrollada a medida para Palex Medical. Su objetivo es centralizar la gestión de las actividades comerciales, técnicas y de proyectos relacionadas con la distribución e instalación de equipamiento preanalítico en hospitales y laboratorios clínicos españoles.
+  </div>
+
+  <p>La plataforma está actualmente <strong>en producción</strong> y siendo utilizada por el equipo de Palex Medical para gestionar hospitales, visitas técnico-comerciales, proyectos de instalación y el inventario de hardware desplegado en los centros clientes.</p>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#00A99D;">200+</span>
+      <span class="kpi-label">Hospitales<br>gestionados</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#6366f1;">151</span>
+      <span class="kpi-label">Commits en<br>producción</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#F7941D;">14</span>
+      <span class="kpi-label">Secciones en<br>formulario visita</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#16a34a;">4</span>
+      <span class="kpi-label">Roles de<br>usuario</span>
+    </div>
+  </div>
+
+  <h2>Valor generado</h2>
+  <div class="two-col">
+    <div>
+      <div class="feature-card">
+        <div class="feature-title">🏥 Trazabilidad hospitalaria</div>
+        <p class="feature-desc">Registro completo de cada visita a cada hospital, con 14 secciones de datos técnicos, fotos, análisis de complejidad y generación de PDF corporativo.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">📦 Control de inventario</div>
+        <p class="feature-desc">Seguimiento en tiempo real del hardware instalado en cada centro: número de serie, estado, garantía, precio, proveedor y asignación.</p>
+      </div>
+    </div>
+    <div>
+      <div class="feature-card orange">
+        <div class="feature-title">💼 CRM integrado</div>
+        <p class="feature-desc">Pipeline Kanban de oportunidades comerciales con historial de cambios de etapa, valor ponderado y previsión de cierre.</p>
+      </div>
+      <div class="feature-card orange">
+        <div class="feature-title">📋 Gestión de proyectos</div>
+        <p class="feature-desc">Proyectos de instalación con fases, hitos, tareas, Gantt visual, material solicitado y enlace público QR para el cliente.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 4 — DESCRIPCIÓN GENERAL
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h1 style="border:none; padding:0; margin:0;">Descripción general</h1>
+  </div>
+
+  <h2>2.1 Propósito y contexto</h2>
+  <p>Palex Medical es una empresa española especializada en la distribución e instalación de sistemas preanalíticos para laboratorios hospitalarios. Sus productos incluyen, entre otros, autómatas de dispensación de tubos (BC Robo), terminales móviles Zebra, lectores RFID, gateways Bluetooth para termografía, impresoras de etiquetas y neveras de cadena de frío monitorizadas.</p>
+  <p>InLab nace de la necesidad de contar con una <strong>herramienta de gestión interna</strong> que permita a los equipos de ventas, técnicos y gestores de proyectos trabajar de forma coordinada, trazando toda la actividad desde la primera visita comercial hasta la validación técnica del sistema instalado.</p>
+
+  <h2>2.2 Roles de usuario</h2>
+  <p>La plataforma implementa un sistema de <strong>control de acceso basado en roles (RBAC)</strong> con cuatro perfiles diferenciados:</p>
+
+  <table>
+    <tr>
+      <th>Rol</th>
+      <th>Descripción</th>
+      <th>Acceso principal</th>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">ADMIN</span></td>
+      <td>Acceso total al sistema. Gestión de usuarios, zonas, hospitales, configuración y todas las visualizaciones.</td>
+      <td>Todo sin restricciones</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-orange">VENTAS</span></td>
+      <td>Comerciales. Acceso al CRM, hospitales de su zona, pipeline de oportunidades y registro de visitas.</td>
+      <td>Dashboard · Hospitales · CRM · Visitas · Proyectos propios · Datos</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-teal">PROYECTOS</span></td>
+      <td>Gestores de instalación. Acceso a sus proyectos asignados, formulario de visita técnica y hardware.</td>
+      <td>Dashboard · Hospitales · Visitas · Proyectos propios · Hardware</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-purple">TÉCNICO</span></td>
+      <td>Técnicos de campo. Perfil equivalente a PROYECTOS en cuanto a acceso.</td>
+      <td>Dashboard · Hospitales · Visitas · Proyectos propios</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <strong>Seguridad IDOR:</strong> Cada rol solo puede acceder a sus propios registros (visitas, proyectos, oportunidades). El rol ADMIN ve el conjunto completo. Las comprobaciones de propiedad están implementadas en todas las API routes.
+  </div>
+
+  <h2>2.3 URL de producción y acceso</h2>
+  <div class="two-col">
+    <div>
+      <h4>URL de producción</h4>
+      <p style="font-family: monospace; background:#f8fafc; padding:8px 12px; border-radius:6px; font-size:9pt; border:1px solid #e5e7eb;">
+        https://palex-platform-production.up.railway.app
+      </p>
+      <h4>Repositorio</h4>
+      <p style="font-family: monospace; background:#f8fafc; padding:8px 12px; border-radius:6px; font-size:9pt; border:1px solid #e5e7eb;">
+        github.com/rubencamachocabrera/palex-platform
+      </p>
+    </div>
+    <div>
+      <h4>Disponibilidad</h4>
+      <ul>
+        <li>Acceso 24/7 desde cualquier dispositivo</li>
+        <li>PWA instalable en móvil (manifest.json)</li>
+        <li>Modo offline con IndexedDB y sincronización</li>
+        <li>Funciona sin conexión para visitas en campo</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 5 — ARQUITECTURA TÉCNICA
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h1 style="border:none; padding:0; margin:0;">Arquitectura técnica</h1>
+  </div>
+
+  <h2>3.1 Stack tecnológico</h2>
+
+  <table>
+    <tr>
+      <th>Capa</th>
+      <th>Tecnología</th>
+      <th>Versión</th>
+      <th>Función</th>
+    </tr>
+    <tr>
+      <td><strong>Frontend</strong></td>
+      <td>Next.js App Router</td>
+      <td>14+</td>
+      <td>Framework React full-stack con SSR, RSC y Client Components</td>
+    </tr>
+    <tr>
+      <td><strong>Lenguaje</strong></td>
+      <td>TypeScript</td>
+      <td>5.x</td>
+      <td>Tipado estricto en toda la aplicación</td>
+    </tr>
+    <tr>
+      <td><strong>Estilos</strong></td>
+      <td>Tailwind CSS</td>
+      <td>4.x</td>
+      <td>Utilidades CSS + sistema de diseño custom</td>
+    </tr>
+    <tr>
+      <td><strong>Base de datos</strong></td>
+      <td>PostgreSQL</td>
+      <td>15</td>
+      <td>Datos relacionales en Railway</td>
+    </tr>
+    <tr>
+      <td><strong>ORM</strong></td>
+      <td>Prisma</td>
+      <td>7.x</td>
+      <td>Esquema tipado, migraciones y query builder</td>
+    </tr>
+    <tr>
+      <td><strong>Autenticación</strong></td>
+      <td>NextAuth.js</td>
+      <td>v5</td>
+      <td>Sesiones con credenciales, Edge-compatible</td>
+    </tr>
+    <tr>
+      <td><strong>Deploy</strong></td>
+      <td>Railway</td>
+      <td>—</td>
+      <td>Hosting + PostgreSQL + CI/CD automático desde GitHub</td>
+    </tr>
+    <tr>
+      <td><strong>Mapas</strong></td>
+      <td>Leaflet + OpenStreetMap</td>
+      <td>1.9</td>
+      <td>Mapas interactivos y geocodificación automática</td>
+    </tr>
+    <tr>
+      <td><strong>Offline</strong></td>
+      <td>IndexedDB + Service Worker</td>
+      <td>—</td>
+      <td>Borradores de visita disponibles sin conexión</td>
+    </tr>
+    <tr>
+      <td><strong>PDF</strong></td>
+      <td>window.print() + CSS</td>
+      <td>—</td>
+      <td>Informes de visita y proyectos imprimibles</td>
+    </tr>
+  </table>
+
+  <h2>3.2 Modelo de datos principal</h2>
+  <p>La base de datos cuenta con <strong>30+ modelos Prisma</strong>. Los principales son:</p>
+
+  <div class="three-col">
+    <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
+      <h4 style="color:#00A99D; margin-top:0;">Núcleo comercial</h4>
+      <ul style="font-size:9pt;">
+        <li>Usuario (ADMIN/VENTAS/PROYECTOS/TECNICO)</li>
+        <li>Hospital (con zona, coordenadas, score)</li>
+        <li>Contacto (por hospital)</li>
+        <li>Zona (asignación de usuarios)</li>
+        <li>Visita (formulario 14 secciones)</li>
+        <li>Oportunidad (CRM, con historial)</li>
+      </ul>
+    </div>
+    <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
+      <h4 style="color:#F7941D; margin-top:0;">Proyectos</h4>
+      <ul style="font-size:9pt;">
+        <li>PreProyecto (proyecto principal)</li>
+        <li>FasePreProyecto (10 tipos)</li>
+        <li>Hito</li>
+        <li>Tarea (con subtareas)</li>
+        <li>EntradaTimeline</li>
+        <li>Adjunto (documentos)</li>
+        <li>Comentario</li>
+        <li>SolicitudMaterial + Líneas</li>
+      </ul>
+    </div>
+    <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
+      <h4 style="color:#6366f1; margin-top:0;">Hardware</h4>
+      <ul style="font-size:9pt;">
+        <li>HardwareTipo (dinámico)</li>
+        <li>HardwareCatalogo (modelos)</li>
+        <li>HardwareUnidad (física)</li>
+        <li>CatalogoDoc (adjuntos)</li>
+        <li>ConfigApp</li>
+        <li>Plantilla (visitas)</li>
+        <li>Notificación</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>3.3 Infraestructura y despliegue</h2>
+  <div class="two-col">
+    <div>
+      <h4>Pipeline CI/CD</h4>
+      <ol style="font-size:9.5pt;">
+        <li>Push a <code>main</code> en GitHub</li>
+        <li>Railway detecta el cambio automáticamente</li>
+        <li>Build: <code>npx prisma generate &amp;&amp; next build</code></li>
+        <li>Start: <code>npx prisma db push &amp;&amp; npm start</code></li>
+        <li>Healthcheck en <code>/api/health</code> (timeout 120s)</li>
+      </ol>
+    </div>
+    <div>
+      <h4>Configuración de producción</h4>
+      <ul style="font-size:9.5pt;">
+        <li>Variables de entorno: <code>AUTH_SECRET</code>, <code>DATABASE_URL</code></li>
+        <li>Prisma adapter-pg (sin URL directa en schema)</li>
+        <li>Rate limiting en-memory por IP y ruta</li>
+        <li>Cache-Control HTTP en APIs de lectura</li>
+        <li>Middleware Edge para protección de rutas</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 6-7 — MÓDULOS: AUTH + DASHBOARD + HOSPITALES
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h1 style="border:none; padding:0; margin:0;">Módulos y funcionalidades</h1>
+  </div>
+
+  <h2>4.1 Autenticación y acceso seguro</h2>
+  <div class="screenshot-box">
+    <strong>Pantalla de login — InLab Palex Medical</strong>
+    [Captura de pantalla: Pantalla de login con diseño dark minimalista, red molecular SVG, InLab en verde corporativo, formulario glass morphism]
+  </div>
+  <ul>
+    <li>Login split-screen con diseño dark corporativo y arte geométrico abstracto</li>
+    <li>Credenciales: email + contraseña hasheada con bcrypt (12 rondas)</li>
+    <li>Animación shake en credenciales erróneas, overlay de carga post-login</li>
+    <li>Middleware Edge-compatible que protege todas las rutas del dashboard</li>
+    <li>Redirección automática según rol al intentar acceder a rutas no autorizadas</li>
+    <li>Sesiones gestionadas con NextAuth v5 y cookie httpOnly</li>
+  </ul>
+
+  <h2>4.2 Dashboard ejecutivo (por rol)</h2>
+  <div class="screenshot-box">
+    <strong>Dashboard — Vista ADMIN</strong>
+    [Captura de pantalla: Dashboard con KPIs, gráficos de barras, pipeline funnel, próximas citas, alertas proactivas]
+  </div>
+  <p>El dashboard se adapta completamente al rol del usuario logueado:</p>
+  <div class="two-col">
+    <div>
+      <h4>Dashboard ADMIN</h4>
+      <ul style="font-size:9.5pt;">
+        <li>KPIs globales: hospitales, usuarios, visitas/mes, pipeline activo</li>
+        <li>Gráfico de visitas últimos 6 meses</li>
+        <li>Funnel de oportunidades CRM por etapa</li>
+        <li>Previsión de cierre ponderada por probabilidad (3 meses)</li>
+        <li>Top 5 hospitales más activos</li>
+        <li>Proyectos activos con % de progreso</li>
+        <li>Próximas citas (14 días)</li>
+        <li>Alertas proactivas: proyectos venciendo, ops estancadas, garantías próximas</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Dashboard PROYECTOS / TÉCNICO</h4>
+      <ul style="font-size:9.5pt;">
+        <li>Saludo personalizado con nombre del usuario</li>
+        <li><strong>Widget "Mi Día"</strong>: visitas hoy, tareas vencidas</li>
+        <li>KPIs personales: visitas del mes, proyectos, mis hospitales</li>
+        <li>Gráfico de mis visitas últimos 6 meses</li>
+        <li>Mis proyectos activos con fases y progreso</li>
+        <li>Alertas: fases retrasadas, hitos sin completar, proyectos próximos a vencer</li>
+        <li>Próximas citas de sus proyectos</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    El sidebar de navegación incluye: acceso directo a módulos, barra de búsqueda global, notificaciones con badge, indicador offline, toggle dark/light mode y atajos de teclado (Cmd+K palette, G+H, G+V, G+P).
+  </div>
+
+  <h2>4.3 Gestión de hospitales</h2>
+  <div class="screenshot-box">
+    <strong>Listado de hospitales con filtros + Vista detalle</strong>
+    [Captura de pantalla izquierda: Grid/lista de hospitales con filtros por zona, tipo y estado activo, sección "Anclados" (favoritos). Captura derecha: Detalle hospital con mapa OSM embebido, KPIs, contactos y visitas]
+  </div>
+  <div class="two-col">
+    <div>
+      <h4>Listado de hospitales</h4>
+      <ul style="font-size:9.5pt;">
+        <li>Vista lista / grid toggle</li>
+        <li>Filtros: zona, tipo de centro, activos/inactivos, texto libre</li>
+        <li><strong>Favoritos</strong>: estrella por hospital, sección "Anclados" al inicio (localStorage)</li>
+        <li>Score de engagement calculado (visitas, contactos, oportunidades, días sin visita)</li>
+        <li>Filtros por tipo: Hospital Público/Privado, Clínica, Laboratorio, C. Salud, Universidad</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Detalle del hospital</h4>
+      <ul style="font-size:9.5pt;">
+        <li>KPIs: visitas, contactos, camas, última visita</li>
+        <li>Tabs: <strong>Actividad</strong> (contactos + visitas unificadas), <strong>Timeline</strong>, <strong>Información</strong></li>
+        <li>Mapa OSM embebido (si tiene coordenadas)</li>
+        <li>Sidebar: datos del centro, acciones rápidas</li>
+        <li>QR del hospital para acceso rápido en campo</li>
+        <li><strong>Registro rápido de llamada</strong>: modal de 4 campos, se guarda como entrada de timeline</li>
+        <li>Geocodificación automática al crear (Nominatim/OSM)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 8 — FORMULARIO DE VISITA
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <h2>4.4 Formulario de visita (14 secciones)</h2>
+  <p>Es el módulo central de la plataforma. Permite documentar en detalle una visita técnica o comercial a un hospital.</p>
+
+  <div class="screenshot-box">
+    <strong>Formulario de visita — Header sticky + Secciones acordeón</strong>
+    [Captura de pantalla: Header con nombre del hospital, barra de progreso global, mapa de segmentos clicables por sección. Debajo, tarjetas de sección con badge numérico, icono, progreso individual y botón de navegación]
+  </div>
+
+  <h3>Header fijo (desaparece al bajar, reaparece al subir)</h3>
+  <ul>
+    <li>Nombre del hospital + tipo de visita (Técnica / Comercial)</li>
+    <li>Indicador de auto-guardado (Google Docs style)</li>
+    <li>Score de complejidad de instalación (0-100)</li>
+    <li>Mapa visual de segmentos: 1 segmento por sección, clicables para navegar</li>
+    <li>Acciones: Vista resumen 360°, Guardar plantilla, PDF, Exportar JSON</li>
+  </ul>
+
+  <h3>Las 14 secciones del formulario</h3>
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Sección</th>
+      <th>Tipo de datos</th>
+    </tr>
+    <tr><td>1</td><td>Datos generales</td><td>Hospital, contacto, fecha, tipo de visita, oportunidad vinculada, pre-proyecto</td></tr>
+    <tr><td>2</td><td>Volumen y tipo de muestras</td><td>Volumen diario, picos, tipos de tubos, porcentajes</td></tr>
+    <tr><td>3</td><td>Automatización actual</td><td>Equipos existentes, grado de automatización, proveedores actuales</td></tr>
+    <tr><td>4</td><td>Infraestructura de red</td><td>Tomas de red, switches, topología, acceso a WIFI</td></tr>
+    <tr><td>5</td><td>Espacio y condiciones físicas</td><td>Dimensiones, accesos, mobiliario, temperatura</td></tr>
+    <tr><td>6</td><td>Necesidades específicas</td><td>Urgencias, prioridades, restricciones del cliente</td></tr>
+    <tr><td>7</td><td>Presupuesto y decisión</td><td>Rango presupuestario, interlocutores, plazo de decisión</td></tr>
+    <tr><td>8</td><td>Competencia</td><td>Otros proveedores evaluados, diferenciadores</td></tr>
+    <tr><td>9</td><td>Propuesta de valor</td><td>Productos presentados, demos, materiales entregados</td></tr>
+    <tr><td>10</td><td>Acuerdos y compromisos</td><td>Próximos pasos, fechas, compromisos adquiridos</td></tr>
+    <tr><td>11</td><td>Neveras y termografía</td><td>Sistema RFID/BT, rutas, infraestructura necesaria</td></tr>
+    <tr><td>12</td><td>Situación de laboratorio</td><td>SIL, interfaz LIS, equipos analíticos</td></tr>
+    <tr><td>13</td><td>Análisis de riesgos</td><td>Dificultades detectadas, mitigación</td></tr>
+    <tr><td>14</td><td>Valoración general</td><td>Puntuación del técnico, observaciones finales</td></tr>
+  </table>
+
+  <h3>Funcionalidades del formulario</h3>
+  <div class="two-col">
+    <div>
+      <ul>
+        <li><strong>Auto-guardado</strong> cada 2 segundos tras cambio (debounced)</li>
+        <li><strong>Modo offline</strong>: borradores en IndexedDB, sincronización al recuperar conexión</li>
+        <li><strong>Fotos por sección</strong>: compresión automática antes de subir</li>
+        <li><strong>Notas de voz</strong>: grabación de audio en campo</li>
+        <li><strong>Checklist de tareas</strong> personalizable</li>
+        <li><strong>Notas libres</strong>: área de texto sin estructura</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><strong>Score de complejidad</strong> calculado automáticamente (14 reglas)</li>
+        <li><strong>Panel de análisis</strong>: detecta riesgos basados en las respuestas</li>
+        <li><strong>PDF corporativo</strong> para entregar al cliente (impresión/exportación)</li>
+        <li><strong>Exportación JSON</strong> con todos los datos estructurados</li>
+        <li><strong>Plantillas</strong>: guardar visita como plantilla para reutilizar</li>
+        <li><strong>Comentarios del equipo</strong> en cada visita</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 9 — CRM + PROYECTOS
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <h2>4.5 CRM / Pipeline de ventas</h2>
+  <div class="screenshot-box">
+    <strong>Pipeline de ventas — Vista Kanban con drag &amp; drop</strong>
+    [Captura de pantalla: Tablero Kanban con columnas: Identificado / Primera Visita / Propuesta / Negociación / Ganado / Perdido. Tarjetas de oportunidad arrastrables entre columnas. Panel lateral de detalle con historial de etapas]
+  </div>
+  <div class="two-col">
+    <div>
+      <h4>Gestión de oportunidades</h4>
+      <ul style="font-size:9.5pt;">
+        <li>6 etapas: Identificado → Primera Visita → Propuesta → Negociación → Ganado → Perdido</li>
+        <li>Vista lista y <strong>Kanban con drag &amp; drop</strong> (@dnd-kit)</li>
+        <li>Valor estimado, probabilidad y fecha de cierre</li>
+        <li>Historial automático de cambios de etapa (quién, cuándo)</li>
+        <li>Valor ponderado = valor × probabilidad</li>
+        <li>Exportación CSV del pipeline</li>
+      </ul>
+    </div>
+    <div>
+      <h4>KPIs comerciales</h4>
+      <ul style="font-size:9.5pt;">
+        <li>Pipeline total (valor bruto activo)</li>
+        <li>Valor ponderado total</li>
+        <li>Oportunidades activas</li>
+        <li>Valor total ganado</li>
+        <li>Tasa de ganancia (win rate)</li>
+        <li>Ciclo medio de venta en días</li>
+        <li>Previsión de cierre 3 meses</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>4.6 Gestión de proyectos (InLab)</h2>
+  <div class="screenshot-box">
+    <strong>Detalle de proyecto — Cockpit + Kanban de tareas + Gantt</strong>
+    [Captura de pantalla: Tab Cockpit con ring de progreso, KPIs, ruta crítica. Tab Tareas en modo Kanban con 4 columnas y drag &amp; drop. Vista Gantt con fases y hitos]
+  </div>
+
+  <h4>Tabs disponibles en cada proyecto (9 tabs)</h4>
+  <div class="three-col">
+    <div class="feature-card">
+      <div class="feature-title">Cockpit (nuevo)</div>
+      <p class="feature-desc">Ring de progreso global ponderado, KPIs en tiempo real, ruta crítica con 6 próximas acciones ordenadas por urgencia. Estado de salud: verde/ámbar/rojo.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">Info + Comentarios</div>
+      <p class="feature-desc">Formulario de edición completo. Referencia de contrato. Sección de comentarios del equipo integrada.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">Tareas</div>
+      <p class="feature-desc">Lista con subtareas o Kanban (4 columnas, drag &amp; drop). Subtareas, prioridades, asignados y fechas.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">Timeline / Gantt</div>
+      <p class="feature-desc">Timeline cronológico con filtros. Vista Gantt SVG con barras de fases, diamantes de hitos, línea de hoy.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">Materiales</div>
+      <p class="feature-desc">Solicitudes de material con líneas detalladas. Asignación de unidades de hardware del inventario.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">Resumen / Compartir</div>
+      <p class="feature-desc">Enlace público con QR para el cliente (vista sin precios). Mapa interactivo del proyecto. PDF imprimible.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Vista pública compartida:</strong> El cliente puede ver el avance del proyecto (fases, hitos, hardware instalado) mediante un enlace con token único. Los precios de hardware están ocultos en esta vista pública.
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 10 — HARDWARE + DATOS + MAPA + ADMIN
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <h2>4.7 Hardware y materiales</h2>
+  <div class="screenshot-box">
+    <strong>Módulo de Materiales — Vista por modelo + Vista plana de unidades</strong>
+    [Captura de pantalla: Cards de modelos con franja de color por tipo, badge de ref. Palex, barra de stock, expansión inline de unidades. Selector Hospital/Proyecto en modal de asignación]
+  </div>
+
+  <h4>Nomenclatura de hardware Palex (productos principales)</h4>
+  <table>
+    <tr><th>Producto</th><th>Descripción</th></tr>
+    <tr><td>BC Robo</td><td>Autómata de dispensación de tubos (Blood Collection Robot)</td></tr>
+    <tr><td>Zebra MC</td><td>Terminal móvil / handheld con lector de códigos + Android</td></tr>
+    <tr><td>Zebra Impresora</td><td>Impresora de etiquetas de código de barras</td></tr>
+    <tr><td>Reader RFID</td><td>Lector RFID fijo conectado al laboratorio</td></tr>
+    <tr><td>Gateway BT</td><td>Gateway Bluetooth para conectar neveras al sistema</td></tr>
+    <tr><td>Mini-PC</td><td>PC industrial para software de termografía</td></tr>
+    <tr><td>Nevera</td><td>Nevera de cadena de frío para muestras biológicas monitorizadas</td></tr>
+  </table>
+
+  <h4>Gestión de inventario (tab Materiales)</h4>
+  <div class="two-col">
+    <div>
+      <ul style="font-size:9.5pt;">
+        <li>Vista "Por modelo" (cards con expansión inline) y "Todas las unidades" (tabla plana)</li>
+        <li>Catálogo de modelos: tipo, marca, modelo, ref. Palex, proveedor, precio, garantía</li>
+        <li>Adjuntos por modelo: fichas técnicas y datasheets (PDF, imágenes, hasta 20MB)</li>
+        <li>Unidades físicas: número de serie, estado, hospital/proyecto asignado, fechas</li>
+      </ul>
+    </div>
+    <div>
+      <ul style="font-size:9.5pt;">
+        <li>Estados: Disponible / Asignado / Mantenimiento / Retirado / Baja</li>
+        <li>Modal de asignación: búsqueda de hospital o proyecto</li>
+        <li>Drawer completo de edición por unidad</li>
+        <li>Tipos dinámicos con color configurable por ADMIN</li>
+        <li>Alertas de garantía próxima en el módulo de Hardware</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>4.8 Explotación de datos</h2>
+  <div class="screenshot-box">
+    <strong>Dashboard de consumo de laboratorio (versión demo)</strong>
+    [Captura de pantalla: Selector de hospital, filtros de periodo 3m/6m/1año/2años, gráfico de área con 4 tipos de tubo, cards individuales con sparklines, tabla de desglose mensual]
+  </div>
+  <p>Módulo actualmente en <span class="badge badge-orange">Demo</span> con datos ficticios generados algorítmicamente. Preparado para conectar con base de datos de consumo real.</p>
+  <ul>
+    <li>Selector de hospital (datos reales) + periodo temporal (3m / 6m / 1 año / 2 años)</li>
+    <li>Tubos monitorizados: EDTA (lila), Coagulación (azul), Suero/SST (dorado), Contenedor orina (verde)</li>
+    <li>Gráfico de área con tooltip interactivo y segmentos clicables</li>
+    <li>KPIs por tipo: total, media/mes, último mes con tendencia %, mes pico</li>
+    <li>Vista alternativa de barras por mes</li>
+    <li>Tabla de desglose mensual exportable</li>
+  </ul>
+
+  <h2>4.9 Mapa interactivo</h2>
+  <ul>
+    <li>Mapa Leaflet + OpenStreetMap con todos los hospitales activos</li>
+    <li>Marcadores clicables que abren ficha del hospital</li>
+    <li>Filtrado visual por zona comercial</li>
+    <li>Coordenadas pobladas automáticamente vía geocodificación Nominatim al crear hospitales</li>
+  </ul>
+
+  <h2>4.10 Módulo de administración (solo ADMIN)</h2>
+  <div class="two-col">
+    <div>
+      <ul>
+        <li><strong>Panel del equipo</strong>: KPIs por usuario (visitas/mes, tendencia, proyectos, pipeline, última actividad)</li>
+        <li><strong>Usuarios</strong>: crear, editar roles, activar/desactivar. Validación email y contraseña ≥8 chars.</li>
+        <li><strong>Zonas</strong>: crear y asignar usuarios a zonas geográficas</li>
+        <li><strong>Hospitales</strong>: CRUD completo con geocodificación automática</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><strong>Todas las visitas</strong>: supervisión global del equipo</li>
+        <li><strong>Hardware admin</strong>: gestión de tipos y catálogo</li>
+        <li><strong>Módulos InLab</strong>: gestión de módulos de proyecto</li>
+        <li><strong>Configuración</strong>: toggle CRM activo/desactivo (reflejo instantáneo en sidebar)</li>
+        <li>Exportación a <strong>Excel y CSV</strong> en hospitales, inventario, visitas</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PÁGINA 11 — SEGURIDAD + ESTADO + ROADMAP
+════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h1 style="border:none; padding:0; margin:0;">Seguridad y calidad</h1>
+  </div>
+
+  <h3>Fixes de seguridad implementados</h3>
+  <table>
+    <tr><th>Severidad</th><th>Vulnerabilidad</th><th>Solución aplicada</th></tr>
+    <tr>
+      <td><span class="badge badge-red">Crítico</span></td>
+      <td>IDOR: cualquier usuario veía todos los pre-proyectos</td>
+      <td>Filtro responsableId para roles != ADMIN en GET y PATCH</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">Crítico</span></td>
+      <td>IDOR: búsqueda global exponía proyectos ajenos</td>
+      <td>Mismo filtro en /api/search</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-orange">Alto</span></td>
+      <td>Memory leak: rate-limit cleanup aleatorio 1%</td>
+      <td>Cleanup determinista cada 5 minutos</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-orange">Alto</span></td>
+      <td>Validación laxa de camas (NaN/Infinity)</td>
+      <td>Number.isFinite + Math.round + bounds geográficos lat/lon</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Medio</span></td>
+      <td>new Date() sin guard en fechaCierre</td>
+      <td>Date.parse() validation guard en todas las rutas</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Medio</span></td>
+      <td>Contraseña sin validación mínima en creación</td>
+      <td>Validación ≥8 chars + email válido en POST /api/usuarios</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Medio</span></td>
+      <td>Rate-limit token generación (10/h)</td>
+      <td>Reducido a 3 generaciones por hora</td>
+    </tr>
+  </table>
+
+  <div class="callout success">
+    <strong>Precios de hardware ocultos en vistas públicas:</strong> La vista compartida con cliente (enlace QR) no muestra precio por unidad, subtotales ni total del hardware instalado. Solo muestra modelo, número de serie y estado.
+  </div>
+
+  <div class="section-header" style="margin-top:24px;">
+    <div class="section-num">6</div>
+    <h1 style="border:none; padding:0; margin:0;">Estado actual</h1>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-value">151</span>
+      <span class="kpi-label">Commits<br>producción</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#F7941D;">30+</span>
+      <span class="kpi-label">Modelos<br>Prisma</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#6366f1;">40+</span>
+      <span class="kpi-label">API Routes<br>protegidas</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value" style="color:#16a34a;">100%</span>
+      <span class="kpi-label">TypeScript<br>sin errores</span>
+    </div>
+  </div>
+
+  <h3>Funcionalidades entregadas (estado Junio 2026)</h3>
+  <div class="two-col">
+    <div>
+      <p><strong>✅ Completado</strong></p>
+      <ul style="font-size:9.5pt;">
+        <li>Autenticación + roles RBAC completo</li>
+        <li>Dashboard por rol con alertas proactivas</li>
+        <li>Gestión completa de hospitales + geocodificación</li>
+        <li>Favoritos hospitales + pre-proyectos</li>
+        <li>Formulario visita 14 secciones + offline + PDF</li>
+        <li>Filtros avanzados en visitas (fecha, tipo)</li>
+        <li>CRM con Kanban drag&amp;drop + historial etapas</li>
+        <li>Proyectos: Cockpit, Gantt, Kanban tareas, Timeline</li>
+        <li>Hardware: catálogo, inventario, asignación, docs adjuntos</li>
+        <li>Mapa interactivo Leaflet</li>
+        <li>Panel equipo ADMIN con KPIs por usuario</li>
+        <li>Excel export en hospitales</li>
+        <li>Registro rápido de llamada desde hospital</li>
+        <li>Dashboard de consumo de laboratorio (demo)</li>
+        <li>Login dark minimalista con identidad corporativa</li>
+        <li>QR de hospital y proyecto</li>
+        <li>Compartir proyecto públicamente (sin precios)</li>
+        <li>Comentarios en visitas y proyectos</li>
+      </ul>
+    </div>
+    <div>
+      <p><strong>🔄 En desarrollo / Roadmap</strong></p>
+      <ul style="font-size:9.5pt;">
+        <li>Conexión real de explotación de datos a BD de consumo</li>
+        <li>Templates de proyecto (fases precargadas)</li>
+        <li>Notificaciones push del navegador</li>
+        <li>Firma digital del cliente en PDF entrega</li>
+        <li>Vista Gantt interactiva con edición de fechas</li>
+        <li>Exportación Excel en visitas y proyectos</li>
+        <li>Modo campo simplificado para tablets</li>
+        <li>Tests E2E con Playwright</li>
+        <li>Audit de rendimiento Lighthouse (objetivo &gt;90)</li>
+        <li>Integración Sentry para monitoreo de errores</li>
+        <li>Seguimiento de presupuesto detallado</li>
+        <li>Portal cliente mejorado</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-header" style="margin-top:24px;">
+    <div class="section-num">8</div>
+    <h1 style="border:none; padding:0; margin:0;">Conclusiones</h1>
+  </div>
+
+  <p>InLab Palex Medical es una plataforma de gestión interna <strong>completamente funcional y en producción</strong>, construida con tecnología moderna (Next.js 14, TypeScript, PostgreSQL, Railway). Cubre de forma integral el ciclo completo de la actividad de Palex Medical: desde la prospección comercial hasta la instalación y seguimiento técnico de equipamiento en hospitales.</p>
+
+  <div class="callout success">
+    La plataforma está siendo utilizada en producción por el equipo de Palex Medical. Cuenta con un sistema de seguridad robusto (RBAC, IDOR fixes, rate limiting), rendimiento optimizado (caché HTTP, paginación, lazy loading) y una experiencia de usuario profesional orientada tanto al trabajo en oficina como en campo.
+  </div>
+
+  <br>
+  <div style="text-align:center; padding: 20px 0; border-top: 2px solid #e5e7eb; margin-top: 20px;">
+    <div style="font-size:8pt; color:#9ca3af; letter-spacing:0.15em; text-transform:uppercase;">
+      InLab · Palex Medical · Informe ejecutivo · Junio 2026 · Confidencial · Uso interno
+    </div>
+    <div style="margin-top:8px; display:inline-flex; gap:6px; align-items:center;">
+      <span style="width:6px; height:6px; border-radius:50%; background:#00A99D; display:inline-block;"></span>
+      <span style="width:6px; height:6px; border-radius:50%; background:#F7941D; display:inline-block;"></span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
