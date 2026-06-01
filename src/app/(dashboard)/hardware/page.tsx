@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { exportarCSV } from "@/lib/csv"
@@ -10,6 +10,9 @@ import { useToast } from "@/components/Toast"
 
 interface HardwareTipo {
   id: string; nombre: string; color: string
+}
+interface CatalogoDoc {
+  id: string; nombre: string; tipo: string; tamano: number; creadoEn: string
 }
 interface HardwareCatalogo {
   id: string
@@ -644,6 +647,12 @@ const TIPO_COLORES_PRESET = ["#6366f1","#3b82f6","#06b6d4","#10b981","#f59e0b","
 
 // ─── MaterialDrawer — crear / editar un modelo de catálogo ───────────────────
 
+function fmtTamano(b: number) {
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`
+}
+
 const CAT_FORM_EMPTY = { tipoId:"", marca:"", modelo:"", referenciaPalex:"", proveedor:"", descripcion:"", precio:"", garantiaMeses:"", fichaUrl:"" }
 
 function MaterialDrawer({ tipos, item, onClose, onSaved }: {
@@ -666,6 +675,56 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
   } : { ...CAT_FORM_EMPTY })
   const [saving, setSaving] = useState(false)
   const tipoSel = tipos.find(t => t.id === form.tipoId)
+
+  // ── Documentos adjuntos ──────────────────────────────────────────────────
+  const [docs,        setDocs]        = useState<CatalogoDoc[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
+  const [subiendo,    setSubiendo]    = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const cargarDocs = useCallback(async () => {
+    if (!item) return
+    setLoadingDocs(true)
+    const r = await fetch(`/api/hardware/${item.id}/docs`)
+    if (r.ok) setDocs(await r.json())
+    setLoadingDocs(false)
+  }, [item])
+
+  useEffect(() => { if (item) cargarDocs() }, [item, cargarDocs])
+
+  async function handleDocUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !item) return
+    if (file.size > 20 * 1024 * 1024) { toastError("El archivo no puede superar 20 MB"); return }
+    setSubiendo(true)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload  = () => resolve((reader.result as string).split(",")[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const r = await fetch(`/api/hardware/${item.id}/docs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: file.name, tipo: file.type || "application/octet-stream", tamano: file.size, contenido: base64 }),
+      })
+      if (!r.ok) throw new Error()
+      const doc = await r.json()
+      setDocs(p => [doc, ...p])
+      success("Documento añadido")
+    } catch { toastError("Error al subir el documento") }
+    finally { setSubiendo(false); if (fileInputRef.current) fileInputRef.current.value = "" }
+  }
+
+  async function eliminarDoc(docId: string) {
+    try {
+      await fetch(`/api/hardware/docs/${docId}`, { method: "DELETE" })
+      setDocs(p => p.filter(d => d.id !== docId))
+      success("Documento eliminado")
+    } catch { toastError("Error al eliminar") }
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })) }
 
@@ -704,7 +763,7 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
     <>
       <div className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
       <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
-        {/* Header con franja de color del tipo */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0"
           style={{ borderTop: `3px solid ${tipoSel?.color ?? TEAL}` }}>
           <div>
@@ -719,7 +778,7 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
         {/* Body scrollable */}
         <form id="mat-drawer-form" onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Tipo — pill selector */}
+          {/* Tipo */}
           <div>
             <label className={FLBL}>Tipo de hardware</label>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -766,10 +825,6 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
               <input value={form.referenciaPalex} onChange={e => set("referenciaPalex", e.target.value)}
                 placeholder="PAL-001234" className={`${FLDCLS} pl-8 font-mono`} style={ringCss} />
             </div>
-            <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-              Código SAP / ERP interno de Palex para este modelo
-            </p>
           </div>
 
           {/* Proveedor + Precio */}
@@ -786,7 +841,7 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
             </div>
           </div>
 
-          {/* Garantía + Datasheet */}
+          {/* Garantía + URL externa */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={FLBL}>Garantía fabricante (meses)</label>
@@ -797,11 +852,11 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
               </div>
             </div>
             <div>
-              <label className={FLBL}>URL Datasheet / Ficha técnica</label>
+              <label className={FLBL}>URL externa (opcional)</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><IcoLink /></span>
                 <input value={form.fichaUrl} onChange={e => set("fichaUrl", e.target.value)}
-                  placeholder="https://…" className={`${FLDCLS} pl-8`} style={ringCss} />
+                  placeholder="https://fabricante.com/…" className={`${FLDCLS} pl-8`} style={ringCss} />
               </div>
             </div>
           </div>
@@ -812,6 +867,77 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
             <textarea value={form.descripcion} onChange={e => set("descripcion", e.target.value)}
               placeholder="Características relevantes, versión de firmware, observaciones…"
               rows={3} className={`${FLDCLS} resize-none`} style={ringCss} />
+          </div>
+
+          {/* ── Documentos adjuntos ── */}
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-px flex-1 bg-gray-100" />
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 flex items-center gap-1.5">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Fichas técnicas y documentos
+              </span>
+              <div className="h-px flex-1 bg-gray-100" />
+            </div>
+
+            {item ? (
+              <>
+                {loadingDocs ? (
+                  <div className="h-10 bg-gray-100 rounded-xl animate-pulse mb-2" />
+                ) : docs.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic text-center py-2 mb-2">Sin documentos todavía</p>
+                ) : (
+                  <div className="space-y-1.5 mb-2.5">
+                    {docs.map(doc => (
+                      <div key={doc.id} className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-700 truncate">{doc.nombre}</p>
+                          <p className="text-[10px] text-gray-400">{fmtTamano(doc.tamano)}</p>
+                        </div>
+                        <a href={`/api/hardware/docs/${doc.id}`} target="_blank" rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0 cursor-pointer"
+                          title="Descargar">
+                          <IcoDownload />
+                        </a>
+                        <button type="button" onClick={() => eliminarDoc(doc.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-300 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                          title="Eliminar documento">
+                          <IcoTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Zona de subida */}
+                <label className={`flex items-center gap-2.5 px-4 py-3 border-2 border-dashed rounded-xl transition-colors ${subiendo ? "opacity-50 cursor-not-allowed border-gray-200" : "cursor-pointer border-gray-200 hover:border-teal-300 hover:bg-teal-50/30"}`}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={subiendo ? "#9ca3af" : TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: subiendo ? "#9ca3af" : TEAL }}>
+                      {subiendo ? "Subiendo documento…" : "Subir documento"}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">PDF, Word, Excel, imágenes — máx. 20 MB</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*"
+                    onChange={handleDocUpload}
+                    disabled={subiendo}
+                  />
+                </label>
+              </>
+            ) : (
+              <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl px-3.5 py-3 border border-gray-100">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <p className="text-xs text-gray-500">Los documentos (fichas técnicas, datasheets, manuales…) se pueden adjuntar una vez creado el material.</p>
+              </div>
+            )}
           </div>
         </form>
 
