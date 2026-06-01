@@ -327,7 +327,9 @@ function SidebarInner({
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d != null) setCrmActivo(d.crmActivo) })
       .catch(() => {})
-  }, [])
+  // Re-fetch cuando cambia la ruta — así al volver de /admin/configuracion
+  // el sidebar refleja el nuevo valor de crmActivo sin necesidad de reload
+  }, [pathname])
 
   useEffect(() => {
     fetch("/api/notificaciones")
