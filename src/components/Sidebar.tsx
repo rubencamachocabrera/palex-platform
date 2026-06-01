@@ -320,12 +320,22 @@ function SidebarInner({
 
   const [pipelineBadge,    setPipelineBadge]    = useState(0)
   const [preProyectosBadge, setPreProyectosBadge] = useState(0)
-  const [crmActivo,        setCrmActivo]         = useState(true)
+  // Inicializa desde localStorage para evitar el flash del CRM en cada navegación
+  const [crmActivo, setCrmActivo] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false
+    try { return localStorage.getItem("palex_crm_activo") === "true" }
+    catch { return false }
+  })
 
   useEffect(() => {
     fetch("/api/config")
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d != null) setCrmActivo(d.crmActivo) })
+      .then(d => {
+        if (d != null) {
+          setCrmActivo(d.crmActivo)
+          try { localStorage.setItem("palex_crm_activo", String(d.crmActivo)) } catch { /* */ }
+        }
+      })
       .catch(() => {})
   // Re-fetch cuando cambia la ruta — así al volver de /admin/configuracion
   // el sidebar refleja el nuevo valor de crmActivo sin necesidad de reload
