@@ -927,6 +927,7 @@ export default function VisitaPage() {
   const visitaRef = useRef<VisitaData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevCompletadasRef = useRef(0)
+  const headerRef = useRef<HTMLDivElement>(null)
 
   const handleSyncSuccess = useCallback(() => {
     setSavedAt(new Date()); setPendiente(false)
@@ -975,6 +976,39 @@ export default function VisitaPage() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // ── Ocultar header al hacer scroll abajo, mostrar al subir ──────────────────
+  useEffect(() => {
+    const main = document.getElementById("main-content")
+    if (!main) return
+    let lastY = 0
+    let ticking = false
+    function onScroll() {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const y = (main as HTMLElement).scrollTop
+        const header = headerRef.current
+        if (header) {
+          if (y > lastY && y > 60) {
+            // Bajando — ocultar
+            header.style.transform = "translateY(-110%)"
+            header.style.opacity = "0"
+            header.style.pointerEvents = "none"
+          } else {
+            // Subiendo o en la cima — mostrar
+            header.style.transform = "translateY(0)"
+            header.style.opacity = "1"
+            header.style.pointerEvents = ""
+          }
+        }
+        lastY = y <= 0 ? 0 : y
+        ticking = false
+      })
+    }
+    main.addEventListener("scroll", onScroll, { passive: true })
+    return () => main.removeEventListener("scroll", onScroll)
+  }, [])
 
   const guardar = useCallback(async (nuevoEstado?: string) => {
     if (!visitaRef.current) return
@@ -1222,8 +1256,8 @@ export default function VisitaPage() {
           HEADER FIJO — Hospital · Progreso · Acciones
           (sticky top-0 funciona porque globals.css ya no usa transform en pageIn)
       ══════════════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 mb-5"
-        style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid #f0f0f0", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
+      <div ref={headerRef} className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 mb-5"
+        style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid #f0f0f0", boxShadow: "0 1px 8px rgba(0,0,0,0.04)", transition: "transform 220ms ease, opacity 220ms ease" }}>
 
         {/* ── Fila 1: Contexto + acciones ── */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2 flex items-center gap-3">
