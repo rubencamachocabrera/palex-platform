@@ -1219,105 +1219,115 @@ export default function VisitaPage() {
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════════════════
-          Barra sticky de progreso + indicador de guardado (Google Docs style)
+          HEADER FIJO — Hospital · Progreso · Acciones
+          (sticky top-0 funciona porque globals.css ya no usa transform en pageIn)
       ══════════════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-2.5 pb-2 mb-4">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 mb-5"
+        style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid #f0f0f0", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
 
-          {/* Botón nav lateral — visible siempre pero más prominente en mobile */}
-          <button
-            type="button"
-            onClick={() => setNavOpen(o => !o)}
-            title="Navegación de secciones"
-            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors lg:hidden"
-          >
+        {/* ── Fila 1: Contexto + acciones ── */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2 flex items-center gap-3">
+
+          {/* Menú secciones mobile */}
+          <button type="button" onClick={() => setNavOpen(o => !o)} title="Ver secciones"
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer lg:hidden">
             <IconMenu size={15} />
           </button>
 
-          {/* Barra de progreso */}
-          <div className="flex-1 flex items-center gap-2.5">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }}
-              />
+          {/* Hospital + estado */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-gray-900 truncate max-w-[200px] sm:max-w-xs">
+                {visita.hospital.nombre}
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                visita.estado === "COMPLETADA" ? "bg-green-50 text-green-700" :
+                visita.estado === "ARCHIVADA"  ? "bg-gray-100 text-gray-500"  :
+                "bg-amber-50 text-amber-700"
+              }`}>
+                {visita.estado === "COMPLETADA" ? "Completada" : visita.estado === "ARCHIVADA" ? "Archivada" : "Borrador"}
+              </span>
             </div>
-            <span className="text-xs text-gray-400 tabular-nums shrink-0">
-              {completadas}/{sections.length}
-            </span>
+            <p className="text-[11px] text-gray-400 mt-0.5 hidden sm:block">
+              {visita.hospital.ciudad}
+              {visita.tipo === "VENTAS" ? " · Visita comercial" : " · Visita técnica"}
+            </p>
           </div>
 
-          {/* Indicador de guardado */}
-          <div className="text-xs shrink-0">
+          {/* Auto-save */}
+          <div className="text-xs shrink-0 hidden sm:block">
             <SaveIndicator saving={saving} pendiente={pendiente} savedAt={savedAt} error={saveError} />
           </div>
 
-          {/* Score de complejidad */}
-          <span
-            className="hidden sm:flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 cursor-default"
-            style={{ color: scoreColor, borderColor: `${scoreColor}55`, backgroundColor: `${scoreColor}12` }}
-            title={`Complejidad de instalación: ${score}/100`}
-          >
-            {score} <span className="font-normal opacity-75">{scoreLabel}</span>
-          </span>
+          {/* Score */}
+          <div className="hidden md:flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-xl border cursor-default"
+            style={{ borderColor: `${scoreColor}40`, backgroundColor: `${scoreColor}0c` }}
+            title={`Complejidad de instalación: ${score}/100`}>
+            <span className="text-sm font-bold tabular-nums" style={{ color: scoreColor }}>{score}</span>
+            <span className="text-[10px] font-medium" style={{ color: scoreColor, opacity: 0.75 }}>{scoreLabel}</span>
+          </div>
 
-          {/* Acciones rápidas */}
+          {/* Offline badge */}
+          {!online && (
+            <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+              Offline
+            </span>
+          )}
+
+          {/* Botones de acción */}
           <div className="flex items-center gap-1 shrink-0">
-            {!online && (
-              <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
-                <span className="hidden sm:inline">Offline</span>
-              </span>
-            )}
+            <button onClick={() => setVistaResumen(true)} title="Vista resumen 360°"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer"
+              style={vistaResumen ? { backgroundColor: `${TEAL}12`, color: TEAL } : {}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span className="hidden sm:inline">Resumen</span>
+            </button>
             {userRol === "ADMIN" && (
-              <button
-                onClick={() => { setNombrePlantilla(""); setMostrarGuardarPlantilla(true) }}
+              <button onClick={() => { setNombrePlantilla(""); setMostrarGuardarPlantilla(true) }}
                 title="Guardar como plantilla"
-                className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                </svg>
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               </button>
             )}
-            <button onClick={() => setShowPrint(true)} title="Vista previa PDF"
-              className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
+            <button onClick={() => setShowPrint(true)} title="PDF / Imprimir"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
               <IconPrint size={14} />
             </button>
-            <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar JSON"
-              className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 transition-colors">
+            <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar datos"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
               <IconDownload size={14} />
-            </button>
-            <button
-              onClick={() => setVistaResumen(true)}
-              title="Vista resumen"
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: vistaResumen ? TEAL : undefined }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 hover:text-gray-600 transition-colors">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
             </button>
           </div>
         </div>
-        {/* Mapa de progreso: 1 segmento por sección */}
-        <div className="max-w-5xl mx-auto mt-1.5 pl-10 lg:pl-8">
+
+        {/* ── Fila 2: Progreso ── */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-2.5">
+          {/* Barra global */}
+          <div className="flex items-center gap-3 mb-1.5">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
+            </div>
+            <span className="text-[11px] font-semibold tabular-nums shrink-0"
+              style={{ color: progreso === 100 ? "#10b981" : "#6b7280" }}>
+              {completadas}/{sections.length} secciones
+              {progreso === 100 && <span className="ml-1">✓</span>}
+            </span>
+          </div>
+          {/* Mapa de segmentos — cada sección es un botón clickable */}
           <div className="flex gap-[3px]">
             {sections.map((s, i) => {
               const pct = calcProgress(s, datos)
               const isAct = openSection === s.id
               return (
-                <button
-                  key={s.id}
-                  type="button"
-                  title={`${i + 1}. ${s.title} — ${pct}%`}
+                <button key={s.id} type="button" title={`${i + 1}. ${s.title} — ${pct}%`}
                   onClick={() => goToSection(s.id)}
-                  className="flex-1 rounded-full transition-all hover:opacity-75"
+                  className="flex-1 rounded-full transition-all duration-200 cursor-pointer hover:scale-y-150 origin-bottom"
                   style={{
-                    height: isAct ? 4 : 3,
-                    backgroundColor: pct === 100 ? "#10b981" : isAct ? TEAL : pct > 0 ? `${TEAL}70` : "#e5e7eb",
-                  }}
-                />
+                    height: isAct ? 5 : 3,
+                    backgroundColor: pct === 100 ? "#10b981" : isAct ? TEAL : pct > 0 ? `${TEAL}55` : "#e5e7eb",
+                  }} />
               )
             })}
           </div>
@@ -1602,39 +1612,48 @@ export default function VisitaPage() {
               const visibleFields = section.fields.filter(f => shouldShowField(f, datos))
 
               return (
-                <div key={section.id} id={`sec-${section.id}`} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div key={section.id} id={`sec-${section.id}`}
+                  className="bg-white rounded-2xl overflow-hidden transition-all duration-200"
+                  style={{
+                    border: isOpen ? `1.5px solid ${TEAL}40` : "1.5px solid #f0f0f0",
+                    boxShadow: isOpen ? `0 4px 20px ${TEAL}12, 0 1px 4px rgba(0,0,0,0.04)` : "0 1px 4px rgba(0,0,0,0.04)",
+                  }}>
                   <button onClick={() => setOpenSection(isOpen ? "" : section.id)}
-                    className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[60px]">
-                    {/* Icono de sección con fondo de color según estado */}
-                    <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                      pct === 100 ? "bg-green-50 text-green-600" : isOpen ? "text-white" : "bg-gray-100 text-gray-500"
-                    }`} style={isOpen && pct < 100 ? { backgroundColor: TEAL } : {}}>
-                      {SECTION_ICON[section.icon] ?? <IconClipboard size={18} />}
-                    </span>
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50/60 active:bg-gray-100/60 transition-colors min-h-[60px] cursor-pointer">
+                    {/* Badge numérico + icono */}
+                    <div className="shrink-0 flex flex-col items-center gap-0.5">
+                      <span className="text-[9px] font-bold tabular-nums" style={{ color: isOpen ? TEAL : pct === 100 ? "#10b981" : "#d1d5db" }}>{idx + 1}</span>
+                      <span className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                        pct === 100 ? "bg-green-50 text-green-600" : isOpen ? "text-white" : "bg-gray-100 text-gray-400"
+                      }`} style={isOpen && pct < 100 ? { backgroundColor: TEAL } : {}}>
+                        {SECTION_ICON[section.icon] ?? <IconClipboard size={18} />}
+                      </span>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-800">{section.title}</p>
+                        <p className="text-sm font-semibold" style={{ color: isOpen ? "#111827" : "#374151" }}>{section.title}</p>
                         {pct === 100 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
-                            <IconCheck size={10} /> Completa
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Completa
                           </span>
                         )}
                         {nFotos > 0 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-                            <IconCamera size={10} /> {nFotos}
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                            <IconCamera size={9} /> {nFotos}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <div className="h-1 w-24 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1 w-28 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#10b981" : TEAL }} />
+                            style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#10b981" : isOpen ? TEAL : `${TEAL}80` }} />
                         </div>
-                        <span className="text-xs text-gray-400 tabular-nums">{pct}%</span>
+                        <span className="text-[11px] tabular-nums font-medium" style={{ color: pct === 100 ? "#10b981" : "#9ca3af" }}>{pct}%</span>
                       </div>
                     </div>
-                    <span className="text-gray-300 transition-transform duration-200 shrink-0"
-                      style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>
+                    <span className="transition-transform duration-200 shrink-0"
+                      style={{ transform: isOpen ? "rotate(90deg)" : "none", color: isOpen ? TEAL : "#d1d5db" }}>
                       <IconChevronRight size={16} />
                     </span>
                   </button>
@@ -1698,22 +1717,26 @@ export default function VisitaPage() {
                       />
 
                       {/* Navegación anterior / siguiente */}
-                      <div className="flex justify-between pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
                         {idx > 0 ? (
                           <button onClick={() => goToSection(sections[idx - 1].id)}
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-gray-700 min-h-[44px] px-2 transition-colors">
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-gray-700 min-h-[44px] px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                             <IconArrowLeft size={14} /> Anterior
                           </button>
                         ) : <span />}
                         {idx < sections.length - 1 ? (
                           <button onClick={() => goToSection(sections[idx + 1].id)}
-                            className="inline-flex items-center gap-1.5 text-sm font-medium min-h-[44px] px-2 transition-colors" style={{ color: TEAL }}>
+                            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl text-white min-h-[44px] transition-opacity hover:opacity-90 cursor-pointer"
+                            style={{ backgroundColor: TEAL }}>
                             Siguiente <IconArrowRight size={14} />
                           </button>
                         ) : !readOnly && visita.estado === "BORRADOR" ? (
                           <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 disabled:opacity-50 min-h-[44px] px-2">
-                            <IconCheck size={14} /> Marcar completa
+                            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl text-white bg-green-500 min-h-[44px] disabled:opacity-50 hover:bg-green-600 transition-colors cursor-pointer">
+                            {cambiandoEstado
+                              ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                              : <IconCheck size={14} />}
+                            {cambiandoEstado ? "Completando…" : "Completar visita"}
                           </button>
                         ) : <span />}
                       </div>
@@ -1821,27 +1844,52 @@ export default function VisitaPage() {
       {/* Barra flotante desktop */}
       {!readOnly && (
         <div className="hidden lg:block fixed bottom-6 right-6 z-40">
-          <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3" style={{ boxShadow: "var(--el-3, 0 10px 24px rgba(0,0,0,.09), 0 4px 8px rgba(0,0,0,.04))" }}>
+          <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2.5"
+            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.07)" }}>
+
+            {/* Progreso mini */}
+            <div className="flex items-center gap-2 pr-2 border-r border-gray-100">
+              <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${progreso}%`, backgroundColor: progreso === 100 ? "#10b981" : TEAL }} />
+              </div>
+              <span className="text-[11px] font-semibold tabular-nums" style={{ color: progreso === 100 ? "#10b981" : "#9ca3af" }}>
+                {progreso}%
+              </span>
+            </div>
+
             {!online && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
-                Sin conexion
+                Offline
               </span>
             )}
+
+            {/* Guardar */}
             <button onClick={() => guardar()} disabled={saving || !pendiente}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 flex items-center gap-2"
-              style={{ backgroundColor: saving || !pendiente ? "#9ca3af" : TEAL }}>
-              {saving ? (
-                <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Guardando...</>
-              ) : pendiente ? "Guardar" : savedAt ? (
-                <><IconCheck size={13} /> Guardado</>
-              ) : "Sin cambios"}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-default"
+              style={{
+                backgroundColor: saving ? `${TEAL}20` : pendiente ? TEAL : "#f3f4f6",
+                color: saving ? TEAL : pendiente ? "white" : "#9ca3af",
+              }}>
+              {saving
+                ? <><span className="w-3 h-3 border-2 border-current/40 border-t-current rounded-full animate-spin" /> Guardando…</>
+                : pendiente
+                ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</>
+                : savedAt
+                ? <><IconCheck size={13} /> Guardado</>
+                : "Sin cambios"}
             </button>
+
+            {/* Completar */}
             {visita.estado === "BORRADOR" && !pendiente && (
               <button onClick={() => cambiarEstado("COMPLETADA")} disabled={cambiandoEstado}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 disabled:opacity-50 flex items-center gap-2">
-                {cambiandoEstado ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <IconCheck size={13} />}
-                {cambiandoEstado ? "Completando..." : "Completar"}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:bg-green-600 disabled:opacity-60 cursor-pointer"
+                style={{ backgroundColor: "#10b981" }}>
+                {cambiandoEstado
+                  ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  : <IconCheck size={13} />}
+                {cambiandoEstado ? "Completando…" : "Completar visita"}
               </button>
             )}
           </div>
