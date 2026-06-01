@@ -1830,8 +1830,8 @@ function SolicitudRow({ sol, ppId, onEstadoChange }: {
           value={sol.estado}
           onChange={e => cambiarEstado(e.target.value)}
           disabled={saving}
-          className="text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-400 shrink-0 border-0"
-          style={{ backgroundColor: est.bg, color: est.color }}>
+          className="text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-400 shrink-0 border-0 appearance-none"
+          style={{ backgroundColor: est.bg, color: est.color, minWidth: "fit-content" }}>
           {Object.entries(SOLICITUD_ESTADO).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}

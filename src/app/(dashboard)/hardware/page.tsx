@@ -1850,8 +1850,8 @@ function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUn
                           </td>
                           <td className="py-2 pr-3">
                             <select value={u.estado} onChange={e => cambiarEstadoInline(u, e.target.value)}
-                              className="text-xs font-bold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1"
-                              style={{ backgroundColor: es.bg, color: es.color }}>
+                              className="text-xs font-bold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1 appearance-none"
+                              style={{ backgroundColor: es.bg, color: es.color, minWidth: "fit-content" }}>
                               {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
                             </select>
                           </td>
@@ -2321,8 +2321,8 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                         </td>
                         <td className="px-4 py-3.5">
                           <select value={u.estado} onChange={e => cambiarEstado(u, e.target.value)}
-                            className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400"
-                            style={{ backgroundColor: es.bg, color: es.color }}>
+                            className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 appearance-none"
+                            style={{ backgroundColor: es.bg, color: es.color, minWidth: "fit-content" }}>
                             {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
                           </select>
                         </td>
@@ -2492,8 +2492,8 @@ function AlertasTab({ unidades, onUpdated }: {
                 {fechaRef && <span className="text-xs text-gray-400 shrink-0 hidden sm:inline">{fmtFecha(fechaRef)}</span>}
                 {campo && (
                   <select value={u.estado} onChange={e => cambiarEstado(u, e.target.value)}
-                    className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 shrink-0"
-                    style={{ backgroundColor: HW_ESTADO[u.estado]?.bg ?? "#f3f4f6", color: HW_ESTADO[u.estado]?.color ?? "#6b7280" }}>
+                    className="text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 shrink-0 appearance-none"
+                    style={{ backgroundColor: HW_ESTADO[u.estado]?.bg ?? "#f3f4f6", color: HW_ESTADO[u.estado]?.color ?? "#6b7280", minWidth: "fit-content" }}>
                     {Object.entries(HW_ESTADO).map(([k, v]) => <option key={k} value={k} className="bg-white text-gray-800">{v.label}</option>)}
                   </select>
                 )}
