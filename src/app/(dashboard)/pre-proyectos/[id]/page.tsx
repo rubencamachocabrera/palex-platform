@@ -148,9 +148,28 @@ function relativo(s: string) {
   return `hace ${Math.floor(d / 30)}m`
 }
 
+// ─── Comentarios embebidos en Info ───────────────────────────────────────────
+
+function ComentariosInInfo({ ppId }: { ppId: string }) {
+  const [userInfo, setUserInfo] = useState<{ id: string; rol: string } | null>(null)
+  useEffect(() => {
+    fetch("/api/perfil").then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.id) setUserInfo({ id: d.id, rol: d.rol }) })
+      .catch(() => {})
+  }, [])
+  if (!userInfo) return null
+  return (
+    <ComentariosPanel
+      endpoint={`/api/pre-proyectos/${ppId}/comentarios`}
+      usuarioId={userInfo.id}
+      esAdmin={userInfo.rol === "ADMIN"}
+    />
+  )
+}
+
 // ---- tabs ----
 
-const TABS = ["Cockpit", "Info", "Tareas", "Timeline", "Materiales", "Contactos", "Visitas", "Adjuntos", "Comentarios", "Resumen"] as const
+const TABS = ["Cockpit", "Info", "Tareas", "Timeline", "Materiales", "Contactos", "Visitas", "Adjuntos", "Resumen"] as const
 type Tab = typeof TABS[number]
 
 // ========== COMPONENTE PRINCIPAL ==========
@@ -171,7 +190,7 @@ export default function PreProyectoDetalle() {
 
   function changeTab(t: Tab) {
     setTab(t)
-    router.replace(`?tab=${t}`, { scroll: false })
+    // No router.replace — causaba re-render/recarga al cambiar de tab
   }
 
   const cargar = useCallback(async () => {
@@ -179,7 +198,6 @@ export default function PreProyectoDetalle() {
     if (r.status === 404) { router.push("/pre-proyectos"); return }
     if (r.ok) setPp(await r.json())
     setLoading(false)
-  // router excluded from deps — including it causes re-fetch on every tab change via router.replace()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
@@ -301,7 +319,6 @@ export default function PreProyectoDetalle() {
       {tab === "Contactos"  && <TabContactos pp={pp} onUpdate={setPp} />}
       {tab === "Visitas"    && <TabVisitas pp={pp} onUpdate={setPp} />}
       {tab === "Adjuntos"      && <TabAdjuntos pp={pp} onUpdate={setPp} />}
-      {tab === "Comentarios"   && <TabComentarios pp={pp} />}
       {tab === "Resumen"       && <TabResumen pp={pp} onUpdate={setPp} />}
     </div>
   )
@@ -345,6 +362,7 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
   }
 
   return (
+    <>
     <form onSubmit={guardar} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
       <div className="grid sm:grid-cols-2 gap-5">
         <div className="sm:col-span-2">
@@ -417,6 +435,22 @@ function TabInfo({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProyecto)
         </button>
       </div>
     </form>
+
+    {/* ── Comentarios integrados en Info ── */}
+    <div className="mt-6">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 flex items-center gap-1.5">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Comentarios del equipo
+        </span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+      <ComentariosInInfo ppId={pp.id} />
+    </div>
+    </>
   )
 }
 
