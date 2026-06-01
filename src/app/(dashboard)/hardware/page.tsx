@@ -1709,7 +1709,7 @@ function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUn
                       <th className="text-left pb-2 font-semibold">Estado</th>
                       <th className="text-left pb-2 font-semibold hidden sm:table-cell">Asignado a</th>
                       <th className="text-left pb-2 font-semibold hidden md:table-cell">Garantía</th>
-                      <th className="pb-2 w-24" />
+                      <th className="pb-2 w-24 sticky right-0 bg-gray-50/60" />
                     </tr>
                   </thead>
                   <tbody>
@@ -1735,7 +1735,7 @@ function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUn
                           <td className="py-2 pr-3 text-gray-400 hidden md:table-cell">
                             {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
                           </td>
-                          <td className="py-2">
+                          <td className="py-2 sticky right-0 bg-white border-l border-gray-50">
                             <div className="flex items-center justify-end gap-0.5">
                               <button onClick={() => setAssignUnit(u)} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 cursor-pointer" title="Asignar"><IcoHospital /></button>
                               <button onClick={() => setEditUnit(u)} className="p-1.5 rounded-lg hover:bg-teal-50 text-gray-300 hover:text-teal-600 cursor-pointer" title="Editar"><IcoEdit /></button>
@@ -2168,7 +2168,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Hospital / Proyecto</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Antigüedad</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Garantía</th>
-                    <th className="px-4 py-3 w-28" />
+                    <th className="px-3 py-3 w-24 sticky right-0 bg-gray-50/80 border-l border-gray-100" />
                   </tr>
                 </thead>
                 <tbody>
@@ -2177,6 +2177,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                     const tc = u.catalogo.tipo?.color ?? "#9ca3af"
                     const dias = diasHasta(u.fechaGarantia)
                     const gAlerta = dias !== null && dias <= 30
+                    const rowBg = i % 2 !== 0 ? "#f9fafb" : "#ffffff"
                     return (
                       <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${i % 2 !== 0 ? "bg-gray-50/20" : ""}`}>
                         <td className="px-4 py-3.5">
@@ -2214,7 +2215,8 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                               </span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
-                        <td className="px-4 py-3.5">
+                        {/* Columna de acciones — sticky a la derecha, siempre visible */}
+                        <td className="px-3 py-3.5 sticky right-0 border-l border-gray-50" style={{ background: rowBg }}>
                           <div className="flex items-center justify-end gap-0.5">
                             <button onClick={() => setAssignUnitGlobal(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 cursor-pointer transition-colors" title="Asignar a hospital/proyecto"><IcoHospital /></button>
                             <button onClick={() => setEditUnitGlobal(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 cursor-pointer transition-colors" title="Editar unidad"><IcoEdit /></button>
