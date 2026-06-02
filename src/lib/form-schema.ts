@@ -164,7 +164,7 @@ export const FORM_SCHEMA: FormSection[] = [
         type: 'number',
         req: true,
         ph: '0',
-        hint: 'Cada ruta es un circuito independiente que parte del laboratorio y visita varios centros'
+        hint: 'Cada ruta es un circuito que visita varios centros'
       },
       {
         id: 'termo_rutas_detalle',
