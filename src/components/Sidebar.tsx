@@ -146,6 +146,11 @@ const Icons: Record<string, () => React.ReactElement> = {
       <line x1="2" y1="20" x2="22" y2="20"/>
     </svg>
   ),
+  Transporte: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
@@ -178,7 +183,10 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   },
   {
     label: "Analítica",
-    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
+    items: [
+      { href: "/datos",      label: "Explotación de datos",  icon: "Datos" },
+      { href: "/transporte", label: "Transporte de muestras", icon: "Transporte" },
+    ],
   },
 ]
 
