@@ -1,7 +1,7 @@
 # CONTEXT — InLab Palex Platform
 > Resumen compacto generado con graphifyy 0.8.30 (AST, 1229 nodos · 1607 edges · 115 comunidades).
 > Actualizar con `python -m graphify update .` tras cambios de código.
-> Commit base: `cfdf2b1b`
+> Commit base: `1a72ed4` (16 jun 2026 — sprint 9 auditoría)
 
 ---
 
@@ -124,23 +124,26 @@ Obtener rol en cliente: `fetch("/api/perfil")` — **NUNCA** `useSession` (elimi
 ```
 /api/auth/[...nextauth]    ← NextAuth handler
 /api/hospitales            ← GET (Cache 30s), POST
-/api/hospitales/[id]       ← GET, PATCH, DELETE
+/api/hospitales/[id]       ← GET (verifica zona no-ADMIN, take:50 visitas), PATCH (whitelist campos), DELETE
 /api/hospitales/[id]/contactos
 /api/hospitales/[id]/timeline
 /api/visitas               ← GET select sin `datos`, ?desde=&hasta= (Cache 15s)
 /api/visitas/[id]          ← GET con `datos` completo
-/api/oportunidades         ← CRM pipeline
+/api/oportunidades         ← CRM pipeline (Cache 15s)
 /api/oportunidades/[id]
 /api/pre-proyectos
 /api/pre-proyectos/[id]/adjuntos
-/api/hardware              ← CRUD hardware
+/api/hardware              ← CRUD hardware (GET Cache 60s)
 /api/hardware/tipos        ← HardwareTipo dinámico
-/api/hardware/unidades
+/api/hardware/unidades     ← GET Cache 30s — POST/PUT requieren ADMIN o PROYECTOS
 /api/notificaciones
-/api/perfil                ← Leer/editar perfil + rol del usuario en cliente
+/api/perfil                ← Devuelve { rol: ... } — usar d?.rol (NO d?.role)
 /api/search                ← Búsqueda unificada hospitales+visitas (max 6+5, Cache 30s)
 /api/config                ← GET/PATCH configuración app
 /api/health                ← Healthcheck Railway
+/api/share/[token]         ← Pre-proyecto público (sin email/PII de contactos)
+/api/proyectos/[id]/mapa/compartir ← Token generado con crypto.randomBytes(18)
+/api/zonas/[id]            ← PATCH con whitelist (nombre, descripcion, activo)
 ```
 
 **Regla crítica:** El campo `datos` (JSON formulario completo) SOLO se devuelve en `/api/visitas/[id]`.
@@ -188,7 +191,8 @@ Usuario (Rol enum: ADMIN|VENTAS|PROYECTOS|TECNICO), Zona, ModuloInlab, Config
 
 ### CRM / Ventas Pipeline
 - Kanban con @dnd-kit: `DraggableCard()`, `DroppableColumn()`
-- Etapas: `ETAPAS`, `ETAPA_COLOR`, `ETAPA_LABEL`
+- Etapas enum Prisma: `IDENTIFICADO | PRIMERA_VISITA | PROPUESTA | NEGOCIACION | GANADO | PERDIDO`
+- ⚠️ CRÍTICO: usar `PRIMERA_VISITA` (NO `CONTACTADO`) — ambos archivos deben coincidir con el enum
 - `valorPonderado()`, `fmtEuros()`, `PROB_DEFECTO`, `PROB_BAR_COLOR`
 - Ficha oportunidad: `PipelineFichaPage()` + `HistorialEntry` de cambios de etapa
 
@@ -320,17 +324,43 @@ python -m graphify explain "calcularScore()"
 - CRM Pipeline: Kanban @dnd-kit, historial etapas, ficha oportunidad
 - Hardware: tipos dinámicos, catálogo, inventario, drawer admin
 - Admin: CRUD completo, export CSV
-- Mapa Leaflet, Explotación de datos (/datos)
+- Mapa Leaflet, Explotación de datos (/datos — mockup, sin backend real)
 - Pre-proyectos con adjuntos
 - PWA: manifest + SW + IndexedDB
 - Dark mode + ThemeProvider + anti-FOUC
 - Command Palette (Cmd+K), atajos teclado
 
+**Sprint 9 completado (16 jun 2026) — auditoría funcionalidad, rendimiento y seguridad:**
+- [x] Fix `d?.role` → `d?.rol` en hardware/page.tsx (rol nunca se establecía)
+- [x] Fix etapa `CONTACTADO` → `PRIMERA_VISITA` en pipeline/[id] (alineado con enum Prisma)
+- [x] `useMemo` para `calcularScore()` en formulario visita (evita recálculo en cada tecla)
+- [x] Token de mapa: `Math.random()` → `crypto.randomBytes(18)` (criptográfico)
+- [x] `/api/share/proyecto/[token]`: eliminado email y PII de contactos del endpoint público
+- [x] IDOR: `GET /api/hospitales/[id]` verifica zona para no-ADMIN
+- [x] `GET /api/hospitales/[id]`: `take: 50` en visitas incluidas
+- [x] Mass assignment: whitelist de campos en PATCH hospitales y zonas
+- [x] Hardware/unidades POST+PUT: restringido a ADMIN y PROYECTOS
+- [x] Cache-Control: oportunidades (15s), hardware (60s), hardware/unidades (30s)
+- [x] CSP header añadido en `next.config.ts`
+- [x] `VoiceNotes` y `ComentariosPanel`: convertidos a `dynamic()` imports (lazy)
+
+**Bugs conocidos / deuda técnica (backlog):**
+- `/datos` es 100% mockup — no hay APIs reales detrás
+- Dark mode incompleto en algunos drawers (estilos inline no respetan `.dark`)
+- `Tarea.asignadoA` es String libre (no FK a Usuario)
+- `/proyectos` no tiene enlace en ningún nav group
+- `CACHE_VERSION = 'palex-v1'` hardcodeado en SW (incrementar en cada deploy relevante)
+- JWT sin `maxAge` explícito (usa default 30 días de NextAuth)
+- `mapaHtml` se guarda sin sanitizar (riesgo XSS si se renderiza con dangerouslySetInnerHTML)
+- `GET /api/proyectos` devuelve todos los proyectos sin filtro de zona
+- Comentarios de visita no verifican acceso a la visita padre
+- Fases de pre-proyecto no verifican pertenencia al proyecto en PATCH
+
 **Pendiente (próximos sprints):**
-- Drag & drop Kanban ya implementado, vincular visita → oportunidad
+- Vincular visita → oportunidad desde formulario visita
 - Comentarios en visitas/proyectos
 - Vista "Mi Día" en dashboard
 - Búsqueda avanzada con filtros
 - Informe PDF pre-proyecto completo
-- KPIs rendimiento en /datos
+- KPIs rendimiento en /datos (conectar a datos reales)
 - Tests E2E con Playwright
