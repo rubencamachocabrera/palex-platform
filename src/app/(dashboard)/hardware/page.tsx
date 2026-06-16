@@ -2544,7 +2544,7 @@ export default function HardwarePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.role) setRol(d.role) }).catch(() => {})
+    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setRol(d.rol) }).catch(() => {})
   }, [])
 
   const cargar = useCallback(async () => {

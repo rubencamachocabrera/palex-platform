@@ -1188,9 +1188,10 @@ export default function VisitaPage() {
   const progreso = sections.length ? Math.round((completadas / sections.length) * 100) : 0
   const fotosMap = (datos.fotos as FotosMap) ?? {}
   const totalFotos = Object.values(fotosMap).reduce((acc, arr) => acc + arr.length, 0)
-  const { score, scoreColor, scoreLabel } = visita
-    ? calcularScore(datos)
-    : { score: 0, scoreColor: "#16a34a", scoreLabel: "Bajo" }
+  const { score, scoreColor, scoreLabel } = useMemo(
+    () => visita ? calcularScore(datos) : { score: 0, scoreColor: "#16a34a", scoreLabel: "Bajo" },
+    [datos, visita]
+  )
 
   // Toast cuando una sección recién se completa
   useEffect(() => {

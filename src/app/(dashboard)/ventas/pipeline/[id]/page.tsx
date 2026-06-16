@@ -4,15 +4,15 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 
-const ETAPAS = ["IDENTIFICADO", "CONTACTADO", "PROPUESTA", "NEGOCIACION", "GANADO", "PERDIDO"] as const
+const ETAPAS = ["IDENTIFICADO", "PRIMERA_VISITA", "PROPUESTA", "NEGOCIACION", "GANADO", "PERDIDO"] as const
 type Etapa = typeof ETAPAS[number]
 
 const ETAPA_LABEL: Record<Etapa, string> = {
-  IDENTIFICADO: "Identificado", CONTACTADO: "Contactado", PROPUESTA: "Propuesta enviada",
+  IDENTIFICADO: "Identificado", PRIMERA_VISITA: "Primera visita", PROPUESTA: "Propuesta enviada",
   NEGOCIACION: "En negociación", GANADO: "Ganado", PERDIDO: "Perdido",
 }
 const ETAPA_COLOR: Record<Etapa, string> = {
-  IDENTIFICADO: "#64748b", CONTACTADO: "#3b82f6", PROPUESTA: "#f97316",
+  IDENTIFICADO: "#64748b", PRIMERA_VISITA: "#3b82f6", PROPUESTA: "#f97316",
   NEGOCIACION: "#8b5cf6", GANADO: "#16a34a", PERDIDO: "#dc2626",
 }
 
