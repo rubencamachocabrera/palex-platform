@@ -33,7 +33,9 @@ export async function GET(req: Request) {
       unidades: undefined,
       _count: undefined,
     }))
-    return NextResponse.json(result)
+    const res = NextResponse.json(result)
+    res.headers.set("Cache-Control", "private, max-age=60, stale-while-revalidate=120")
+    return res
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

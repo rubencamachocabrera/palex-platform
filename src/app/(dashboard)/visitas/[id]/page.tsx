@@ -8,11 +8,13 @@ import type { FormField, FormSection } from "@/lib/form-schema"
 import { comprimirImagen } from "@/lib/img-compress"
 import { TodoChecklist } from "@/components/visitas/TodoChecklist"
 import type { TodoItem } from "@/components/visitas/TodoChecklist"
-import { VoiceNotes } from "@/components/visitas/VoiceNotes"
 import type { AudioNota } from "@/components/visitas/VoiceNotes"
 import { useOfflineSync } from "@/hooks/useOfflineSync"
 import { AnalisisPanel } from "@/components/visitas/AnalisisPanel"
 import { calcularScore } from "@/lib/visita-analysis"
+
+const VoiceNotes = dynamic(() => import("@/components/visitas/VoiceNotes").then(m => ({ default: m.VoiceNotes })), { ssr: false })
+const ComentariosPanel = dynamic(() => import("@/components/ComentariosPanel").then(m => ({ default: m.ComentariosPanel })), { ssr: false })
 
 // Dynamic import — PrintView sólo se carga cuando el usuario pulsa "Imprimir"
 const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
@@ -27,7 +29,7 @@ const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
   ssr: false,
 })
 
-import { ComentariosPanel } from "@/components/ComentariosPanel"
+
 import { TEAL, TEAL_DARK } from "@/lib/brand"
 import {
   IconHospital, IconUsers, IconCalendar, IconAlertTriangle, IconMonitor,

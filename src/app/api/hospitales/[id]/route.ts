@@ -8,6 +8,18 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { id } = await params
+    const rol = session.user.role
+    const userId = session.user.id
+
+    // Verificar acceso por zona para roles no-ADMIN
+    if (rol !== "ADMIN") {
+      const access = await db.hospital.findFirst({
+        where: { id, zona: { usuarios: { some: { usuarioId: userId } } } },
+        select: { id: true },
+      })
+      if (!access) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
+
     const hospital = await db.hospital.findUnique({
       where: { id },
       include: {
@@ -16,6 +28,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         visitas: {
           include: { usuario: { select: { id: true, nombre: true, rol: true } } },
           orderBy: { fecha: "desc" },
+          take: 50,
         },
       },
     })
@@ -33,7 +46,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const { id } = await params
-    const data = await req.json()
+    const body = await req.json()
+    const { nombre, ciudad, provincia, pais, tipo, camas, direccion, activo, zonaId, latitud, longitud } = body
+    const data = Object.fromEntries(
+      Object.entries({ nombre, ciudad, provincia, pais, tipo, camas, direccion, activo, zonaId, latitud, longitud })
+        .filter(([, v]) => v !== undefined)
+    )
     const hospital = await db.hospital.update({ where: { id }, data })
     return NextResponse.json(hospital)
   } catch (err) {

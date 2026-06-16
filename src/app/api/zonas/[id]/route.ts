@@ -8,7 +8,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const { id } = await params
-    const data = await req.json()
+    const body = await req.json()
+    const { nombre, descripcion, activo } = body
+    const data = Object.fromEntries(
+      Object.entries({ nombre, descripcion, activo }).filter(([, v]) => v !== undefined)
+    )
     const zona = await db.zona.update({ where: { id }, data })
     return NextResponse.json(zona)
   } catch (err) {

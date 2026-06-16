@@ -33,7 +33,9 @@ export async function GET(req: Request) {
       },
       orderBy: { creadoEn: "desc" },
     })
-    return NextResponse.json(unidades)
+    const res = NextResponse.json(unidades)
+    res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
+    return res
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
@@ -41,7 +43,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const rol = (session?.user as { role?: string } | undefined)?.role
+  if (!session?.user || (rol !== "ADMIN" && rol !== "PROYECTOS")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   try {
     const body = await req.json()
 
@@ -94,7 +97,8 @@ export async function POST(req: Request) {
 // Bulk assignment: assign existing units to a project
 export async function PUT(req: Request) {
   const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const rol = (session?.user as { role?: string } | undefined)?.role
+  if (!session?.user || (rol !== "ADMIN" && rol !== "PROYECTOS")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   try {
     const body = await req.json()
     const { ids, preProyectoId, hospitalId, estado } = body

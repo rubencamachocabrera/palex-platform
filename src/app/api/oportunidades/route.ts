@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
       orderBy: { editadoEn: "desc" },
     })
 
-    return NextResponse.json(oportunidades)
+    const res = NextResponse.json(oportunidades)
+    res.headers.set("Cache-Control", "private, max-age=15, stale-while-revalidate=30")
+    return res
   } catch (err) {
     console.error("[GET]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
