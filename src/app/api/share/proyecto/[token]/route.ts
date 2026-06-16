@@ -14,10 +14,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
             zona: { select: { nombre: true } },
           },
         },
-        responsable: { select: { id: true, nombre: true, email: true } },
+        responsable: { select: { id: true, nombre: true } },
         fases: { orderBy: { orden: "asc" } },
         hitos: { orderBy: { fecha: "asc" } },
-        contactos: { include: { contacto: true } },
+        contactos: { select: { contacto: { select: { nombre: true, cargo: true } } } },
         visitas: {
           orderBy: { fecha: "desc" },
           select: { id: true, fecha: true, estado: true, tipo: true, usuario: { select: { nombre: true } } },

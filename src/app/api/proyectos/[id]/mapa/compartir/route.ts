@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { randomBytes } from "crypto"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
@@ -54,6 +55,5 @@ export async function DELETE(
 }
 
 function generateToken() {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  return Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
+  return randomBytes(18).toString("hex")
 }
