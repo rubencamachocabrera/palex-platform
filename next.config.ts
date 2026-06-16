@@ -32,10 +32,10 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com",
+              "style-src 'self' 'unsafe-inline' https://unpkg.com",
               "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.openstreetmap.org",
-              "connect-src 'self'",
+              "connect-src 'self' https://*.tile.openstreetmap.org",
               "font-src 'self' data:",
               "frame-ancestors 'none'",
             ].join("; "),
