@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { calcularScore } from "@/lib/visita-analysis"
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -47,6 +48,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (rol !== "ADMIN" && visita.usuarioId !== session.user.id)
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
+    const datosParaScore = body.datos !== undefined
+      ? (body.datos as Record<string, unknown>)
+      : (visita.datos as Record<string, unknown> ?? {})
+    const { score } = calcularScore(datosParaScore)
+
     const updated = await db.visita.update({
       where: { id },
       data: {
@@ -56,6 +62,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
         ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),
         ...("contactoPrincipalId" in body && { contactoPrincipalId: body.contactoPrincipalId ?? null }),
+        score,
       },
       include: {
         oportunidad: { select: { id: true, titulo: true, etapa: true } },

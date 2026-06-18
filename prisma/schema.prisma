@@ -124,8 +124,9 @@ enum PrioridadTarea {
 // --- CONFIG ----------------------------------------------------------
 
 model ConfigApp {
-  id        Int     @id @default(1)
-  crmActivo Boolean @default(true)
+  id            Int     @id @default(1)
+  crmActivo     Boolean @default(true)
+  scoringConfig Json?
 
   @@map("config_app")
 }
@@ -237,6 +238,7 @@ model Visita {
   fecha                DateTime     @default(now())
   datos                Json         @default("{}")
   fotos                Json         @default("[]")
+  score                Int?
   creadoEn             DateTime     @default(now())
   editadoEn            DateTime     @updatedAt
 

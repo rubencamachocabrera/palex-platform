@@ -1,7 +1,5 @@
-/**
- * Palex — Análisis automático de visitas preproyecto
- * Panel de riesgos + Score de complejidad
- */
+import type { ScoringConfig } from "@/lib/scoring-config"
+import { DEFAULT_SCORING_CONFIG } from "@/lib/scoring-config"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -32,10 +30,17 @@ export interface AnalisisVisita {
 
 // ─── Detección de riesgos ─────────────────────────────────────────────────────
 
-export function detectarRiesgos(datos: Record<string, unknown>): Riesgo[] {
+export function detectarRiesgos(datos: Record<string, unknown>, cfg: ScoringConfig = DEFAULT_SCORING_CONFIG): Riesgo[] {
   const riesgos: Riesgo[] = []
 
-  function r(id: string, nivel: RiesgoNivel, titulo: string, descripcion: string, campo?: string) {
+  function reglaCfg(id: string) {
+    return cfg.reglas.find(r => r.id === id)
+  }
+
+  function r(id: string, nivelDefault: RiesgoNivel, titulo: string, descripcion: string, campo?: string) {
+    const rc = reglaCfg(id)
+    if (rc && !rc.activa) return
+    const nivel = rc?.nivel ?? nivelDefault
     riesgos.push({ id, nivel, titulo, descripcion, campo })
   }
 
@@ -181,79 +186,90 @@ export function detectarRiesgos(datos: Record<string, unknown>): Riesgo[] {
 
 // ─── Score de complejidad ─────────────────────────────────────────────────────
 
-export function calcularScore(datos: Record<string, unknown>): Pick<AnalisisVisita, "score" | "scoreLabel" | "scoreColor" | "detalleScore"> {
+export function calcularScore(datos: Record<string, unknown>, cfg: ScoringConfig = DEFAULT_SCORING_CONFIG): Pick<AnalisisVisita, "score" | "scoreLabel" | "scoreColor" | "detalleScore"> {
   const detalleScore: ScoreDetalle[] = []
   let total = 0
+  let maxTotal = 0
 
-  function add(categoria: string, puntos: number, max: number, descripcion: string) {
-    const pts = Math.min(puntos, max)
-    detalleScore.push({ categoria, puntos: pts, max, descripcion })
-    total += pts
+  function catMax(id: string, fallback: number): number {
+    const c = cfg.categorias.find(c => c.id === id)
+    if (c && !c.activa) return 0
+    return c?.max ?? fallback
   }
 
-  // 1. Volumen de pacientes (máx 20)
-  const pacDia = Number(datos.pac_dia ?? 0)
-  const ptsPac = pacDia > 400 ? 20 : pacDia > 200 ? 14 : pacDia > 100 ? 8 : pacDia > 50 ? 4 : 2
-  add("Volumen pacientes", ptsPac, 20, `${pacDia} pac/día`)
+  function add(catId: string, nombre: string, puntos: number, fallbackMax: number, descripcion: string) {
+    const max = catMax(catId, fallbackMax)
+    if (max === 0) return
+    const pts = Math.min(puntos, max)
+    detalleScore.push({ categoria: nombre, puntos: pts, max, descripcion })
+    total += pts
+    maxTotal += max
+  }
 
-  // 2. Integraciones TI requeridas (máx 20)
+  // 1. Volumen de pacientes
+  const pacDia = Number(datos.pac_dia ?? 0)
+  const maxVol = catMax("volumen", 20)
+  const ptsPacRaw = pacDia > 400 ? maxVol : pacDia > 200 ? Math.round(maxVol * 0.7) : pacDia > 100 ? Math.round(maxVol * 0.4) : pacDia > 50 ? Math.round(maxVol * 0.2) : Math.round(maxVol * 0.1)
+  add("volumen", "Volumen pacientes", ptsPacRaw, 20, `${pacDia} pac/día`)
+
+  // 2. Integraciones TI
   const sistemas = (datos.sistemas_sw as string[] | undefined) ?? []
   const conexFut = (datos.conexiones_fut as string ?? "").length > 20 ? 5 : 0
-  const ptsInt = Math.min(sistemas.length * 4 + conexFut, 20)
-  add("Integraciones TI", ptsInt, 20, `${sistemas.length} sistemas + integraciones futuras`)
+  const maxInt = catMax("integraciones", 20)
+  add("integraciones", "Integraciones TI", sistemas.length * Math.round(maxInt / 5) + conexFut, 20, `${sistemas.length} sistemas`)
 
-  // 3. Infraestructura (máx 15)
+  // 3. Infraestructura
   let ptsInfra = 0
   if (datos.so_pc === "Windows 7 / anterior") ptsInfra += 6
   if (datos.red_cableada === "No") ptsInfra += 4
   if (datos.wifi === "No") ptsInfra += 3
   if (datos.servidor_hospital === "No") ptsInfra += 2
-  add("Infraestructura", ptsInfra, 15, "SO, red, servidor")
+  add("infra", "Infraestructura", ptsInfra, 15, "SO, red, servidor")
 
-  // 4. Hardware a instalar (máx 15)
+  // 4. Hardware
   const nBcRobo = Number(datos.n_bcrobo ?? 0)
   const nZebra = Number(datos.n_zebra ?? 0)
   const nPuntos = Number(datos.n_puntos ?? 0)
-  const ptsHw = Math.min(nBcRobo * 5 + nZebra * 2 + Math.floor(nPuntos / 3), 15)
-  add("Hardware a instalar", ptsHw, 15, `${nBcRobo} BC Robo · ${nZebra} Zebras · ${nPuntos} puntos extracción`)
+  add("hardware", "Hardware a instalar", nBcRobo * 5 + nZebra * 2 + Math.floor(nPuntos / 3), 15, `${nBcRobo} BC Robo · ${nZebra} Zebras`)
 
-  // 5. Petición electrónica y LIS (máx 10)
+  // 5. Petición electrónica y accesos
   let ptsPet = 0
   if (datos.solicitud_elec === "No") ptsPet += 5
   else if (datos.solicitud_elec === "Parcialmente") ptsPet += 3
   if (datos.ldap === "Sí") ptsPet += 3
   if (datos.acceso_remoto === "No") ptsPet += 2
-  add("Petición electrónica y accesos", Math.min(ptsPet, 10), 10, "Petición elec., LDAP, acceso remoto")
+  add("peticion", "Petición electrónica y accesos", ptsPet, 10, "Petición elec., LDAP, acceso remoto")
 
-  // 6. Casos especiales y complejidad organizativa (máx 10)
+  // 6. Casos especiales
   const tiposEsp = (datos.tipos_esp as string[] | undefined) ?? []
-  const ptsEsp = Math.min(tiposEsp.length * 2 + (datos.pacientes_esp === "Sí" ? 2 : 0), 10)
-  add("Casos especiales", ptsEsp, 10, `${tiposEsp.length} tipo${tiposEsp.length !== 1 ? "s" : ""} de pacientes especiales`)
+  add("casos-esp", "Casos especiales", tiposEsp.length * 2 + (datos.pacientes_esp === "Sí" ? 2 : 0), 10, `${tiposEsp.length} tipo${tiposEsp.length !== 1 ? "s" : ""}`)
 
-  // 7. Incidencias y madurez (máx 10)
+  // 7. Incidencias y madurez
   let ptsMad = 0
   if (datos.frec_incidencia === ">5%") ptsMad += 5
   else if (datos.frec_incidencia === "3–5%") ptsMad += 3
   if (datos.sistema_registro === "No") ptsMad += 3
   if (datos.etiq_metodo === "Sin sistema definido") ptsMad += 2
-  add("Incidencias y madurez", Math.min(ptsMad, 10), 10, "Tasa incidencias, registros, etiquetado")
+  add("incidencias", "Incidencias y madurez", ptsMad, 10, "Tasa incidencias, registros, etiquetado")
 
-  const score = Math.min(total, 100)
+  // Normalizar a 0-100 respecto al máximo posible con esta config
+  const score = maxTotal > 0 ? Math.min(Math.round((total / maxTotal) * 100), 100) : 0
 
+  const { baja, media, alta } = cfg.umbrales
   let scoreLabel: string
   let scoreColor: string
-  if (score <= 20) { scoreLabel = "Baja"; scoreColor = "#10b981" }
-  else if (score <= 45) { scoreLabel = "Media"; scoreColor = "#f59e0b" }
-  else if (score <= 70) { scoreLabel = "Alta"; scoreColor = "#f97316" }
-  else { scoreLabel = "Muy alta"; scoreColor = "#ef4444" }
+  if (score <= baja)        { scoreLabel = "Baja";     scoreColor = "#10b981" }
+  else if (score <= media)  { scoreLabel = "Media";    scoreColor = "#f59e0b" }
+  else if (score <= alta)   { scoreLabel = "Alta";     scoreColor = "#f97316" }
+  else                      { scoreLabel = "Muy alta"; scoreColor = "#ef4444" }
 
   return { score, scoreLabel, scoreColor, detalleScore }
 }
 
 // ─── Función principal ────────────────────────────────────────────────────────
 
-export function analizarVisita(datos: Record<string, unknown>): AnalisisVisita {
-  const riesgos = detectarRiesgos(datos)
-  const { score, scoreLabel, scoreColor, detalleScore } = calcularScore(datos)
+export function analizarVisita(datos: Record<string, unknown>, cfg: ScoringConfig = DEFAULT_SCORING_CONFIG): AnalisisVisita {
+  const riesgos = detectarRiesgos(datos, cfg)
+  const { score, scoreLabel, scoreColor, detalleScore } = calcularScore(datos, cfg)
   return { riesgos, score, scoreLabel, scoreColor, detalleScore }
 }

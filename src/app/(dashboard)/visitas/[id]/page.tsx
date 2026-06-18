@@ -1779,7 +1779,7 @@ export default function VisitaPage() {
 
           {/* Panel de análisis */}
           <div className="mt-4">
-            <AnalisisPanel datos={datos} />
+            <AnalisisPanel datos={datos} hospitalId={visita.hospital.id} />
           </div>
 
           {/* Comentarios del equipo */}

@@ -3,11 +3,35 @@
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
+import {
+  DEFAULT_SCORING_CONFIG, invalidateScoringCache,
+  type ScoringConfig, type CategoriaConfig, type ReglaConfig,
+} from "@/lib/scoring-config"
 
 // ---- tipos ----
 
-interface Config { id: number; crmActivo: boolean }
+interface Config { id: number; crmActivo: boolean; scoringConfig?: ScoringConfig | null }
 interface ModuloItem { id: string; nombre: string; activo: boolean; _count?: { proyectos: number } }
+
+const NIVEL_LABEL: Record<string, string> = { alto: "Alto", medio: "Medio", info: "Info" }
+const NIVEL_COLOR: Record<string, string> = { alto: "#ef4444", medio: "#f59e0b", info: "#3b82f6" }
+const REGLA_LABEL: Record<string, string> = {
+  "so-obsoleto": "SO incompatible (Win 7 o anterior)",
+  "sin-red-cableada": "Sin red cableada",
+  "sin-pet-elec": "Sin petición electrónica",
+  "sin-wifi": "Sin cobertura WiFi",
+  "sin-servidor": "Sin espacio para servidor",
+  "sin-pcs": "Sin PCs disponibles",
+  "alta-incidencias": "Alta tasa de incidencias (>5%)",
+  "sin-planos": "Sin planos del área",
+  "bcrobo-sin-red": "BC Robo sin toma de red",
+  "bcrobo-sin-elec": "BC Robo sin toma eléctrica",
+  "zebra-sin-red": "Zebras sin conectividad",
+  "ldap-sin-ti": "LDAP sin contacto TI identificado",
+  "bcrobo-acceso": "Acceso restringido para BC Robo",
+  "etiq-sin-sistema": "Sin sistema de etiquetado definido",
+  "volumen-alto-sin-estadistico": "Alto volumen sin estadístico",
+}
 
 // ---- subcomponentes ----
 
@@ -388,6 +412,191 @@ function ModulosInlabSection() {
   )
 }
 
+// ---- Scoring Section ----
+
+function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
+  const { success, error: toastError } = useToast()
+  const [cfg, setCfg] = useState<ScoringConfig>(initialConfig)
+  const [saving, setSaving] = useState(false)
+  const [dirty, setDirty] = useState(false)
+
+  function setCategorias(cats: CategoriaConfig[]) {
+    setCfg(c => ({ ...c, categorias: cats })); setDirty(true)
+  }
+  function setReglas(reglas: ReglaConfig[]) {
+    setCfg(c => ({ ...c, reglas })); setDirty(true)
+  }
+  function setUmbral(key: keyof ScoringConfig["umbrales"], val: number) {
+    setCfg(c => ({ ...c, umbrales: { ...c.umbrales, [key]: val } })); setDirty(true)
+  }
+
+  async function guardar() {
+    setSaving(true)
+    try {
+      const r = await fetch("/api/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scoringConfig: cfg }),
+      })
+      if (!r.ok) throw new Error()
+      invalidateScoringCache()
+      setDirty(false)
+      success("Configuración de scoring guardada")
+    } catch {
+      toastError("Error al guardar el scoring")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function resetDefaults() {
+    setCfg(DEFAULT_SCORING_CONFIG)
+    setDirty(true)
+  }
+
+  const maxTotal = cfg.categorias.filter(c => c.activa).reduce((s, c) => s + c.max, 0)
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Scoring de complejidad</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Configura los pesos de cada categoría, los umbrales de nivel y qué alertas están activas.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={resetDefaults} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors">
+            Restaurar por defecto
+          </button>
+          <button
+            onClick={guardar}
+            disabled={saving || !dirty}
+            className="text-xs font-semibold px-4 py-2 rounded-xl text-white disabled:opacity-50 transition-opacity"
+            style={{ backgroundColor: TEAL }}
+          >
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
+
+      {/* Umbrales de nivel */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">Umbrales de nivel</h3>
+        <p className="text-xs text-gray-400 mb-4">
+          Define el valor máximo de score (0–100) para cada nivel de complejidad.
+        </p>
+        <div className="grid grid-cols-3 gap-4">
+          {(["baja", "media", "alta"] as const).map(key => {
+            const colors = { baja: "#10b981", media: "#f59e0b", alta: "#f97316" }
+            const labels = { baja: "Baja", media: "Media", alta: "Alta (>alta = Muy alta)" }
+            return (
+              <div key={key}>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: colors[key] }}>
+                  {labels[key]}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range" min={1} max={99}
+                    value={cfg.umbrales[key]}
+                    onChange={e => setUmbral(key, Number(e.target.value))}
+                    className="flex-1 accent-teal-500"
+                  />
+                  <span className="text-sm font-bold tabular-nums w-8 text-right" style={{ color: colors[key] }}>
+                    {cfg.umbrales[key]}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-3 bg-gray-50 rounded-lg px-3 py-2">
+          Escala actual: Baja ≤{cfg.umbrales.baja} · Media ≤{cfg.umbrales.media} · Alta ≤{cfg.umbrales.alta} · Muy alta &gt;{cfg.umbrales.alta}
+        </p>
+      </div>
+
+      {/* Pesos de categorías */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-700">Pesos por categoría</h3>
+          <span className="text-xs text-gray-400">Máx. posible: <span className="font-bold text-gray-600">{maxTotal} pts</span></span>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          Ajusta cuántos puntos puede aportar cada categoría al score total. El score final se normaliza a 0-100.
+        </p>
+        <div className="space-y-4">
+          {cfg.categorias.map((cat, i) => (
+            <div key={cat.id} className={`rounded-xl border p-4 transition-colors ${cat.activa ? "border-gray-100 bg-white" : "border-gray-100 bg-gray-50 opacity-60"}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <button
+                  onClick={() => setCategorias(cfg.categorias.map((c, j) => j === i ? { ...c, activa: !c.activa } : c))}
+                  className="shrink-0 w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-colors"
+                  style={cat.activa ? { borderColor: TEAL, backgroundColor: `${TEAL}15` } : { borderColor: "#e5e7eb" }}
+                >
+                  {cat.activa && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </button>
+                <span className="text-sm font-medium text-gray-700 flex-1">{cat.nombre}</span>
+                <span className="text-lg font-bold tabular-nums w-10 text-right" style={{ color: cat.activa ? TEAL : "#d1d5db" }}>
+                  {cat.max}
+                </span>
+              </div>
+              {cat.activa && (
+                <input
+                  type="range" min={1} max={40}
+                  value={cat.max}
+                  onChange={e => setCategorias(cfg.categorias.map((c, j) => j === i ? { ...c, max: Number(e.target.value) } : c))}
+                  className="w-full accent-teal-500"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Reglas de alerta */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">Reglas de alerta</h3>
+        <p className="text-xs text-gray-400 mb-4">
+          Activa o desactiva cada regla y ajusta su nivel de gravedad.
+        </p>
+        <div className="space-y-2">
+          {cfg.reglas.map((regla, i) => (
+            <div key={regla.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${regla.activa ? "border-gray-100" : "border-gray-100 bg-gray-50 opacity-60"}`}>
+              <button
+                onClick={() => setReglas(cfg.reglas.map((r, j) => j === i ? { ...r, activa: !r.activa } : r))}
+                className="shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-colors"
+                style={regla.activa ? { borderColor: TEAL, backgroundColor: `${TEAL}15` } : { borderColor: "#e5e7eb" }}
+              >
+                {regla.activa && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+              <span className="flex-1 text-xs text-gray-700">{REGLA_LABEL[regla.id] ?? regla.id}</span>
+              {regla.activa && (
+                <select
+                  value={regla.nivel}
+                  onChange={e => setReglas(cfg.reglas.map((r, j) => j === i ? { ...r, nivel: e.target.value as "alto" | "medio" | "info" } : r))}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none"
+                  style={{ color: NIVEL_COLOR[regla.nivel] }}
+                >
+                  {(["alto", "medio", "info"] as const).map(n => (
+                    <option key={n} value={n}>{NIVEL_LABEL[n]}</option>
+                  ))}
+                </select>
+              )}
+              {!regla.activa && (
+                <span className="text-xs text-gray-400 px-2 py-0.5 rounded-full bg-gray-100">Inactiva</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---- página principal ----
 
 export default function ConfiguracionPage() {
@@ -466,6 +675,18 @@ export default function ConfiguracionPage() {
       <div className="border-t border-gray-100" />
 
       <ModulosInlabSection />
+
+      <div className="border-t border-gray-100" />
+
+      {!loading && (
+        <ScoringSection
+          initialConfig={
+            config?.scoringConfig
+              ? { ...DEFAULT_SCORING_CONFIG, ...(config.scoringConfig as Partial<ScoringConfig>) }
+              : DEFAULT_SCORING_CONFIG
+          }
+        />
+      )}
     </div>
   )
 }

@@ -26,10 +26,12 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json()
     await getOrCreateConfig()
-    const config = await db.configApp.update({
-      where: { id: 1 },
-      data: { crmActivo: body.crmActivo },
-    })
+    const data: Record<string, unknown> = {}
+    if ("crmActivo" in body) data.crmActivo = Boolean(body.crmActivo)
+    if ("scoringConfig" in body && body.scoringConfig !== null && typeof body.scoringConfig === "object") {
+      data.scoringConfig = body.scoringConfig
+    }
+    const config = await db.configApp.update({ where: { id: 1 }, data })
     return NextResponse.json(config)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
