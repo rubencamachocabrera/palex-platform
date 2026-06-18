@@ -30,8 +30,9 @@ export async function GET(req: Request) {
   try {
     const items = await db.preProyecto.findMany({
       where: {
-        // ADMIN ve todo; otros roles solo ven proyectos donde son responsable
-        ...(rol !== "ADMIN" ? { responsableId: userId } : {}),
+        // Cuando se filtra por hospital (contexto de vinculación desde visita),
+        // mostramos todos los proyectos del hospital sin restricción de responsable
+        ...(rol !== "ADMIN" && !hospitalId ? { responsableId: userId } : {}),
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
         ...(prioridad !== null && prioridad !== "" ? { prioridad: parseInt(prioridad) } : {}),
