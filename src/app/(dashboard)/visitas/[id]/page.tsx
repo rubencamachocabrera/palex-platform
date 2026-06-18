@@ -72,14 +72,11 @@ const ESTADO_COLOR: Record<string, string> = {
 interface Foto { id: string; name: string; data: string; caption: string }
 type FotosMap = Record<string, Foto[]>
 
-interface OportunidadItem { id: string; titulo: string; etapa: string }
 interface PreProyectoItem { id: string; titulo: string }
 interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
   id: string; estado: string; tipo: string; fecha: string
-  oportunidadId?: string | null
-  oportunidad?: OportunidadItem | null
   preProyectoId?: string | null
   preProyecto?: PreProyectoItem | null
   contactoPrincipalId?: string | null
@@ -904,13 +901,9 @@ export default function VisitaPage() {
   const [openSection, setOpenSection] = useState<string>("s0")
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
-  // Errores de validación inline por campo
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  // Panel lateral de navegación (mobile: colapsable)
   const [navOpen, setNavOpen] = useState(false)
   const [saveError, setSaveError] = useState(false)
-  const [oportunidades, setOportunidades] = useState<OportunidadItem[]>([])
-  const [vinculandoOp, setVinculandoOp] = useState(false)
   const [preProyectos, setPreProyectos] = useState<PreProyectoItem[]>([])
   const [vinculandoPP, setVinculandoPP] = useState(false)
   const [contactos, setContactos] = useState<ContactoItem[]>([])
@@ -955,11 +948,7 @@ export default function VisitaPage() {
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
-          // Cargar oportunidades, pre-proyectos y rol usuario
-          fetch(`/api/oportunidades?hospitalId=${data.hospital.id}`)
-            .then(r => r.ok ? r.json() : [])
-            .then(ops => { if (Array.isArray(ops)) setOportunidades(ops.map((o: { id: string; titulo: string; etapa: string }) => ({ id: o.id, titulo: o.titulo, etapa: o.etapa }))) })
-            .catch(() => {})
+          // Cargar pre-proyectos, contactos y rol usuario
           fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
             .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string }) => ({ id: p.id, titulo: p.titulo }))) })
@@ -1090,25 +1079,6 @@ export default function VisitaPage() {
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
-
-  const vincularOportunidad = useCallback(async (oportunidadId: string | null) => {
-    if (!visitaRef.current) return
-    setVinculandoOp(true)
-    try {
-      const r = await fetch(`/api/visitas/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oportunidadId }),
-      })
-      if (r.ok) {
-        const updated = await r.json()
-        setVisita(v => v ? { ...v, oportunidadId: updated.oportunidadId, oportunidad: updated.oportunidad ?? null } : v)
-      }
-    } catch { /* silencioso */ } finally {
-      setVinculandoOp(false)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
 
   const vincularPreProyecto = useCallback(async (preProyectoId: string | null) => {
     if (!visitaRef.current) return
@@ -1313,27 +1283,32 @@ export default function VisitaPage() {
           )}
 
           {/* Botones de acción */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={() => setVistaResumen(true)} title="Vista resumen 360°"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer"
-              style={vistaResumen ? { backgroundColor: `${TEAL}12`, color: TEAL } : {}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer min-h-[36px]"
+              style={vistaResumen
+                ? { backgroundColor: `${TEAL}15`, color: TEAL, border: `1px solid ${TEAL}30` }
+                : { color: "#6b7280", border: "1px solid #e5e7eb", backgroundColor: "transparent" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span className="hidden sm:inline">Resumen</span>
             </button>
             {userRol === "ADMIN" && (
               <button onClick={() => { setNombrePlantilla(""); setMostrarGuardarPlantilla(true) }}
                 title="Guardar como plantilla"
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer min-h-[36px] border border-gray-200">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span className="hidden md:inline">Plantilla</span>
               </button>
             )}
             <button onClick={() => setShowPrint(true)} title="PDF / Imprimir"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer min-h-[36px] border border-gray-200">
               <IconPrint size={14} />
+              <span className="hidden sm:inline">PDF</span>
             </button>
             <button onClick={() => exportarJSON(visita, datos, sections)} title="Exportar datos"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer min-h-[36px] border border-gray-200">
               <IconDownload size={14} />
+              <span className="hidden md:inline">Exportar</span>
             </button>
           </div>
         </div>
@@ -1438,10 +1413,10 @@ export default function VisitaPage() {
         <div className="min-w-0">
 
           {/* Context strip */}
-          <div className="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-start gap-3">
+          <div className="mb-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-start gap-3">
             <button
               onClick={() => router.back()}
-              className="shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="shrink-0 mt-0.5 w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200"
             >
               <IconArrowLeft size={16} />
             </button>
@@ -1489,92 +1464,67 @@ export default function VisitaPage() {
             </div>
           </div>
 
-          {/* Vincular oportunidad */}
-          {(oportunidades.length > 0 || visita.oportunidad) && (
-            <div className="mb-4 flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400 shrink-0">Oportunidad:</span>
-              {visita.oportunidad ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  {visita.oportunidad.titulo}
-                  {!readOnly && (
-                    <button
-                      onClick={() => vincularOportunidad(null)}
-                      disabled={vinculandoOp}
-                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
-                      title="Desvincular"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  )}
-                </span>
-              ) : (
-                <select
-                  disabled={readOnly || vinculandoOp}
-                  onChange={e => e.target.value && vincularOportunidad(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Vincular a oportunidad…</option>
-                  {oportunidades.map(op => (
-                    <option key={op.id} value={op.id}>{op.titulo}</option>
-                  ))}
-                </select>
-              )}
+          {/* Vincular proyecto (pre-proyecto) */}
+          <div className="mb-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00A99D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                </svg>
+              </span>
+              <span className="text-xs font-semibold text-gray-600">Proyecto</span>
             </div>
-          )}
-
-          {/* Vincular pre-proyecto */}
-          {(preProyectos.length > 0 || visita.preProyecto) && (
-            <div className="mb-4 flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400 shrink-0">Pre-Proyecto:</span>
-              {visita.preProyecto ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
-                  {visita.preProyecto.titulo}
-                  {!readOnly && (
-                    <button
-                      onClick={() => vincularPreProyecto(null)}
-                      disabled={vinculandoPP}
-                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
-                      title="Desvincular"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  )}
-                </span>
-              ) : (
-                <select
-                  disabled={readOnly || vinculandoPP}
-                  onChange={e => e.target.value && vincularPreProyecto(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Vincular a pre-proyecto…</option>
-                  {preProyectos.map(pp => (
-                    <option key={pp.id} value={pp.id}>{pp.titulo}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )}
+            {visita.preProyecto ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border min-h-[32px]"
+                style={{ backgroundColor: `${TEAL}10`, borderColor: `${TEAL}30`, color: TEAL }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                {visita.preProyecto.titulo}
+                {!readOnly && (
+                  <button onClick={() => vincularPreProyecto(null)} disabled={vinculandoPP}
+                    className="ml-1 opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
+                    title="Desvincular proyecto">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
+              </span>
+            ) : preProyectos.length > 0 ? (
+              <select
+                disabled={readOnly || vinculandoPP}
+                onChange={e => e.target.value && vincularPreProyecto(e.target.value)}
+                className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
+                defaultValue=""
+              >
+                <option value="">Sin proyecto asociado</option>
+                {preProyectos.map(pp => (
+                  <option key={pp.id} value={pp.id}>{pp.titulo}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs text-gray-400 italic">
+                {readOnly ? "Sin proyecto asociado" : "No hay proyectos creados para este hospital"}
+              </span>
+            )}
+          </div>
 
           {/* Vincular contacto principal */}
           {(contactos.length > 0 || visita.contactoPrincipal) && (
-            <div className="mb-4 flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400 shrink-0">Contacto:</span>
+            <div className="mb-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <span className="text-xs font-semibold text-gray-600">Contacto</span>
+              </div>
               {visita.contactoPrincipal ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 min-h-[32px]">
                   {visita.contactoPrincipal.nombre}
-                  {visita.contactoPrincipal.cargo && <span className="opacity-70">· {visita.contactoPrincipal.cargo}</span>}
+                  {visita.contactoPrincipal.cargo && <span className="opacity-60">· {visita.contactoPrincipal.cargo}</span>}
                   {!readOnly && (
-                    <button
-                      onClick={() => vincularContacto(null)}
-                      disabled={vinculandoContacto}
-                      className="ml-0.5 text-teal-400 hover:text-red-400 transition-colors"
-                      title="Desvincular"
-                    >
+                    <button onClick={() => vincularContacto(null)} disabled={vinculandoContacto}
+                      className="ml-1 opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
+                      title="Desvincular contacto">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   )}
@@ -1583,10 +1533,10 @@ export default function VisitaPage() {
                 <select
                   disabled={readOnly || vinculandoContacto}
                   onChange={e => e.target.value && vincularContacto(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50"
+                  className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
                   defaultValue=""
                 >
-                  <option value="" disabled>Vincular contacto principal…</option>
+                  <option value="">Sin contacto principal</option>
                   {contactos.map(c => (
                     <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>
                   ))}
