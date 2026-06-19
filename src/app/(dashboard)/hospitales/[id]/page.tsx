@@ -68,6 +68,17 @@ const TIMELINE_COLOR: Record<string, string> = {
   preproyecto: "#6366f1", fase: "#10b981", hito: "#f97316",
   material: "#06b6d4", contacto: "#9ca3af",
 }
+const PROY_ESTADO_LABEL: Record<string, string> = {
+  NUEVO: "Nuevo", EN_CURSO: "En curso", PAUSADO: "Pausado",
+  COMPLETADO: "Completado", CANCELADO: "Cancelado",
+}
+const PROY_ESTADO_COLOR: Record<string, { bg: string; text: string }> = {
+  NUEVO:      { bg: "#f0f9ff", text: "#0369a1" },
+  EN_CURSO:   { bg: `${TEAL}18`, text: TEAL },
+  PAUSADO:    { bg: "#fef3c7", text: "#d97706" },
+  COMPLETADO: { bg: "#f0fdf4", text: "#16a34a" },
+  CANCELADO:  { bg: "#fef2f2", text: "#dc2626" },
+}
 const TIMELINE_FILTROS = [
   { value: "todos", label: "Todos" },
   { value: "visitas", label: "Visitas" },
@@ -101,6 +112,14 @@ interface Hospital {
   contactos: Contacto[]; visitas: Visita[]
 }
 
+interface FaseResumen { id: string; tipo: string; estado: string; orden: number }
+interface Proyecto {
+  id: string; titulo: string; estado: string; prioridad: number
+  fechaInicio: string | null; fechaFinPlan: string | null; creadoEn: string
+  responsable: { id: string; nombre: string } | null
+  fases: FaseResumen[]
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function HospitalDetailPage() {
@@ -110,11 +129,21 @@ export default function HospitalDetailPage() {
   const [hospital, setHospital] = useState<Hospital | null>(null)
   const [userRol, setUserRol] = useState<string>("")
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"actividad" | "timeline" | "informacion">("actividad")
+  const [tab, setTab] = useState<"actividad" | "timeline" | "informacion" | "proyectos">("actividad")
   const [timeline, setTimeline] = useState<TimelineEvento[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<TimelineFiltro>("todos")
   const [creandoVisita, setCreandoVisita] = useState(false)
+
+  // Proyectos tab
+  const [proyectos, setProyectos] = useState<Proyecto[]>([])
+  const [proyectosLoaded, setProyectosLoaded] = useState(false)
+  const [proyectosLoading, setProyectosLoading] = useState(false)
+  // Nuevo proyecto modal
+  const [showNuevoProyecto, setShowNuevoProyecto] = useState(false)
+  const [formProyecto, setFormProyecto] = useState({ titulo: "", descripcion: "" })
+  const [guardandoProyecto, setGuardandoProyecto] = useState(false)
+  const [errorProyecto, setErrorProyecto] = useState("")
 
   // Contacto modal
   const [contactoModal, setContactoModal] = useState(false)
@@ -187,9 +216,41 @@ export default function HospitalDetailPage() {
       .then(d => { if (Array.isArray(d)) setTimeline(d) })
       .finally(() => setTimelineLoading(false))
   }
+
+  async function cargarProyectos() {
+    if (proyectosLoaded) return
+    setProyectosLoading(true)
+    fetch(`/api/pre-proyectos?hospitalId=${id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setProyectos(d) })
+      .finally(() => { setProyectosLoading(false); setProyectosLoaded(true) })
+  }
+
+  async function crearProyecto(e: React.FormEvent) {
+    e.preventDefault()
+    if (!formProyecto.titulo.trim()) { setErrorProyecto("El título es obligatorio"); return }
+    setGuardandoProyecto(true); setErrorProyecto("")
+    const r = await fetch("/api/pre-proyectos", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titulo: formProyecto.titulo.trim(), descripcion: formProyecto.descripcion.trim() || null, hospitalId: id }),
+    })
+    if (!r.ok) {
+      const d = await r.json()
+      setErrorProyecto(d.error ?? "Error al crear el proyecto")
+      setGuardandoProyecto(false)
+      return
+    }
+    const nuevo = await r.json()
+    setShowNuevoProyecto(false)
+    setFormProyecto({ titulo: "", descripcion: "" })
+    setGuardandoProyecto(false)
+    router.push(`/pre-proyectos/${nuevo.id}`)
+  }
+
   function changeTab(t: typeof tab) {
     setTab(t)
     if (t === "timeline") cargarTimeline()
+    if (t === "proyectos") cargarProyectos()
   }
 
   const filteredTimeline = timelineFilter === "todos" ? timeline : timeline.filter(ev => {
@@ -366,9 +427,10 @@ export default function HospitalDetailPage() {
           {/* Tabs */}
           <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
             {([
-              { k: "actividad",    label: `Actividad`, badge: hospital.contactos.length + hospital.visitas.length },
+              { k: "actividad",    label: "Actividad", badge: hospital.contactos.length + hospital.visitas.length },
+              { k: "proyectos",    label: "Proyectos", badge: proyectosLoaded ? proyectos.length : null },
               { k: "timeline",     label: "Timeline", badge: null },
-              { k: "informacion",  label: "Información", badge: null },
+              { k: "informacion",  label: "Info", badge: null },
             ] as { k: typeof tab; label: string; badge: number | null }[]).map(t => (
               <button key={t.k} onClick={() => changeTab(t.k)}
                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap"
@@ -500,6 +562,82 @@ export default function HospitalDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── Tab: Proyectos ── */}
+          {tab === "proyectos" && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                <h2 className="text-sm font-bold text-gray-800">
+                  Proyectos
+                  {proyectos.length > 0 && <span className="ml-2 text-xs font-semibold text-gray-400">({proyectos.length})</span>}
+                </h2>
+                <button onClick={() => { setFormProyecto({ titulo: "", descripcion: "" }); setErrorProyecto(""); setShowNuevoProyecto(true) }}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl text-white cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: TEAL }}>
+                  <IconPlus size={12} /> Nuevo proyecto
+                </button>
+              </div>
+              {proyectosLoading ? (
+                <div className="p-5 space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+              ) : proyectos.length === 0 ? (
+                <div className="px-5 py-14 text-center">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-600">Sin proyectos activos</p>
+                  <p className="text-xs text-gray-400 mt-1">Crea el primer proyecto para este hospital.</p>
+                  <button onClick={() => { setFormProyecto({ titulo: "", descripcion: "" }); setErrorProyecto(""); setShowNuevoProyecto(true) }}
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl text-white cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: TEAL }}>
+                    <IconPlus size={12} /> Crear proyecto
+                  </button>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {proyectos.map(p => {
+                    const fasFin = p.fases.filter(f => f.estado === "COMPLETADO").length
+                    const fasTot = p.fases.length
+                    const pct = fasTot > 0 ? Math.round((fasFin / fasTot) * 100) : 0
+                    const est = PROY_ESTADO_COLOR[p.estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
+                    const retrasado = p.fechaFinPlan && new Date(p.fechaFinPlan) < new Date()
+                      && p.estado !== "COMPLETADO" && p.estado !== "CANCELADO"
+                    return (
+                      <Link key={p.id} href={`/pre-proyectos/${p.id}`}
+                        className="block px-5 py-4 hover:bg-gray-50/50 transition-colors group">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: est.bg, color: est.text }}>
+                                {PROY_ESTADO_LABEL[p.estado] ?? p.estado}
+                              </span>
+                              {retrasado && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">Retrasado</span>}
+                            </div>
+                            <p className="text-sm font-semibold text-gray-900 leading-snug group-hover:text-teal-700 transition-colors line-clamp-1">{p.titulo}</p>
+                            {p.responsable && <p className="text-xs text-gray-400 mt-0.5">{p.responsable.nombre}</p>}
+                            {fasTot > 0 && (
+                              <div className="mt-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] text-gray-400">{fasFin}/{fasTot} fases</span>
+                                  <span className="text-[10px] font-semibold" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
+                                </div>
+                              </div>
+                            )}
+                            {p.fechaInicio && (
+                              <p className="text-[10px] text-gray-400 mt-1.5">Inicio: {fmtFecha(p.fechaInicio)}{p.fechaFinPlan ? ` · Fin: ${fmtFecha(p.fechaFinPlan)}` : ""}</p>
+                            )}
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" className="group-hover:stroke-gray-400 transition-colors shrink-0 mt-1"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -641,6 +779,12 @@ export default function HospitalDetailPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 {creandoVisita ? "Creando visita…" : "Nueva visita"}
               </button>
+              <button onClick={() => { setFormProyecto({ titulo: "", descripcion: "" }); setErrorProyecto(""); setShowNuevoProyecto(true) }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#6366f1" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuevo proyecto
+              </button>
               <button onClick={() => setShowLlamada(true)}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 10.3a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 0h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/></svg>
@@ -716,6 +860,38 @@ export default function HospitalDetailPage() {
             }} className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90" style={{ backgroundColor: TEAL }}>
               Descargar PNG
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Nuevo proyecto ── */}
+      {showNuevoProyecto && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid #6366f1` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Nuevo proyecto</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{hospital!.nombre}</p>
+              </div>
+              <button onClick={() => setShowNuevoProyecto(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+            </div>
+            <form onSubmit={crearProyecto} className="px-5 py-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Título del proyecto <span className="text-red-400">*</span></label>
+                <input value={formProyecto.titulo} onChange={e => setFormProyecto(p => ({ ...p, titulo: e.target.value }))} required autoFocus placeholder="Ej: Proyecto preanalítica 2026" className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Descripción (opcional)</label>
+                <textarea value={formProyecto.descripcion} onChange={e => setFormProyecto(p => ({ ...p, descripcion: e.target.value }))} rows={2} placeholder="Breve descripción del alcance…" className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none" />
+              </div>
+              {errorProyecto && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl">{errorProyecto}</p>}
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowNuevoProyecto(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+                <button type="submit" disabled={guardandoProyecto || !formProyecto.titulo.trim()} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90" style={{ backgroundColor: "#6366f1" }}>
+                  {guardandoProyecto ? "Creando…" : "Crear proyecto"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
