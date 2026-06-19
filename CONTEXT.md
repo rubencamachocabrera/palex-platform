@@ -315,34 +315,25 @@ python -m graphify explain "calcularScore()"
 
 ---
 
-## 16. Estado actual (junio 2026)
+## 16. Estado actual (junio 2026, auditado 2026-06-19)
 
-**Completado:**
+**Completado (sprints 1-9):**
 - Auth completa (login, middleware, roles)
-- Hospitales: lista, detalle, contactos, timeline
-- Visitas: formulario 13 secciones, calendario, PDF, offline, análisis
+- Hospitales: lista, detalle, contactos, timeline de actividad, QR
+- Visitas: formulario 13 secciones, calendario, PDF, offline, análisis, comentarios
 - CRM Pipeline: Kanban @dnd-kit, historial etapas, ficha oportunidad
 - Hardware: tipos dinámicos, catálogo, inventario, drawer admin
 - Admin: CRUD completo, export CSV
-- Mapa Leaflet, Explotación de datos (/datos — mockup, sin backend real)
-- Pre-proyectos con adjuntos
+- Mapa Leaflet, Explotación de datos (/datos — mockup, arquitectura lista para API real)
+- Pre-proyectos con adjuntos, PDF, comentarios
+- Vincular visita → proyecto con selector + progreso fases
+- Vista "Mi Día" en dashboard (Ventas + Proyectos)
+- Búsqueda avanzada: filtros fecha, estado, tipo, zona en /visitas
 - PWA: manifest + SW + IndexedDB
 - Dark mode + ThemeProvider + anti-FOUC
 - Command Palette (Cmd+K), atajos teclado
-
-**Sprint 9 completado (16 jun 2026) — auditoría funcionalidad, rendimiento y seguridad:**
-- [x] Fix `d?.role` → `d?.rol` en hardware/page.tsx (rol nunca se establecía)
-- [x] Fix etapa `CONTACTADO` → `PRIMERA_VISITA` en pipeline/[id] (alineado con enum Prisma)
-- [x] `useMemo` para `calcularScore()` en formulario visita (evita recálculo en cada tecla)
-- [x] Token de mapa: `Math.random()` → `crypto.randomBytes(18)` (criptográfico)
-- [x] `/api/share/proyecto/[token]`: eliminado email y PII de contactos del endpoint público
-- [x] IDOR: `GET /api/hospitales/[id]` verifica zona para no-ADMIN
-- [x] `GET /api/hospitales/[id]`: `take: 50` en visitas incluidas
-- [x] Mass assignment: whitelist de campos en PATCH hospitales y zonas
-- [x] Hardware/unidades POST+PUT: restringido a ADMIN y PROYECTOS
-- [x] Cache-Control: oportunidades (15s), hardware (60s), hardware/unidades (30s)
-- [x] CSP header añadido en `next.config.ts`
-- [x] `VoiceNotes` y `ComentariosPanel`: convertidos a `dynamic()` imports (lazy)
+- Error boundaries (error.tsx) en 15 rutas
+- Seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
 
 **Bugs conocidos / deuda técnica (backlog):**
 - `/datos` es 100% mockup — no hay APIs reales detrás
@@ -355,12 +346,19 @@ python -m graphify explain "calcularScore()"
 - `GET /api/proyectos` devuelve todos los proyectos sin filtro de zona
 - Comentarios de visita no verifican acceso a la visita padre
 - Fases de pre-proyecto no verifican pertenencia al proyecto en PATCH
+- Modelo Visita no tiene campo `titulo` — las visitas no se pueden nombrar
 
 **Pendiente (próximos sprints):**
-- Vincular visita → oportunidad desde formulario visita
-- Comentarios en visitas/proyectos
-- Vista "Mi Día" en dashboard
-- Búsqueda avanzada con filtros
-- Informe PDF pre-proyecto completo
-- KPIs rendimiento en /datos (conectar a datos reales)
+
+Sprint 10 — UX visitas + vinculación:
+- Añadir campo `titulo` a modelo Visita (schema + API + modal + lista)
+- UI selector visita → oportunidad en formulario (backend listo, falta frontend)
+- Conectar /datos a APIs reales
+
+Sprint 11 — Calidad y producción:
+- Sentry para errores en producción
+- Lighthouse audit (objetivo >90)
 - Tests E2E con Playwright
+- Sanitizar mapaHtml (XSS)
+- Filtro zona en GET /api/proyectos
+- Verificar acceso en comentarios y fases

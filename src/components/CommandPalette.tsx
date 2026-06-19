@@ -194,13 +194,13 @@ export function CommandPalette() {
           onSelect: () => { cerrar(); router.push("/hospitales/" + h.id) },
         }))
 
-      const visitasF: Accion[] = (visitas as { id: string; hospital?: { nombre: string }; fecha: string; estado: string }[])
+      const visitasF: Accion[] = (visitas as { id: string; titulo?: string | null; hospital?: { nombre: string }; fecha: string; estado: string }[])
         .slice(0, 4)
         .map(v => ({
           id: "v-" + v.id,
           tipo: "visita" as const,
-          titulo: v.hospital?.nombre ?? "Visita",
-          subtitulo: new Date(v.fecha).toLocaleDateString("es-ES") + " · " + v.estado,
+          titulo: v.titulo || v.hospital?.nombre || "Visita",
+          subtitulo: (v.titulo ? (v.hospital?.nombre ?? "") + " · " : "") + new Date(v.fecha).toLocaleDateString("es-ES") + " · " + v.estado,
           href: "/visitas/" + v.id,
           icono: <IcoVisita />,
           onSelect: () => { cerrar(); router.push("/visitas/" + v.id) },

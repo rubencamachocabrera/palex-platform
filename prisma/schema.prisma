@@ -228,6 +228,7 @@ model Contacto {
 
 model Visita {
   id                   String       @id @default(cuid())
+  titulo               String?
   hospitalId           String
   usuarioId            String
   oportunidadId        String?

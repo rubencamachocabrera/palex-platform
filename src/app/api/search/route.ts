@@ -33,14 +33,13 @@ export async function GET(req: NextRequest) {
       db.visita.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
-          hospital: {
-            OR: [
-              { nombre: { contains: q, mode: "insensitive" } },
-              { ciudad: { contains: q, mode: "insensitive" } },
-            ],
-          },
+          OR: [
+            { titulo: { contains: q, mode: "insensitive" } },
+            { hospital: { nombre: { contains: q, mode: "insensitive" } } },
+            { hospital: { ciudad: { contains: q, mode: "insensitive" } } },
+          ],
         },
-        select: { id: true, estado: true, fecha: true, hospital: { select: { nombre: true } } },
+        select: { id: true, titulo: true, estado: true, fecha: true, hospital: { select: { nombre: true } } },
         take: 4,
         orderBy: { fecha: "desc" },
       }),

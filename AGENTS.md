@@ -294,29 +294,50 @@ public/
 
 ---
 
-## Pendiente inmediato (proxima sesion)
+## Completado (sprints 6-9, auditado 2026-06-19)
 
 ### Sprint 6 — Quick wins de alto impacto
-- [ ] Drag & drop Kanban (@dnd-kit) — Ver feature #4
-- [ ] QR por hospital — Ver feature #5
-- [ ] Historial cambios de etapa en oportunidades — Ver feature #8
-- [ ] Vincular visita -> oportunidad desde formulario visita
+- [x] Drag & drop Kanban (@dnd-kit) — DndContext + DraggableCard + DroppableColumn
+- [x] QR por hospital — generacion dinamica + descarga PNG
+- [x] Historial cambios de etapa en oportunidades — timeline en ficha oportunidad
+- [x] Vincular visita -> proyecto (pre-proyecto) desde formulario visita — selector con progreso fases
+- [~] Vincular visita -> oportunidad — backend listo (oportunidadId en API), FALTA UI selector
 
 ### Sprint 7 — Colaboracion
-- [ ] Comentarios en visitas y proyectos — Ver feature #1
-- [ ] Vista "Mi Dia" en dashboard — Ver feature #2
-- [ ] Timeline de actividad por hospital — Ver feature #9
+- [x] Comentarios en visitas y proyectos — ComentariosPanel + APIs (dynamic import)
+- [x] Vista "Mi Dia" en dashboard — Ventas (visitas hoy + ops proximas) + Proyectos (tareas vencidas + visitas)
+- [x] Timeline de actividad por hospital — tab Timeline + API /hospitales/[id]/timeline
 
 ### Sprint 8 — Datos y reportes
-- [ ] Informe PDF pre-proyecto completo — Ver feature #11
-- [ ] KPIs de rendimiento en /datos — Ver feature #13
-- [ ] Busqueda avanzada con filtros — Ver feature #3
+- [x] Informe PDF pre-proyecto — window.print() con branding Palex
+- [x] KPIs en /datos — arquitectura lista, datos MOCK (sin API real aun)
+- [x] Busqueda avanzada con filtros — fecha desde/hasta, estado, tipo, zona en /visitas
 
 ### Sprint 9 — Calidad tecnica
-- [ ] Error boundaries por modulo
+- [x] Error boundaries por modulo — error.tsx en 15 rutas (patron Next.js App Router)
+- [x] Auditorias seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
+- [ ] Sentry para errores en produccion — solo comentario TODO, sin implementar
 - [ ] Lighthouse audit (objetivo >90)
-- [ ] Sentry para errores en produccion
 - [ ] Tests E2E con Playwright (login, crear visita, pipeline)
+
+---
+
+## Pendiente inmediato (proxima sesion — 2026-06-19)
+
+### Sprint 10 — UX visitas + vinculacion
+- [ ] Anadir campo `titulo` a modelo Visita (schema + API + UI)
+- [ ] Mejorar modal quick-create en /visitas: campo titulo + fecha + hospital + plantilla
+- [ ] UI selector visita -> oportunidad en formulario visita (backend ya listo)
+- [ ] Conectar /datos a APIs reales (actualmente 100% mockup)
+
+### Sprint 11 — Calidad y produccion
+- [ ] Sentry para errores en produccion
+- [ ] Lighthouse audit (objetivo >90)
+- [ ] Tests E2E con Playwright (login, crear visita, pipeline)
+- [ ] Sanitizar mapaHtml (riesgo XSS con dangerouslySetInnerHTML)
+- [ ] Filtro de zona en GET /api/proyectos (actualmente devuelve todos)
+- [ ] Verificar acceso a visita padre en comentarios
+- [ ] Verificar pertenencia al proyecto en PATCH fases pre-proyecto
 
 ---
 

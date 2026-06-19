@@ -50,6 +50,7 @@ function mesLabel(iso: string) {
 
 interface Visita {
   id: string
+  titulo?: string | null
   estado: string
   tipo: string
   fecha: string
@@ -113,6 +114,7 @@ export default function VisitasPage() {
   const [hospitalesLista, setHospitalesLista] = useState<Hospital[]>([])
   const [hospitalId, setHospitalId] = useState("")
   const [busqHosp, setBusqHosp] = useState("")
+  const [tituloModal, setTituloModal] = useState("")
   const [fechaModal, setFechaModal] = useState("")
   const [creando, setCreando] = useState(false)
   const [userRol, setUserRol] = useState("PROYECTOS")
@@ -173,7 +175,7 @@ export default function VisitasPage() {
   }
 
   async function abrirModal() {
-    setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setPlantillaId("")
+    setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setPlantillaId("")
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
       const data = r.ok ? await r.json() : []
@@ -192,6 +194,7 @@ export default function VisitasPage() {
       const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
       const plantilla = plantillas.find(p => p.id === plantillaId)
       const body: Record<string, unknown> = { hospitalId, tipo }
+      if (tituloModal.trim()) body.titulo = tituloModal.trim()
       if (fechaModal) body.fecha = fechaModal
       if (plantilla) body.datos = plantilla.datos
       const res = await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -219,7 +222,8 @@ export default function VisitasPage() {
     .filter(v => !busqueda ||
       v.hospital.nombre.toLowerCase().includes(b) ||
       v.hospital.ciudad.toLowerCase().includes(b) ||
-      v.usuario.nombre.toLowerCase().includes(b))
+      v.usuario.nombre.toLowerCase().includes(b) ||
+      (v.titulo && v.titulo.toLowerCase().includes(b)))
     .sort((a, c) => {
       if (orden === "fecha-asc") return new Date(a.fecha).getTime() - new Date(c.fecha).getTime()
       if (orden === "hospital") return a.hospital.nombre.localeCompare(c.hospital.nombre)
@@ -327,6 +331,7 @@ export default function VisitasPage() {
         <button
           onClick={() => exportarCSV(
             filtradas.map(v => ({
+              Título: v.titulo ?? "",
               Hospital: v.hospital.nombre, Ciudad: v.hospital.ciudad, Zona: v.hospital.zona?.nombre ?? "",
               Técnico: v.usuario.nombre, Fecha: fmtFecha(v.fecha),
               Estado: ESTADO[v.estado]?.label ?? v.estado, Tipo: TIPO_CONFIG[v.tipo]?.label ?? v.tipo,
@@ -476,9 +481,15 @@ export default function VisitasPage() {
 
                       {/* Info principal */}
                       <div className="flex-1 min-w-0">
+                        {/* Titulo si existe */}
+                        {v.titulo && (
+                          <p className="text-[13px] font-semibold text-gray-800 group-hover:text-teal-700 transition-colors truncate mb-0.5">
+                            {v.titulo}
+                          </p>
+                        )}
                         {/* Fila 1: nombre hospital + tipo */}
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="text-sm font-bold text-gray-900 group-hover:text-teal-700 transition-colors truncate">
+                          <span className={`text-sm ${v.titulo ? "font-medium text-gray-500" : "font-bold text-gray-900 group-hover:text-teal-700 transition-colors"} truncate`}>
                             {v.hospital.nombre}
                           </span>
                           {tipoC && (
@@ -566,7 +577,7 @@ export default function VisitasPage() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <p className="font-semibold text-gray-800">Nueva visita</p>
-                <p className="text-xs text-gray-400 mt-0.5">Selecciona el hospital de destino</p>
+                <p className="text-xs text-gray-400 mt-0.5">Dale un nombre y selecciona el hospital</p>
               </div>
               <button onClick={() => setMostrarModal(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -575,6 +586,14 @@ export default function VisitasPage() {
               </button>
             </div>
             <div className="p-4">
+              <div className="mb-3">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Nombre de la visita</label>
+                <input value={tituloModal} onChange={e => setTituloModal(e.target.value)}
+                  placeholder="Ej: Revisión BC Robo planta 2"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+              </div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Hospital</label>
               <div className="relative mb-3">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={14} /></div>
                 <input autoFocus value={busqHosp} onChange={e => setBusqHosp(e.target.value)}

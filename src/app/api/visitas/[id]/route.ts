@@ -58,6 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...(body.datos !== undefined && { datos: body.datos }),
         ...(body.estado !== undefined && { estado: body.estado }),
+        ...(typeof body.titulo === "string" && { titulo: body.titulo.trim() || null }),
         ...(body.fecha !== undefined && body.fecha && !isNaN(Date.parse(body.fecha)) && { fecha: new Date(body.fecha) }),
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
         ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),

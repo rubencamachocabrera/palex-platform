@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
           db.visita.findMany({
             where, take, skip,
             select: {
-              id: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
+              id: true, titulo: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
               hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
               usuario: { select: { id: true, nombre: true, rol: true } },
             },
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
           await db.visita.findMany({
             where,
             select: {
-              id: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
+              id: true, titulo: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
               hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
               usuario: { select: { id: true, nombre: true, rol: true } },
             },
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const { hospitalId, tipo, fecha, datos, preProyectoId } = await req.json()
+    const { hospitalId, tipo, fecha, datos, preProyectoId, titulo } = await req.json()
     if (!hospitalId || !tipo) return NextResponse.json({ error: "Faltan campos" }, { status: 400 })
     const fechaValida = fecha && !isNaN(Date.parse(fecha)) ? new Date(fecha) : new Date()
 
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
         datos: datos && typeof datos === "object" ? datos : {},
         fecha:   fechaValida,
         ...(preProyectoId ? { preProyectoId } : {}),
+        ...(titulo && typeof titulo === "string" ? { titulo: titulo.trim() } : {}),
       },
     })
     return NextResponse.json(visita, { status: 201 })

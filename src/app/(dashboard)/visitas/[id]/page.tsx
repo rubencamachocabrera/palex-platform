@@ -76,7 +76,7 @@ interface PreProyectoItem { id: string; titulo: string; estado: string; fases: {
 interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
-  id: string; estado: string; tipo: string; fecha: string
+  id: string; titulo?: string | null; estado: string; tipo: string; fecha: string
   preProyectoId?: string | null
   preProyecto?: PreProyectoItem | null
   contactoPrincipalId?: string | null
@@ -1241,8 +1241,26 @@ export default function VisitaPage() {
             <IconMenu size={15} />
           </button>
 
-          {/* Hospital + estado */}
+          {/* Título + Hospital + estado */}
           <div className="flex-1 min-w-0">
+            {readOnly ? (
+              visita.titulo && <p className="text-[13px] font-semibold text-gray-800 truncate mb-0.5">{visita.titulo}</p>
+            ) : (
+              <input
+                value={visita.titulo ?? ""}
+                onChange={e => setVisita(v => v ? { ...v, titulo: e.target.value } : v)}
+                onBlur={e => {
+                  const val = e.target.value.trim() || null
+                  if (val !== (visitaRef.current?.titulo ?? null)) {
+                    fetch(`/api/visitas/${visita.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ titulo: val ?? "" }) })
+                      .then(r => r.ok ? r.json() : null)
+                      .then(d => { if (d) { setVisita(v => v ? { ...v, titulo: d.titulo } : v); if (visitaRef.current) visitaRef.current.titulo = d.titulo } })
+                  }
+                }}
+                placeholder="Nombre de la visita (opcional)"
+                className="w-full text-[13px] font-semibold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 placeholder:font-normal truncate mb-0.5 p-0 focus:ring-0"
+              />
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-bold text-gray-900 truncate max-w-[200px] sm:max-w-xs">
                 {visita.hospital.nombre}
