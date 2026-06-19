@@ -1,24 +1,25 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
-import { IconSearch, IconChevronRight } from "@/components/ui/Icons"
+import { IconSearch } from "@/components/ui/Icons"
 import { exportarCSV } from "@/lib/csv"
 
-const ESTADO_LABEL: Record<string, string> = {
-  BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
+// ─── Configuración de estados ─────────────────────────────────────────────────
+
+const ESTADO: Record<string, { label: string; bg: string; text: string; bar: string; dot: string }> = {
+  BORRADOR:   { label: "En curso",   bg: "#fffbeb", text: "#92400e", bar: "#f59e0b", dot: "#f59e0b" },
+  COMPLETADA: { label: "Completada", bg: "#f0fdf4", text: "#15803d", bar: "#16a34a", dot: "#22c55e" },
+  ARCHIVADA:  { label: "Archivada",  bg: "#f3f4f6", text: "#6b7280", bar: "#9ca3af", dot: "#9ca3af" },
 }
-const ESTADO_COLOR: Record<string, string> = {
-  BORRADOR:   "bg-amber-50 text-amber-600",
-  COMPLETADA: "bg-green-50 text-green-600",
-  ARCHIVADA:  "bg-gray-100 text-gray-400",
-}
-const ESTADO_BAR: Record<string, string> = {
-  BORRADOR: "#f59e0b", COMPLETADA: "#16a34a", ARCHIVADA: "#9ca3af",
+
+const TIPO_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  VENTAS:     { label: "Comercial", bg: "#fef3c7", text: "#92400e" },
+  PROYECTOS:  { label: "Técnica",   bg: `${TEAL}15`, text: TEAL },
 }
 
 function avatarColor(nombre: string) {
@@ -37,40 +38,67 @@ function fechaRelativa(iso: string) {
   return `Hace ${Math.floor(d/365)} año${Math.floor(d/365)>1?"s":""}`
 }
 
+function fmtFecha(iso: string) {
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
+}
+
 function mesLabel(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
 }
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 interface Visita {
   id: string
   estado: string
   tipo: string
   fecha: string
-  hospital: { id: string; nombre: string; ciudad: string }
+  score?: number | null
+  hospital: { id: string; nombre: string; ciudad: string; zona: { nombre: string } }
+  usuario: { id: string; nombre: string; rol: string }
 }
 
 interface Hospital { id: string; nombre: string; ciudad: string }
 
-function SkeletonVisita() {
+// ─── Skeletons ────────────────────────────────────────────────────────────────
+
+function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5">
-      <div className="w-9 h-9 rounded-full skeleton-shimmer shrink-0" />
-      <div className="flex-1 space-y-1.5">
-        <div className="h-3.5 w-2/3 rounded skeleton-shimmer" />
-        <div className="h-2.5 w-1/3 rounded skeleton-shimmer" />
+    <div className="flex items-center gap-3 px-5 py-4">
+      <div className="w-10 h-10 rounded-xl skeleton-shimmer shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="h-3.5 w-36 rounded skeleton-shimmer" />
+          <div className="h-5 w-16 rounded-full skeleton-shimmer" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full skeleton-shimmer" />
+          <div className="h-2.5 w-24 rounded skeleton-shimmer" />
+          <div className="h-2.5 w-16 rounded skeleton-shimmer" />
+        </div>
       </div>
-      <div className="h-6 w-20 rounded-full skeleton-shimmer shrink-0" />
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="hidden sm:block text-right space-y-1">
+          <div className="h-3 w-20 rounded skeleton-shimmer" />
+          <div className="h-2.5 w-12 rounded skeleton-shimmer" />
+        </div>
+        <div className="h-7 w-20 rounded-full skeleton-shimmer" />
+      </div>
     </div>
   )
 }
 
 type Orden = "fecha-desc" | "fecha-asc" | "hospital"
 
-export default function MisVisitasPage() {
+// ─── Página ──────────────────────────────────────────────────────────────────
+
+export default function VisitasPage() {
   const router = useRouter()
   const [visitas, setVisitas] = useState<Visita[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtro, setFiltro] = useState("TODOS")
+  const [filtroEstado, setFiltroEstado] = useState("TODOS")
+  const [filtroTipo, setFiltroTipo] = useState("TODOS")
+  const [filtroZona, setFiltroZona] = useState("TODOS")
   const [busqueda, setBusqueda] = useState("")
   const [orden, setOrden] = useState<Orden>("fecha-desc")
   const [page, setPage] = useState(1)
@@ -78,8 +106,7 @@ export default function MisVisitasPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [filtroDesde, setFiltroDesde] = useState("")
   const [filtroHasta, setFiltroHasta] = useState("")
-  const [filtroTipo, setFiltroTipo] = useState("TODOS")
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
+  const [filtrosAvanzados, setFiltrosAvanzados] = useState(false)
 
   // Modal quick-create
   const [mostrarModal, setMostrarModal] = useState(false)
@@ -94,22 +121,16 @@ export default function MisVisitasPage() {
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
-  // Carga inicial (perfil + visitas)
   useEffect(() => {
     fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol) }).catch(() => {})
     cargarVisitas()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Re-fetch cuando cambia el rango de fechas
-  useEffect(() => {
-    cargarVisitas()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroDesde, filtroHasta])
+  useEffect(() => { cargarVisitas() }, [filtroDesde, filtroHasta]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function cargarVisitas() {
-    setLoading(true)
-    setPage(1)
+    setLoading(true); setPage(1)
     const url = (filtroDesde && filtroHasta)
       ? `/api/visitas?desde=${filtroDesde}&hasta=${filtroHasta}`
       : "/api/visitas?limit=50&page=1"
@@ -128,40 +149,31 @@ export default function MisVisitasPage() {
       .catch(() => setLoading(false))
   }
 
-  // Abrir modal automáticamente si viene desde el calendario con ?abrir=1&fecha=
   useEffect(() => {
     if (autoAbierto.current) return
     if (searchParams.get("abrir") === "1") {
       autoAbierto.current = true
-      const fechaParam = searchParams.get("fecha") ?? ""
-      setFechaModal(fechaParam)
+      setFechaModal(searchParams.get("fecha") ?? "")
       abrirModal()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   async function cargarMas() {
-    const nextPage = page + 1
-    setLoadingMore(true)
+    const nextPage = page + 1; setLoadingMore(true)
     try {
       const r = await fetch(`/api/visitas?limit=50&page=${nextPage}`)
       const total = parseInt(r.headers.get("X-Total-Count") ?? "0")
       const data: Visita[] = r.ok ? await r.json() : []
       if (Array.isArray(data) && data.length > 0) {
-        setVisitas(prev => [...prev, ...data])
-        setPage(nextPage)
+        setVisitas(prev => [...prev, ...data]); setPage(nextPage)
         setHasMore(visitas.length + data.length < total)
       }
-    } finally {
-      setLoadingMore(false)
-    }
+    } finally { setLoadingMore(false) }
   }
 
   async function abrirModal() {
-    setMostrarModal(true)
-    setHospitalId("")
-    setBusqHosp("")
-    setPlantillaId("")
+    setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setPlantillaId("")
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
       const data = r.ok ? await r.json() : []
@@ -175,96 +187,97 @@ export default function MisVisitasPage() {
   }
 
   async function crearVisita() {
-    if (!hospitalId) return
-    setCreando(true)
+    if (!hospitalId) return; setCreando(true)
     try {
       const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
       const plantilla = plantillas.find(p => p.id === plantillaId)
       const body: Record<string, unknown> = { hospitalId, tipo }
       if (fechaModal) body.fecha = fechaModal
       if (plantilla) body.datos = plantilla.datos
-      const res = await fetch("/api/visitas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
+      const res = await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       if (!res.ok) { setCreando(false); return }
       const nueva = await res.json()
       router.push("/visitas/" + nueva.id)
-    } catch {
-      setCreando(false)
-    }
+    } catch { setCreando(false) }
   }
 
-  const filtradas = visitas
-    .filter(v => filtro === "TODOS" || v.estado === filtro)
+  // ─── Zonas únicas extraídas de los datos cargados ────────────────────────
+
+  const zonasDisponibles = useMemo(() => {
+    const set = new Set<string>()
+    visitas.forEach(v => { if (v.hospital.zona?.nombre) set.add(v.hospital.zona.nombre) })
+    return Array.from(set).sort()
+  }, [visitas])
+
+  // ─── Filtrado y ordenación ────────────────────────────────────────────────
+
+  const b = busqueda.toLowerCase()
+  const filtradas = useMemo(() => visitas
+    .filter(v => filtroEstado === "TODOS" || v.estado === filtroEstado)
     .filter(v => filtroTipo === "TODOS" || v.tipo === filtroTipo)
+    .filter(v => filtroZona === "TODOS" || v.hospital.zona?.nombre === filtroZona)
     .filter(v => !busqueda ||
-      v.hospital.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      v.hospital.ciudad.toLowerCase().includes(busqueda.toLowerCase()))
-    .sort((a, b) => {
-      if (orden === "fecha-asc") return new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
-      if (orden === "hospital") return a.hospital.nombre.localeCompare(b.hospital.nombre)
-      return new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      v.hospital.nombre.toLowerCase().includes(b) ||
+      v.hospital.ciudad.toLowerCase().includes(b) ||
+      v.usuario.nombre.toLowerCase().includes(b))
+    .sort((a, c) => {
+      if (orden === "fecha-asc") return new Date(a.fecha).getTime() - new Date(c.fecha).getTime()
+      if (orden === "hospital") return a.hospital.nombre.localeCompare(c.hospital.nombre)
+      return new Date(c.fecha).getTime() - new Date(a.fecha).getTime()
     })
+  , [visitas, filtroEstado, filtroTipo, filtroZona, busqueda, orden]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hospFiltrados = hospitalesLista.filter(h =>
-    !busqHosp ||
-    h.nombre.toLowerCase().includes(busqHosp.toLowerCase()) ||
-    h.ciudad.toLowerCase().includes(busqHosp.toLowerCase())
+    !busqHosp || h.nombre.toLowerCase().includes(busqHosp.toLowerCase()) || h.ciudad.toLowerCase().includes(busqHosp.toLowerCase())
   ).slice(0, 20)
 
-  const ESTADO_PILL: Record<string, { active: { bg: string; text: string; border: string }; dot: string }> = {
-    TODOS:      { active: { bg: TEAL,      text: "#fff",    border: TEAL      }, dot: "#6b7280" },
-    BORRADOR:   { active: { bg: "#fef3c7", text: "#92400e", border: "#fcd34d" }, dot: "#f59e0b" },
-    COMPLETADA: { active: { bg: "#f0fdf4", text: "#14532d", border: "#86efac" }, dot: "#22c55e" },
-    ARCHIVADA:  { active: { bg: "#f3f4f6", text: "#374151", border: "#d1d5db" }, dot: "#9ca3af" },
-  }
+  // ─── Stats ────────────────────────────────────────────────────────────────
 
-  // Stats para el banner
   const hoy = new Date(); hoy.setHours(0,0,0,0)
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const enCurso = visitas.filter(v => v.estado === "BORRADOR").length
   const completadasMes = visitas.filter(v => v.estado === "COMPLETADA" && new Date(v.fecha) >= inicioMes).length
-  const borradores = visitas.filter(v => v.estado === "BORRADOR").length
   const ultimaFecha = visitas.length > 0 ? visitas.reduce((a,b) => new Date(a.fecha) > new Date(b.fecha) ? a : b).fecha : null
 
-  // Agrupación por mes
-  const grupos: { mes: string; items: typeof filtradas }[] = []
-  filtradas.forEach(v => {
-    const mes = mesLabel(v.fecha)
-    const g = grupos.find(g => g.mes === mes)
-    if (g) g.items.push(v)
-    else grupos.push({ mes, items: [v] })
-  })
+  // ─── Agrupación por mes ───────────────────────────────────────────────────
+
+  const grupos = useMemo(() => {
+    const gs: { mes: string; items: typeof filtradas }[] = []
+    filtradas.forEach(v => {
+      const mes = mesLabel(v.fecha)
+      const g = gs.find(g => g.mes === mes)
+      if (g) g.items.push(v); else gs.push({ mes, items: [v] })
+    })
+    return gs
+  }, [filtradas])
+
+  const filtrosActivos = filtroDesde || filtroHasta || filtroTipo !== "TODOS" || filtroZona !== "TODOS"
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="animate-in fade-in duration-200">
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      {/* ── HEADER ── */}
+      <div className="flex items-start justify-between mb-5">
         <PageHeader
-          title="Mis visitas"
-          subtitle={loading ? "Cargando..." : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""} en total`}
+          title={userRol === "ADMIN" ? "Todas las visitas" : "Mis visitas"}
+          subtitle={loading ? "Cargando..." : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""}${filtradas.length !== visitas.length ? ` · ${filtradas.length} filtradas` : ""}`}
           className="mb-0"
         />
         <div className="flex items-center gap-2 shrink-0 mt-0.5">
-          <Link
-            href="/visitas/calendario"
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition"
-            title="Vista calendario"
-          >
+          <Link href="/visitas/calendario"
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
               <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            Calendario
+            <span className="hidden sm:inline">Calendario</span>
           </Link>
-          <button
-            onClick={abrirModal}
+          <button onClick={abrirModal}
             className="flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl text-white hover:opacity-90 transition min-h-[42px]"
-            style={{ backgroundColor: TEAL, boxShadow: `0 2px 8px ${TEAL}50` }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            style={{ backgroundColor: TEAL, boxShadow: `0 2px 8px ${TEAL}50` }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Nueva visita
@@ -272,92 +285,116 @@ export default function MisVisitasPage() {
         </div>
       </div>
 
-      {/* Busqueda + orden + CSV */}
+      {/* ── STATS ── */}
+      {!loading && visitas.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: "Total", value: visitas.length, color: TEAL, bg: `${TEAL}12`,
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
+            { label: "En curso", value: enCurso, color: "#d97706", bg: "#fef3c7",
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+            { label: "Completadas (mes)", value: completadasMes, color: "#16a34a", bg: "#f0fdf4",
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
+            { label: "Última visita", value: ultimaFecha ? fechaRelativa(ultimaFecha) : "—", color: "#6366f1", bg: "#eef2ff",
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: k.bg, color: k.color }}>{k.icon}</div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-none truncate" style={{ color: typeof k.value === "number" && k.value === 0 ? "#9ca3af" : k.color }}>{k.value}</p>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-0.5 leading-none">{k.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── BARRA DE BÚSQUEDA + CONTROLES ── */}
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <div className="relative flex-1">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            <IconSearch size={15} />
-          </div>
-          <input
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por hospital o ciudad..."
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={15} /></div>
+          <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            placeholder="Hospital, ciudad o técnico..."
             className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:border-transparent"
-            style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-          />
+            style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
         </div>
-        <select
-          value={orden}
-          onChange={e => setOrden(e.target.value as Orden)}
-          className="text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none sm:w-44"
-        >
-          <option value="fecha-desc">Mas recientes</option>
-          <option value="fecha-asc">Mas antiguas</option>
+        <select value={orden} onChange={e => setOrden(e.target.value as Orden)}
+          className="text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none sm:w-44">
+          <option value="fecha-desc">Más recientes</option>
+          <option value="fecha-asc">Más antiguas</option>
           <option value="hospital">Por hospital</option>
         </select>
         <button
           onClick={() => exportarCSV(
             filtradas.map(v => ({
-              Hospital: v.hospital.nombre,
-              Ciudad: v.hospital.ciudad,
-              Fecha: new Date(v.fecha).toLocaleDateString("es-ES"),
-              Estado: ESTADO_LABEL[v.estado] ?? v.estado,
-              Tipo: v.tipo,
+              Hospital: v.hospital.nombre, Ciudad: v.hospital.ciudad, Zona: v.hospital.zona?.nombre ?? "",
+              Técnico: v.usuario.nombre, Fecha: fmtFecha(v.fecha),
+              Estado: ESTADO[v.estado]?.label ?? v.estado, Tipo: TIPO_CONFIG[v.tipo]?.label ?? v.tipo,
+              Score: v.score ?? "",
             })),
             "visitas"
           )}
           disabled={filtradas.length === 0}
-          className="flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          title="Exportar CSV"
-        >
+          className="flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 shrink-0"
+          title="Exportar CSV">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           CSV
         </button>
-        {/* Toggle filtros avanzados */}
-        <button
-          onClick={() => setFiltrosAbiertos(v => !v)}
+        <button onClick={() => setFiltrosAvanzados(v => !v)}
           className="flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border transition-colors shrink-0"
-          style={filtrosAbiertos || filtroDesde || filtroHasta || filtroTipo !== "TODOS"
+          style={filtrosAvanzados || filtrosActivos
             ? { borderColor: TEAL, color: TEAL, backgroundColor: `${TEAL}0c` }
-            : { borderColor: "#e5e7eb", color: "#6b7280", backgroundColor: "white" }}
-          title="Filtros avanzados"
-        >
+            : { borderColor: "#e5e7eb", color: "#6b7280", backgroundColor: "white" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
           Filtros
-          {(filtroDesde || filtroHasta || filtroTipo !== "TODOS") && (
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />
-          )}
+          {filtrosActivos && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />}
         </button>
       </div>
 
-      {/* Filtros avanzados */}
-      {filtrosAbiertos && (
-        <div className="flex flex-wrap gap-3 mb-4 p-3.5 bg-gray-50/80 rounded-xl border border-gray-100">
+      {/* ── FILTROS AVANZADOS ── */}
+      {filtrosAvanzados && (
+        <div className="flex flex-wrap gap-3 mb-4 p-4 bg-gray-50/80 rounded-xl border border-gray-100">
+          {/* Tipo */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-gray-500">Tipo:</span>
+            <span className="text-xs font-semibold text-gray-500 shrink-0">Tipo:</span>
             {(["TODOS", "VENTAS", "PROYECTOS"] as const).map(t => (
               <button key={t} onClick={() => setFiltroTipo(t)}
                 className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer"
                 style={filtroTipo === t
                   ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" }
                   : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
-                {t === "TODOS" ? "Todos" : t === "VENTAS" ? "Ventas" : "Técnica"}
+                {t === "TODOS" ? "Todos" : TIPO_CONFIG[t]?.label}
               </button>
             ))}
           </div>
+          {/* Zona */}
+          {zonasDisponibles.length > 1 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-500 shrink-0">Zona:</span>
+              {(["TODOS", ...zonasDisponibles]).map(z => (
+                <button key={z} onClick={() => setFiltroZona(z)}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+                  style={filtroZona === z
+                    ? { backgroundColor: "#6366f1", borderColor: "#6366f1", color: "white" }
+                    : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  {z === "TODOS" ? "Todas" : z}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Rango fechas */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-gray-500">Desde:</span>
+            <span className="text-xs font-semibold text-gray-500 shrink-0">Desde:</span>
             <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)}
               className="text-sm border border-gray-200 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer" />
             <span className="text-xs text-gray-400">hasta</span>
-            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)}
-              min={filtroDesde}
+            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} min={filtroDesde}
               className="text-sm border border-gray-200 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer" />
           </div>
-          {(filtroDesde || filtroHasta || filtroTipo !== "TODOS") && (
-            <button onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroTipo("TODOS") }}
+          {filtrosActivos && (
+            <button onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroTipo("TODOS"); setFiltroZona("TODOS") }}
               className="text-xs text-red-400 hover:text-red-600 font-semibold cursor-pointer transition-colors ml-auto">
               Limpiar filtros
             </button>
@@ -365,32 +402,25 @@ export default function MisVisitasPage() {
         </div>
       )}
 
-      {/* Filtros de estado */}
+      {/* ── PILLS DE ESTADO ── */}
       <div className="flex gap-2 flex-wrap mb-5">
         {(["TODOS", "BORRADOR", "COMPLETADA", "ARCHIVADA"] as const).map(e => {
-          const isActive = filtro === e
-          const pill = ESTADO_PILL[e]
+          const cfg = ESTADO[e]
+          const isActive = filtroEstado === e
           const count = e === "TODOS" ? visitas.length : visitas.filter(v => v.estado === e).length
           return (
-            <button
-              key={e}
-              onClick={() => setFiltro(e)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all min-h-[36px]"
+            <button key={e} onClick={() => setFiltroEstado(e)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all min-h-[34px] cursor-pointer"
               style={isActive
-                ? { backgroundColor: pill.active.bg, color: pill.active.text, borderColor: pill.active.border }
-                : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }
-              }
-            >
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isActive ? pill.dot : "#d1d5db" }} />
-              {e === "TODOS" ? "Todas" : ESTADO_LABEL[e]}
+                ? { backgroundColor: cfg?.bg ?? `${TEAL}18`, color: cfg?.text ?? TEAL, borderColor: cfg?.dot ?? TEAL }
+                : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}>
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isActive ? (cfg?.dot ?? TEAL) : "#d1d5db" }} />
+              {e === "TODOS" ? "Todas" : (cfg?.label ?? e)}
               {!loading && (
-                <span
-                  className="inline-flex items-center justify-center rounded-full text-[10px] font-bold w-4 h-4 leading-none"
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                   style={isActive
-                    ? { backgroundColor: "rgba(0,0,0,0.08)", color: isActive ? pill.active.text : "#6b7280" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280" }
-                  }
-                >
+                    ? { backgroundColor: "rgba(0,0,0,0.08)", color: cfg?.text ?? TEAL }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
                   {count}
                 </span>
               )}
@@ -399,103 +429,113 @@ export default function MisVisitasPage() {
         })}
       </div>
 
-      {/* Stats banner */}
-      {!loading && visitas.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {/* Total */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#f0fdfa" }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill={TEAL} aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Total</p>
-              <p className="text-xl font-bold leading-none text-gray-900">{visitas.length}</p>
-            </div>
-          </div>
-          {/* Borrador */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-amber-50">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="#f59e0b" aria-hidden="true"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Borrador</p>
-              <p className="text-xl font-bold text-amber-600 leading-none">{borradores}</p>
-            </div>
-          </div>
-          {/* Completadas mes */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-green-50">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="#16a34a" aria-hidden="true"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Completadas mes</p>
-              <p className="text-xl font-bold text-green-600 leading-none">{completadasMes}</p>
-            </div>
-          </div>
-          {/* Última visita */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#f0fdfa" }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill={TEAL} aria-hidden="true"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/></svg>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Última visita</p>
-              <p className="text-base font-bold leading-none" style={{ color: TEAL }}>{ultimaFecha ? fechaRelativa(ultimaFecha) : "—"}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista */}
+      {/* ── LISTA ── */}
       <div className="space-y-1">
         {loading ? (
           <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-            {Array.from({ length: 5 }).map((_, i) => <SkeletonVisita key={i} />)}
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         ) : filtradas.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100">
             <EmptyState
               icon={busqueda ? "search" : "document"}
-              title={busqueda ? `Sin resultados para "${busqueda}"` : filtro === "TODOS" ? "No tienes visitas registradas" : `No hay visitas "${ESTADO_LABEL[filtro]}"`}
-              description={busqueda ? "Prueba con otro nombre de hospital o ciudad." : filtro === "TODOS" ? "Crea tu primera visita seleccionando un hospital." : undefined}
-              action={busqueda ? { label: "Limpiar busqueda", variant: "ghost", onClick: () => setBusqueda("") } : filtro === "TODOS" ? { label: "Nueva visita", onClick: abrirModal } : undefined}
+              title={busqueda ? `Sin resultados para "${busqueda}"` : filtroEstado === "TODOS" ? "No hay visitas registradas" : `No hay visitas "${ESTADO[filtroEstado]?.label ?? filtroEstado}"`}
+              description={busqueda ? "Prueba con otro hospital, ciudad o nombre de técnico." : filtroEstado === "TODOS" ? "Crea tu primera visita seleccionando un hospital." : undefined}
+              action={busqueda ? { label: "Limpiar búsqueda", variant: "ghost", onClick: () => setBusqueda("") } : filtroEstado === "TODOS" ? { label: "Nueva visita", onClick: abrirModal } : undefined}
             />
           </div>
         ) : (
           grupos.map(({ mes, items }) => (
             <div key={mes}>
               {/* Separador de mes */}
-              <div className="flex items-center gap-2 px-1 py-2">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide capitalize">{mes}</span>
+              <div className="flex items-center gap-2 px-1 py-2.5">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider capitalize">{mes}</span>
                 <span className="text-xs text-gray-300 font-medium">· {items.length}</span>
                 <div className="flex-1 h-px bg-gray-100 ml-1" />
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-                {items.map((v, i) => {
-                  const color = avatarColor(v.hospital.nombre)
-                  const inicial = v.hospital.nombre.charAt(0).toUpperCase()
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50/80">
+                {items.map(v => {
+                  const est = ESTADO[v.estado]
+                  const tipoC = TIPO_CONFIG[v.tipo]
+                  const hospColor = avatarColor(v.hospital.nombre)
+                  const userColor = avatarColor(v.usuario.nombre)
                   return (
                     <Link key={v.id} href={`/visitas/${v.id}`}
-                      className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/70 transition-colors group relative"
-                      style={{ animationDelay: `${i * 25}ms` }}>
-                      {/* Barra lateral estado */}
-                      <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full" style={{ backgroundColor: ESTADO_BAR[v.estado] ?? "#e5e7eb" }} />
+                      className="flex items-center gap-3.5 px-5 py-4 hover:bg-gray-50/60 transition-colors group relative">
+
+                      {/* Barra estado lateral */}
+                      <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full transition-all"
+                        style={{ backgroundColor: est?.bar ?? "#e5e7eb" }} />
+
                       {/* Avatar hospital */}
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ml-2" style={{ backgroundColor: color }}>
-                        {inicial}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm"
+                        style={{ backgroundColor: hospColor }}>
+                        {v.hospital.nombre.charAt(0).toUpperCase()}
                       </div>
+
+                      {/* Info principal */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate">{v.hospital.nombre}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-gray-400">{v.hospital.ciudad}</span>
-                          <span className="text-gray-200">·</span>
-                          <span className="text-xs text-gray-400" title={new Date(v.fecha).toLocaleDateString("es-ES")}>{fechaRelativa(v.fecha)}</span>
-                          <span className="text-gray-200">·</span>
-                          <span className="text-xs font-medium" style={{ color: TEAL }}>{v.tipo === "VENTAS" ? "Ventas" : "Proyectos"}</span>
+                        {/* Fila 1: nombre hospital + tipo */}
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-sm font-bold text-gray-900 group-hover:text-teal-700 transition-colors truncate">
+                            {v.hospital.nombre}
+                          </span>
+                          {tipoC && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                              style={{ backgroundColor: tipoC.bg, color: tipoC.text }}>
+                              {tipoC.label}
+                            </span>
+                          )}
+                          {v.hospital.zona?.nombre && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 hidden sm:inline shrink-0">
+                              {v.hospital.zona.nombre}
+                            </span>
+                          )}
+                        </div>
+                        {/* Fila 2: responsable + ciudad */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                              style={{ backgroundColor: userColor }}>
+                              {v.usuario.nombre.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs font-medium text-gray-600 truncate max-w-[120px]">{v.usuario.nombre}</span>
+                          </div>
+                          <span className="text-gray-200 text-xs shrink-0">·</span>
+                          <span className="text-xs text-gray-400 truncate">{v.hospital.ciudad}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ESTADO_COLOR[v.estado]}`}>{ESTADO_LABEL[v.estado]}</span>
-                        <IconChevronRight size={15} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+
+                      {/* Columna derecha */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Score */}
+                        {v.score != null && v.score > 0 && (
+                          <div className="hidden md:flex flex-col items-center" title={`Score de complejidad: ${v.score}/100`}>
+                            <span className="text-sm font-black leading-none"
+                              style={{ color: v.score >= 70 ? "#16a34a" : v.score >= 40 ? TEAL : "#f59e0b" }}>
+                              {v.score}
+                            </span>
+                            <span className="text-[9px] text-gray-300 font-medium">pts</span>
+                          </div>
+                        )}
+                        {/* Fecha */}
+                        <div className="hidden sm:block text-right">
+                          <p className="text-xs font-semibold text-gray-700 whitespace-nowrap">{fmtFecha(v.fecha)}</p>
+                          <p className="text-[10px] text-gray-400">{fechaRelativa(v.fecha)}</p>
+                        </div>
+                        {/* Estado badge */}
+                        {est && (
+                          <span className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: est.bg, color: est.text }}>
+                            {est.label}
+                          </span>
+                        )}
+                        {/* Chevron */}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className="group-hover:stroke-gray-400 transition-colors shrink-0">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
                       </div>
                     </Link>
                   )
@@ -506,29 +546,28 @@ export default function MisVisitasPage() {
         )}
       </div>
 
-      {/* Cargar más */}
+      {/* ── CARGAR MÁS ── */}
       {hasMore && !loading && (
         <div className="flex justify-center mt-4">
-          <button
-            onClick={cargarMas}
-            disabled={loadingMore}
-            className="text-sm font-medium px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
+          <button onClick={cargarMas} disabled={loadingMore}
+            className="text-sm font-medium px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
             {loadingMore ? "Cargando..." : "Cargar más visitas"}
           </button>
         </div>
       )}
 
-      {/* Modal quick-create */}
+      {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-          onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}
-        >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <p className="font-semibold text-gray-800">Nueva visita</p>
+              <div>
+                <p className="font-semibold text-gray-800">Nueva visita</p>
+                <p className="text-xs text-gray-400 mt-0.5">Selecciona el hospital de destino</p>
+              </div>
               <button onClick={() => setMostrarModal(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -536,61 +575,53 @@ export default function MisVisitasPage() {
               </button>
             </div>
             <div className="p-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Selecciona el hospital</p>
               <div className="relative mb-3">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                  <IconSearch size={14} />
-                </div>
-                <input
-                  autoFocus
-                  value={busqHosp}
-                  onChange={e => setBusqHosp(e.target.value)}
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={14} /></div>
+                <input autoFocus value={busqHosp} onChange={e => setBusqHosp(e.target.value)}
                   placeholder="Buscar hospital..."
                   className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-                />
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
               </div>
               <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-50">
                 {hospFiltrados.length > 0 ? hospFiltrados.map(h => (
-                  <button
-                    key={h.id}
-                    onClick={() => setHospitalId(h.id)}
-                    className={`w-full text-left px-3 py-2.5 transition-colors ${hospitalId === h.id ? "bg-teal-50" : "hover:bg-gray-50"}`}
-                  >
-                    <p className="text-sm font-medium text-gray-800">{h.nombre}</p>
-                    <p className="text-xs text-gray-400">{h.ciudad}</p>
+                  <button key={h.id} onClick={() => setHospitalId(h.id)}
+                    className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2 ${hospitalId === h.id ? "" : "hover:bg-gray-50"}`}
+                    style={hospitalId === h.id ? { backgroundColor: `${TEAL}10` } : {}}>
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ backgroundColor: avatarColor(h.nombre) }}>
+                      {h.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{h.nombre}</p>
+                      <p className="text-xs text-gray-400">{h.ciudad}</p>
+                    </div>
+                    {hospitalId === h.id && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto shrink-0">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
                   </button>
                 )) : (
-                  <div className="py-6 text-center text-xs text-gray-400">
+                  <div className="py-8 text-center text-xs text-gray-400">
                     {hospitalesLista.length === 0 ? "Cargando hospitales..." : "Sin resultados"}
                   </div>
                 )}
               </div>
             </div>
             <div className="px-4 pb-2">
-              <label className="text-xs font-medium text-gray-500 block mb-1">Fecha de la visita</label>
-              <input
-                type="date"
-                value={fechaModal}
-                onChange={e => setFechaModal(e.target.value)}
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Fecha de la visita</label>
+              <input type="date" value={fechaModal} onChange={e => setFechaModal(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-              />
+                style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
             </div>
-            {/* Selector de plantilla */}
             {plantillas.length > 0 && (
               <div className="px-4 pb-2">
-                <label className="text-xs font-medium text-gray-500 block mb-1">Plantilla (opcional)</label>
-                <select
-                  value={plantillaId}
-                  onChange={e => setPlantillaId(e.target.value)}
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Plantilla (opcional)</label>
+                <select value={plantillaId} onChange={e => setPlantillaId(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-white focus:border-transparent"
-                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
-                >
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
                   <option value="">Sin plantilla — formulario en blanco</option>
-                  {plantillas.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre}</option>
-                  ))}
+                  {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                 </select>
                 {plantillaId && (
                   <p className="text-xs mt-1 flex items-center gap-1" style={{ color: TEAL }}>
@@ -601,15 +632,13 @@ export default function MisVisitasPage() {
               </div>
             )}
             <div className="flex gap-2 px-4 pb-4 pt-2">
-              <button onClick={() => setMostrarModal(false)} className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+              <button onClick={() => setMostrarModal(false)}
+                className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
-              <button
-                onClick={crearVisita}
-                disabled={!hospitalId || creando}
-                className="flex-1 py-2.5 text-sm font-medium rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: TEAL }}
-              >
+              <button onClick={crearVisita} disabled={!hospitalId || creando}
+                className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                style={{ backgroundColor: TEAL }}>
                 {creando ? "Creando..." : "Crear visita"}
               </button>
             </div>

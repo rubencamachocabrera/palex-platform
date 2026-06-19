@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
           db.visita.findMany({
             where, take, skip,
             select: {
-              id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
+              id: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
               hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
               usuario: { select: { id: true, nombre: true, rol: true } },
             },
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
           await db.visita.findMany({
             where,
             select: {
-              id: true, estado: true, tipo: true, fecha: true, creadoEn: true, editadoEn: true,
+              id: true, estado: true, tipo: true, fecha: true, score: true, creadoEn: true, editadoEn: true,
               hospital: { select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } } },
               usuario: { select: { id: true, nombre: true, rol: true } },
             },
