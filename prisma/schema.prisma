@@ -584,6 +584,7 @@ model Comentario {
   autorId       String
   autorNombre   String
   contenido     String   @db.Text
+  fotos         Json     @default("[]")
   creadoEn      DateTime @default(now())
   editadoEn     DateTime @updatedAt
 

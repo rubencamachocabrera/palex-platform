@@ -23,11 +23,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const visita = await db.visita.findUnique({ where: { id }, select: { id: true } })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
-    const { contenido } = await req.json()
+    const { contenido, fotos } = await req.json()
     if (!contenido?.trim()) return NextResponse.json({ error: "Contenido requerido" }, { status: 400 })
+    const fotosArr = Array.isArray(fotos) ? fotos.slice(0, 2) : []
     const usuario = await db.usuario.findUnique({ where: { id: session.user.id }, select: { nombre: true } })
     const comentario = await db.comentario.create({
-      data: { visitaId: id, autorId: session.user.id, autorNombre: usuario?.nombre ?? "Usuario", contenido: contenido.trim() },
+      data: { visitaId: id, autorId: session.user.id, autorNombre: usuario?.nombre ?? "Usuario", contenido: contenido.trim(), fotos: fotosArr },
     })
     return NextResponse.json(comentario, { status: 201 })
   } catch {

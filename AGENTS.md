@@ -68,6 +68,15 @@ El modulo de ventas (oportunidades, pipeline Kanban, etapas) esta **100% desacti
 No mostrar selectores de oportunidad, no vincular visitas a oportunidades, no trabajar en nada CRM.
 El codigo existe pero no se usa ni se debe tocar.
 
+### Proyectos y Pre-proyectos — son lo mismo
+Para el usuario, "Pre-proyectos" y "Proyectos" son el mismo concepto: **proyectos**.
+El sidebar ya tiene boton "Proyectos". No separar conceptualmente en la UI.
+
+### Plantillas de visita
+Existe un sistema de plantillas: una visita se puede guardar como plantilla y al crear una nueva
+se puede seleccionar esa plantilla para pre-rellenar campos. NO implementar "duplicar visita" —
+las plantillas ya cubren esa necesidad.
+
 ---
 
 ## 4. Estructura de ficheros
@@ -311,6 +320,9 @@ Config        (clave/valor configuracion app)
 - [ ] KPIs de rendimiento por usuario/zona (solo ADMIN)
 
 ### Backlog — features futuras (no priorizado)
+- [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
+- [ ] Dashboard carga de trabajo — heatmap mensual visitas por tecnico (ADMIN)
+- [ ] Alertas mantenimiento hardware — garantia expirada, tiempo sin revision
 - [ ] Favoritos/Acceso rapido — estrella en hospitales y proyectos
 - [ ] Panel de equipo (ADMIN) — quien hace que
 - [ ] Etiquetas/Tags para hospitales y visitas

@@ -59,7 +59,9 @@ interface Visita {
   usuario: { id: string; nombre: string; rol: string }
 }
 
-interface Hospital { id: string; nombre: string; ciudad: string }
+interface Hospital { id: string; nombre: string; ciudad: string; zona?: { id: string; nombre: string } }
+interface Zona { id: string; nombre: string }
+interface PreProyectoMini { id: string; titulo: string; estado: string }
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
@@ -115,16 +117,22 @@ export default function VisitasPage() {
   const [hospitalId, setHospitalId] = useState("")
   const [busqHosp, setBusqHosp] = useState("")
   const [tituloModal, setTituloModal] = useState("")
+  const [tituloAutoGen, setTituloAutoGen] = useState(true)
   const [fechaModal, setFechaModal] = useState("")
+  const [zonaModal, setZonaModal] = useState("TODAS")
+  const [zonasLista, setZonasLista] = useState<Zona[]>([])
+  const [preProyectos, setPreProyectos] = useState<PreProyectoMini[]>([])
+  const [preProyectoId, setPreProyectoId] = useState("")
   const [creando, setCreando] = useState(false)
   const [userRol, setUserRol] = useState("PROYECTOS")
+  const [userName, setUserName] = useState("")
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string; descripcion: string | null; datos: Record<string, unknown> }[]>([])
   const [plantillaId, setPlantillaId] = useState("")
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
   useEffect(() => {
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol) }).catch(() => {})
+    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol); if (d?.nombre) setUserName(d.nombre) }).catch(() => {})
     cargarVisitas()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -174,18 +182,46 @@ export default function VisitasPage() {
     } finally { setLoadingMore(false) }
   }
 
+  function generarTitulo(hospNombre: string, fecha: string) {
+    const f = fecha ? new Date(fecha) : new Date()
+    return `Visita ${hospNombre} — ${f.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+  }
+
   async function abrirModal() {
-    setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setPlantillaId("")
+    const hoy = new Date().toISOString().slice(0, 10)
+    setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setTituloAutoGen(true)
+    setPlantillaId(""); setZonaModal("TODAS"); setPreProyectoId(""); setPreProyectos([])
+    setFechaModal(hoy)
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
       const data = r.ok ? await r.json() : []
-      setHospitalesLista(Array.isArray(data) ? data : [])
+      if (Array.isArray(data)) {
+        setHospitalesLista(data)
+        const zonas = new Map<string, Zona>()
+        data.forEach((h: Hospital) => { if (h.zona) zonas.set(h.zona.id, h.zona) })
+        setZonasLista(Array.from(zonas.values()).sort((a, b) => a.nombre.localeCompare(b.nombre)))
+      }
     }
     const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
     fetch(`/api/plantillas?tipo=${tipo}`)
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setPlantillas(d) })
       .catch(() => {})
+  }
+
+  function seleccionarHospital(hId: string) {
+    setHospitalId(hId)
+    const hosp = hospitalesLista.find(h => h.id === hId)
+    if (hosp && tituloAutoGen) setTituloModal(generarTitulo(hosp.nombre, fechaModal))
+    setPreProyectoId("")
+    if (hId) {
+      fetch(`/api/pre-proyectos?hospitalId=${hId}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(d => setPreProyectos(Array.isArray(d) ? d.filter((p: PreProyectoMini) => p.estado !== "CANCELADO") : []))
+        .catch(() => setPreProyectos([]))
+    } else {
+      setPreProyectos([])
+    }
   }
 
   async function crearVisita() {
@@ -197,6 +233,7 @@ export default function VisitasPage() {
       if (tituloModal.trim()) body.titulo = tituloModal.trim()
       if (fechaModal) body.fecha = fechaModal
       if (plantilla) body.datos = plantilla.datos
+      if (preProyectoId) body.preProyectoId = preProyectoId
       const res = await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       if (!res.ok) { setCreando(false); return }
       const nueva = await res.json()
@@ -231,9 +268,10 @@ export default function VisitasPage() {
     })
   , [visitas, filtroEstado, filtroTipo, filtroZona, busqueda, orden]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hospFiltrados = hospitalesLista.filter(h =>
-    !busqHosp || h.nombre.toLowerCase().includes(busqHosp.toLowerCase()) || h.ciudad.toLowerCase().includes(busqHosp.toLowerCase())
-  ).slice(0, 20)
+  const hospFiltrados = hospitalesLista
+    .filter(h => zonaModal === "TODAS" || h.zona?.id === zonaModal)
+    .filter(h => !busqHosp || h.nombre.toLowerCase().includes(busqHosp.toLowerCase()) || h.ciudad.toLowerCase().includes(busqHosp.toLowerCase()))
+    .slice(0, 20)
 
   // ─── Stats ────────────────────────────────────────────────────────────────
 
@@ -569,95 +607,146 @@ export default function VisitasPage() {
 
       {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
             style={{ borderTop: `3px solid ${TEAL}` }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-800">Nueva visita</p>
-                <p className="text-xs text-gray-400 mt-0.5">Dale un nombre y selecciona el hospital</p>
+                <p className="font-bold text-gray-900 dark:text-white">Nueva visita</p>
+                {userName && <p className="text-xs text-gray-400 mt-0.5">Responsable: <span className="font-medium text-gray-600 dark:text-gray-300">{userName}</span></p>}
               </div>
-              <button onClick={() => setMostrarModal(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
+              <button onClick={() => setMostrarModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 cursor-pointer">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
-            <div className="p-4">
-              <div className="mb-3">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Nombre de la visita</label>
-                <input value={tituloModal} onChange={e => setTituloModal(e.target.value)}
-                  placeholder="Ej: Revisión BC Robo planta 2"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+
+            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+
+              {/* Título */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Nombre de la visita</label>
+                <input value={tituloModal}
+                  onChange={e => { setTituloModal(e.target.value); setTituloAutoGen(false) }}
+                  placeholder="Se genera automáticamente al seleccionar hospital"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
                   style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
               </div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Hospital</label>
-              <div className="relative mb-3">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={14} /></div>
-                <input autoFocus value={busqHosp} onChange={e => setBusqHosp(e.target.value)}
-                  placeholder="Buscar hospital..."
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+
+              {/* Zona + Fecha en fila */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Zona</label>
+                  <select value={zonaModal} onChange={e => { setZonaModal(e.target.value); setHospitalId(""); setPreProyectos([]) }}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+                    <option value="TODAS">Todas las zonas</option>
+                    {zonasLista.map(z => <option key={z.id} value={z.id}>{z.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Fecha</label>
+                  <input type="date" value={fechaModal}
+                    onChange={e => {
+                      setFechaModal(e.target.value)
+                      if (tituloAutoGen && hospitalId) {
+                        const hosp = hospitalesLista.find(h => h.id === hospitalId)
+                        if (hosp) setTituloModal(generarTitulo(hosp.nombre, e.target.value))
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+                </div>
               </div>
-              <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-50">
-                {hospFiltrados.length > 0 ? hospFiltrados.map(h => (
-                  <button key={h.id} onClick={() => setHospitalId(h.id)}
-                    className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2 ${hospitalId === h.id ? "" : "hover:bg-gray-50"}`}
-                    style={hospitalId === h.id ? { backgroundColor: `${TEAL}10` } : {}}>
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                      style={{ backgroundColor: avatarColor(h.nombre) }}>
-                      {h.nombre.charAt(0).toUpperCase()}
+
+              {/* Hospital */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
+                  Hospital {zonaModal !== "TODAS" && <span className="font-normal normal-case">({hospFiltrados.length})</span>}
+                </label>
+                <div className="relative mb-2">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={14} /></div>
+                  <input value={busqHosp} onChange={e => setBusqHosp(e.target.value)}
+                    placeholder="Buscar hospital..."
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+                </div>
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-800">
+                  {hospFiltrados.length > 0 ? hospFiltrados.map(h => (
+                    <button key={h.id} onClick={() => seleccionarHospital(h.id)}
+                      className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2.5 cursor-pointer ${hospitalId === h.id ? "" : "hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                      style={hospitalId === h.id ? { backgroundColor: `${TEAL}12` } : {}}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                        style={{ backgroundColor: avatarColor(h.nombre) }}>
+                        {h.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{h.nombre}</p>
+                        <p className="text-xs text-gray-400 truncate">{h.ciudad}{h.zona ? ` · ${h.zona.nombre}` : ""}</p>
+                      </div>
+                      {hospitalId === h.id && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </button>
+                  )) : (
+                    <div className="py-8 text-center text-xs text-gray-400">
+                      {hospitalesLista.length === 0 ? "Cargando hospitales..." : "Sin resultados para esta zona"}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{h.nombre}</p>
-                      <p className="text-xs text-gray-400">{h.ciudad}</p>
-                    </div>
-                    {hospitalId === h.id && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto shrink-0">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    )}
-                  </button>
-                )) : (
-                  <div className="py-8 text-center text-xs text-gray-400">
-                    {hospitalesLista.length === 0 ? "Cargando hospitales..." : "Sin resultados"}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+
+              {/* Proyecto (solo si hay hospital seleccionado y tiene proyectos) */}
+              {hospitalId && preProyectos.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Proyecto (opcional)</label>
+                  <select value={preProyectoId} onChange={e => setPreProyectoId(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+                    <option value="">Sin proyecto vinculado</option>
+                    {preProyectos.map(p => (
+                      <option key={p.id} value={p.id}>{p.titulo} ({p.estado === "EN_CURSO" ? "En curso" : p.estado === "NUEVO" ? "Nuevo" : p.estado})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Plantilla */}
+              {plantillas.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Plantilla (opcional)</label>
+                  <select value={plantillaId} onChange={e => setPlantillaId(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+                    <option value="">Sin plantilla — formulario en blanco</option>
+                    {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                  {plantillaId && (
+                    <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: TEAL }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      El formulario se abrirá pre-rellenado
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="px-4 pb-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Fecha de la visita</label>
-              <input type="date" value={fechaModal} onChange={e => setFechaModal(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
-            </div>
-            {plantillas.length > 0 && (
-              <div className="px-4 pb-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Plantilla (opcional)</label>
-                <select value={plantillaId} onChange={e => setPlantillaId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-white focus:border-transparent"
-                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
-                  <option value="">Sin plantilla — formulario en blanco</option>
-                  {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                </select>
-                {plantillaId && (
-                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: TEAL }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    El formulario se abrirá pre-rellenado
-                  </p>
-                )}
-              </div>
-            )}
-            <div className="flex gap-2 px-4 pb-4 pt-2">
+
+            {/* Footer acciones */}
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-gray-800">
               <button onClick={() => setMostrarModal(false)}
-                className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 Cancelar
               </button>
               <button onClick={crearVisita} disabled={!hospitalId || creando}
-                className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-                style={{ backgroundColor: TEAL }}>
+                className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 cursor-pointer"
+                style={{ backgroundColor: TEAL, boxShadow: hospitalId ? `0 2px 8px ${TEAL}40` : "none" }}>
                 {creando ? "Creando..." : "Crear visita"}
               </button>
             </div>

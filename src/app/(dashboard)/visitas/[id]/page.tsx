@@ -76,7 +76,7 @@ interface PreProyectoItem { id: string; titulo: string; estado: string; fases: {
 interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
-  id: string; titulo?: string | null; estado: string; tipo: string; fecha: string
+  id: string; titulo?: string | null; estado: string; tipo: string; fecha: string; editadoEn?: string
   preProyectoId?: string | null
   preProyecto?: PreProyectoItem | null
   contactoPrincipalId?: string | null
@@ -910,6 +910,7 @@ export default function VisitaPage() {
   const [vinculandoContacto, setVinculandoContacto] = useState(false)
   const [userRol, setUserRol] = useState("")
   const [userId, setUserId] = useState("")
+  const [userName, setUserName] = useState("")
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState("")
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
@@ -959,7 +960,7 @@ export default function VisitaPage() {
             .catch(() => {})
           fetch("/api/perfil")
             .then(r => r.ok ? r.json() : null)
-            .then(d => { if (d?.rol) setUserRol(d.rol); if (d?.id) setUserId(d.id) })
+            .then(d => { if (d?.rol) setUserRol(d.rol); if (d?.id) setUserId(d.id); if (d?.nombre) setUserName(d.nombre) })
             .catch(() => {})
         }
         setLoading(false)
@@ -967,6 +968,43 @@ export default function VisitaPage() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // ── Edición colaborativa — polling cada 4s ──────────────────────────────────
+  const lastEditadoRef = useRef<string>("")
+  const [colabUsers, setColabUsers] = useState<string[]>([])
+  const [colabToast, setColabToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!visita) return
+    lastEditadoRef.current = visita.editadoEn ?? ""
+  }, [visita?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!visita || !online) return
+    const pollInterval = setInterval(async () => {
+      if (saving) return
+      try {
+        const r = await fetch(`/api/visitas/${id}?fields=datos,editadoEn,usuario`, { signal: AbortSignal.timeout(5000) })
+        if (!r.ok) return
+        const remote = await r.json()
+        const remoteEditado = remote.editadoEn ?? ""
+        if (remoteEditado && remoteEditado > lastEditadoRef.current && !pendiente) {
+          const remoteDatos = typeof remote.datos === "object" && remote.datos !== null ? (remote.datos as Record<string, unknown>) : {}
+          const remoteUser = remote.usuario?.nombre ?? "Otro usuario"
+          if (remoteUser !== userName && userName) {
+            setColabToast(`${remoteUser} ha actualizado el formulario`)
+            setTimeout(() => setColabToast(null), 4000)
+          }
+          setDatos(remoteDatos); datosRef.current = remoteDatos
+          lastEditadoRef.current = remoteEditado
+        }
+        if (remote._activeUsers && Array.isArray(remote._activeUsers)) {
+          setColabUsers(remote._activeUsers.filter((n: string) => n !== userName))
+        }
+      } catch { /* timeout or network error — skip */ }
+    }, 4000)
+    return () => clearInterval(pollInterval)
+  }, [visita?.id, online, saving, pendiente, id, userName]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Ocultar header al hacer scroll abajo, mostrar al subir ──────────────────
   useEffect(() => {
@@ -1017,7 +1055,8 @@ export default function VisitaPage() {
       })
       if (r.ok) {
         const updated = await r.json()
-        setVisita(v => { const next = v ? { ...v, estado: updated.estado } : v; visitaRef.current = next; return next })
+        setVisita(v => { const next = v ? { ...v, estado: updated.estado, editadoEn: updated.editadoEn } : v; visitaRef.current = next; return next })
+        if (updated.editadoEn) lastEditadoRef.current = updated.editadoEn
         setSavedAt(new Date()); setPendiente(false)
       } else {
         setSaveError(true)
@@ -1278,6 +1317,15 @@ export default function VisitaPage() {
               {visita.tipo === "VENTAS" ? " · Visita comercial" : " · Visita técnica"}
             </p>
           </div>
+
+          {/* Colaboradores activos */}
+          {colabUsers.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50" title={`Editando también: ${colabUsers.join(", ")}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[10px] font-medium text-blue-600 max-w-[80px] truncate">{colabUsers[0]}</span>
+              {colabUsers.length > 1 && <span className="text-[10px] text-blue-400">+{colabUsers.length - 1}</span>}
+            </div>
+          )}
 
           {/* Auto-save */}
           <div className="text-xs shrink-0 hidden sm:block">
@@ -1932,6 +1980,16 @@ export default function VisitaPage() {
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
             </span>
             <span>«{sectionToast}» completada</span>
+          </div>
+        </div>
+      )}
+
+      {/* Toast colaboración */}
+      {colabToast && (
+        <div className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-2 bg-blue-600/95 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-2xl">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            <span>{colabToast}</span>
           </div>
         </div>
       )}
