@@ -72,7 +72,7 @@ const ESTADO_COLOR: Record<string, string> = {
 interface Foto { id: string; name: string; data: string; caption: string }
 type FotosMap = Record<string, Foto[]>
 
-interface PreProyectoItem { id: string; titulo: string }
+interface PreProyectoItem { id: string; titulo: string; estado: string; fases: { estado: string }[] }
 interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
@@ -951,7 +951,7 @@ export default function VisitaPage() {
           // Cargar pre-proyectos, contactos y rol usuario
           fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
-            .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string }) => ({ id: p.id, titulo: p.titulo }))) })
+            .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string; estado: string; fases: { estado: string }[] }) => ({ id: p.id, titulo: p.titulo, estado: p.estado, fases: p.fases ?? [] }))) })
             .catch(() => {})
           fetch(`/api/hospitales/${data.hospital.id}/contactos`)
             .then(r => r.ok ? r.json() : [])
@@ -1495,9 +1495,14 @@ export default function VisitaPage() {
                 defaultValue=""
               >
                 <option value="">Sin proyecto asociado</option>
-                {preProyectos.map(pp => (
-                  <option key={pp.id} value={pp.id}>{pp.titulo}</option>
-                ))}
+                {preProyectos.map(pp => {
+                  const fasOk = pp.fases.filter(f => f.estado === "COMPLETADA").length
+                  return (
+                    <option key={pp.id} value={pp.id}>
+                      {pp.titulo} — {fasOk}/{pp.fases.length} fases
+                    </option>
+                  )
+                })}
               </select>
             ) : (
               <span className="text-xs text-gray-400 italic">

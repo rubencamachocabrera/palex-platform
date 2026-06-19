@@ -193,6 +193,19 @@ export default function PreProyectoDetalle() {
     // No router.replace — causaba re-render/recarga al cambiar de tab
   }
 
+  const [creandoV, setCreandoV] = useState(false)
+  async function crearVisitaRapida() {
+    if (!pp) return
+    setCreandoV(true)
+    try {
+      const r = await fetch("/api/visitas", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hospitalId: pp.hospital.id, tipo: "PROYECTOS", preProyectoId: pp.id }),
+      })
+      if (r.ok) { const v = await r.json(); router.push(`/visitas/${v.id}`) }
+    } finally { setCreandoV(false) }
+  }
+
   const cargar = useCallback(async () => {
     const r = await fetch(`/api/pre-proyectos/${params.id}`)
     if (r.status === 404) { router.push("/pre-proyectos"); return }
@@ -287,6 +300,32 @@ export default function PreProyectoDetalle() {
             <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
           </div>
         </div>
+        {/* Acciones rápidas */}
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap">
+          <button
+            onClick={crearVisitaRapida}
+            disabled={creandoV}
+            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            style={{ backgroundColor: TEAL }}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="6.5" y1="1" x2="6.5" y2="12"/><line x1="1" y1="6.5" x2="12" y2="6.5"/>
+            </svg>
+            {creandoV ? "Creando visita…" : "Nueva visita"}
+          </button>
+          <button
+            onClick={() => changeTab("Visitas")}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {pp.visitas.length} visita{pp.visitas.length !== 1 ? "s" : ""} →
+          </button>
+          <Link
+            href={`/hospitales/${pp.hospital.id}`}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Ver hospital →
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -311,7 +350,7 @@ export default function PreProyectoDetalle() {
       </div>
 
       {/* Tab contenido */}
-      {tab === "Cockpit"    && <TabCockpit pp={pp} />}
+      {tab === "Cockpit"    && <TabCockpit pp={pp} onChangeTab={changeTab} />}
       {tab === "Info"       && <TabInfo pp={pp} onUpdate={setPp} />}
       {tab === "Tareas"     && <TabTareas pp={pp} onUpdate={setPp} />}
       {tab === "Timeline"   && <TabTimeline pp={pp} onUpdate={setPp} />}
@@ -2414,7 +2453,7 @@ function TabAdjuntos({ pp, onUpdate }: { pp: PreProyecto; onUpdate: (p: PreProye
 
 // ========== TAB COCKPIT ==========
 
-function TabCockpit({ pp }: { pp: PreProyecto }) {
+function TabCockpit({ pp, onChangeTab }: { pp: PreProyecto; onChangeTab: (t: Tab) => void }) {
   const now = new Date()
 
   const tareasRaiz = (pp.tareas ?? []).filter(t => !t.parentId)
@@ -2608,7 +2647,14 @@ function TabCockpit({ pp }: { pp: PreProyecto }) {
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Últimas visitas</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Últimas visitas</p>
+            {pp.visitas.length > 0 && (
+              <button onClick={() => onChangeTab("Visitas")} className="text-xs font-semibold hover:underline" style={{ color: TEAL }}>
+                Ver todas ({pp.visitas.length}) →
+              </button>
+            )}
+          </div>
           {pp.visitas.length === 0
             ? <p className="text-sm text-gray-300">Sin visitas registradas</p>
             : <div className="space-y-1.5">
