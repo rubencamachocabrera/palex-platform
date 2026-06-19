@@ -30,8 +30,8 @@ export async function GET(req: Request) {
   try {
     const items = await db.preProyecto.findMany({
       where: {
-        // Cuando se filtra por hospital (contexto de vinculación desde visita),
-        // mostramos todos los proyectos del hospital sin restricción de responsable
+        // hospitalId provisto: todos los proyectos de ese hospital (sin filtro de responsable)
+        // sin hospitalId: solo proyectos propios para no-ADMIN
         ...(rol !== "ADMIN" && !hospitalId ? { responsableId: userId } : {}),
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
