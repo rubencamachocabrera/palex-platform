@@ -10,51 +10,46 @@ async function checkAccess(id: string, userId: string, role: string) {
   return null
 }
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string; moduloId: string }> }
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const { id, moduloId } = await params
-  const role = session.user.role as string
-  if (!["ADMIN", "PROYECTOS", "TECNICO"].includes(role))
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  const { id } = await params
   try {
-    const denied = await checkAccess(id, session.user.id, role)
+    const denied = await checkAccess(id, session.user.id, session.user.role as string)
     if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
 
-    const { estado } = await req.json()
-    const valid = ["PENDIENTE", "EN_INSTALACION", "INSTALADO", "FORMACION", "VALIDADO"]
-    if (!valid.includes(estado))
-      return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
-
-    const updated = await db.proyectoModulo.update({
-      where: { proyectoId_moduloId: { proyectoId: id, moduloId } },
-      data: { estado },
+    const modulos = await db.proyectoModulo.findMany({
+      where: { proyectoId: id },
       include: { modulo: { select: { id: true, nombre: true } } },
     })
-    return NextResponse.json(updated)
+    return NextResponse.json(modulos)
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string; moduloId: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const { id, moduloId } = await params
+  const { id } = await params
   try {
     const denied = await checkAccess(id, session.user.id, session.user.role as string)
     if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
 
-    await db.proyectoModulo.delete({
-      where: { proyectoId_moduloId: { proyectoId: id, moduloId } },
+    const { moduloIds } = await req.json()
+    if (!Array.isArray(moduloIds) || moduloIds.length === 0)
+      return NextResponse.json({ error: "moduloIds requerido" }, { status: 400 })
+
+    await db.proyectoModulo.deleteMany({ where: { proyectoId: id } })
+    await db.proyectoModulo.createMany({
+      data: moduloIds.map((moduloId: string) => ({ proyectoId: id, moduloId })),
     })
-    return NextResponse.json({ ok: true })
+
+    const modulos = await db.proyectoModulo.findMany({
+      where: { proyectoId: id },
+      include: { modulo: { select: { id: true, nombre: true } } },
+    })
+    return NextResponse.json(modulos, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

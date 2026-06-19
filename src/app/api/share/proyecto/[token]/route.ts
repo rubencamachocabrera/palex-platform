@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   try {
-    const pp = await db.preProyecto.findUnique({
+    const pp = await db.proyecto.findUnique({
       where: { shareToken: token },
       include: {
         hospital: {

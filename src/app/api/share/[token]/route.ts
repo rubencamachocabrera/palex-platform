@@ -7,22 +7,22 @@ export async function GET(
 ) {
   try {
     const { token } = await params
-    const proyecto = await db.proyecto.findUnique({
-      where: { mapaToken: token },
+    const pp = await db.proyecto.findUnique({
+      where: { shareToken: token },
       select: {
-        nombre: true,
+        titulo: true,
         mapaHtml: true,
         hospital: { select: { nombre: true, ciudad: true } },
       },
     })
-    if (!proyecto || !proyecto.mapaHtml) {
+    if (!pp || !pp.mapaHtml) {
       return NextResponse.json({ error: "Enlace no válido o expirado" }, { status: 404 })
     }
     return NextResponse.json({
-      nombre: proyecto.nombre,
-      hospital: proyecto.hospital.nombre,
-      ciudad: proyecto.hospital.ciudad,
-      mapaHtml: proyecto.mapaHtml,
+      nombre: pp.titulo,
+      hospital: pp.hospital.nombre,
+      ciudad: pp.hospital.ciudad,
+      mapaHtml: pp.mapaHtml,
     })
   } catch (err) {
     console.error("[GET /api/share/[token]]", err)

@@ -301,14 +301,14 @@ async function DashboardAdmin() {
     db.oportunidad.groupBy({ by: ["etapa"], where: { etapa: { notIn: ["PERDIDO"] } }, _count: { _all: true } }),
     db.oportunidad.findMany({ where: { etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
     db.hospital.findMany({ where: { activo: true }, orderBy: { visitas: { _count: "desc" } }, take: 5, select: { nombre: true, _count: { select: { visitas: true } } } }),
-    db.preProyecto.findMany({
+    db.proyecto.findMany({
       where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
       select: { id: true, titulo: true, estado: true, fechaFinPlan: true, hospital: { select: { nombre: true } }, fases: { select: { estado: true } } },
       orderBy: { fechaFinPlan: "asc" }, take: 8,
     }),
     db.entradaTimeline.findMany({
       where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias } },
-      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, preProyecto: { select: { id: true, titulo: true, hospital: { select: { nombre: true } } } } },
+      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, proyecto: { select: { id: true, titulo: true, hospital: { select: { nombre: true } } } } },
       orderBy: { fechaCita: "asc" }, take: 6,
     }),
   ])
@@ -347,7 +347,7 @@ async function DashboardAdmin() {
   const idsConVisita = new Set(hConVisitaReciente.map(v => v.hospitalId))
 
   const [proyectosVenc, opEstancadas, hwHuerfano, hospitalesInactivos, fasesRetrasadasGlobal, hitosRetrasadosGlobal, hwGarantia] = await Promise.all([
-    db.preProyecto.findMany({
+    db.proyecto.findMany({
       where: { estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
       select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
       orderBy: { fechaFinPlan: "asc" },
@@ -360,8 +360,8 @@ async function DashboardAdmin() {
       take: 5,
     }),
     db.hardwareUnidad.findMany({
-      where: { estado: "ASIGNADO", preProyecto: { estado: "COMPLETADO" } },
-      select: { id: true, catalogo: { select: { marca: true, modelo: true } }, preProyecto: { select: { id: true, titulo: true } } },
+      where: { estado: "ASIGNADO", proyecto: { estado: "COMPLETADO" } },
+      select: { id: true, catalogo: { select: { marca: true, modelo: true } }, proyecto: { select: { id: true, titulo: true } } },
       take: 5,
     }),
     db.hospital.findMany({
@@ -370,19 +370,19 @@ async function DashboardAdmin() {
       orderBy: { nombre: "asc" },
       take: 5,
     }),
-    db.fasePreProyecto.findMany({
-      where: { fechaPlan: { lt: ahora }, estado: { not: "COMPLETADO" }, preProyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
-      select: { id: true, nombre: true, fechaPlan: true, preProyecto: { select: { id: true, titulo: true } } },
+    db.faseProyecto.findMany({
+      where: { fechaPlan: { lt: ahora }, estado: { not: "COMPLETADO" }, proyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, nombre: true, fechaPlan: true, proyecto: { select: { id: true, titulo: true } } },
       orderBy: { fechaPlan: "asc" }, take: 5,
     }),
     db.hito.findMany({
-      where: { fecha: { lt: ahora }, completado: false, preProyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
-      select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
+      where: { fecha: { lt: ahora }, completado: false, proyecto: { estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, titulo: true, fecha: true, proyecto: { select: { id: true, titulo: true } } },
       orderBy: { fecha: "asc" }, take: 5,
     }),
     db.hardwareUnidad.findMany({
       where: { estado: { notIn: ["BAJA", "RETIRADO"] }, fechaGarantia: { gte: ahora, lte: en60dias } },
-      select: { id: true, numSerie: true, fechaGarantia: true, catalogo: { select: { marca: true, modelo: true } }, preProyecto: { select: { id: true, titulo: true } }, hospital: { select: { nombre: true } } },
+      select: { id: true, numSerie: true, fechaGarantia: true, catalogo: { select: { marca: true, modelo: true } }, proyecto: { select: { id: true, titulo: true } }, hospital: { select: { nombre: true } } },
       orderBy: { fechaGarantia: "asc" }, take: 5,
     }),
   ])
@@ -396,7 +396,7 @@ async function DashboardAdmin() {
       key: `pv-${p.id}`,
       titulo: p.titulo,
       sub: `${p.hospital.nombre} · vence en ${dias} día${dias !== 1 ? "s" : ""}`,
-      href: `/pre-proyectos/${p.id}`,
+      href: `/proyectos/${p.id}`,
       color: "#dc2626", bg: "#fef2f2",
     })
   })
@@ -414,8 +414,8 @@ async function DashboardAdmin() {
     alertas.push({
       key: `hw-${u.id}`,
       titulo: `${u.catalogo.marca} ${u.catalogo.modelo}`,
-      sub: `Asignado a proyecto completado: ${u.preProyecto?.titulo ?? "—"}`,
-      href: u.preProyecto ? `/pre-proyectos/${u.preProyecto.id}` : "/hardware",
+      sub: `Asignado a proyecto completado: ${u.proyecto?.titulo ?? "—"}`,
+      href: u.proyecto ? `/proyectos/${u.proyecto.id}` : "/hardware",
       color: "#7c3aed", bg: "#f5f3ff",
     })
   })
@@ -431,29 +431,29 @@ async function DashboardAdmin() {
   fasesRetrasadasGlobal.forEach(f => {
     alertas.push({
       key: `frg-${f.id}`,
-      titulo: f.preProyecto.titulo,
+      titulo: f.proyecto.titulo,
       sub: `Fase "${f.nombre}" vencida el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`,
-      href: `/pre-proyectos/${f.preProyecto.id}`,
+      href: `/proyectos/${f.proyecto.id}`,
       color: "#dc2626", bg: "#fef2f2",
     })
   })
   hitosRetrasadosGlobal.forEach(h => {
     alertas.push({
       key: `hrg-${h.id}`,
-      titulo: h.preProyecto.titulo,
+      titulo: h.proyecto.titulo,
       sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`,
-      href: `/pre-proyectos/${h.preProyecto.id}`,
+      href: `/proyectos/${h.proyecto.id}`,
       color: "#f97316", bg: "#fff7ed",
     })
   })
   hwGarantia.forEach(u => {
     const dias = u.fechaGarantia ? Math.ceil((new Date(u.fechaGarantia).getTime() - ahora.getTime()) / 86400000) : 0
-    const contexto = u.preProyecto ? u.preProyecto.titulo : (u.hospital?.nombre ?? "Sin asignar")
+    const contexto = u.proyecto ? u.proyecto.titulo : (u.hospital?.nombre ?? "Sin asignar")
     alertas.push({
       key: `hg-${u.id}`,
       titulo: `${u.catalogo.marca} ${u.catalogo.modelo}${u.numSerie ? ` (S/N ${u.numSerie})` : ""}`,
       sub: `Garantía vence en ${dias} día${dias !== 1 ? "s" : ""} · ${contexto}`,
-      href: u.preProyecto ? `/pre-proyectos/${u.preProyecto.id}` : "/hardware",
+      href: u.proyecto ? `/proyectos/${u.proyecto.id}` : "/hardware",
       color: "#0369a1", bg: "#f0f9ff",
     })
   })
@@ -522,7 +522,7 @@ async function DashboardAdmin() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Próximas citas (14 días)" link="/pre-proyectos" /></div>
+            <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Próximas citas (14 días)" link="/proyectos" /></div>
             {proximasCitas.length === 0 ? (
               <p className="text-sm text-gray-400 p-5 text-center">Sin citas próximas</p>
             ) : (
@@ -530,14 +530,14 @@ async function DashboardAdmin() {
                 {proximasCitas.map(c => {
                   const dias = c.fechaCita ? Math.ceil((new Date(c.fechaCita).getTime() - ahora.getTime()) / 86400000) : 0
                   return (
-                    <Link key={c.id} href={`/pre-proyectos/${c.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <Link key={c.id} href={`/proyectos/${c.proyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                       <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 text-white text-[10px] font-bold" style={{ backgroundColor: dias <= 1 ? "#dc2626" : dias <= 3 ? "#f97316" : TEAL }}>
                         <span className="text-sm font-black leading-none">{dias <= 0 ? "Hoy" : dias}</span>
                         {dias > 0 && <span>d</span>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800 truncate">{c.titulo}</p>
-                        <p className="text-xs text-gray-400 truncate">{c.preProyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
+                        <p className="text-xs text-gray-400 truncate">{c.proyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
                       </div>
                       {c.lugarCita && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}>{c.lugarCita === "PRESENCIAL" ? "Presencial" : c.lugarCita === "TEAMS" ? "Teams" : c.lugarCita === "ZOOM" ? "Zoom" : "Meet"}</span>}
                     </Link>
@@ -557,14 +557,14 @@ async function DashboardAdmin() {
       {/* Proyectos activos (siempre visible) */}
       <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50">
-          <SectionHeader title="Proyectos activos" link="/pre-proyectos" />
+          <SectionHeader title="Proyectos activos" link="/proyectos" />
         </div>
         {proyectosCon.length === 0 ? (
           <p className="text-sm text-gray-400 p-5 text-center">Sin proyectos activos</p>
         ) : (
           <div className="divide-y divide-gray-50">
             {proyectosCon.map(p => (
-              <Link key={p.id} href={`/pre-proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+              <Link key={p.id} href={`/proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-teal-700 transition-colors">{p.hospital.nombre}</p>
                   <p className="text-xs text-gray-400 truncate">{p.titulo}</p>
@@ -630,7 +630,7 @@ async function DashboardAdmin() {
         <div className="stagger-grid grid grid-cols-2 sm:grid-cols-4 gap-3">
           <QuickLink href="/admin/usuarios"   label="Gestionar usuarios" Icon={IconUsers}       color="bg-blue-50 text-blue-700" />
           <QuickLink href="/admin/hospitales" label="Ver hospitales"     Icon={IconHospital}    color="bg-teal-50 text-teal-700" />
-          <QuickLink href="/pre-proyectos"    label="Proyectos InLab"    Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
+          <QuickLink href="/proyectos"    label="Proyectos InLab"    Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
           {crmActivo
             ? <QuickLink href="/ventas/pipeline" label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
             : <QuickLink href="/admin/zonas"     label="Configurar zonas"   Icon={IconMap}        color="bg-amber-50 text-amber-700" />
@@ -828,38 +828,38 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: ahora } }, orderBy: { fecha: "asc" }, take: 5, include: { hospital: { select: { nombre: true } } } }),
     db.proyectoModulo.groupBy({ by: ["estado"], _count: { _all: true } }),
     db.visita.count({ where: { usuarioId: userId } }),
-    db.preProyecto.findMany({
+    db.proyecto.findMany({
       where: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
       include: { hospital: { select: { nombre: true } }, fases: { select: { estado: true } } },
       orderBy: { fechaFinPlan: "asc" },
     }),
-    db.fasePreProyecto.findMany({
+    db.faseProyecto.findMany({
       where: {
         fechaPlan: { lt: ahora },
         estado: { not: "COMPLETADO" },
-        preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
+        proyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } },
       },
-      select: { id: true, nombre: true, fechaPlan: true, preProyecto: { select: { id: true, titulo: true } } },
+      select: { id: true, nombre: true, fechaPlan: true, proyecto: { select: { id: true, titulo: true } } },
       orderBy: { fechaPlan: "asc" },
       take: 5,
     }),
-    db.preProyecto.findMany({
+    db.proyecto.findMany({
       where: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] }, fechaFinPlan: { gte: ahora, lte: en7dias } },
       select: { id: true, titulo: true, fechaFinPlan: true, hospital: { select: { nombre: true } } },
       orderBy: { fechaFinPlan: "asc" },
     }),
     db.entradaTimeline.findMany({
-      where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias }, preProyecto: { responsableId: userId } },
-      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, preProyecto: { select: { id: true, hospital: { select: { nombre: true } } } } },
+      where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias }, proyecto: { responsableId: userId } },
+      select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, proyecto: { select: { id: true, hospital: { select: { nombre: true } } } } },
       orderBy: { fechaCita: "asc" }, take: 5,
     }),
     db.hito.findMany({
-      where: { fecha: { lt: ahora }, completado: false, preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
-      select: { id: true, titulo: true, fecha: true, preProyecto: { select: { id: true, titulo: true } } },
+      where: { fecha: { lt: ahora }, completado: false, proyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+      select: { id: true, titulo: true, fecha: true, proyecto: { select: { id: true, titulo: true } } },
       orderBy: { fecha: "asc" }, take: 5,
     }),
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
-    db.tarea.findMany({ where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA", "CANCELADA"] }, preProyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } }, include: { preProyecto: { select: { id: true, titulo: true } } }, orderBy: { fechaVencimiento: "asc" }, take: 5 }),
+    db.tarea.findMany({ where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA", "CANCELADA"] }, proyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } }, include: { proyecto: { select: { id: true, titulo: true } } }, orderBy: { fechaVencimiento: "asc" }, take: 5 }),
   ])
 
   const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -876,13 +876,13 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
   const alertas: AlertaItem[] = []
   proyectosVenc.forEach(p => {
     const dias = p.fechaFinPlan ? Math.ceil((new Date(p.fechaFinPlan).getTime() - ahora.getTime()) / 86400000) : 0
-    alertas.push({ key: `pv-${p.id}`, titulo: p.titulo, sub: `Vence en ${dias} día${dias !== 1 ? "s" : ""} · ${p.hospital.nombre}`, href: `/pre-proyectos/${p.id}`, color: "#f97316", bg: "#fff7ed" })
+    alertas.push({ key: `pv-${p.id}`, titulo: p.titulo, sub: `Vence en ${dias} día${dias !== 1 ? "s" : ""} · ${p.hospital.nombre}`, href: `/proyectos/${p.id}`, color: "#f97316", bg: "#fff7ed" })
   })
   fasesRetrasadas.forEach(f => {
-    alertas.push({ key: `fr-${f.id}`, titulo: f.preProyecto.titulo, sub: `Fase "${f.nombre}" — debía completarse el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${f.preProyecto.id}`, color: "#dc2626", bg: "#fef2f2" })
+    alertas.push({ key: `fr-${f.id}`, titulo: f.proyecto.titulo, sub: `Fase "${f.nombre}" — debía completarse el ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`, href: `/proyectos/${f.proyecto.id}`, color: "#dc2626", bg: "#fef2f2" })
   })
   hitosRetrasados.forEach(h => {
-    alertas.push({ key: `hr-${h.id}`, titulo: h.preProyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/pre-proyectos/${h.preProyecto.id}`, color: "#f97316", bg: "#fff7ed" })
+    alertas.push({ key: `hr-${h.id}`, titulo: h.proyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/proyectos/${h.proyecto.id}`, color: "#f97316", bg: "#fff7ed" })
   })
 
   const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0
@@ -912,7 +912,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
               </Link>
             ))}
             {tareasVencidas.map(t => (
-              <Link key={t.id} href={`/pre-proyectos/${t.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+              <Link key={t.id} href={`/proyectos/${t.proyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                 <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -920,7 +920,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{t.titulo}</p>
-                  <p className="text-xs text-gray-400 truncate">{t.preProyecto.titulo} · Tarea vencida</p>
+                  <p className="text-xs text-gray-400 truncate">{t.proyecto.titulo} · Tarea vencida</p>
                 </div>
                 <span className="text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full shrink-0">Vencida</span>
               </Link>
@@ -978,7 +978,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
 
         {/* Mis proyectos activos */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis proyectos activos" link="/pre-proyectos" /></div>
+          <div className="px-5 py-4 border-b border-gray-50"><SectionHeader title="Mis proyectos activos" link="/proyectos" /></div>
           {misProyectos.length === 0 ? (
             <EmptyState icon="folder" title="Sin proyectos asignados" description="No tienes proyectos activos asignados" />
           ) : (
@@ -986,7 +986,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
               {misProyectos.slice(0, 5).map(p => {
                 const pct = p.fases.length ? Math.round((p.fases.filter(f => f.estado === "COMPLETADO").length / p.fases.length) * 100) : 0
                 return (
-                  <Link key={p.id} href={`/pre-proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+                  <Link key={p.id} href={`/proyectos/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-teal-700 transition-colors">{p.hospital.nombre}</p>
                       <div className="flex items-center gap-2 mt-1">
@@ -1017,20 +1017,20 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       {proximasCitas.length > 0 && (
         <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
-            <SectionHeader title="Próximas citas (14 días)" link="/pre-proyectos" />
+            <SectionHeader title="Próximas citas (14 días)" link="/proyectos" />
           </div>
           <div className="divide-y divide-gray-50">
             {proximasCitas.map(c => {
               const dias = c.fechaCita ? Math.ceil((new Date(c.fechaCita).getTime() - ahora.getTime()) / 86400000) : 0
               return (
-                <Link key={c.id} href={`/pre-proyectos/${c.preProyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <Link key={c.id} href={`/proyectos/${c.proyecto.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                   <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 text-white text-[10px] font-bold" style={{ backgroundColor: dias <= 1 ? "#dc2626" : dias <= 3 ? "#f97316" : TEAL }}>
                     <span className="text-sm font-black leading-none">{dias <= 0 ? "!" : dias}</span>
                     {dias > 0 && <span>d</span>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{c.titulo}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.preProyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
+                    <p className="text-xs text-gray-400 truncate">{c.proyecto.hospital.nombre}{c.personaCita ? ` · ${c.personaCita}` : ""}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {c.lugarCita && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}>{c.lugarCita === "PRESENCIAL" ? "Presencial" : c.lugarCita === "TEAMS" ? "Teams" : c.lugarCita === "ZOOM" ? "Zoom" : "Meet"}</span>}
@@ -1049,7 +1049,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
           <QuickLink href="/visitas?abrir=1" label="Nueva visita"      Icon={IconClipboard}   color="bg-teal-50 text-teal-700" />
           <QuickLink href="/visitas"         label="Mis visitas"       Icon={IconFileText}    color="bg-blue-50 text-blue-700" />
           <QuickLink href="/hospitales"      label="Mis hospitales"    Icon={IconHospital}    color="bg-amber-50 text-amber-700" />
-          <QuickLink href="/pre-proyectos"   label="Proyectos"         Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
+          <QuickLink href="/proyectos"   label="Proyectos"         Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
         </div>
       </div>
     </div>

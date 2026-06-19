@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
     const rol = session.user.role
     const userId = session.user.id
 
-    if (q.length < 2) return NextResponse.json({ hospitales: [], visitas: [], preProyectos: [], proyectos: [] })
+    if (q.length < 2) return NextResponse.json({ hospitales: [], visitas: [], proyectos: [] })
 
-    const [hospitales, visitas, preProyectos, proyectos] = await Promise.all([
+    const [hospitales, visitas, proyectos] = await Promise.all([
       db.hospital.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : {
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         take: 4,
         orderBy: { fecha: "desc" },
       }),
-      db.preProyecto.findMany({
+      db.proyecto.findMany({
         where: {
           ...(rol !== "ADMIN" ? { responsableId: userId } : {}),
           OR: [
@@ -58,23 +58,9 @@ export async function GET(req: NextRequest) {
         take: 4,
         orderBy: { editadoEn: "desc" },
       }),
-      db.proyecto.findMany({
-        where: {
-          OR: [
-            { nombre: { contains: q, mode: "insensitive" } },
-            { hospital: { nombre: { contains: q, mode: "insensitive" } } },
-          ],
-        },
-        select: {
-          id: true, nombre: true,
-          hospital: { select: { nombre: true, ciudad: true } },
-        },
-        take: 3,
-        orderBy: { actualizadoEn: "desc" },
-      }),
     ])
 
-    const res = NextResponse.json({ hospitales, visitas, preProyectos, proyectos })
+    const res = NextResponse.json({ hospitales, visitas, proyectos })
     res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
     return res
   } catch (err) {

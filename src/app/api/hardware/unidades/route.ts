@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const tipo = searchParams.get("tipo")
   const estado = searchParams.get("estado")
   const hospitalId = searchParams.get("hospitalId")
-  const preProyectoId = searchParams.get("preProyectoId")
+  const proyectoId = searchParams.get("proyectoId")
   const catalogoId = searchParams.get("catalogoId")
   const q = searchParams.get("q")
   try {
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       where: {
         ...(estado ? { estado: estado as never } : {}),
         ...(hospitalId ? { hospitalId } : {}),
-        ...(preProyectoId ? { preProyectoId } : {}),
+        ...(proyectoId ? { proyectoId } : {}),
         ...(catalogoId ? { catalogoId } : {}),
         ...(tipo ? { catalogo: { tipo: tipo as never } } : {}),
         ...(q ? { OR: [
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       include: {
         catalogo: true,
         hospital: { select: { id: true, nombre: true, ciudad: true } },
-        preProyecto: { select: { id: true, titulo: true } },
+        proyecto: { select: { id: true, titulo: true } },
       },
       orderBy: { creadoEn: "desc" },
     })
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
               numSerie: item.numSerie || null,
               estado: item.estado || "DISPONIBLE",
               hospitalId: item.hospitalId || null,
-              preProyectoId: item.preProyectoId || null,
+              proyectoId: item.proyectoId || null,
               fechaCompra: item.fechaCompra ? new Date(item.fechaCompra) : null,
               fechaGarantia: item.fechaGarantia ? new Date(item.fechaGarantia) : null,
               notas: item.notas || null,
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         numSerie: body.numSerie || null,
         estado: body.estado || "DISPONIBLE",
         hospitalId: body.hospitalId || null,
-        preProyectoId: body.preProyectoId || null,
+        proyectoId: body.proyectoId || null,
         fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
         fechaGarantia: body.fechaGarantia ? new Date(body.fechaGarantia) : null,
         notas: body.notas || null,
@@ -101,19 +101,19 @@ export async function PUT(req: Request) {
   if (!session?.user || (rol !== "ADMIN" && rol !== "PROYECTOS")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   try {
     const body = await req.json()
-    const { ids, preProyectoId, hospitalId, estado } = body
+    const { ids, proyectoId, hospitalId, estado } = body
     if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ error: "ids requerido" }, { status: 400 })
     await db.hardwareUnidad.updateMany({
       where: { id: { in: ids } },
       data: {
-        ...(preProyectoId !== undefined ? { preProyectoId: preProyectoId || null } : {}),
+        ...(proyectoId !== undefined ? { proyectoId: proyectoId || null } : {}),
         ...(hospitalId !== undefined ? { hospitalId: hospitalId || null } : {}),
         ...(estado ? { estado } : {}),
       },
     })
     const updated = await db.hardwareUnidad.findMany({
       where: { id: { in: ids } },
-      include: { catalogo: true, hospital: { select: { id: true, nombre: true, ciudad: true } }, preProyecto: { select: { id: true, titulo: true } } },
+      include: { catalogo: true, hospital: { select: { id: true, nombre: true, ciudad: true } }, proyecto: { select: { id: true, titulo: true } } },
     })
     return NextResponse.json(updated)
   } catch {

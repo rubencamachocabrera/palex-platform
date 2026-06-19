@@ -22,11 +22,10 @@ export async function GET(
     const hospital = await db.hospital.findUnique({ where: { id }, select: { id: true } })
     if (!hospital) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
 
-    const [visitas, oportunidades, preProyectos, proyectos, contactos] = await Promise.all([
+    const [visitas, oportunidades, proyectos, contactos] = await Promise.all([
       db.visita.findMany({ where: { hospitalId: id }, select: { id: true, estado: true, fecha: true, usuario: { select: { nombre: true } } }, orderBy: { fecha: "desc" }, take: 50 }),
       db.oportunidad.findMany({ where: { hospitalId: id }, select: { id: true, titulo: true, etapa: true, historial: true, creadoEn: true, usuario: { select: { nombre: true } } }, orderBy: { creadoEn: "desc" }, take: 20 }),
-      db.preProyecto.findMany({ where: { hospitalId: id }, select: { id: true, titulo: true, estado: true, creadoEn: true, fases: { select: { id: true, nombre: true, fechaReal: true } }, hitos: { select: { id: true, titulo: true, fecha: true, fechaReal: true, completado: true } }, solicitudes: { select: { id: true, titulo: true, estado: true, fechaSolicitud: true } } }, orderBy: { creadoEn: "desc" }, take: 20 }),
-      db.proyecto.findMany({ where: { hospitalId: id }, select: { id: true, nombre: true, creadoEn: true }, orderBy: { creadoEn: "desc" }, take: 10 }),
+      db.proyecto.findMany({ where: { hospitalId: id }, select: { id: true, titulo: true, estado: true, creadoEn: true, fases: { select: { id: true, nombre: true, fechaReal: true } }, hitos: { select: { id: true, titulo: true, fecha: true, fechaReal: true, completado: true } }, solicitudes: { select: { id: true, titulo: true, estado: true, fechaSolicitud: true } } }, orderBy: { creadoEn: "desc" }, take: 20 }),
       db.contacto.findMany({ where: { hospitalId: id }, select: { id: true, nombre: true, cargo: true, creadoEn: true }, orderBy: { creadoEn: "desc" }, take: 20 }),
     ])
 
@@ -45,21 +44,17 @@ export async function GET(
       }
     }
 
-    for (const pp of preProyectos) {
-      eventos.push({ id: `pp-${pp.id}`, tipo: "preproyecto", titulo: pp.titulo, descripcion: `Pre-proyecto ${pp.estado.toLowerCase().replace(/_/g, " ")}`, fecha: pp.creadoEn.toISOString(), href: `/pre-proyectos/${pp.id}` })
+    for (const pp of proyectos) {
+      eventos.push({ id: `pp-${pp.id}`, tipo: "proyecto", titulo: pp.titulo, descripcion: `Proyecto ${pp.estado.toLowerCase().replace(/_/g, " ")}`, fecha: pp.creadoEn.toISOString(), href: `/proyectos/${pp.id}` })
       for (const f of pp.fases) {
-        if (f.fechaReal) eventos.push({ id: `fase-${f.id}`, tipo: "fase", titulo: `Fase completada: ${f.nombre}`, descripcion: pp.titulo, fecha: f.fechaReal.toISOString(), href: `/pre-proyectos/${pp.id}` })
+        if (f.fechaReal) eventos.push({ id: `fase-${f.id}`, tipo: "fase", titulo: `Fase completada: ${f.nombre}`, descripcion: pp.titulo, fecha: f.fechaReal.toISOString(), href: `/proyectos/${pp.id}` })
       }
       for (const h of pp.hitos) {
-        if (h.completado) eventos.push({ id: `hito-${h.id}`, tipo: "hito", titulo: h.titulo, descripcion: `Hito completado · ${pp.titulo}`, fecha: (h.fechaReal ?? h.fecha).toISOString(), href: `/pre-proyectos/${pp.id}` })
+        if (h.completado) eventos.push({ id: `hito-${h.id}`, tipo: "hito", titulo: h.titulo, descripcion: `Hito completado · ${pp.titulo}`, fecha: (h.fechaReal ?? h.fecha).toISOString(), href: `/proyectos/${pp.id}` })
       }
       for (const s of pp.solicitudes) {
-        if (s.estado === "ENTREGADA" || s.estado === "ENVIADA") eventos.push({ id: `mat-${s.id}`, tipo: "material", titulo: s.titulo, descripcion: `Material ${s.estado.toLowerCase()} · ${pp.titulo}`, fecha: s.fechaSolicitud.toISOString(), href: `/pre-proyectos/${pp.id}` })
+        if (s.estado === "ENTREGADA" || s.estado === "ENVIADA") eventos.push({ id: `mat-${s.id}`, tipo: "material", titulo: s.titulo, descripcion: `Material ${s.estado.toLowerCase()} · ${pp.titulo}`, fecha: s.fechaSolicitud.toISOString(), href: `/proyectos/${pp.id}` })
       }
-    }
-
-    for (const p of proyectos) {
-      eventos.push({ id: `proyecto-${p.id}`, tipo: "proyecto", titulo: p.nombre, descripcion: "Proyecto InLab vinculado", fecha: p.creadoEn.toISOString() })
     }
 
     for (const c of contactos) {

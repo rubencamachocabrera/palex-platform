@@ -1,69 +1,102 @@
-import { NextRequest, NextResponse } from "next/server"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
-export async function GET(req: NextRequest) {
+const FASES_DEFAULT = [
+  { tipo: "FIRMA_CONTRATO",     nombre: "Firma de Contrato",        orden: 1 },
+  { tipo: "VISITA_TECNICA",     nombre: "Visita Técnica Previa",    orden: 2 },
+  { tipo: "SOLICITUD_MATERIAL", nombre: "Solicitud de Material",    orden: 3 },
+  { tipo: "ENTREGA_MATERIAL",   nombre: "Entrega de Material",      orden: 4 },
+  { tipo: "CONFIGURACION",      nombre: "Configuración",            orden: 5 },
+  { tipo: "INSTALACION",        nombre: "Instalación",              orden: 6 },
+  { tipo: "PUESTA_EN_MARCHA",   nombre: "Puesta en Marcha",         orden: 7 },
+  { tipo: "FORMACION",          nombre: "Formación",                orden: 8 },
+  { tipo: "VALIDACION",         nombre: "Validación Técnica",       orden: 9 },
+  { tipo: "ENTREGA_PROYECTO",   nombre: "Entrega del Proyecto",     orden: 10 },
+  { tipo: "SOPORTE_POST",       nombre: "Soporte Post-Instalación", orden: 11 },
+] as const
+
+export async function GET(req: Request) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const { searchParams } = new URL(req.url)
+  const estado = searchParams.get("estado")
+  const hospitalId = searchParams.get("hospitalId")
+  const q = searchParams.get("q")
+  const prioridad = searchParams.get("prioridad")
+  const responsableId = searchParams.get("responsableId")
+  const rol    = session.user.role
+  const userId = session.user.id
   try {
-    const rl = checkRateLimit(req, "proyectos", { limit: 30, windowMs: 60000 })
-    if (rl) return rl
-
-    const session = await auth()
-    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
-    const proyectos = await db.proyecto.findMany({
+    const items = await db.proyecto.findMany({
+      where: {
+        // hospitalId provisto: todos los proyectos de ese hospital (sin filtro de responsable)
+        // sin hospitalId: solo proyectos propios para no-ADMIN
+        ...(rol !== "ADMIN" && !hospitalId ? { responsableId: userId } : {}),
+        ...(estado ? { estado: estado as never } : {}),
+        ...(hospitalId ? { hospitalId } : {}),
+        ...(prioridad !== null && prioridad !== "" ? { prioridad: parseInt(prioridad) } : {}),
+        ...(responsableId ? { responsableId } : {}),
+        ...(q ? { OR: [
+          { titulo: { contains: q, mode: "insensitive" } },
+          { hospital: { nombre: { contains: q, mode: "insensitive" } } },
+        ]} : {}),
+      },
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true } },
+        responsable: { select: { id: true, nombre: true } },
+        fases: { select: { id: true, tipo: true, estado: true, orden: true } },
+        visitas: { select: { id: true } },
+        solicitudes: { select: { id: true } },
+        hardwareUnidades: { select: { id: true } },
         modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
       },
       orderBy: { creadoEn: "desc" },
     })
-    const res = NextResponse.json(proyectos)
-    res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
-    return res
-  } catch (err) {
-    console.error("[GET /api/proyectos]", err)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return NextResponse.json(items, {
+      headers: { "Cache-Control": "private, max-age=0, no-store" },
+    })
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   try {
-    const rl = checkRateLimit(req, "proyectos", { limit: 30, windowMs: 60000 })
-    if (rl) return rl
-
-    const session = await auth()
-    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    const rol = session.user.role
-    if (rol !== "ADMIN" && rol !== "PROYECTOS") {
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-    }
-
     const body = await req.json()
-    const { nombre, hospitalId, fechaInicio, fechaFin, refConcurso, moduloIds } = body
-    if (!nombre || !hospitalId || !fechaInicio) {
-      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
-    }
+    const { titulo, hospitalId, responsableId, descripcion, prioridad, presupuesto, fechaInicio, fechaFinPlan, refConcurso, moduloIds } = body
+    if (!titulo || !hospitalId) return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
 
     const proyecto = await db.proyecto.create({
       data: {
-        nombre,
+        titulo,
         hospitalId,
-        fechaInicio: new Date(fechaInicio),
-        fechaFin: fechaFin ? new Date(fechaFin) : null,
+        responsableId: responsableId || null,
+        descripcion: descripcion || null,
+        prioridad: prioridad ?? 0,
+        presupuesto: presupuesto ? parseFloat(presupuesto) : null,
+        fechaInicio: fechaInicio ? new Date(fechaInicio) : null,
+        fechaFinPlan: fechaFinPlan ? new Date(fechaFinPlan) : null,
         refConcurso: refConcurso || null,
-        modulos: moduloIds?.length
-          ? { create: (moduloIds as string[]).map((id: string) => ({ moduloId: id })) }
-          : undefined,
+        fases: {
+          create: FASES_DEFAULT.map(f => ({ ...f })),
+        },
+        ...(Array.isArray(moduloIds) && moduloIds.length > 0 ? {
+          modulos: {
+            create: moduloIds.map((moduloId: string) => ({ moduloId })),
+          },
+        } : {}),
       },
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true } },
+        fases: true,
         modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
       },
     })
     return NextResponse.json(proyecto, { status: 201 })
-  } catch (err) {
-    console.error("[POST /api/proyectos]", err)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }

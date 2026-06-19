@@ -9,7 +9,7 @@ import { useTheme } from "@/components/ThemeProvider"
 import { TEAL } from "@/lib/brand"
 
 interface Resultado {
-  tipo: "hospital" | "visita" | "preproyecto" | "proyecto"
+  tipo: "hospital" | "visita" | "proyecto"
   id: string
   titulo: string
   subtitulo: string
@@ -42,15 +42,6 @@ function VisitaIcon() {
       <polyline points="14 2 14 8 20 8"/>
       <line x1="16" y1="13" x2="8" y2="13"/>
       <line x1="16" y1="17" x2="8" y2="17"/>
-    </svg>
-  )
-}
-
-function PreProyectoIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
     </svg>
   )
 }
@@ -144,7 +135,7 @@ export function TopBar() {
     try {
       const r = await fetch("/api/search?q=" + encodeURIComponent(texto.trim()))
       if (!r.ok) return
-      const { hospitales = [], visitas = [], preProyectos = [], proyectos = [] } = await r.json()
+      const { hospitales = [], visitas = [], proyectos = [] } = await r.json()
 
       const resH: Resultado[] = hospitales.map((h: { id: string; nombre: string; ciudad: string; zona?: { nombre: string } }) => ({
         tipo: "hospital" as const,
@@ -162,23 +153,15 @@ export function TopBar() {
         href: "/visitas/" + v.id,
       }))
 
-      const resPP: Resultado[] = preProyectos.map((p: { id: string; titulo: string; estado: string; hospital: { nombre: string; ciudad: string } }) => ({
-        tipo: "preproyecto" as const,
+      const resPP: Resultado[] = proyectos.map((p: { id: string; titulo: string; estado: string; hospital: { nombre: string; ciudad: string } }) => ({
+        tipo: "proyecto" as const,
         id: p.id,
         titulo: p.titulo,
         subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : "") + " · " + p.estado,
-        href: "/pre-proyectos/" + p.id,
-      }))
-
-      const resPR: Resultado[] = proyectos.map((p: { id: string; nombre: string; hospital: { nombre: string; ciudad: string } }) => ({
-        tipo: "proyecto" as const,
-        id: p.id,
-        titulo: p.nombre,
-        subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : ""),
         href: "/proyectos/" + p.id,
       }))
 
-      const todos = [...resH, ...resV, ...resPP, ...resPR]
+      const todos = [...resH, ...resV, ...resPP]
       setResultados(todos)
       setAbierto(todos.length > 0)
     } catch (e) {
@@ -312,7 +295,6 @@ export function TopBar() {
                 <span className="shrink-0 text-gray-400">
                   {r.tipo === "hospital" ? <HospitalIcon />
                    : r.tipo === "visita" ? <VisitaIcon />
-                   : r.tipo === "preproyecto" ? <PreProyectoIcon />
                    : <ProyectoIcon />}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -324,13 +306,12 @@ export function TopBar() {
                   style={
                     r.tipo === "hospital"    ? { backgroundColor: "#E6F7F6", color: TEAL }
                     : r.tipo === "visita"    ? { backgroundColor: "#FEF3E5", color: "#F7941D" }
-                    : r.tipo === "preproyecto" ? { backgroundColor: "#EEF2FF", color: "#4F46E5" }
-                    : { backgroundColor: "#EFF6FF", color: "#2563EB" }
+                    : { backgroundColor: "#EEF2FF", color: "#4F46E5" }
                   }
                 >
                   {r.tipo === "hospital" ? "Hospital"
                    : r.tipo === "visita" ? "Visita"
-                   : r.tipo === "preproyecto" ? "Pre-proyecto"
+                   
                    : "Proyecto"}
                 </span>
               </button>

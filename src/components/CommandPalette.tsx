@@ -8,7 +8,7 @@ import { TEAL } from "@/lib/brand"
 
 interface Accion {
   id: string
-  tipo: "accion" | "hospital" | "visita" | "preproyecto" | "proyecto"
+  tipo: "accion" | "hospital" | "visita" | "proyecto"
   titulo: string
   subtitulo?: string
   href?: string
@@ -83,14 +83,6 @@ function IcoArrow() {
     </svg>
   )
 }
-function IcoPreProyecto() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-  )
-}
 function IcoProyecto() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -109,13 +101,12 @@ const ACCIONES_BASE: Omit<Accion, "onSelect">[] = [
   { id: "visitas",       tipo: "accion", titulo: "Mis Visitas",              subtitulo: "Listado de visitas",           href: "/visitas",            icono: <IcoVisita /> },
   { id: "calendario",    tipo: "accion", titulo: "Vista Calendario",         subtitulo: "Ver visitas en calendario",    href: "/visitas/calendario", icono: <IcoCalendar /> },
   { id: "pipeline",      tipo: "accion", titulo: "Pipeline CRM",             subtitulo: "Oportunidades y etapas",       href: "/ventas/pipeline",    icono: <IcoPipeline /> },
-  { id: "pre-proyectos", tipo: "accion", titulo: "Pre-Proyectos",            subtitulo: "Gestión de pre-proyectos",     href: "/pre-proyectos",      icono: <IcoPreProyecto /> },
-  { id: "proyectos",     tipo: "accion", titulo: "Proyectos",                subtitulo: "Proyectos InLab activos",      href: "/proyectos",          icono: <IcoProyecto /> },
+  { id: "proyectos",     tipo: "accion", titulo: "Proyectos",                subtitulo: "Gestión de proyectos",         href: "/proyectos",          icono: <IcoProyecto /> },
   { id: "nueva",         tipo: "accion", titulo: "Nueva Visita",             subtitulo: "Crear formulario de visita",   href: "/visitas/nueva",      icono: <IcoPlus /> },
 ]
 
 // Caché de búsqueda compartida — evita re-fetching en 60s
-let searchCache: { q: string; data: { hospitales: unknown[]; visitas: unknown[]; preProyectos: unknown[]; proyectos: unknown[] }; ts: number } | null = null
+let searchCache: { q: string; data: { hospitales: unknown[]; visitas: unknown[]; proyectos: unknown[] }; ts: number } | null = null
 
 // ─── CommandPalette ───────────────────────────────────────────────────────────
 
@@ -180,7 +171,7 @@ export function CommandPalette() {
           searchCache = { q, data, ts: ahora }
         }
       }
-      const { hospitales = [], visitas = [], preProyectos = [], proyectos = [] } = searchCache?.data ?? {}
+      const { hospitales = [], visitas = [], proyectos = [] } = searchCache?.data ?? {}
 
       const hospsF: Accion[] = (hospitales as { id: string; nombre: string; ciudad: string; zona?: { nombre: string } }[])
         .slice(0, 5)
@@ -206,31 +197,19 @@ export function CommandPalette() {
           onSelect: () => { cerrar(); router.push("/visitas/" + v.id) },
         }))
 
-      const ppF: Accion[] = (preProyectos as { id: string; titulo: string; estado: string; hospital: { nombre: string; ciudad: string } }[])
-        .slice(0, 4)
+      const ppF: Accion[] = (proyectos as { id: string; titulo: string; estado: string; hospital: { nombre: string; ciudad: string } }[])
+        .slice(0, 6)
         .map(p => ({
           id: "pp-" + p.id,
-          tipo: "preproyecto" as const,
+          tipo: "proyecto" as const,
           titulo: p.titulo,
           subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : "") + " · " + p.estado,
-          href: "/pre-proyectos/" + p.id,
-          icono: <IcoPreProyecto />,
-          onSelect: () => { cerrar(); router.push("/pre-proyectos/" + p.id) },
-        }))
-
-      const prF: Accion[] = (proyectos as { id: string; nombre: string; hospital: { nombre: string; ciudad: string } }[])
-        .slice(0, 3)
-        .map(p => ({
-          id: "pr-" + p.id,
-          tipo: "proyecto" as const,
-          titulo: p.nombre,
-          subtitulo: p.hospital?.nombre + (p.hospital?.ciudad ? " · " + p.hospital.ciudad : ""),
           href: "/proyectos/" + p.id,
           icono: <IcoProyecto />,
           onSelect: () => { cerrar(); router.push("/proyectos/" + p.id) },
         }))
 
-      setResultados([...accionesF, ...hospsF, ...visitasF, ...ppF, ...prF])
+      setResultados([...accionesF, ...hospsF, ...visitasF, ...ppF])
       setIndiceActivo(0)
     } catch {
       // silenciar error de red
@@ -273,24 +252,21 @@ export function CommandPalette() {
   const acciones    = resultados.filter(r => r.tipo === "accion")
   const hosps       = resultados.filter(r => r.tipo === "hospital")
   const visits      = resultados.filter(r => r.tipo === "visita")
-  const preproys    = resultados.filter(r => r.tipo === "preproyecto")
   const proys       = resultados.filter(r => r.tipo === "proyecto")
   if (acciones.length)  grupos.push({ label: "Acciones rápidas", items: acciones })
   if (hosps.length)     grupos.push({ label: "Hospitales",        items: hosps })
   if (visits.length)    grupos.push({ label: "Visitas",           items: visits })
-  if (preproys.length)  grupos.push({ label: "Pre-Proyectos",     items: preproys })
-  if (proys.length)     grupos.push({ label: "Proyectos InLab",   items: proys })
+  if (proys.length)     grupos.push({ label: "Proyectos",         items: proys })
 
   const TIPO_COLOR: Record<string, { bg: string; color: string }> = {
     accion:      { bg: "#F0F9FF", color: "#0EA5E9" },
     hospital:    { bg: "#E6F7F6", color: "#00A99D" },
     visita:      { bg: "#FEF3E5", color: "#F7941D" },
-    preproyecto: { bg: "#EEF2FF", color: "#4F46E5" },
-    proyecto:    { bg: "#EFF6FF", color: "#2563EB" },
+    proyecto:    { bg: "#EEF2FF", color: "#4F46E5" },
   }
   const TIPO_LABEL: Record<string, string> = {
     accion: "Acción", hospital: "Hospital", visita: "Visita",
-    preproyecto: "Pre-proyecto", proyecto: "Proyecto",
+    proyecto: "Proyecto",
   }
 
   let itemIdx = -1

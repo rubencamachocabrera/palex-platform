@@ -37,7 +37,7 @@ interface UnidadItem {
   creadoEn: string
   catalogo: CatalogoItem
   hospital: { id: string; nombre: string; ciudad: string } | null
-  preProyecto: { id: string; titulo: string } | null
+  proyecto: { id: string; titulo: string } | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -827,7 +827,7 @@ function UnidadesModal({ item, onClose, onChanged }: {
                         </span>
                       </td>
                       <td className="py-2.5 text-xs text-gray-500 max-w-[160px] truncate">
-                        {u.hospital?.nombre ?? u.preProyecto?.titulo ?? "—"}
+                        {u.hospital?.nombre ?? u.proyecto?.titulo ?? "—"}
                       </td>
                       <td className="py-2.5 text-xs text-gray-400">
                         {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
@@ -1142,7 +1142,7 @@ function InventarioTab({ tipos }: { tipos: HardwareTipo[] }) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell max-w-[160px] truncate">
-                      {u.hospital?.nombre ?? u.preProyecto?.titulo ?? "—"}
+                      {u.hospital?.nombre ?? u.proyecto?.titulo ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">
                       {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}

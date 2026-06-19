@@ -12,7 +12,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("numSerie" in body) data.numSerie = body.numSerie || null
     if ("estado" in body) data.estado = body.estado
     if ("hospitalId" in body) data.hospitalId = body.hospitalId || null
-    if ("preProyectoId" in body) data.preProyectoId = body.preProyectoId || null
+    if ("proyectoId" in body) data.proyectoId = body.proyectoId || null
     if ("fechaCompra" in body) data.fechaCompra = body.fechaCompra ? new Date(body.fechaCompra) : null
     if ("fechaGarantia" in body) data.fechaGarantia = body.fechaGarantia ? new Date(body.fechaGarantia) : null
     if ("proximoMantenimiento" in body) data.proximoMantenimiento = body.proximoMantenimiento ? new Date(body.proximoMantenimiento) : null

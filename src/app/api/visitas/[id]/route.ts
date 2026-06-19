@@ -15,7 +15,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         hospital: { select: { id: true, nombre: true, ciudad: true } },
         usuario: { select: { id: true, nombre: true } },
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
-        preProyecto: { select: { id: true, titulo: true } },
+        proyecto: { select: { id: true, titulo: true } },
         contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
       },
     })
@@ -61,23 +61,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(typeof body.titulo === "string" && { titulo: body.titulo.trim() || null }),
         ...(body.fecha !== undefined && body.fecha && !isNaN(Date.parse(body.fecha)) && { fecha: new Date(body.fecha) }),
         ...("oportunidadId" in body && { oportunidadId: body.oportunidadId ?? null }),
-        ...("preProyectoId" in body && { preProyectoId: body.preProyectoId ?? null }),
+        ...("proyectoId" in body && { proyectoId: body.proyectoId ?? null }),
         ...("contactoPrincipalId" in body && { contactoPrincipalId: body.contactoPrincipalId ?? null }),
         score,
       },
       include: {
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
-        preProyecto: { select: { id: true, titulo: true } },
+        proyecto: { select: { id: true, titulo: true } },
         contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
       },
     })
 
     // Auto-vincular contacto al pre-proyecto si ambos están presentes
-    if ("contactoPrincipalId" in body && body.contactoPrincipalId && updated.preProyectoId) {
+    if ("contactoPrincipalId" in body && body.contactoPrincipalId && updated.proyectoId) {
       try {
-        await db.preProyectoContacto.upsert({
-          where: { preProyectoId_contactoId: { preProyectoId: updated.preProyectoId, contactoId: body.contactoPrincipalId } },
-          create: { preProyectoId: updated.preProyectoId, contactoId: body.contactoPrincipalId },
+        await db.proyectoContacto.upsert({
+          where: { proyectoId_contactoId: { proyectoId: updated.proyectoId, contactoId: body.contactoPrincipalId } },
+          create: { proyectoId: updated.proyectoId, contactoId: body.contactoPrincipalId },
           update: {},
         })
       } catch (e) { console.warn("[PATCH visitas/[id]] upsert contacto pre-proyecto:", e) }

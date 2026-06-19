@@ -67,19 +67,17 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
 
     const { id } = await params
 
-    const [visitas, oportunidades, preProyectos, proyectos] = await Promise.all([
+    const [visitas, oportunidades, proyectos] = await Promise.all([
       db.visita.count({ where: { hospitalId: id } }),
       db.oportunidad.count({ where: { hospitalId: id } }),
-      db.preProyecto.count({ where: { hospitalId: id } }),
       db.proyecto.count({ where: { hospitalId: id } }),
     ])
 
-    const total = visitas + oportunidades + preProyectos + proyectos
+    const total = visitas + oportunidades + proyectos
     if (total > 0) {
       const partes: string[] = []
       if (visitas > 0) partes.push(`${visitas} visita${visitas !== 1 ? "s" : ""}`)
       if (oportunidades > 0) partes.push(`${oportunidades} oportunidad${oportunidades !== 1 ? "es" : ""}`)
-      if (preProyectos > 0) partes.push(`${preProyectos} pre-proyecto${preProyectos !== 1 ? "s" : ""}`)
       if (proyectos > 0) partes.push(`${proyectos} proyecto${proyectos !== 1 ? "s" : ""}`)
       return NextResponse.json(
         { error: `No se puede eliminar: tiene ${partes.join(", ")} vinculados` },

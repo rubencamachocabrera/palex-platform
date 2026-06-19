@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         unidades: {
           include: {
             hospital: { select: { id: true, nombre: true, ciudad: true } },
-            preProyecto: { select: { id: true, titulo: true } },
+            proyecto: { select: { id: true, titulo: true } },
           },
           orderBy: { creadoEn: "desc" },
         },

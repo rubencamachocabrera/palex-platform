@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     if (adminView && session.user.role === "ADMIN") {
       const modulos = await db.moduloInlab.findMany({
         orderBy: { nombre: "asc" },
-        include: { _count: { select: { proyectos: true } } },
+        include: { _count: { select: { proyectoModulos: true } } },
       })
       return NextResponse.json(modulos)
     }

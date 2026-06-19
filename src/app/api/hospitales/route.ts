@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         where: { etapa: { notIn: ["GANADO", "PERDIDO"] } },
         _count: { _all: true },
       }),
-      db.preProyecto.groupBy({
+      db.proyecto.groupBy({
         by: ["hospitalId"],
         where: { estado: "EN_CURSO" },
         _count: { _all: true },

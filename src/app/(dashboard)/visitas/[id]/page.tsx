@@ -72,13 +72,13 @@ const ESTADO_COLOR: Record<string, string> = {
 interface Foto { id: string; name: string; data: string; caption: string }
 type FotosMap = Record<string, Foto[]>
 
-interface PreProyectoItem { id: string; titulo: string; estado: string; fases: { estado: string }[] }
+interface ProyectoItem { id: string; titulo: string; estado: string; fases: { estado: string }[] }
 interface ContactoItem { id: string; nombre: string; cargo: string | null }
 
 interface VisitaData {
   id: string; titulo?: string | null; estado: string; tipo: string; fecha: string; editadoEn?: string
-  preProyectoId?: string | null
-  preProyecto?: PreProyectoItem | null
+  proyectoId?: string | null
+  proyecto?: ProyectoItem | null
   contactoPrincipalId?: string | null
   contactoPrincipal?: ContactoItem | null
   datos: Record<string, unknown>
@@ -904,7 +904,7 @@ export default function VisitaPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [navOpen, setNavOpen] = useState(false)
   const [saveError, setSaveError] = useState(false)
-  const [preProyectos, setPreProyectos] = useState<PreProyectoItem[]>([])
+  const [proyectos, setProyectos] = useState<ProyectoItem[]>([])
   const [vinculandoPP, setVinculandoPP] = useState(false)
   const [contactos, setContactos] = useState<ContactoItem[]>([])
   const [vinculandoContacto, setVinculandoContacto] = useState(false)
@@ -949,10 +949,10 @@ export default function VisitaPage() {
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
           setDatos(resolved); datosRef.current = resolved
-          // Cargar pre-proyectos, contactos y rol usuario
-          fetch(`/api/pre-proyectos?hospitalId=${data.hospital.id}`)
+          // Cargar proyectos, contactos y rol usuario
+          fetch(`/api/proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
-            .then(pps => { if (Array.isArray(pps)) setPreProyectos(pps.map((p: { id: string; titulo: string; estado: string; fases: { estado: string }[] }) => ({ id: p.id, titulo: p.titulo, estado: p.estado, fases: p.fases ?? [] }))) })
+            .then(pps => { if (Array.isArray(pps)) setProyectos(pps.map((p: { id: string; titulo: string; estado: string; fases: { estado: string }[] }) => ({ id: p.id, titulo: p.titulo, estado: p.estado, fases: p.fases ?? [] }))) })
             .catch(() => {})
           fetch(`/api/hospitales/${data.hospital.id}/contactos`)
             .then(r => r.ok ? r.json() : [])
@@ -1119,18 +1119,18 @@ export default function VisitaPage() {
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
-  const vincularPreProyecto = useCallback(async (preProyectoId: string | null) => {
+  const vincularProyecto = useCallback(async (proyectoId: string | null) => {
     if (!visitaRef.current) return
     setVinculandoPP(true)
     try {
       const r = await fetch(`/api/visitas/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preProyectoId }),
+        body: JSON.stringify({ proyectoId }),
       })
       if (r.ok) {
         const updated = await r.json()
-        setVisita(v => v ? { ...v, preProyectoId: updated.preProyectoId, preProyecto: updated.preProyecto ?? null } : v)
+        setVisita(v => v ? { ...v, proyectoId: updated.proyectoId, proyecto: updated.proyecto ?? null } : v)
       }
     } catch { /* silencioso */ } finally {
       setVinculandoPP(false)
@@ -1540,28 +1540,28 @@ export default function VisitaPage() {
               </span>
               <span className="text-xs font-semibold text-gray-600">Proyecto</span>
             </div>
-            {visita.preProyecto ? (
+            {visita.proyecto ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border min-h-[32px]"
                 style={{ backgroundColor: `${TEAL}10`, borderColor: `${TEAL}30`, color: TEAL }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
-                {visita.preProyecto.titulo}
+                {visita.proyecto.titulo}
                 {!readOnly && (
-                  <button onClick={() => vincularPreProyecto(null)} disabled={vinculandoPP}
+                  <button onClick={() => vincularProyecto(null)} disabled={vinculandoPP}
                     className="ml-1 opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
                     title="Desvincular proyecto">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
                 )}
               </span>
-            ) : preProyectos.length > 0 ? (
+            ) : proyectos.length > 0 ? (
               <select
                 disabled={readOnly || vinculandoPP}
-                onChange={e => e.target.value && vincularPreProyecto(e.target.value)}
+                onChange={e => e.target.value && vincularProyecto(e.target.value)}
                 className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
                 defaultValue=""
               >
                 <option value="">Sin proyecto asociado</option>
-                {preProyectos.map(pp => {
+                {proyectos.map(pp => {
                   const fasOk = pp.fases.filter(f => f.estado === "COMPLETADA").length
                   return (
                     <option key={pp.id} value={pp.id}>

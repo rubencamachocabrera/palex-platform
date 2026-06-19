@@ -37,11 +37,11 @@ export async function GET(_req: NextRequest) {
         orderBy: { editadoEn: "asc" },
         take: 10,
       }),
-      db.fasePreProyecto.findMany({
+      db.faseProyecto.findMany({
         where: {
           fechaPlan: { lt: now },
           estado: { not: "COMPLETADO" },
-          preProyecto: {
+          proyecto: {
             estado: { notIn: ["COMPLETADO", "CANCELADO"] },
             ...(rol === "ADMIN" ? {} : { responsableId: userId }),
           },
@@ -50,12 +50,12 @@ export async function GET(_req: NextRequest) {
           id: true,
           nombre: true,
           fechaPlan: true,
-          preProyecto: { select: { id: true, titulo: true } },
+          proyecto: { select: { id: true, titulo: true } },
         },
         orderBy: { fechaPlan: "asc" },
         take: 10,
       }),
-      db.preProyecto.findMany({
+      db.proyecto.findMany({
         where: {
           fechaFinPlan: { lte: en7dias, gte: now },
           estado: { notIn: ["COMPLETADO", "CANCELADO"] },
@@ -70,14 +70,14 @@ export async function GET(_req: NextRequest) {
           fechaVencimiento: { lt: now },
           estado: { notIn: ["COMPLETADA", "CANCELADA"] },
           parentId: null,
-          preProyecto: {
+          proyecto: {
             estado: { notIn: ["COMPLETADO", "CANCELADO"] },
             ...(rol === "ADMIN" ? {} : { responsableId: userId }),
           },
         },
         select: {
           id: true, titulo: true, fechaVencimiento: true,
-          preProyecto: { select: { id: true, titulo: true } },
+          proyecto: { select: { id: true, titulo: true } },
         },
         orderBy: { fechaVencimiento: "asc" },
         take: 8,
@@ -102,8 +102,8 @@ export async function GET(_req: NextRequest) {
       ...fasesRetrasadas.map(f => ({
         tipo: "fase_retrasada" as const,
         id: f.id,
-        titulo: f.preProyecto.titulo,
-        href: `/pre-proyectos/${f.preProyecto.id}`,
+        titulo: f.proyecto.titulo,
+        href: `/proyectos/${f.proyecto.id}`,
         mensaje: `Fase "${f.nombre}" retrasada desde ${new Date(f.fechaPlan!).toLocaleDateString("es-ES")}`,
       })),
       ...proyectosPorVencer.map(p => {
@@ -112,7 +112,7 @@ export async function GET(_req: NextRequest) {
           tipo: "proyecto_por_vencer" as const,
           id: p.id,
           titulo: p.titulo,
-          href: `/pre-proyectos/${p.id}`,
+          href: `/proyectos/${p.id}`,
           mensaje: diasRestantes <= 0 ? "Fecha de entrega hoy" : `Entrega en ${diasRestantes} día${diasRestantes === 1 ? "" : "s"}`,
         }
       }),
@@ -122,8 +122,8 @@ export async function GET(_req: NextRequest) {
           tipo: "tarea_retrasada" as const,
           id: t.id,
           titulo: t.titulo,
-          href: `/pre-proyectos/${t.preProyecto.id}`,
-          mensaje: `En "${t.preProyecto.titulo}" · ${diasRetraso === 0 ? "vencía hoy" : `retrasada ${diasRetraso}d`}`,
+          href: `/proyectos/${t.proyecto.id}`,
+          mensaje: `En "${t.proyecto.titulo}" · ${diasRetraso === 0 ? "vencía hoy" : `retrasada ${diasRetraso}d`}`,
         }
       }),
     ]

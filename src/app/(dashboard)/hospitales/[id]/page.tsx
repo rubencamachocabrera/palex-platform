@@ -220,7 +220,7 @@ export default function HospitalDetailPage() {
   async function cargarProyectos() {
     if (proyectosLoaded) return
     setProyectosLoading(true)
-    fetch(`/api/pre-proyectos?hospitalId=${id}`)
+    fetch(`/api/proyectos?hospitalId=${id}`)
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setProyectos(d) })
       .finally(() => { setProyectosLoading(false); setProyectosLoaded(true) })
@@ -230,7 +230,7 @@ export default function HospitalDetailPage() {
     e.preventDefault()
     if (!formProyecto.titulo.trim()) { setErrorProyecto("El título es obligatorio"); return }
     setGuardandoProyecto(true); setErrorProyecto("")
-    const r = await fetch("/api/pre-proyectos", {
+    const r = await fetch("/api/proyectos", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ titulo: formProyecto.titulo.trim(), descripcion: formProyecto.descripcion.trim() || null, hospitalId: id }),
     })
@@ -244,7 +244,7 @@ export default function HospitalDetailPage() {
     setShowNuevoProyecto(false)
     setFormProyecto({ titulo: "", descripcion: "" })
     setGuardandoProyecto(false)
-    router.push(`/pre-proyectos/${nuevo.id}`)
+    router.push(`/proyectos/${nuevo.id}`)
   }
 
   function changeTab(t: typeof tab) {
@@ -269,12 +269,12 @@ export default function HospitalDetailPage() {
     if (!llamadaForm.motivo.trim()) return
     setRegistrandoLlamada(true)
     try {
-      const rPP = await fetch(`/api/pre-proyectos?hospitalId=${id}`)
+      const rPP = await fetch(`/api/proyectos?hospitalId=${id}`)
       const pps = rPP.ok ? await rPP.json() : []
       const ppActivo = Array.isArray(pps) ? pps.find((p: { estado: string }) => ["EN_CURSO","NUEVO","PAUSADO"].includes(p.estado)) : null
       const contenido = [llamadaForm.motivo.trim(), llamadaForm.resultado.trim() ? `Resultado: ${llamadaForm.resultado.trim()}` : "", llamadaForm.contacto.trim() ? `Contacto: ${llamadaForm.contacto.trim()}` : "", llamadaForm.duracion.trim() ? `Duración: ${llamadaForm.duracion.trim()} min` : ""].filter(Boolean).join("\n")
       if (ppActivo) {
-        await fetch(`/api/pre-proyectos/${ppActivo.id}/entradas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tipo: "EVENTO", titulo: `Llamada — ${hospital!.nombre}`, contenido }) })
+        await fetch(`/api/proyectos/${ppActivo.id}/entradas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tipo: "EVENTO", titulo: `Llamada — ${hospital!.nombre}`, contenido }) })
       } else {
         await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospitalId: id, tipo: "VENTAS", estado: "ARCHIVADA", datos: { notas: contenido, tipo_registro: "llamada" } }) })
       }
@@ -604,7 +604,7 @@ export default function HospitalDetailPage() {
                     const retrasado = p.fechaFinPlan && new Date(p.fechaFinPlan) < new Date()
                       && p.estado !== "COMPLETADO" && p.estado !== "CANCELADO"
                     return (
-                      <Link key={p.id} href={`/pre-proyectos/${p.id}`}
+                      <Link key={p.id} href={`/proyectos/${p.id}`}
                         className="block px-5 py-4 hover:bg-gray-50/50 transition-colors group">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">

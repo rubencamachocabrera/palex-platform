@@ -55,7 +55,7 @@ enum EtapaPipeline {
   PERDIDO
 }
 
-enum EstadoPreProyecto {
+enum EstadoProyecto {
   NUEVO
   EN_CURSO
   PAUSADO
@@ -146,8 +146,8 @@ model Usuario {
   zonas             UsuarioZona[]
   visitas           Visita[]
   oportunidades     Oportunidad[]
-  preProyectos      PreProyecto[]      @relation("PreProyectoResponsable")
-  fasesResponsable  FasePreProyecto[]  @relation("FaseResponsable")
+  proyectos      Proyecto[]      @relation("ProyectoResponsable")
+  fasesResponsable  FaseProyecto[]  @relation("FaseResponsable")
 
   @@map("usuarios")
 }
@@ -200,8 +200,7 @@ model Hospital {
   contactos        Contacto[]
   visitas          Visita[]
   oportunidades    Oportunidad[]
-  proyectos        Proyecto[]
-  preProyectos     PreProyecto[]
+  proyectos     Proyecto[]
   hardwareUnidades HardwareUnidad[]
 
   @@map("hospitales")
@@ -218,7 +217,7 @@ model Contacto {
   creadoEn   DateTime @default(now())
 
   hospital         Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  preProyectos     PreProyectoContacto[]
+  proyectos     ProyectoContacto[]
   visitasPrincipal Visita[]              @relation("VisitaContactoPrincipal")
 
   @@map("contactos")
@@ -232,7 +231,7 @@ model Visita {
   hospitalId           String
   usuarioId            String
   oportunidadId        String?
-  preProyectoId        String?
+  proyectoId        String?  @map("preProyectoId")
   contactoPrincipalId  String?
   tipo                 TipoVisita
   estado               EstadoVisita @default(BORRADOR)
@@ -246,51 +245,32 @@ model Visita {
   hospital           Hospital     @relation(fields: [hospitalId], references: [id])
   usuario            Usuario      @relation(fields: [usuarioId], references: [id])
   oportunidad        Oportunidad? @relation(fields: [oportunidadId], references: [id], onDelete: SetNull)
-  preProyecto        PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
+  proyecto        Proyecto? @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
   contactoPrincipal  Contacto?    @relation("VisitaContactoPrincipal", fields: [contactoPrincipalId], references: [id], onDelete: SetNull)
   comentarios        Comentario[]
 
   @@map("visitas")
 }
 
-// --- PROYECTOS (InLab) -----------------------------------------------
-
-model Proyecto {
-  id            String    @id @default(cuid())
-  nombre        String
-  hospitalId    String
-  fechaInicio   DateTime
-  fechaFin      DateTime?
-  refConcurso   String?
-  mapaHtml      String?   @db.Text
-  mapaToken     String?   @unique
-  creadoEn      DateTime  @default(now())
-  actualizadoEn DateTime  @updatedAt
-
-  hospital     Hospital        @relation(fields: [hospitalId], references: [id])
-  modulos      ProyectoModulo[]
-  preProyectos PreProyecto[]   @relation("PreProyectoProyecto")
-
-  @@map("proyectos")
-}
+// --- MODULOS INLAB ---------------------------------------------------
 
 model ProyectoModulo {
-  proyectoId String
-  moduloId   String
-  estado     EstadoModulo @default(PENDIENTE)
+  proyectoId String @map("preProyectoId")
+  moduloId      String
+  estado        EstadoModulo @default(PENDIENTE)
 
-  proyecto Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
-  modulo   ModuloInlab @relation(fields: [moduloId], references: [id])
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  modulo      ModuloInlab @relation("ProyectoModulos", fields: [moduloId], references: [id])
 
   @@id([proyectoId, moduloId])
-  @@map("proyectos_modulos")
+  @@map("pre_proyectos_modulos")
 }
 
 model ModuloInlab {
-  id        String           @id @default(cuid())
-  nombre    String           @unique
-  activo    Boolean          @default(true)
-  proyectos ProyectoModulo[]
+  id                 String              @id @default(cuid())
+  nombre             String              @unique
+  activo             Boolean             @default(true)
+  proyectoModulos ProyectoModulo[] @relation("ProyectoModulos")
 
   @@map("modulos_inlab")
 }
@@ -320,16 +300,15 @@ model Oportunidad {
   @@map("oportunidades")
 }
 
-// --- PRE-PROYECTOS ---------------------------------------------------
+// --- PROYECTOS -------------------------------------------------------
 
-model PreProyecto {
+model Proyecto {
   id            String            @id @default(cuid())
   titulo        String
   descripcion   String?           @db.Text
   hospitalId    String
   responsableId String?
-  proyectoId    String?
-  estado        EstadoPreProyecto @default(NUEVO)
+  estado        EstadoProyecto @default(NUEVO)
   prioridad     Int               @default(0)
   presupuesto   Float?
   fechaInicio   DateTime?
@@ -337,31 +316,32 @@ model PreProyecto {
   fechaFinReal  DateTime?
   notas         String?           @db.Text
   refContrato   String?
+  refConcurso   String?
   mapaHtml      String?           @db.Text
   shareToken    String?           @unique
   creadoEn      DateTime          @default(now())
   editadoEn     DateTime          @updatedAt
 
   hospital         Hospital              @relation(fields: [hospitalId], references: [id])
-  responsable      Usuario?              @relation("PreProyectoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
-  proyecto         Proyecto?             @relation("PreProyectoProyecto", fields: [proyectoId], references: [id], onDelete: SetNull)
-  fases            FasePreProyecto[]
+  responsable      Usuario?              @relation("ProyectoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+  fases            FaseProyecto[]
   hitos            Hito[]
   solicitudes      SolicitudMaterial[]
   hardwareUnidades HardwareUnidad[]
-  contactos        PreProyectoContacto[]
+  contactos        ProyectoContacto[]
   visitas          Visita[]
   entradas         EntradaTimeline[]
   tareas           Tarea[]
   adjuntos         Adjunto[]
   comentarios      Comentario[]
+  modulos          ProyectoModulo[]
 
   @@map("pre_proyectos")
 }
 
-model FasePreProyecto {
+model FaseProyecto {
   id            String     @id @default(cuid())
-  preProyectoId String
+  proyectoId String @map("preProyectoId")
   tipo          TipoFase
   nombre        String
   orden         Int
@@ -373,7 +353,7 @@ model FasePreProyecto {
   creadoEn      DateTime   @default(now())
   editadoEn     DateTime   @updatedAt
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   responsable Usuario?    @relation("FaseResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
 
   @@map("fases_pre_proyectos")
@@ -381,7 +361,7 @@ model FasePreProyecto {
 
 model Hito {
   id            String   @id @default(cuid())
-  preProyectoId String
+  proyectoId String @map("preProyectoId")
   titulo        String
   descripcion   String?
   fecha         DateTime
@@ -390,14 +370,14 @@ model Hito {
   creadoEn      DateTime @default(now())
   editadoEn     DateTime @updatedAt
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
   @@map("hitos")
 }
 
 model EntradaTimeline {
   id            String      @id @default(cuid())
-  preProyectoId String
+  proyectoId String @map("preProyectoId")
   tipo          TipoEntrada
   titulo        String
   contenido     String?     @db.Text
@@ -411,14 +391,14 @@ model EntradaTimeline {
   creadoEn      DateTime    @default(now())
   editadoEn     DateTime    @updatedAt
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
   @@map("entradas_timeline")
 }
 
 model Tarea {
   id               String         @id @default(cuid())
-  preProyectoId    String
+  proyectoId    String @map("preProyectoId")
   parentId         String?
   titulo           String
   descripcion      String?        @db.Text
@@ -431,7 +411,7 @@ model Tarea {
   creadoEn         DateTime       @default(now())
   editadoEn        DateTime       @updatedAt
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   parent      Tarea?      @relation("TareaSubtareas", fields: [parentId], references: [id], onDelete: Cascade)
   subtareas   Tarea[]     @relation("TareaSubtareas")
 
@@ -440,7 +420,7 @@ model Tarea {
 
 model SolicitudMaterial {
   id               String          @id @default(cuid())
-  preProyectoId    String
+  proyectoId    String @map("preProyectoId")
   titulo           String
   estado           EstadoSolicitud @default(PENDIENTE)
   fechaSolicitud   DateTime        @default(now())
@@ -450,7 +430,7 @@ model SolicitudMaterial {
   creadoEn         DateTime        @default(now())
   editadoEn        DateTime        @updatedAt
 
-  preProyecto PreProyecto    @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   lineas      LineaMaterial[]
 
   @@map("solicitudes_material")
@@ -528,7 +508,7 @@ model HardwareUnidad {
   numSerie      String?
   estado        EstadoHardware @default(DISPONIBLE)
   hospitalId    String?
-  preProyectoId String?
+  proyectoId String?  @map("preProyectoId")
   fechaCompra           DateTime?
   fechaGarantia         DateTime?
   proximoMantenimiento  DateTime?
@@ -538,21 +518,21 @@ model HardwareUnidad {
 
   catalogo    HardwareCatalogo @relation(fields: [catalogoId], references: [id])
   hospital    Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
-  preProyecto PreProyecto?     @relation(fields: [preProyectoId], references: [id], onDelete: SetNull)
+  proyecto Proyecto?     @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
 
   @@map("hardware_unidades")
 }
 
-// --- PIVOT PRE-PROYECTOS <-> CONTACTOS -------------------------------
+// --- PIVOT PROYECTOS <-> CONTACTOS -----------------------------------
 
-model PreProyectoContacto {
-  preProyectoId String
+model ProyectoContacto {
+  proyectoId String @map("preProyectoId")
   contactoId    String
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   contacto    Contacto    @relation(fields: [contactoId], references: [id], onDelete: Cascade)
 
-  @@id([preProyectoId, contactoId])
+  @@id([proyectoId, contactoId])
   @@map("pre_proyectos_contactos")
 }
 
@@ -560,7 +540,7 @@ model PreProyectoContacto {
 
 model Adjunto {
   id            String   @id @default(cuid())
-  preProyectoId String
+  proyectoId String @map("preProyectoId")
   nombre        String
   tipo          String
   tamano        Int
@@ -568,7 +548,7 @@ model Adjunto {
   creadoPor     String   @default("")
   creadoEn      DateTime @default(now())
 
-  preProyecto PreProyecto @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
   @@map("adjuntos")
 }
@@ -580,7 +560,7 @@ model Adjunto {
 model Comentario {
   id            String   @id @default(cuid())
   visitaId      String?
-  preProyectoId String?
+  proyectoId String?  @map("preProyectoId")
   autorId       String
   autorNombre   String
   contenido     String   @db.Text
@@ -589,7 +569,7 @@ model Comentario {
   editadoEn     DateTime @updatedAt
 
   visita      Visita?      @relation(fields: [visitaId], references: [id], onDelete: Cascade)
-  preProyecto PreProyecto? @relation(fields: [preProyectoId], references: [id], onDelete: Cascade)
+  proyecto Proyecto? @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
   @@map("comentarios")
 }

@@ -13,7 +13,6 @@ const PROTECTED_PREFIXES = [
   "/visitas",
   "/ventas",
   "/proyectos",
-  "/pre-proyectos",
   "/hardware",
   "/mapa",
   "/perfil",

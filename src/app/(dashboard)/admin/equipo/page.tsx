@@ -27,7 +27,7 @@ export default async function EquipoPage() {
     db.visita.groupBy({ by: ["usuarioId"], where: { creadoEn: { gte: inicioMes } }, _count: { _all: true } }),
     db.visita.groupBy({ by: ["usuarioId"], where: { creadoEn: { gte: inicioMesAnterior, lte: finMesAnterior } }, _count: { _all: true } }),
     db.visita.findMany({ where: { creadoEn: { gte: hace7 } }, select: { usuarioId: true, fecha: true, hospital: { select: { nombre: true } }, estado: true }, orderBy: { creadoEn: "desc" }, take: 50 }),
-    db.preProyecto.groupBy({ by: ["responsableId"], where: { estado: { notIn: ["COMPLETADO","CANCELADO"] }, responsableId: { not: null } }, _count: { _all: true } }),
+    db.proyecto.groupBy({ by: ["responsableId"], where: { estado: { notIn: ["COMPLETADO","CANCELADO"] }, responsableId: { not: null } }, _count: { _all: true } }),
     db.tarea.groupBy({ by: ["asignadoA"], where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA","CANCELADA"] }, asignadoA: { not: null } }, _count: { _all: true } }),
     db.oportunidad.groupBy({ by: ["usuarioId"], where: { etapa: { notIn: ["GANADO","PERDIDO"] } }, _count: { _all: true }, _sum: { valorEstimado: true } }),
   ])

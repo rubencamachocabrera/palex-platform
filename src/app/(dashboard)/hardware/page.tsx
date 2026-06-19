@@ -31,7 +31,7 @@ interface HardwareUnidad {
   proximoMantenimiento: string | null
   catalogo: HardwareCatalogo
   hospital: { id: string; nombre: string; ciudad: string } | null
-  preProyecto: { id: string; titulo: string } | null
+  proyecto: { id: string; titulo: string } | null
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -356,7 +356,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
                     <span style={{ color: urgente ? "#dc2626" : "#d97706" }}><IcoWarning /></span>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 truncate">{u.catalogo.marca} {u.catalogo.modelo}</p>
-                      <p className="text-xs text-gray-500">{u.numSerie ? `S/N: ${u.numSerie}` : "Sin nº serie"} · {u.hospital?.nombre ?? u.preProyecto?.titulo ?? "—"}</p>
+                      <p className="text-xs text-gray-500">{u.numSerie ? `S/N: ${u.numSerie}` : "Sin nº serie"} · {u.hospital?.nombre ?? u.proyecto?.titulo ?? "—"}</p>
                     </div>
                     <span className="text-xs font-bold shrink-0" style={{ color: urgente ? "#dc2626" : "#d97706" }}>{dias === 0 ? "Hoy" : `${dias}d`}</span>
                   </div>
@@ -423,7 +423,7 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
     if (u.hospital) {
       if (!byHosp[u.hospital.id]) byHosp[u.hospital.id] = { hospital: u.hospital, uds: [] }
       byHosp[u.hospital.id].uds.push(u)
-    } else if (u.preProyecto) {
+    } else if (u.proyecto) {
       enProyecto.push(u)
     } else if (u.estado === "ASIGNADO") {
       huerfanos.push(u)
@@ -603,14 +603,14 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
       {/* En proyecto */}
       {enProyecto.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">En pre-proyecto ({enProyecto.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">En proyecto ({enProyecto.length})</h3>
           <div className="space-y-1.5">
             {enProyecto.map(u => (
               <div key={u.id} className="flex items-center gap-3 text-xs text-gray-600">
                 <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tipoLabel(u.catalogo)}</span>
                 <span className="font-medium">{u.catalogo.marca} {u.catalogo.modelo}</span>
                 {u.numSerie && <code className="font-mono text-gray-400">{u.numSerie}</code>}
-                <Link href={`/pre-proyectos/${u.preProyecto!.id}`} className="ml-auto hover:underline shrink-0" style={{ color: TEAL }}>{u.preProyecto!.titulo}</Link>
+                <Link href={`/proyectos/${u.proyecto!.id}`} className="ml-auto hover:underline shrink-0" style={{ color: TEAL }}>{u.proyecto!.titulo}</Link>
               </div>
             ))}
           </div>
@@ -1088,10 +1088,10 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
   const [hospitales, setHospitales] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
   const [proyectos,  setProyectos]  = useState<{ id: string; titulo: string }[]>([])
   const [destino, setDestino] = useState<"hospital"|"proyecto"|"libre">(
-    unidad.hospital ? "hospital" : unidad.preProyecto ? "proyecto" : "libre"
+    unidad.hospital ? "hospital" : unidad.proyecto ? "proyecto" : "libre"
   )
   const [hospitalId,  setHospitalId]  = useState(unidad.hospital?.id ?? "")
-  const [proyectoId,  setProyectoId]  = useState(unidad.preProyecto?.id ?? "")
+  const [proyectoId,  setProyectoId]  = useState(unidad.proyecto?.id ?? "")
   const [estado,      setEstado]      = useState(unidad.estado)
   const [saving,      setSaving]      = useState(false)
   const [busqHosp,    setBusqHosp]    = useState("")
@@ -1100,7 +1100,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
   useEffect(() => {
     Promise.all([
       fetch("/api/hospitales").then(r => r.ok ? r.json() : []),
-      fetch("/api/pre-proyectos").then(r => r.ok ? r.json() : []),
+      fetch("/api/proyectos").then(r => r.ok ? r.json() : []),
     ]).then(([h, p]) => {
       if (Array.isArray(h)) setHospitales(h.sort((a: { nombre: string }, b: { nombre: string }) => a.nombre.localeCompare(b.nombre)))
       if (Array.isArray(p)) setProyectos(p.sort((a: { titulo: string }, b: { titulo: string }) => a.titulo.localeCompare(b.titulo)))
@@ -1112,7 +1112,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
     try {
       const payload = {
         hospitalId:    destino === "hospital"  ? (hospitalId || null) : null,
-        preProyectoId: destino === "proyecto"  ? (proyectoId || null) : null,
+        proyectoId: destino === "proyecto"  ? (proyectoId || null) : null,
         estado:        destino === "libre"     ? "DISPONIBLE"         : estado,
       }
       const r = await fetch(`/api/hardware/unidades/${unidad.id}`, {
@@ -1125,7 +1125,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
         ? (hospitales.find(h => h.id === hospitalId) ?? null) : null
       const proy = destino === "proyecto" && proyectoId
         ? (proyectos.find(p => p.id === proyectoId) ? { id: proyectoId, titulo: proyectos.find(p => p.id === proyectoId)!.titulo } : null) : null
-      onSaved({ ...unidad, ...updated, hospital: hosp, preProyecto: proy })
+      onSaved({ ...unidad, ...updated, hospital: hosp, proyecto: proy })
       success("Asignación actualizada")
       onClose()
     } catch { toastError("Error al guardar") }
@@ -1143,7 +1143,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
 
   const DEST_OPTS: { k: "hospital"|"proyecto"|"libre"; label: string; sub: string }[] = [
     { k: "hospital",  label: "Hospital",    sub: "Instalar en un centro" },
-    { k: "proyecto",  label: "Proyecto",    sub: "Pre-proyecto activo"   },
+    { k: "proyecto",  label: "Proyecto",    sub: "Proyecto activo"   },
     { k: "libre",     label: "Sin asignar", sub: "Stock disponible"      },
   ]
 
@@ -1209,7 +1209,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
 
           {destino === "proyecto" && (
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Pre-proyecto</label>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Proyecto</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"><IcoSearch /></span>
                 <input value={busqProy} onChange={e => setBusqProy(e.target.value)} placeholder="Filtrar proyectos…"
@@ -1856,7 +1856,7 @@ function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUn
                             </select>
                           </td>
                           <td className="py-2 pr-3 text-gray-500 hidden sm:table-cell max-w-[130px] truncate">
-                            {u.hospital?.nombre ?? u.preProyecto?.titulo ?? <span className="text-gray-300">—</span>}
+                            {u.hospital?.nombre ?? u.proyecto?.titulo ?? <span className="text-gray-300">—</span>}
                           </td>
                           <td className="py-2 pr-3 text-gray-400 hidden md:table-cell">
                             {u.fechaGarantia ? fmtFecha(u.fechaGarantia) : "—"}
@@ -1968,7 +1968,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
       Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
       Hospital: u.hospital?.nombre ?? "",
       Ciudad: u.hospital?.ciudad ?? "",
-      Proyecto: u.preProyecto?.titulo ?? "",
+      Proyecto: u.proyecto?.titulo ?? "",
       "Fecha Compra": fmtFecha(u.fechaCompra),
       "Fin Garantía": fmtFecha(u.fechaGarantia),
       "Próx. Mantenimiento": fmtFecha(u.proximoMantenimiento),
@@ -1983,7 +1983,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
     .filter(u => !filtroTipoId  || u.catalogo.tipoId === filtroTipoId)
     .filter(u => !filtroEstado  || u.estado === filtroEstado)
     .filter(u => !filtroHosp   || u.hospital?.id === filtroHosp)
-    .filter(u => !busqueda     || [u.numSerie, u.catalogo.marca, u.catalogo.modelo, u.catalogo.referenciaPalex, u.notas, u.hospital?.nombre, u.preProyecto?.titulo]
+    .filter(u => !busqueda     || [u.numSerie, u.catalogo.marca, u.catalogo.modelo, u.catalogo.referenciaPalex, u.notas, u.hospital?.nombre, u.proyecto?.titulo]
       .some(v => v?.toLowerCase().includes(busqueda.toLowerCase())))
 
   const unidadesOrdenadas = [...unidadesFiltradas].sort((a, b) => {
@@ -2329,8 +2329,8 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                         <td className="px-4 py-3.5 hidden md:table-cell">
                           {u.hospital
                             ? <div><p className="text-xs font-medium text-gray-700">{u.hospital.nombre}</p><p className="text-[10px] text-gray-400">{u.hospital.ciudad}</p></div>
-                            : u.preProyecto
-                            ? <span className="text-xs font-medium" style={{ color: TEAL }}>{u.preProyecto.titulo}</span>
+                            : u.proyecto
+                            ? <span className="text-xs font-medium" style={{ color: TEAL }}>{u.proyecto.titulo}</span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
                         <td className="px-4 py-3.5 text-xs text-gray-500 hidden lg:table-cell">{fmtAntiguedad(u.fechaCompra)}</td>
@@ -2410,7 +2410,7 @@ function AlertasTab({ unidades, onUpdated }: {
   const mantProximo      = unidades.filter(u => { const d = diasHasta(u.proximoMantenimiento); return d !== null && d >= 0 && d <= 14 })
   const mantenimiento    = unidades.filter(u => u.estado === "EN_MANTENIMIENTO")
   const baja             = unidades.filter(u => u.estado === "BAJA")
-  const huerfanos        = unidades.filter(u => u.estado === "ASIGNADO" && !u.preProyecto && !u.hospital)
+  const huerfanos        = unidades.filter(u => u.estado === "ASIGNADO" && !u.proyecto && !u.hospital)
 
   async function cambiarEstado(u: HardwareUnidad, nuevoEstado: string) {
     const r = await fetch(`/api/hardware/unidades/${u.id}`, {
@@ -2432,7 +2432,7 @@ function AlertasTab({ unidades, onUpdated }: {
       Marca: u.catalogo.marca, Modelo: u.catalogo.modelo,
       "Nº Serie": u.numSerie ?? "",
       Estado: HW_ESTADO[u.estado]?.label ?? u.estado,
-      Hospital: u.hospital?.nombre ?? "", Proyecto: u.preProyecto?.titulo ?? "",
+      Hospital: u.hospital?.nombre ?? "", Proyecto: u.proyecto?.titulo ?? "",
       "Fin Garantía": fmtFecha(u.fechaGarantia),
       "Próx. Mantenimiento": fmtFecha(u.proximoMantenimiento),
       Notas: u.notas ?? "",
@@ -2481,7 +2481,7 @@ function AlertasTab({ unidades, onUpdated }: {
                   <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
                     {u.numSerie && <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{u.numSerie}</code>}
                     <span>{tipoLabel(u.catalogo)}</span>
-                    {(u.hospital || u.preProyecto) && <span>· {u.hospital?.nombre ?? u.preProyecto?.titulo}</span>}
+                    {(u.hospital || u.proyecto) && <span>· {u.hospital?.nombre ?? u.proyecto?.titulo}</span>}
                   </div>
                 </div>
                 {dias !== null && (

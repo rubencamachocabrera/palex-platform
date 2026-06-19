@@ -61,7 +61,7 @@ interface Visita {
 
 interface Hospital { id: string; nombre: string; ciudad: string; zona?: { id: string; nombre: string } }
 interface Zona { id: string; nombre: string }
-interface PreProyectoMini { id: string; titulo: string; estado: string }
+interface ProyectoMini { id: string; titulo: string; estado: string }
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
@@ -121,8 +121,8 @@ export default function VisitasPage() {
   const [fechaModal, setFechaModal] = useState("")
   const [zonaModal, setZonaModal] = useState("TODAS")
   const [zonasLista, setZonasLista] = useState<Zona[]>([])
-  const [preProyectos, setPreProyectos] = useState<PreProyectoMini[]>([])
-  const [preProyectoId, setPreProyectoId] = useState("")
+  const [proyectos, setProyectos] = useState<ProyectoMini[]>([])
+  const [proyectoId, setProyectoId] = useState("")
   const [creando, setCreando] = useState(false)
   const [userRol, setUserRol] = useState("PROYECTOS")
   const [userName, setUserName] = useState("")
@@ -190,7 +190,7 @@ export default function VisitasPage() {
   async function abrirModal() {
     const hoy = new Date().toISOString().slice(0, 10)
     setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setTituloAutoGen(true)
-    setPlantillaId(""); setZonaModal("TODAS"); setPreProyectoId(""); setPreProyectos([])
+    setPlantillaId(""); setZonaModal("TODAS"); setProyectoId(""); setProyectos([])
     setFechaModal(hoy)
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
@@ -213,14 +213,14 @@ export default function VisitasPage() {
     setHospitalId(hId)
     const hosp = hospitalesLista.find(h => h.id === hId)
     if (hosp && tituloAutoGen) setTituloModal(generarTitulo(hosp.nombre, fechaModal))
-    setPreProyectoId("")
+    setProyectoId("")
     if (hId) {
-      fetch(`/api/pre-proyectos?hospitalId=${hId}`)
+      fetch(`/api/proyectos?hospitalId=${hId}`)
         .then(r => r.ok ? r.json() : [])
-        .then(d => setPreProyectos(Array.isArray(d) ? d.filter((p: PreProyectoMini) => p.estado !== "CANCELADO") : []))
-        .catch(() => setPreProyectos([]))
+        .then(d => setProyectos(Array.isArray(d) ? d.filter((p: ProyectoMini) => p.estado !== "CANCELADO") : []))
+        .catch(() => setProyectos([]))
     } else {
-      setPreProyectos([])
+      setProyectos([])
     }
   }
 
@@ -233,7 +233,7 @@ export default function VisitasPage() {
       if (tituloModal.trim()) body.titulo = tituloModal.trim()
       if (fechaModal) body.fecha = fechaModal
       if (plantilla) body.datos = plantilla.datos
-      if (preProyectoId) body.preProyectoId = preProyectoId
+      if (proyectoId) body.proyectoId = proyectoId
       const res = await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       if (!res.ok) { setCreando(false); return }
       const nueva = await res.json()
@@ -642,7 +642,7 @@ export default function VisitasPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Zona</label>
-                  <select value={zonaModal} onChange={e => { setZonaModal(e.target.value); setHospitalId(""); setPreProyectos([]) }}
+                  <select value={zonaModal} onChange={e => { setZonaModal(e.target.value); setHospitalId(""); setProyectos([]) }}
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
                     style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
                     <option value="TODAS">Todas las zonas</option>
@@ -704,14 +704,14 @@ export default function VisitasPage() {
               </div>
 
               {/* Proyecto (solo si hay hospital seleccionado y tiene proyectos) */}
-              {hospitalId && preProyectos.length > 0 && (
+              {hospitalId && proyectos.length > 0 && (
                 <div>
                   <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Proyecto (opcional)</label>
-                  <select value={preProyectoId} onChange={e => setPreProyectoId(e.target.value)}
+                  <select value={proyectoId} onChange={e => setProyectoId(e.target.value)}
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
                     style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
                     <option value="">Sin proyecto vinculado</option>
-                    {preProyectos.map(p => (
+                    {proyectos.map(p => (
                       <option key={p.id} value={p.id}>{p.titulo} ({p.estado === "EN_CURSO" ? "En curso" : p.estado === "NUEVO" ? "Nuevo" : p.estado})</option>
                     ))}
                   </select>
