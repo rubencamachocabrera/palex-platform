@@ -317,48 +317,27 @@ python -m graphify explain "calcularScore()"
 
 ## 16. Estado actual (junio 2026, auditado 2026-06-19)
 
-**Completado (sprints 1-9):**
+**Completado (sprints 1-10):**
 - Auth completa (login, middleware, roles)
-- Hospitales: lista, detalle, contactos, timeline de actividad, QR
-- Visitas: formulario 13 secciones, calendario, PDF, offline, análisis, comentarios
-- CRM Pipeline: Kanban @dnd-kit, historial etapas, ficha oportunidad
+- Hospitales: lista, detalle, contactos, timeline de actividad, QR, favoritos
+- Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, análisis, comentarios
+- Visitas quick-create: modal con titulo + hospital + fecha + plantilla
 - Hardware: tipos dinámicos, catálogo, inventario, drawer admin
 - Admin: CRUD completo, export CSV
 - Mapa Leaflet, Explotación de datos (/datos — mockup, arquitectura lista para API real)
-- Pre-proyectos con adjuntos, PDF, comentarios
+- Pre-proyectos con adjuntos, PDF, comentarios, boton "Nueva visita"
 - Vincular visita → proyecto con selector + progreso fases
 - Vista "Mi Día" en dashboard (Ventas + Proyectos)
 - Búsqueda avanzada: filtros fecha, estado, tipo, zona en /visitas
+- Búsqueda por titulo de visita en lista, CommandPalette y /api/search
 - PWA: manifest + SW + IndexedDB
 - Dark mode + ThemeProvider + anti-FOUC
 - Command Palette (Cmd+K), atajos teclado
 - Error boundaries (error.tsx) en 15 rutas
 - Seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
 
-**Bugs conocidos / deuda técnica (backlog):**
-- `/datos` es 100% mockup — no hay APIs reales detrás
-- Dark mode incompleto en algunos drawers (estilos inline no respetan `.dark`)
-- `Tarea.asignadoA` es String libre (no FK a Usuario)
-- `/proyectos` no tiene enlace en ningún nav group
-- `CACHE_VERSION = 'palex-v1'` hardcodeado en SW (incrementar en cada deploy relevante)
-- JWT sin `maxAge` explícito (usa default 30 días de NextAuth)
-- `mapaHtml` se guarda sin sanitizar (riesgo XSS si se renderiza con dangerouslySetInnerHTML)
-- `GET /api/proyectos` devuelve todos los proyectos sin filtro de zona
-- Comentarios de visita no verifican acceso a la visita padre
-- Fases de pre-proyecto no verifican pertenencia al proyecto en PATCH
-- Modelo Visita no tiene campo `titulo` — las visitas no se pueden nombrar
+**CRM / Pipeline comercial: DESACTIVADO** — no trabajar en este módulo.
 
-**Pendiente (próximos sprints):**
+**Deuda técnica: ver AGENTS.md sección 8.**
 
-Sprint 10 — UX visitas + vinculación:
-- Añadir campo `titulo` a modelo Visita (schema + API + modal + lista)
-- UI selector visita → oportunidad en formulario (backend listo, falta frontend)
-- Conectar /datos a APIs reales
-
-Sprint 11 — Calidad y producción:
-- Sentry para errores en producción
-- Lighthouse audit (objetivo >90)
-- Tests E2E con Playwright
-- Sanitizar mapaHtml (XSS)
-- Filtro zona en GET /api/proyectos
-- Verificar acceso en comentarios y fases
+**Pendiente: ver AGENTS.md secciones 9 (sprints) y backlog.**

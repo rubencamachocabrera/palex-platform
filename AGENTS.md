@@ -6,411 +6,382 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ---
 
-# PALEX PLATFORM — Contexto de Proyecto para IA
+# INLAB PALEX PLATFORM — Guia del Proyecto
 
-> Fuente de verdad para cualquier asistente IA (Cowork, Claude Code, etc).
-> Actualizar siempre que cambie el estado del proyecto.
-> Ultima actualizacion: 2026-05-29
-
----
-
-## Stack tecnico (NO cambiar sin justificacion)
-
-- Framework: Next.js 14+ App Router, TypeScript estricto
-- UI: Tailwind CSS + shadcn/ui
-- DB: PostgreSQL via Railway
-- ORM: Prisma 7 con @prisma/adapter-pg
-- Auth: NextAuth.js v5 — auth.config.ts para Edge, auth.ts para server
-- Deploy: Railway (produccion activa)
-- URL produccion: https://palex-platform-production.up.railway.app
-- VCS: Git + GitHub: rubencamachocabrera
-
-### Prisma — CRITICO
-- NO usar `url` en el bloque `datasource` (usa adapter-pg, la URL va en env)
-- Prisma Client se importa SIEMPRE desde @/lib/db.ts
-- Para schema changes: `npx prisma db push` (nunca migrate en produccion sin revisar)
-- El config real de Prisma 7 esta en `prisma.config.ts` (raiz del proyecto)
-- Railway ejecuta `prisma db push` en el START (no en el build) — ver railway.toml
-- `--accept-data-loss` solo cubre DROP de columnas con datos, NO cubre anadir columna NOT NULL sin default
-- NUNCA nombrar un campo de relacion igual que una columna DB existente (ej: relacion `tipo` + columna antigua `tipo`) → Prisma 7 se confunde y genera ADD COLUMN tipo NOT NULL
-- Cuando haya conflicto de nombre entre relacion y columna DB: usar `@map("nombre_diferente")` en el campo FK escalar (ej: `tipoId String? @map("tipo_id")`)
-- `orderBy` sobre campo de relacion necesita sintaxis anidada: `{ tipo: { nombre: "asc" } }` — NO `{ tipo: "asc" }`
-- Ejecutar `npx prisma generate` despues de cualquier cambio en schema.prisma
-
-### NextAuth v5 — CRITICO
-- auth() solo en servidor / server components / API routes
-- NUNCA usar useSession — esta eliminado de toda la app
-- Para obtener rol en cliente: fetch("/api/perfil")
-- Variable de entorno: AUTH_SECRET (no NEXTAUTH_SECRET), AUTH_URL en Railway
-
-### URL routing — CRITICO
-- El route group (dashboard) NO aniade nada a la URL
-- Rutas reales: /dashboard, /hospitales, /visitas, /ventas, /admin, /perfil
-- NO usar /dashboard/hospitales, /dashboard/visitas, etc.
-
-### Roles del sistema
-- ADMIN: acceso total
-- VENTAS: dashboard, hospitales, pipeline CRM
-- PROYECTOS: dashboard, mis hospitales, mis visitas, calendario
-- TECNICO: igual que PROYECTOS (mismo nav group en Sidebar)
+> Fuente de verdad para cada sesion de desarrollo.
+> Ultima actualizacion: 2026-06-19 (auditoria completa sprints 1-10).
 
 ---
 
-## Estructura de ficheros clave
+## 1. Stack tecnico (NO cambiar sin justificacion)
+
+| Capa        | Tecnologia                                              |
+|-------------|----------------------------------------------------------|
+| Framework   | Next.js 14+ App Router, TypeScript estricto              |
+| UI          | Tailwind CSS v4 + componentes propios (NO shadcn)        |
+| DB          | PostgreSQL via Railway                                    |
+| ORM         | Prisma 7 con `@prisma/adapter-pg`                        |
+| Auth        | NextAuth.js v5 — `auth.config.ts` (Edge) + `auth.ts` (server) |
+| Deploy      | Railway (auto-deploy desde `git push origin main`)       |
+| Offline     | IndexedDB + Service Worker (PWA)                          |
+| URL prod    | https://palex-platform-production.up.railway.app          |
+| Repo        | github.com/rubencamachocabrera/palex-platform             |
+
+---
+
+## 2. Reglas criticas — romper esto causa bugs en produccion
+
+### Prisma 7
+- NO usar `url` en bloque `datasource` (usa adapter-pg, la URL va en env)
+- Importar SIEMPRE desde `@/lib/db.ts`
+- Schema changes: `npx prisma db push` (nunca `migrate` en prod sin revisar)
+- Config real en `prisma.config.ts` (raiz)
+- Railway ejecuta `prisma db push --accept-data-loss` en START (no en build)
+- `--accept-data-loss` solo cubre DROP columnas, NO anadir NOT NULL sin default
+- NUNCA nombrar relacion igual que columna DB → usar `@map("nombre_diferente")`
+- `orderBy` sobre relacion: `{ tipo: { nombre: "asc" } }` NO `{ tipo: "asc" }`
+- `npx prisma generate` despues de cualquier cambio en schema.prisma
+
+### NextAuth v5
+- `auth()` solo en servidor / server components / API routes
+- NUNCA `useSession` — eliminado de toda la app
+- Obtener rol en cliente: `fetch("/api/perfil")` → `d?.rol` (NO `d?.role`)
+- Variables env: `AUTH_SECRET`, `AUTH_URL`
+
+### URL routing
+- Route group `(dashboard)` NO aparece en la URL
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/pre-proyectos`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`
+- NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
+
+### Roles
+- `ADMIN`: acceso total
+- `VENTAS`: dashboard, hospitales, pipeline CRM (DESACTIVADO)
+- `PROYECTOS`: dashboard, hospitales, visitas, calendario, pre-proyectos
+- `TECNICO`: igual que PROYECTOS
+
+---
+
+## 3. Modulos desactivados
+
+### CRM / Pipeline comercial
+El modulo de ventas (oportunidades, pipeline Kanban, etapas) esta **100% desactivado**.
+No mostrar selectores de oportunidad, no vincular visitas a oportunidades, no trabajar en nada CRM.
+El codigo existe pero no se usa ni se debe tocar.
+
+---
+
+## 4. Estructura de ficheros
 
 ```
 src/
   app/
-    (auth)/login/page.tsx           -- Login split-screen animado
+    (auth)/login/page.tsx               Login split-screen animado
     (dashboard)/
-      layout.tsx                    -- Sidebar + TopBar + KeyboardShortcutsProvider
-      dashboard/page.tsx            -- Dashboard por rol
-      hospitales/page.tsx           -- Lista hospitales filtro zonas + grid/list
-      hospitales/[id]/page.tsx      -- Detalle + KPIs + contactos + visitas
-      visitas/page.tsx              -- Lista visitas, busqueda, ordenacion, quick-create modal
-      visitas/calendario/page.tsx   -- Vista calendario mensual, dots por estado
-      visitas/[id]/page.tsx         -- Formulario 13 secciones, fotos, PDF, offline, context strip, progress map 13 segs, score badge, sectionToast, vista resumen overlay
-      ventas/pipeline/page.tsx      -- CRM pipeline KPIs + kanban
-      admin/                        -- CRUD usuarios, zonas, hospitales, visitas
-      perfil/page.tsx               -- Editar nombre + cambiar contrasena
+      layout.tsx                        Sidebar + TopBar + KeyboardShortcutsProvider
+      dashboard/page.tsx                Dashboard por rol + widget "Mi Dia"
+      hospitales/page.tsx               Lista + filtro zona + grid/list + favoritos
+      hospitales/[id]/page.tsx          Detalle: KPIs, tabs Contactos/Visitas/Timeline, QR
+      visitas/page.tsx                  Lista + busqueda + filtros avanzados + quick-create modal
+      visitas/calendario/page.tsx       Calendario mensual, dots por estado
+      visitas/[id]/page.tsx             Formulario 13 secciones, titulo editable, fotos, PDF, offline
+      ventas/pipeline/page.tsx          CRM pipeline (DESACTIVADO)
+      pre-proyectos/page.tsx            Lista pre-proyectos
+      pre-proyectos/[id]/page.tsx       Detalle + fases + comentarios + PDF
+      proyectos/[id]/page.tsx           Detalle: fases, modulos InLab
+      hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
+      mapa/page.tsx                     Leaflet, coordenadas por ciudad
+      datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
+      admin/                            CRUD: usuarios, zonas, hospitales, hardware, visitas
+      perfil/page.tsx                   Editar nombre + cambiar contrasena
     api/
       auth/[...nextauth]/route.ts
-      search/route.ts               -- Busqueda unificada (hospitales + visitas, sin datos JSON)
-      hospitales/route.ts           -- Cache-Control 30s
-      hospitales/[id]/route.ts
+      search/route.ts                   Busqueda unificada (hospitales+visitas+preproyectos+proyectos)
+      hospitales/route.ts               GET (Cache 30s), POST
+      hospitales/[id]/route.ts          GET (verifica zona no-ADMIN, take:50), PATCH (whitelist), DELETE
       hospitales/[id]/contactos/route.ts
-      visitas/route.ts              -- select (sin datos), filtro ?desde=&hasta=, Cache-Control 15s
-      visitas/[id]/route.ts
-      oportunidades/route.ts
-      oportunidades/[id]/route.ts
+      hospitales/[id]/timeline/route.ts
+      visitas/route.ts                  GET select sin `datos` + titulo, ?desde=&hasta=, Cache 15s
+      visitas/[id]/route.ts             GET con `datos` completo, PATCH titulo/datos/estado/fecha
+      visitas/[id]/comentarios/route.ts
+      pre-proyectos/route.ts
+      pre-proyectos/[id]/route.ts
+      pre-proyectos/[id]/comentarios/route.ts
+      pre-proyectos/[id]/adjuntos/route.ts
+      proyectos/[id]/route.ts
+      hardware/route.ts                 GET Cache 60s
+      hardware/tipos/route.ts           HardwareTipo dinamico
+      hardware/unidades/route.ts        GET Cache 30s, POST/PUT solo ADMIN+PROYECTOS
+      oportunidades/route.ts            (DESACTIVADO — no usar)
+      notificaciones/route.ts
+      config/route.ts
+      perfil/route.ts
       usuarios/route.ts
       zonas/route.ts
-      perfil/route.ts
       health/route.ts
+      share/[token]/route.ts            Pre-proyecto publico (sin PII)
   components/
-    Sidebar.tsx                     -- Dark sidebar #0f172a, colapsable 256/64px, overflow-hidden fix flash, nav por rol
-    TopBar.tsx                      -- Busqueda global, toggle dark/light (sol/luna), hint ⌘K, dark: variants
-    ThemeProvider.tsx               -- Context dark/light, localStorage palex_theme, clase .dark en <html>, transicion suave
-    CommandPalette.tsx              -- Cmd+K, busqueda hospitales+visitas, cache 60s modulo
-    KeyboardShortcutsProvider.tsx   -- Monta CommandPalette + useKeyboardShortcuts
-    Toast.tsx                       -- Global toast provider
+    Sidebar.tsx                         Dark #0f172a, colapsable 256/64px, nav por rol
+    TopBar.tsx                          Busqueda global debounced, toggle dark/light, hint Cmd+K
+    ThemeProvider.tsx                    dark/light, localStorage palex_theme, anti-FOUC
+    CommandPalette.tsx                   Cmd+K, busca hospitales+visitas+preproyectos+proyectos
+    KeyboardShortcutsProvider.tsx        Monta CommandPalette + atajos G+H/V/P/D
+    ComentariosPanel.tsx                Sistema comentarios (dynamic import)
+    Toast.tsx                           Global toast provider (god node: 42 edges)
+    PageTransition.tsx
     OfflineIndicator.tsx
     ServiceWorkerRegistrar.tsx
     ui/
-      EmptyState.tsx
-      Icons.tsx                     -- SVG icons (NO emojis)
+      EmptyState.tsx                    EmptyState() en todas las listas vacias
+      Icons.tsx                         TODOS los iconos SVG (NO emojis)
       PageHeader.tsx
-      Skeleton.tsx
+      Skeleton.tsx                      cn(), Skeleton, SkeletonCard, SkeletonKPI
     visitas/
-      AnalisisPanel.tsx
-      PrintView.tsx
+      AnalisisPanel.tsx                 Score + riesgos
+      PrintView.tsx                     PDF profesional Palex
       TodoChecklist.tsx
-      VoiceNotes.tsx
+      VoiceNotes.tsx                    (dynamic import)
   hooks/
-    useKeyboardShortcuts.ts         -- Cmd+K, G+H/V/P/D, Escape
-    useOfflineSync.ts
+    useKeyboardShortcuts.ts             Cmd+K, G+H/V/P/D, Escape
+    useOfflineSync.ts                   useOfflineSync(), useOnlineStatus(), SaveStatus
   lib/
-    auth.config.ts                  -- Edge-compatible config
-    auth.ts                         -- Server-side NextAuth
-    brand.ts                        -- TEAL, TEAL_LIGHT, ORANGE tokens
-    csv.ts                          -- Export CSV helper
-    db.ts                           -- Prisma singleton
-    form-schema.ts                  -- Schema 13 secciones formulario visita
-    img-compress.ts                 -- comprimirImagen() Canvas API
-    offline-db.ts                   -- IndexedDB drafts + sync-queue
-    rate-limit.ts                   -- In-memory rate limiter (windowMs)
-    visita-analysis.ts              -- detectarRiesgos() + calcularScore()
-  middleware.ts                     -- Protege rutas, edge-compatible
-  types/next-auth.d.ts
+    auth.config.ts                      Edge-compatible
+    auth.ts                             Server-side NextAuth
+    brand.ts                            TEAL=#00A99D, TEAL_LIGHT, TEAL_DARK, ORANGE=#F7941D
+    csv.ts                              exportarCSV()
+    db.ts                               Prisma singleton (SIEMPRE importar desde aqui)
+    form-schema.ts                      FORM_SCHEMA: 13 secciones formulario visita
+    img-compress.ts                     comprimirImagen() Canvas API
+    offline-db.ts                       IndexedDB: openDB, saveDraft, getDraft, enqueueSync
+    rate-limit.ts                       checkRateLimit() (god node: 22 edges)
+    visita-analysis.ts                  detectarRiesgos() + calcularScore() (score 0-100)
+  middleware.ts                         Protege rutas, edge-compatible
+  types/next-auth.d.ts                  Extiende Session, User, JWT con id, rol, nombre
 prisma/
-  schema.prisma                     -- Rol enum: ADMIN VENTAS PROYECTOS TECNICO
+  schema.prisma                         Modelos: Hospital, Visita, PreProyecto, Proyecto, Hardware...
 public/
   logo-palex.png
-  manifest.json                     -- PWA, theme #00A99D
-  sw.js                             -- Service Worker
+  manifest.json                         PWA, theme #00A99D
+  sw.js                                 Service Worker
 ```
 
 ---
 
-## Funcionalidades implementadas (mayo 2026)
+## 5. Modelos Prisma principales
+
+```
+Usuario       (Rol enum: ADMIN|VENTAS|PROYECTOS|TECNICO)
+Zona          (agrupacion de hospitales)
+Hospital      (nombre, ciudad, provincia, tipo, camas, zona)
+Contacto      (nombre, cargo, email, telefono, hospital)
+Visita        (titulo?, hospitalId, tipo, estado, fecha, datos:JSON, score, fotos:JSON)
+Oportunidad   (DESACTIVADO — pipeline CRM)
+HistorialEntry(DESACTIVADO — cambios etapa CRM)
+PreProyecto   (titulo, hospital, responsable, fases, adjuntos)
+Proyecto      (nombre, hospital, fases, modulos InLab)
+Fase          (nombre, estado, fechas)
+Hito          (nombre, fecha, fase)
+HardwareTipo  (nombre, color hex — dinamico desde admin)
+HardwareCatalogo (marca, modelo, referenciaPalex, tipoId @map("tipo_id"))
+HardwareUnidad   (serie, estado: DISPONIBLE|ASIGNADO|EN_MANTENIMIENTO|RETIRADO|BAJA)
+Comentario    (texto, autor, fecha — vinculado a visita o pre-proyecto)
+ModuloInlab   (nombre, descripcion — catalogo de modulos InLab)
+Config        (clave/valor configuracion app)
+```
+
+---
+
+## 6. APIs — reglas importantes
+
+- `/api/search`: busqueda unificada hospitales+visitas+preproyectos+proyectos. Busca por titulo de visita. Cache 30s.
+- `/api/visitas` GET: select SIN `datos` (JSON grande), incluye `titulo`. Acepta `?desde=&hasta=`. Cache 15s.
+- `/api/visitas/[id]` GET: devuelve `datos` completo + relaciones.
+- POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `preProyectoId`.
+- PATCH visita acepta: `titulo`, `datos`, `estado`, `fecha`, `preProyectoId`, `contactoPrincipalId`.
+- Seguridad: IDOR check en hospitales (zona) y visitas (propietario). Whitelist en PATCH hospitales/zonas.
+- Rate limiting: checkRateLimit() en todas las APIs de lectura.
+
+---
+
+## 7. Estado actual — todo lo implementado (junio 2026)
 
 ### Auth y navegacion
-- Login split-screen: panel izquierdo teal animado + panel derecho card con shake en error
-- Middleware edge-compatible protegiendo todas las rutas dashboard
-- Sidebar dark pro #0f172a, colapsable 256/64px, nav por rol, overflow-hidden fix flash botones ocultos
-- TopBar: busqueda global debounced, toggle dark/light (sol/luna animado), hint ⌘K en search, dark variants
-- ThemeProvider: dark/light persistido en localStorage (palex_theme), clase .dark en <html>, anti-FOUC script inline, transicion suave 250ms
-- Command Palette (Cmd+K / Ctrl+K): busca hospitales + visitas, atajos teclado G+H/V/P/D
-- Active state preciso en sidebar (sin doble-activo en rutas hijas)
-
-### Dark mode (globals.css)
-- @variant dark — soporte dark: variants Tailwind v4
-- Overrides globales: bg-white/gray, text-gray, border, inputs, tints de estado, sombras, hover
-- Skeleton shimmer adaptado a dark
-- Seleccion de texto en teal
-- Scrollbar dark
-- Nuevas clases: .glass-panel, .text-gradient, .glow-teal, .glow-teal-sm, .shine-hover, .animate-gradient
+- Login split-screen con shake en error
+- Middleware edge-compatible en todas las rutas
+- Sidebar dark colapsable, nav por rol
+- TopBar con busqueda global, toggle dark/light, hint Cmd+K
+- ThemeProvider dark/light con anti-FOUC
+- Command Palette (Cmd+K) con busqueda hospitales+visitas+preproyectos+proyectos
+- Atajos teclado: G+H/V/P/D, /, Escape
 
 ### Hospitales
-- Lista con filtro zona, toggle grid/lista, busqueda por nombre
-- Detalle: KPIs visitas, tabs Contactos/Visitas, skeleton loading
-- Contactos creables por todos los roles (edit/delete solo ADMIN)
-- CRUD admin completo
+- Lista con filtro zona, toggle grid/lista, busqueda, favoritos (localStorage)
+- Detalle: KPIs visitas, tabs Contactos/Visitas/Timeline
+- QR por hospital: generacion dinamica + descarga PNG
+- Contactos: creables por todos, edit/delete solo ADMIN
+- Timeline de actividad: historial cronologico completo
 
 ### Visitas
-- Lista con busqueda hospital/ciudad, ordenacion 3 modos, EmptyState contextual
-- Quick-create desde lista (mini-modal hospital picker)
-- Vista Calendario mensual: dots por estado, panel lateral, crear visita con fecha pre-rellena
-  - Solo carga visitas del mes visible (?desde=&hasta= en API)
-- Formulario visita preproyecto: 13 secciones, fotos por seccion, auto-save IndexedDB
-  - PDF profesional Palex, export JSON, TodoChecklist, Notas de voz, AnalisisPanel
-  - Score complejidad 0-100, detectarRiesgos() 14 reglas
-  - Offline: useOfflineSync, restaura borrador si mas completo que servidor
+- Lista con titulo, busqueda (titulo/hospital/ciudad/tecnico), filtros avanzados (fecha/estado/tipo/zona), ordenacion 3 modos
+- Quick-create modal: titulo + hospital + fecha + plantilla
+- Titulo editable en cabecera del formulario (guarda onBlur)
+- Calendario mensual: dots por estado, crear con fecha pre-rellena, ?desde=&hasta=
+- Formulario 13 secciones: fotos por seccion, auto-save IndexedDB, offline
+- Seccion s_termo: neveras/termografia (RFID + BT), SubHeaders visuales
+- PDF profesional Palex, export JSON, CSV con titulo
+- Score complejidad 0-100, detectarRiesgos() 14 reglas
+- TodoChecklist, Notas de voz (dynamic), Comentarios (dynamic)
+- Vista resumen 360 con edicion inline
+- Vinculacion visita -> pre-proyecto con selector + progreso fases
 
-### CRM / Ventas
-- Pipeline Kanban con KPIs, filtros, crear/editar oportunidades
-- EmptyState por etapa
+### Pre-proyectos
+- Lista + detalle con fases, tareas, hitos
+- Adjuntos, comentarios
+- PDF via window.print() con branding Palex
+- Link compartir publico con token criptografico (sin PII)
+- Boton "Nueva visita" desde cabecera del proyecto
+
+### Proyectos (InLab)
+- Detalle: fases, modulos InLab
+- Hub de proyecto con acciones rapidas
+
+### Hardware
+- HardwareTipo dinamico con color hex desde admin
+- HardwareCatalogo: referenciaPalex en teal monospace
+- HardwareUnidad: estados, hospital asignado, garantia
+- Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
+- Admin: drawer lateral, color picker, card grid
+
+### Dashboard
+- Widget "Mi Dia" por rol:
+  - VENTAS: visitas hoy + oportunidades proximas
+  - PROYECTOS/TECNICO: tareas vencidas + visitas del dia
+- KPIs por rol
 
 ### Admin
-- CRUD completo: usuarios, zonas, hospitales, visitas
-- Export CSV (csv.ts)
-- Asignacion zonas a usuarios desde modal
+- CRUD completo: usuarios, zonas, hospitales, hardware, visitas
+- Export CSV
+- Asignacion zonas a usuarios
 
 ### Calidad tecnica
-- CSS brand tokens (brand.ts): TEAL #00A99D, ORANGE #F7941D
+- Brand tokens en brand.ts (TEAL, ORANGE — importar, NO hardcodear)
 - SVG icons en todo (NO emojis)
 - EmptyState + Skeleton shimmer en todas las listas
-- Rate limiting en-memory (rate-limit.ts)
+- Rate limiting in-memory
 - Cache-Control HTTP en APIs de lectura
-- PWA: manifest + SW + IndexedDB offline store
+- Error boundaries (error.tsx) en 15 rutas
+- Seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
+- PWA: manifest + SW + IndexedDB
+- Dark mode completo con anti-FOUC
 
 ---
 
-## APIs — notas importantes
+## 8. Deuda tecnica y bugs conocidos
 
-- /api/search: endpoint unificado para busqueda. Usa select sin campo `datos` (JSON grande).
-  Devuelve max 6 hospitales + 5 visitas. Cache-Control private, max-age=30.
-- /api/visitas GET: usa select (sin `datos`), acepta ?desde=&hasta= para calendario.
-  Cache-Control private, max-age=15.
-- /api/visitas GET: el campo `datos` (JSON formulario completo) SOLO se devuelve en /api/visitas/[id].
-- CommandPalette: cache modulo-level 60s TTL para evitar re-fetch en cada apertura.
-
----
-
-## Completado (sesion 2026-05-22)
-- [x] Quick-create visita desde /visitas (conectado con backend)
-- [x] Exportar CSV en /visitas y /pipeline
-- [x] Notificaciones: dismiss al clic, marcar todas leidas, auto-refresh 3min
-- [x] Vista Resumen edicion inline por seccion (InlineFieldEditor)
-- [x] Sidebar paleta navy #1c2b45 + item Explotacion de datos
-- [x] Nuevo modulo /datos con KPIs en tiempo real + roadmap
-- [x] Atajo teclado / para buscar en TopBar
-- [x] Middleware protege /datos /pre-proyectos /hardware
-- [x] Errores de carga con estado visual + reintentar (hospitales)
-- [x] SVG en lugar de simbolos unicode en admin
-
-## Completado (sesion 2026-05-29)
-- [x] Seccion "Neveras y Termografia" en formulario visita (s_termo):
-  - SubHeaders visuales (label teal + linea divisoria), sin valor en DB, excluidos del progreso
-  - Icono termometro SVG en SECTION_ICON
-  - Opciones correctas: "Solo temperatura (RFID)", "Solo ubicacion (BT)", "Temperatura y ubicacion"
-  - Hints con dispositivos necesarios en cada campo de infraestructura
-- [x] Modulo Hardware COMPLETO rediseno SUPER PRO:
-  - Schema Prisma: TipoHardware enum → HardwareTipo model dinamico
-  - HardwareCatalogo: tipoId @map("tipo_id"), referenciaPalex, proveedor, fichaUrl
-  - APIs: /api/hardware/tipos (GET+POST), /api/hardware/tipos/[id] (PATCH+DELETE)
-  - Admin /admin/hardware: drawer lateral, color picker tipos, card grid catalogo, tab inventario
-  - User /hardware: tabs Resumen/Inventario/Instalaciones/Catalogo/Alertas
-  - CatalogoTab: card grid con franja de color tipo, referenciaPalex en teal mono, pills dinamicos
-- [x] railway.toml corregido: --accept-data-loss + healthcheckTimeout 120s
-- [x] Fix Prisma 7: @map("tipo_id") en tipoId para evitar conflicto nombre relacion/columna
-- [x] Fix TypeScript: orderBy relacion necesita { tipo: { nombre: "asc" } } no { tipo: "asc" }
+| Prioridad | Issue | Ubicacion |
+|-----------|-------|-----------|
+| ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx, _lib/mock-data.ts |
+| ALTA | `mapaHtml` se guarda sin sanitizar (riesgo XSS) | dangerouslySetInnerHTML |
+| ALTA | `GET /api/proyectos` devuelve todos sin filtro de zona | api/proyectos/route.ts |
+| ALTA | Comentarios de visita no verifican acceso a la visita padre | api/visitas/[id]/comentarios |
+| ALTA | Fases pre-proyecto no verifican pertenencia en PATCH | api/pre-proyectos/[id] |
+| MEDIA | Dark mode incompleto en algunos drawers (estilos inline) | varios |
+| MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma |
+| MEDIA | `/proyectos` no tiene enlace en ningun nav group del Sidebar | Sidebar.tsx |
+| BAJA | `CACHE_VERSION = 'palex-v1'` hardcodeado en SW | public/sw.js |
+| BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts |
 
 ---
 
-## Roadmap de funcionalidades — analisis mayo 2026
+## 9. Pendiente — proximos sprints
 
-> Priorizadas por impacto real en usuarios (no solo tecnologia)
-
-### TIER 1 — Productividad diaria (mayor ROI para el usuario)
-
-1. **Comentarios en visitas y proyectos** — Sistema de notas internas del equipo vinculadas a cada visita o pre-proyecto. Cada comentario tiene autor, fecha y puede adjuntar hasta 2 fotos. Base para la colaboracion real.
-
-2. **Vista "Mi Dia"** — Widget en Dashboard que muestra: tareas vencidas o de hoy, visitas del dia, deadlines de fases de proyecto. Personalizado por rol. El usuario abre la app y sabe exactamente que tiene que hacer.
-
-3. **Busqueda avanzada con filtros** — Extender /visitas y /pre-proyectos con filtros combinables: fecha (desde/hasta), estado, zona, tecnico asignado, hospital. Actualmente solo se filtra por nombre.
-
-4. **Drag & drop en Kanban CRM** — Con @dnd-kit. Arrastrar oportunidades entre columnas. Actualiza etapa via PATCH inmediato. Es la mejora de UX mas esperada en pipeline.
-
-5. **QR por hospital** — En la ficha de hospital, boton "Ver QR" genera un codigo QR con la URL publica del hospital. El tecnico lo escanea en campo para abrir la ficha rapidamente en movil.
-
-6. **Favoritos / Acceso rapido** — Estrella en hospitales y proyectos para anclarlos al inicio del sidebar o dashboard. Persiste en localStorage (o DB). Muy util para usuarios que trabajan siempre con los mismos 5-10 centros.
-
-### TIER 2 — Colaboracion y visibilidad de equipo
-
-7. **Panel de equipo (ADMIN)** — Vista de "quien hace que": tabla de usuarios con su ultima visita, proyectos activos, tareas vencidas. Sin navegacion profunda, solo el resumen de cada persona. Solo visible para ADMIN.
-
-8. **Historial de cambios en oportunidades CRM** — Timeline de cambios de etapa con fecha, usuario y nota opcional. Cuando una op pasa de Propuesta a Ganado, queda registrado quien lo movio. Critico para trazabilidad comercial.
-
-9. **Timeline de actividad por hospital** — En la ficha de hospital, una pestaña "Actividad" con el historial cronologico: visitas realizadas, oportunidades creadas, proyectos vinculados, contactos anadidos. Una vista completa del historial con ese centro.
-
-10. **Etiquetas / Tags** — Sistema de etiquetas libres para hospitales y visitas. El admin define las etiquetas (p.ej: "Cliente activo", "Sin contrato", "Zona norte") y los usuarios las aplican. Permite filtrar y agrupar de forma flexible.
-
-### TIER 3 — Datos e informes
-
-11. **Informe PDF de pre-proyecto completo** — Generar un PDF profesional Palex con toda la info del pre-proyecto: fases, tareas, hitos, responsables, fechas, notas. Complementa el PDF de visita ya existente.
-
-12. **Exportar proyecto a Excel formateado** — Usando la lib xlsx o similar, generar un Excel con hojas separadas: resumen, fases, tareas, contactos. Mas util que CSV para el cliente final.
-
-13. **KPIs de rendimiento por usuario / zona** — En /datos: tasa conversion visita→oportunidad, tiempo medio de ciclo de venta, visitas por mes por zona. Solo accesible para ADMIN y VENTAS.
-
-14. **Informe de actividad semanal** — PDF o email automatico cada lunes con: visitas de la semana anterior, proyectos avanzados, tareas completadas. Generado bajo demanda desde perfil o enviado por cron.
-
-### TIER 4 — Campo y movilidad
-
-15. **Modo campo simplificado** — Vista minimalista del formulario de visita con solo los campos mas importantes y botones grandes (44px+). Para uso rapido desde movil en campo. Toggle "Modo campo / Modo completo".
-
-16. **Firma digital del cliente** — En el PDF del informe de visita, canvas de firma tactil. El cliente firma en el tablet del tecnico y la firma se incrusta en el PDF final. Profesionaliza enormemente la entrega del informe.
-
-17. **Notificaciones push del navegador** — Web Push API para alertas criticas: tarea vencida, proyecto por vencer manana, nueva asignacion. El usuario recibe notificacion aunque la app este cerrada.
-
-18. **Sincronizacion bidireccional de calendario** — Exportar visitas agendadas a Google Calendar / Outlook via iCal (.ics). El tecnico tiene sus visitas en su calendario personal.
-
-### TIER 5 — Diferenciadores premium
-
-19. **Onboarding guiado (nuevo usuario)** — Wizard de 4 pasos al primer login: 1) Ver tu zona asignada, 2) Crear primera visita, 3) Explorar hospitales, 4) Abrir pipeline. Con tooltips interactivos tipo Intro.js.
-
-20. **Vista Gantt de fases** — En el detalle del pre-proyecto, una vista de timeline horizontal con las fases como barras. Solo lectura inicialmente. Muy visual para presentar al cliente o en reuniones.
-
-21. **Acceso compartido con contrasena** — En los links de compartir (/share/...), opcion de proteger con PIN de 4 digitos configurable por el creador. Mas seguro para informes confidenciales.
-
-22. **Registro rapido de llamada** — Desde la ficha de hospital, boton "Registrar llamada" que abre un micro-formulario (2 campos: motivo + resultado) y crea un log sin abrir el formulario completo de visita. Ideal para comerciales.
-
-23. **Mencion de usuarios en comentarios** — En el sistema de comentarios (feature 1), escribir @nombre autocompleta usuarios del equipo y envia una notificacion interna al mencionado.
-
-24. **Hospitales relacionados / Grupo** — Vincular hospitales del mismo grupo hospitalario entre si. En la ficha de uno se muestran los "hospitales hermanos". Util para grupos como HM, Quiron, etc.
-
-25. **Recordatorios personales** — Desde cualquier hospital u oportunidad, crear un recordatorio con fecha: "Llamar el 15/06". Aparece en "Mi Dia" y en las notificaciones cuando llega la fecha.
-
----
-
-## Completado (sprints 6-9, auditado 2026-06-19)
-
-### Sprint 6 — Quick wins de alto impacto
-- [x] Drag & drop Kanban (@dnd-kit) — DndContext + DraggableCard + DroppableColumn
-- [x] QR por hospital — generacion dinamica + descarga PNG
-- [x] Historial cambios de etapa en oportunidades — timeline en ficha oportunidad
-- [x] Vincular visita -> proyecto (pre-proyecto) desde formulario visita — selector con progreso fases
-- [~] Vincular visita -> oportunidad — backend listo (oportunidadId en API), FALTA UI selector
-
-### Sprint 7 — Colaboracion
-- [x] Comentarios en visitas y proyectos — ComentariosPanel + APIs (dynamic import)
-- [x] Vista "Mi Dia" en dashboard — Ventas (visitas hoy + ops proximas) + Proyectos (tareas vencidas + visitas)
-- [x] Timeline de actividad por hospital — tab Timeline + API /hospitales/[id]/timeline
-
-### Sprint 8 — Datos y reportes
-- [x] Informe PDF pre-proyecto — window.print() con branding Palex
-- [x] KPIs en /datos — arquitectura lista, datos MOCK (sin API real aun)
-- [x] Busqueda avanzada con filtros — fecha desde/hasta, estado, tipo, zona en /visitas
-
-### Sprint 9 — Calidad tecnica
-- [x] Error boundaries por modulo — error.tsx en 15 rutas (patron Next.js App Router)
-- [x] Auditorias seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
-- [ ] Sentry para errores en produccion — solo comentario TODO, sin implementar
-- [ ] Lighthouse audit (objetivo >90)
-- [ ] Tests E2E con Playwright (login, crear visita, pipeline)
-
----
-
-## Pendiente inmediato (proxima sesion — 2026-06-19)
-
-### Sprint 10 — UX visitas + vinculacion
-- [ ] Anadir campo `titulo` a modelo Visita (schema + API + UI)
-- [ ] Mejorar modal quick-create en /visitas: campo titulo + fecha + hospital + plantilla
-- [ ] UI selector visita -> oportunidad en formulario visita (backend ya listo)
-- [ ] Conectar /datos a APIs reales (actualmente 100% mockup)
-
-### Sprint 11 — Calidad y produccion
-- [ ] Sentry para errores en produccion
-- [ ] Lighthouse audit (objetivo >90)
-- [ ] Tests E2E con Playwright (login, crear visita, pipeline)
+### Sprint 11 — Seguridad y robustez
 - [ ] Sanitizar mapaHtml (riesgo XSS con dangerouslySetInnerHTML)
-- [ ] Filtro de zona en GET /api/proyectos (actualmente devuelve todos)
+- [ ] Filtro de zona en GET /api/proyectos
 - [ ] Verificar acceso a visita padre en comentarios
-- [ ] Verificar pertenencia al proyecto en PATCH fases pre-proyecto
+- [ ] Verificar pertenencia al proyecto en PATCH fases
+- [ ] Sentry para errores en produccion
+
+### Sprint 12 — Calidad y testing
+- [ ] Lighthouse audit (objetivo >90)
+- [ ] Tests E2E con Playwright (login, crear visita, formulario)
+- [ ] Dark mode completo en drawers/modales
+
+### Sprint 13 — Datos reales
+- [ ] Conectar /datos a APIs reales (sustituir mockup)
+- [ ] KPIs de rendimiento por usuario/zona (solo ADMIN)
+
+### Backlog — features futuras (no priorizado)
+- [ ] Favoritos/Acceso rapido — estrella en hospitales y proyectos
+- [ ] Panel de equipo (ADMIN) — quien hace que
+- [ ] Etiquetas/Tags para hospitales y visitas
+- [ ] Exportar proyecto a Excel formateado
+- [ ] Modo campo simplificado (movil)
+- [ ] Firma digital del cliente en PDF
+- [ ] Notificaciones push del navegador
+- [ ] Sincronizacion calendario (iCal)
+- [ ] Onboarding guiado nuevo usuario
+- [ ] Vista Gantt de fases
+- [ ] Registro rapido de llamada
+- [ ] Mencion @usuario en comentarios
+- [ ] Hospitales relacionados / Grupo
+- [ ] Recordatorios personales
 
 ---
 
-## Checklist obligatorio antes de cada deploy a produccion
+## 10. Patrones y convenciones de codigo
 
-1. `git status` — verificar que TODOS los archivos modificados estan staged. Un archivo editado localmente pero no commiteado rompe el build en Railway.
-2. `npx tsc --noEmit` — debe terminar sin output (cero errores). Si hay errores, NO hacer push.
-3. `npx next build` — opcional pero recomendado si el cambio toca API routes o server components.
-4. Solo entonces: `git push origin main`
-
-NUNCA asumir que porque "funciona local" esta commiteado. Siempre `git status` antes del push.
-
----
-
-## Railway — configuracion de deploy
-
-- El archivo de config real es `railway.toml` (raiz del proyecto) — NO `railway.json` (ignorado)
-- `railway.toml` actual:
-  - build: `npx prisma generate && next build`
-  - start: `npx prisma db push --accept-data-loss && npm start`
-  - healthcheck: `/api/health`, timeout 120s
-- `railway.json` NO existe (fue eliminado, causaba confusion)
-- Si el healthcheck falla: revisar Deploy Logs → buscar el error REAL antes del "healthcheck timeout"
-
----
-
-## Nomenclatura hardware Palex (APRENDER — usar siempre estos nombres exactos)
-
-Productos que Palex instala en hospitales y laboratorios:
-
-| Nombre correcto    | Descripcion                                              | Notas                          |
-|--------------------|----------------------------------------------------------|--------------------------------|
-| BC Robo            | Automat de dispensacion de tubos (Blood Collection Robot)| NO "BCRobot" ni "BC Robot"     |
-| Zebra MC           | Terminal movil / handheld (lector codigos + Android)     | Ej: Zebra MC3300, MC9300       |
-| Zebra Impresora    | Impresora de etiquetas de codigo de barras               | Ej: Zebra ZD421, ZT411         |
-| Reader RFID        | Lector RFID fijo (conectado por red al laboratorio)      | Necesita toma de datos + corriente |
-| Gateway BT         | Gateway Bluetooth (conecta neveras BT al sistema)        | Necesita toma de datos + corriente en centro de salud |
-| Mini-PC            | PC industrial para el software de termografia en lab     | Necesita toma de datos + corriente |
-| Nevera             | Nevera de cadena de frio para muestras biologicas        | Monitorizacion via RFID o BT   |
-| Pantalla           | Monitor conectado al mini-PC en laboratorio              | Opcional, necesita corriente adicional |
-
-### Sistema de termografia / neveras (s_termo en formulario visita)
-- "Solo temperatura (RFID)": sensor RFID en nevera + Reader RFID en laboratorio
-- "Solo ubicacion (BT)": sensor BT en nevera + Gateway BT en centros de salud
-- "Temperatura y ubicacion": ambos sistemas combinados
-- Cada ruta = circuito de recogida que parte del laboratorio y visita varios centros de salud
-- Infraestructura laboratorio necesita: 3 tomas de datos (Reader RFID + Gateway BT + mini-PC) y 3-4 enchufes
-
-### Modulo Hardware en la plataforma
-- `HardwareTipo`: tipos dinamicos creables desde admin (no enum hardcodeado)
-  - Ejemplos: "BC Robo", "Zebra MC", "Zebra Impresora", "Reader RFID", "Gateway BT", "Nevera", "Mini-PC"
-  - Cada tipo tiene color hex para badge visual
-- `HardwareCatalogo`: catalogo de modelos (marca + modelo + referenciaPalex + proveedor + precio + fichaUrl)
-  - `referenciaPalex`: codigo interno Palex del modelo (ej: PAL-1234) — mostrar siempre en teal monospace
-  - `tipoId String? @map("tipo_id")`: FK a HardwareTipo — el @map es CRITICO para evitar conflicto con columnas antiguas
-- `HardwareUnidad`: unidades fisicas (nº serie, estado, hospital asignado, garantia)
-  - Estados: DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, RETIRADO, BAJA
-
----
-
-## Patrones y convenciones de codigo
-
-- API routes: try/catch siempre, retornar { error: "..." } status 500
-- Client fetching: fetch("/api/...") con guard r.ok y Array.isArray()
-- Imagenes: comprimirImagen() de @/lib/img-compress.ts antes de guardar
-- Color principal: TEAL = "#00A99D" (importar de @/lib/brand.ts, NO hardcodear)
+- `"use client"` debe ser la PRIMERA LINEA del archivo (sin nada antes)
+- API routes: try/catch siempre, retornar `{ error: "..." }` status 500
+- Client fetching: `fetch("/api/...")` con guard `r.ok` y `Array.isArray()`
+- Imagenes: `comprimirImagen()` de `@/lib/img-compress.ts` antes de guardar
+- Color principal: importar de `@/lib/brand.ts`, NUNCA hardcodear hex
 - Tap targets movil: minimo 44px altura
 - Formularios: RadioPills/CheckPills (no radio/checkbox nativos)
-- "use client" debe ser la PRIMERA LINEA del archivo (sin nada antes, ni comentarios)
+- Iconos: SIEMPRE SVG de `components/ui/Icons.tsx` (NO emojis)
+- EmptyState en todas las listas vacias
+- Skeleton shimmer en todas las cargas
 
 ---
 
-## Reglas del asistente
+## 11. Nomenclatura hardware Palex
+
+| Nombre correcto | Descripcion | Notas |
+|----------------|-------------|-------|
+| BC Robo | Automat dispensacion tubos | NO "BCRobot" ni "BC Robot" |
+| Zebra MC | Terminal movil handheld | Ej: MC3300, MC9300 |
+| Zebra Impresora | Impresora etiquetas codigos | Ej: ZD421, ZT411 |
+| Reader RFID | Lector RFID fijo | Toma datos + corriente |
+| Gateway BT | Gateway Bluetooth neveras | Toma datos + corriente |
+| Mini-PC | PC industrial termografia | Toma datos + corriente |
+| Nevera | Cadena frio muestras biologicas | RFID o BT |
+| Pantalla | Monitor para mini-PC | Opcional |
+
+### Sistema termografia (s_termo)
+- "Solo temperatura (RFID)": sensor RFID + Reader RFID en lab
+- "Solo ubicacion (BT)": sensor BT + Gateway BT en centros de salud
+- "Temperatura y ubicacion": ambos combinados
+- Infraestructura lab: 3 tomas datos + 3-4 enchufes
+
+---
+
+## 12. Deploy a produccion
+
+### Checklist obligatorio
+1. `git status` — todos los archivos staged
+2. `npx tsc --noEmit` — cero errores
+3. `npx next build` — recomendado si toca APIs o server components
+4. `git push origin main` — Railway auto-despliega
+
+### Railway
+- Config: `railway.toml` (NO `railway.json`)
+- Build: `npx prisma generate && next build`
+- Start: `npx prisma db push --accept-data-loss && npm start`
+- Healthcheck: `/api/health`, timeout 120s
+- Vars: `AUTH_SECRET`, `AUTH_URL`, `DATABASE_URL`
+
+---
+
+## 13. Reglas del asistente
 
 1. NUNCA tocar codigo sin propuesta previa + confirmacion de Ruben
 2. NUNCA asumir — UNA sola pregunta si hay duda
@@ -419,32 +390,6 @@ Productos que Palex instala en hospitales y laboratorios:
 5. No insistir en deploy ni en push a GitHub
 
 Formato obligatorio antes de implementar:
-  PROPUESTA / Que voy a hacer / Como / Archivos / Complejidad / Procedo?
-
----
-
-## Patrones criticos — sandbox de Cowork (solo relevante en Cowork, no en Claude Code CLI)
-
-### Git en sandbox — NUNCA usar git add / git commit normales
-El sandbox monta el workspace via /sessions/.../mnt/. El git index ve TODOS los archivos del
-repo del usuario, pero el mount del sandbox solo tiene el directorio seleccionado. Cualquier
-`git add .` o `git commit` marca como eliminados todos los archivos fuera del mount.
-
-Usar SIEMPRE el flujo GIT_INDEX_FILE seguro:
-  1. clear_locks() recursivo en .git (os.rename, nunca os.unlink)
-  2. read-tree HEAD en indice temporal (GIT_INDEX_FILE=/tmp/xxx.idx)
-  3. hash-object -w + update-index --add --cacheinfo para cada archivo
-  4. Verificar size > 0 antes de commitear (blob vacio = archivo truncado)
-  5. write-tree + commit-tree
-  6. Escribir ref directamente: open(".git/refs/heads/main","w").write(commit)
-
-### Write/Edit tool trunca archivos > ~100 lineas en silencio
-Para archivos grandes usar Python: open(path,"w").write(content)
-Verificar con: wc -l archivo && tail -5 archivo
-Si truncado, append con: open(path,"a").write(missing_content)
-
-### index.lock — usar os.rename(), nunca os.unlink()
-Limpiar recursivamente con os.walk() (incluye refs/heads/main.lock).
-
-### update-index: usar siempre --add --cacheinfo
-Sin --add falla (rc=128) para archivos nuevos o directorios nuevos en el arbol.
+```
+PROPUESTA / Que voy a hacer / Como / Archivos / Complejidad / Procedo?
+```
