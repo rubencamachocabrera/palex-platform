@@ -148,6 +148,7 @@ model Usuario {
   oportunidades     Oportunidad[]
   proyectos      Proyecto[]      @relation("ProyectoResponsable")
   fasesResponsable  FaseProyecto[]  @relation("FaseResponsable")
+  logs              LogActividad[]
 
   @@map("usuarios")
 }
@@ -585,4 +586,19 @@ model PlantillaVisita {
   editadoEn   DateTime @updatedAt
 
   @@map("plantillas_visita")
+}
+
+model LogActividad {
+  id        String   @id @default(cuid())
+  accion    String
+  entidad   String
+  entidadId String?  @map("entidad_id")
+  detalle   String?
+  usuarioId String   @map("usuario_id")
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  @@index([creadoEn])
+  @@index([usuarioId])
+  @@map("log_actividad")
 }

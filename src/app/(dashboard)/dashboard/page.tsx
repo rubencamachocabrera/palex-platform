@@ -473,6 +473,23 @@ async function DashboardAdmin() {
         }
       </div>
 
+      {/* Accesos rápidos */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+        {[
+          { label: "Hospitales", href: "/hospitales", icon: <IconHospital size={14} /> },
+          { label: "Visitas", href: "/visitas", icon: <IconClipboard size={14} /> },
+          { label: "Proyectos", href: "/proyectos", icon: <IconCheckCircle size={14} /> },
+          { label: "Hardware", href: "/hardware", icon: <IconFileText size={14} /> },
+          { label: "Mapa", href: "/mapa", icon: <IconMap size={14} /> },
+        ].map(a => (
+          <Link key={a.href} href={a.href}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            <span className="text-gray-400">{a.icon}</span>
+            {a.label}
+          </Link>
+        ))}
+      </div>
+
       {/* Fila 1: Visitas por mes + Funnel/Proyectos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -738,6 +755,20 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
         <KpiCard label="Visitas este mes" value={visitasMes} sub={trendVisitas !== undefined ? `vs ${visitasPrevMes} el mes pasado` : undefined} icon={<IconClipboard size={18} />} trend={trendVisitas} />
       </div>
 
+      {/* Accesos rápidos */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+        {[
+          { label: "Hospitales", href: "/hospitales", icon: <IconHospital size={14} /> },
+          { label: "Visitas", href: "/visitas", icon: <IconClipboard size={14} /> },
+        ].map(a => (
+          <Link key={a.href} href={a.href}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            <span className="text-gray-400">{a.icon}</span>
+            {a.label}
+          </Link>
+        ))}
+      </div>
+
       {/* Fila: Visitas por mes + Funnel */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -934,6 +965,22 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
         <KpiCard label="Hospitales en mi zona" value={misHospitales} icon={<IconHospital size={18} />} />
         <KpiCard label="Total visitas" value={totalVisitas} icon={<IconFileText size={18} />} />
         <KpiCard label="Proyectos activos" value={misProyectos.length} icon={<IconCheckCircle size={18} />} />
+      </div>
+
+      {/* Accesos rápidos */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+        {[
+          { label: "Hospitales", href: "/hospitales", icon: <IconHospital size={14} /> },
+          { label: "Visitas", href: "/visitas", icon: <IconClipboard size={14} /> },
+          { label: "Calendario", href: "/visitas/calendario", icon: <IconFileText size={14} /> },
+          { label: "Proyectos", href: "/proyectos", icon: <IconCheckCircle size={14} /> },
+        ].map(a => (
+          <Link key={a.href} href={a.href}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            <span className="text-gray-400">{a.icon}</span>
+            {a.label}
+          </Link>
+        ))}
       </div>
 
       {/* Fila: gráficos */}

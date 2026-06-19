@@ -71,7 +71,7 @@ export default function ShareMapaPage() {
       <iframe
         ref={iframeRef}
         srcDoc={data.mapaHtml}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts"
         onLoad={handleLoad}
         className="w-full border-0 block"
         style={{ height: iframeHeight }}

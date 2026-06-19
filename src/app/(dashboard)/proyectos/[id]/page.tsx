@@ -197,13 +197,36 @@ export default function ProyectoDetalle() {
   }
 
   const [creandoV, setCreandoV] = useState(false)
+  const [showNuevaVisitaModal, setShowNuevaVisitaModal] = useState(false)
+  const [tituloVisitaModal, setTituloVisitaModal] = useState("")
+  const [fechaVisitaModal, setFechaVisitaModal] = useState("")
+  const [plantillasVisita, setPlantillasVisita] = useState<{ id: string; nombre: string }[]>([])
+  const [plantillaVisitaId, setPlantillaVisitaId] = useState("")
+
+  function abrirNuevaVisitaModal() {
+    if (!pp) return
+    const hoy = new Date().toISOString().split("T")[0]
+    setFechaVisitaModal(hoy)
+    setTituloVisitaModal(`Visita ${pp.hospital.nombre} — ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`)
+    setPlantillaVisitaId("")
+    setShowNuevaVisitaModal(true)
+    if (plantillasVisita.length === 0) {
+      fetch("/api/plantillas").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setPlantillasVisita(d) }).catch(() => {})
+    }
+  }
+
   async function crearVisitaRapida() {
     if (!pp) return
     setCreandoV(true)
     try {
+      let datos = {}
+      if (plantillaVisitaId) {
+        const pl = await fetch(`/api/plantillas/${plantillaVisitaId}`).then(r => r.ok ? r.json() : null).catch(() => null)
+        if (pl?.datos) datos = pl.datos
+      }
       const r = await fetch("/api/visitas", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hospitalId: pp.hospital.id, tipo: "PROYECTOS", proyectoId: pp.id }),
+        body: JSON.stringify({ hospitalId: pp.hospital.id, tipo: "PROYECTOS", proyectoId: pp.id, titulo: tituloVisitaModal || null, fecha: fechaVisitaModal || undefined, datos }),
       })
       if (r.ok) { const v = await r.json(); router.push(`/visitas/${v.id}`) }
     } finally { setCreandoV(false) }
@@ -241,7 +264,7 @@ export default function ProyectoDetalle() {
     && !["COMPLETADO", "CANCELADO"].includes(efDetalle)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto overflow-x-hidden">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-4">
         <Link href="/proyectos" className="hover:text-teal-600 transition-colors">Proyectos</Link>
@@ -306,7 +329,7 @@ export default function ProyectoDetalle() {
         {/* Acciones rápidas */}
         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap">
           <button
-            onClick={crearVisitaRapida}
+            onClick={abrirNuevaVisitaModal}
             disabled={creandoV}
             className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl text-white hover:opacity-90 transition-opacity disabled:opacity-50"
             style={{ backgroundColor: TEAL }}
@@ -323,7 +346,7 @@ export default function ProyectoDetalle() {
             {pp.visitas.length} visita{pp.visitas.length !== 1 ? "s" : ""} →
           </button>
           <Link
-            href={`/hospitales/${pp.hospital.id}`}
+            href={`/hospitales/${pp.hospital.id}?from=proyecto&pid=${pp.id}`}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Ver hospital →
@@ -363,6 +386,62 @@ export default function ProyectoDetalle() {
       {tab === "Módulos"   && <TabModulos pp={pp} onUpdate={setPp} />}
       {tab === "Adjuntos"      && <TabAdjuntos pp={pp} onUpdate={setPp} />}
       {tab === "Resumen"       && <TabResumen pp={pp} onUpdate={setPp} />}
+
+      {/* ── MODAL: Nueva visita ── */}
+      {showNuevaVisitaModal && pp && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisitaModal(false) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <p className="text-sm font-bold text-gray-900">Nueva visita</p>
+                <p className="text-xs text-gray-400 mt-0.5">{pp.hospital.nombre} · {pp.titulo}</p>
+              </div>
+              <button onClick={() => setShowNuevaVisitaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Nombre de la visita</label>
+                <input value={tituloVisitaModal} onChange={e => setTituloVisitaModal(e.target.value)}
+                  placeholder="Se genera automáticamente" autoFocus
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Fecha</label>
+                <input type="date" value={fechaVisitaModal} onChange={e => setFechaVisitaModal(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              </div>
+              {plantillasVisita.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Plantilla (opcional)</label>
+                  <select value={plantillaVisitaId} onChange={e => setPlantillaVisitaId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
+                    <option value="">Sin plantilla — formulario en blanco</option>
+                    {plantillasVisita.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                  {plantillaVisitaId && (
+                    <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: TEAL }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      El formulario se abrirá pre-rellenado
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100">
+              <button onClick={() => setShowNuevaVisitaModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+              <button onClick={crearVisitaRapida} disabled={creandoV}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: TEAL }}>
+                {creandoV ? "Creando…" : "Crear visita"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -560,7 +639,7 @@ function GanttFases({ pp }: { pp: Proyecto }) {
   const totalH = hitoYOffset + (pp.hitos.length > 0 ? pp.hitos.length * ROW_H + 4 : 0) + 8
 
   return (
-    <div className="overflow-x-auto -mx-2 pb-2">
+    <div className="overflow-x-auto pb-2">
       <svg viewBox={`0 0 ${VB_W} ${totalH}`} className="w-full" style={{ minWidth: 480, height: totalH }}>
         <defs>
           <pattern id="hatch-overdue" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
@@ -3629,7 +3708,7 @@ ${pp.mapaHtml ? `<div class="map-page">
               </div>
             </div>
             {mapaExpanded && (
-              <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
+              <iframe ref={mapRef} srcDoc={pp.mapaHtml} sandbox="allow-scripts"
                 onLoad={handleMapLoad} className="w-full border-0 block" style={{ height: mapH }} title="Mapa de instalación" />
             )}
           </div>
@@ -3714,7 +3793,7 @@ ${pp.mapaHtml ? `<div class="map-page">
                 </button>
               </div>
             </div>
-            <iframe srcDoc={pp.mapaHtml} sandbox="allow-scripts allow-same-origin"
+            <iframe srcDoc={pp.mapaHtml} sandbox="allow-scripts"
               className="flex-1 border-0 w-full" title="Mapa pantalla completa" />
           </div>
         )}
@@ -3737,7 +3816,7 @@ ${pp.mapaHtml ? `<div class="map-page">
                   )}
                 </div>
               </div>
-              <Link href={`/hospitales/${pp.hospital.id}`}
+              <Link href={`/hospitales/${pp.hospital.id}?from=proyecto&pid=${pp.id}`}
                 className="text-xs font-semibold shrink-0 flex items-center gap-1 hover:opacity-70 transition-opacity"
                 style={{ color: TEAL }}>
                 Ver
@@ -4128,6 +4207,7 @@ ${pp.mapaHtml ? `<div class="map-page">
         className="hidden"
         onChange={handleFileSelect}
       />
+
     </div>
   )
 }

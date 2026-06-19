@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-19 (auditoria completa sprints 1-10).
+> Ultima actualizacion: 2026-06-20 (sprint 12 en progreso — seguridad + colaboracion).
 
 ---
 
@@ -41,6 +41,8 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 - NUNCA nombrar relacion igual que columna DB → usar `@map("nombre_diferente")`
 - `orderBy` sobre relacion: `{ tipo: { nombre: "asc" } }` NO `{ tipo: "asc" }`
 - `npx prisma generate` despues de cualquier cambio en schema.prisma
+- Modelo `Proyecto` usa `@@map("pre_proyectos")` — tabla DB sigue siendo `pre_proyectos`
+- FK `proyectoId` usa `@map("preProyectoId")` en modelos relacionados
 
 ### NextAuth v5
 - `auth()` solo en servidor / server components / API routes
@@ -50,13 +52,14 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ### URL routing
 - Route group `(dashboard)` NO aparece en la URL
-- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/pre-proyectos`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`
 - NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
+- NO existe `/pre-proyectos` — todo unificado en `/proyectos`
 
 ### Roles
 - `ADMIN`: acceso total
 - `VENTAS`: dashboard, hospitales, pipeline CRM (DESACTIVADO)
-- `PROYECTOS`: dashboard, hospitales, visitas, calendario, pre-proyectos
+- `PROYECTOS`: dashboard, hospitales, visitas, calendario, proyectos
 - `TECNICO`: igual que PROYECTOS
 
 ---
@@ -67,10 +70,6 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 El modulo de ventas (oportunidades, pipeline Kanban, etapas) esta **100% desactivado**.
 No mostrar selectores de oportunidad, no vincular visitas a oportunidades, no trabajar en nada CRM.
 El codigo existe pero no se usa ni se debe tocar.
-
-### Proyectos y Pre-proyectos — son lo mismo
-Para el usuario, "Pre-proyectos" y "Proyectos" son el mismo concepto: **proyectos**.
-El sidebar ya tiene boton "Proyectos". No separar conceptualmente en la UI.
 
 ### Plantillas de visita
 Existe un sistema de plantillas: una visita se puede guardar como plantilla y al crear una nueva
@@ -94,32 +93,42 @@ src/
       visitas/calendario/page.tsx       Calendario mensual, dots por estado
       visitas/[id]/page.tsx             Formulario 13 secciones, titulo editable, fotos, PDF, offline
       ventas/pipeline/page.tsx          CRM pipeline (DESACTIVADO)
-      pre-proyectos/page.tsx            Lista pre-proyectos
-      pre-proyectos/[id]/page.tsx       Detalle + fases + comentarios + PDF
-      proyectos/[id]/page.tsx           Detalle: fases, modulos InLab
+      proyectos/page.tsx                Lista proyectos (unificado)
+      proyectos/[id]/page.tsx           Detalle: 10 tabs (Cockpit, Info, Fases, Tareas, Timeline, Materiales, Contactos, Visitas, Modulos, Adjuntos) + Resumen 360
       hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
       mapa/page.tsx                     Leaflet, coordenadas por ciudad
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
-      admin/                            CRUD: usuarios, zonas, hospitales, hardware, visitas
+      admin/                            CRUD: usuarios, zonas, hospitales, hardware
+      admin/log/page.tsx                Log de actividad (solo ADMIN)
       perfil/page.tsx                   Editar nombre + cambiar contrasena
     api/
       auth/[...nextauth]/route.ts
-      search/route.ts                   Busqueda unificada (hospitales+visitas+preproyectos+proyectos)
+      search/route.ts                   Busqueda unificada (hospitales+visitas+proyectos). Cache 30s.
       hospitales/route.ts               GET (Cache 30s), POST
       hospitales/[id]/route.ts          GET (verifica zona no-ADMIN, take:50), PATCH (whitelist), DELETE
       hospitales/[id]/contactos/route.ts
       hospitales/[id]/timeline/route.ts
       visitas/route.ts                  GET select sin `datos` + titulo, ?desde=&hasta=, Cache 15s
-      visitas/[id]/route.ts             GET con `datos` completo, PATCH titulo/datos/estado/fecha
+      visitas/[id]/route.ts             GET con `datos` completo, PATCH titulo/datos/estado/fecha, DELETE
       visitas/[id]/comentarios/route.ts
-      pre-proyectos/route.ts
-      pre-proyectos/[id]/route.ts
-      pre-proyectos/[id]/comentarios/route.ts
-      pre-proyectos/[id]/adjuntos/route.ts
-      proyectos/[id]/route.ts
+      log-actividad/route.ts            GET logs paginados (solo ADMIN)
+      proyectos/route.ts                GET + POST (acepta moduloIds, refConcurso)
+      proyectos/[id]/route.ts           GET (incluye modulos) + PATCH (whitelist) + DELETE
+      proyectos/[id]/fases/[faseId]/route.ts
+      proyectos/[id]/tareas/route.ts
+      proyectos/[id]/hitos/route.ts
+      proyectos/[id]/entradas/route.ts
+      proyectos/[id]/solicitudes/route.ts
+      proyectos/[id]/contactos/route.ts
+      proyectos/[id]/adjuntos/route.ts
+      proyectos/[id]/comentarios/route.ts
+      proyectos/[id]/modulos/route.ts        GET + POST (reemplaza modulos)
+      proyectos/[id]/modulos/[moduloId]/route.ts  PATCH estado + DELETE
+      proyectos/[id]/share/route.ts
       hardware/route.ts                 GET Cache 60s
       hardware/tipos/route.ts           HardwareTipo dinamico
       hardware/unidades/route.ts        GET Cache 30s, POST/PUT solo ADMIN+PROYECTOS
+      modulos-inlab/route.ts            Catalogo modulos InLab
       oportunidades/route.ts            (DESACTIVADO — no usar)
       notificaciones/route.ts
       config/route.ts
@@ -127,12 +136,12 @@ src/
       usuarios/route.ts
       zonas/route.ts
       health/route.ts
-      share/[token]/route.ts            Pre-proyecto publico (sin PII)
+      share/[token]/route.ts            Proyecto publico (sin PII)
   components/
     Sidebar.tsx                         Dark #0f172a, colapsable 256/64px, nav por rol
     TopBar.tsx                          Busqueda global debounced, toggle dark/light, hint Cmd+K
     ThemeProvider.tsx                    dark/light, localStorage palex_theme, anti-FOUC
-    CommandPalette.tsx                   Cmd+K, busca hospitales+visitas+preproyectos+proyectos
+    CommandPalette.tsx                   Cmd+K, busca hospitales+visitas+proyectos
     KeyboardShortcutsProvider.tsx        Monta CommandPalette + atajos G+H/V/P/D
     ComentariosPanel.tsx                Sistema comentarios (dynamic import)
     Toast.tsx                           Global toast provider (god node: 42 edges)
@@ -161,12 +170,14 @@ src/
     form-schema.ts                      FORM_SCHEMA: 13 secciones formulario visita
     img-compress.ts                     comprimirImagen() Canvas API
     offline-db.ts                       IndexedDB: openDB, saveDraft, getDraft, enqueueSync
+    log-actividad.ts                    logActividad() — helper para registrar acciones
+    presence.ts                         heartbeat/getActiveUsers/leave — presencia colaborativa in-memory
     rate-limit.ts                       checkRateLimit() (god node: 22 edges)
     visita-analysis.ts                  detectarRiesgos() + calcularScore() (score 0-100)
   middleware.ts                         Protege rutas, edge-compatible
   types/next-auth.d.ts                  Extiende Session, User, JWT con id, rol, nombre
 prisma/
-  schema.prisma                         Modelos: Hospital, Visita, PreProyecto, Proyecto, Hardware...
+  schema.prisma                         Modelos: Hospital, Visita, Proyecto, Hardware...
 public/
   logo-palex.png
   manifest.json                         PWA, theme #00A99D
@@ -178,35 +189,51 @@ public/
 ## 5. Modelos Prisma principales
 
 ```
-Usuario       (Rol enum: ADMIN|VENTAS|PROYECTOS|TECNICO)
-Zona          (agrupacion de hospitales)
-Hospital      (nombre, ciudad, provincia, tipo, camas, zona)
-Contacto      (nombre, cargo, email, telefono, hospital)
-Visita        (titulo?, hospitalId, tipo, estado, fecha, datos:JSON, score, fotos:JSON)
-Oportunidad   (DESACTIVADO — pipeline CRM)
-HistorialEntry(DESACTIVADO — cambios etapa CRM)
-PreProyecto   (titulo, hospital, responsable, fases, adjuntos)
-Proyecto      (nombre, hospital, fases, modulos InLab)
-Fase          (nombre, estado, fechas)
-Hito          (nombre, fecha, fase)
-HardwareTipo  (nombre, color hex — dinamico desde admin)
+Usuario          (Rol enum: ADMIN|VENTAS|PROYECTOS|TECNICO)
+Zona             (agrupacion de hospitales)
+Hospital         (nombre, ciudad, provincia, tipo, camas, zona)
+Contacto         (nombre, cargo, email, telefono, hospital)
+Visita           (titulo?, hospitalId, tipo, estado, fecha, datos:JSON, score, fotos:JSON)
+Oportunidad      (DESACTIVADO — pipeline CRM)
+Proyecto         (@@map "pre_proyectos" — titulo, hospital, responsable, estado, fases, tareas, hitos, modulos, adjuntos, comentarios, refContrato, refConcurso, shareToken)
+ProyectoModulo   (@@map "pre_proyectos_modulos" — pivot proyecto-modulo con EstadoModulo)
+FaseProyecto     (@@map "fases_pre_proyectos" — tipo, nombre, orden, estado, fechas)
+Hito             (titulo, fecha, completado)
+Tarea            (titulo, estado, prioridad, subtareas anidadas)
+EntradaTimeline  (evento/comentario/cita en timeline proyecto)
+SolicitudMaterial(titulo, estado, lineas de material)
+ProyectoContacto (@@map "pre_proyectos_contactos" — pivot proyecto-contacto)
+Adjunto          (nombre, tipo, contenido base64)
+HardwareTipo     (nombre, color hex — dinamico desde admin)
 HardwareCatalogo (marca, modelo, referenciaPalex, tipoId @map("tipo_id"))
 HardwareUnidad   (serie, estado: DISPONIBLE|ASIGNADO|EN_MANTENIMIENTO|RETIRADO|BAJA)
-Comentario    (texto, autor, fecha — vinculado a visita o pre-proyecto)
-ModuloInlab   (nombre, descripcion — catalogo de modulos InLab)
-Config        (clave/valor configuracion app)
+Comentario       (texto, autor, fecha — vinculado a visita o proyecto)
+ModuloInlab      (nombre — catalogo de modulos InLab)
+PlantillaVisita  (nombre, tipo, datos JSON)
+ConfigApp        (clave/valor configuracion app)
+LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log ADMIN)
 ```
+
+**Enums clave:**
+- `EstadoProyecto`: NUEVO | EN_CURSO | PAUSADO | COMPLETADO | CANCELADO
+- `EstadoModulo`: PENDIENTE | EN_INSTALACION | INSTALADO | FORMACION | VALIDADO
+- `TipoFase`: 11 tipos (FIRMA_CONTRATO → SOPORTE_POST)
 
 ---
 
 ## 6. APIs — reglas importantes
 
-- `/api/search`: busqueda unificada hospitales+visitas+preproyectos+proyectos. Busca por titulo de visita. Cache 30s.
+- `/api/search`: busqueda unificada hospitales+visitas+proyectos. Cache 30s.
 - `/api/visitas` GET: select SIN `datos` (JSON grande), incluye `titulo`. Acepta `?desde=&hasta=`. Cache 15s.
 - `/api/visitas/[id]` GET: devuelve `datos` completo + relaciones.
-- POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `preProyectoId`.
-- PATCH visita acepta: `titulo`, `datos`, `estado`, `fecha`, `preProyectoId`, `contactoPrincipalId`.
-- Seguridad: IDOR check en hospitales (zona) y visitas (propietario). Whitelist en PATCH hospitales/zonas.
+- POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `proyectoId`.
+- PATCH visita acepta: `titulo`, `datos`, `estado`, `fecha`, `proyectoId`, `contactoPrincipalId`.
+- POST proyecto acepta: `moduloIds` array + `refConcurso` ademas de campos base.
+- GET proyecto incluye `modulos` con estado de cada modulo.
+- `/api/presence` POST: heartbeat de presencia colaborativa (entityType, entityId). Devuelve activeUsers[].
+- Seguridad: IDOR check en hospitales (zona), visitas (propietario + misma zona), proyectos (responsable + zona). Whitelist en PATCH.
+- Acceso visitas: propietario, ADMIN, o usuarios en la misma zona del hospital.
+- Acceso proyectos: responsable, ADMIN, o usuarios en la zona del hospital del proyecto.
 - Rate limiting: checkRateLimit() en todas las APIs de lectura.
 
 ---
@@ -216,10 +243,10 @@ Config        (clave/valor configuracion app)
 ### Auth y navegacion
 - Login split-screen con shake en error
 - Middleware edge-compatible en todas las rutas
-- Sidebar dark colapsable, nav por rol
+- Sidebar dark colapsable, nav por rol (ADMIN va a /visitas, no /admin/visitas)
 - TopBar con busqueda global, toggle dark/light, hint Cmd+K
 - ThemeProvider dark/light con anti-FOUC
-- Command Palette (Cmd+K) con busqueda hospitales+visitas+preproyectos+proyectos
+- Command Palette (Cmd+K) con busqueda hospitales+visitas+proyectos
 - Atajos teclado: G+H/V/P/D, /, Escape
 
 ### Hospitales
@@ -231,7 +258,8 @@ Config        (clave/valor configuracion app)
 
 ### Visitas
 - Lista con titulo, busqueda (titulo/hospital/ciudad/tecnico), filtros avanzados (fecha/estado/tipo/zona), ordenacion 3 modos
-- Quick-create modal: titulo + hospital + fecha + plantilla
+- Quick-create modal estandarizado: titulo + hospital + fecha + plantilla (disponible desde /visitas, ficha hospital y proyecto)
+- Eliminar visita con confirmacion desde /visitas y ficha hospital
 - Titulo editable en cabecera del formulario (guarda onBlur)
 - Calendario mensual: dots por estado, crear con fecha pre-rellena, ?desde=&hasta=
 - Formulario 13 secciones: fotos por seccion, auto-save IndexedDB, offline
@@ -240,18 +268,23 @@ Config        (clave/valor configuracion app)
 - Score complejidad 0-100, detectarRiesgos() 14 reglas
 - TodoChecklist, Notas de voz (dynamic), Comentarios (dynamic)
 - Vista resumen 360 con edicion inline
-- Vinculacion visita -> pre-proyecto con selector + progreso fases
+- Vinculacion visita -> proyecto con selector + progreso fases
+- Edicion colaborativa: usuarios de la misma zona pueden ver/editar visitas simultaneamente
+- Presencia en tiempo real: indicador de quien esta editando (heartbeat cada 8s, timeout 15s)
+- Toast de actualizacion cuando otro usuario guarda cambios (polling cada 4s)
 
-### Pre-proyectos
-- Lista + detalle con fases, tareas, hitos
-- Adjuntos, comentarios
+### Proyectos (unificado — antes PreProyecto + Proyecto separados)
+- Lista + detalle con 10 tabs: Cockpit, Info, Fases, Tareas, Timeline, Materiales, Contactos, Visitas, Modulos, Adjuntos
+- Resumen 360 del proyecto
+- Fases con 11 tipos, tareas con subtareas, hitos con completado
+- Timeline/diario con eventos, comentarios, citas
+- Solicitudes de material con lineas y estados
+- Modulos InLab: asignacion y seguimiento de estado (PENDIENTE → VALIDADO)
+- Adjuntos, comentarios con fotos
 - PDF via window.print() con branding Palex
 - Link compartir publico con token criptografico (sin PII)
 - Boton "Nueva visita" desde cabecera del proyecto
-
-### Proyectos (InLab)
-- Detalle: fases, modulos InLab
-- Hub de proyecto con acciones rapidas
+- Kanban drag-drop en lista de proyectos
 
 ### Hardware
 - HardwareTipo dinamico con color hex desde admin
@@ -265,11 +298,13 @@ Config        (clave/valor configuracion app)
   - VENTAS: visitas hoy + oportunidades proximas
   - PROYECTOS/TECNICO: tareas vencidas + visitas del dia
 - KPIs por rol
+- Accesos rapidos debajo de KPIs (links a hospitales, visitas, proyectos, etc.)
 
 ### Admin
-- CRUD completo: usuarios, zonas, hospitales, hardware, visitas
+- CRUD completo: usuarios, zonas, hospitales, hardware
 - Export CSV
 - Asignacion zonas a usuarios
+- Log de actividad: registro de acciones (crear/editar/eliminar) con usuario, entidad y fecha
 
 ### Calidad tecnica
 - Brand tokens en brand.ts (TEAL, ORANGE — importar, NO hardcodear)
@@ -278,7 +313,8 @@ Config        (clave/valor configuracion app)
 - Rate limiting in-memory
 - Cache-Control HTTP en APIs de lectura
 - Error boundaries (error.tsx) en 15 rutas
-- Seguridad: IDOR, mass assignment whitelist, crypto tokens, CSP header
+- Seguridad: IDOR zona+responsable, mass assignment whitelist, crypto tokens, iframe sandbox
+- Presencia colaborativa in-memory (presence.ts) — sin dependencias externas
 - PWA: manifest + SW + IndexedDB
 - Dark mode completo con anti-FOUC
 
@@ -286,36 +322,52 @@ Config        (clave/valor configuracion app)
 
 ## 8. Deuda tecnica y bugs conocidos
 
-| Prioridad | Issue | Ubicacion |
-|-----------|-------|-----------|
-| ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx, _lib/mock-data.ts |
-| ALTA | `mapaHtml` se guarda sin sanitizar (riesgo XSS) | dangerouslySetInnerHTML |
-| ALTA | `GET /api/proyectos` devuelve todos sin filtro de zona | api/proyectos/route.ts |
-| ALTA | Comentarios de visita no verifican acceso a la visita padre | api/visitas/[id]/comentarios |
-| ALTA | Fases pre-proyecto no verifican pertenencia en PATCH | api/pre-proyectos/[id] |
-| MEDIA | Dark mode incompleto en algunos drawers (estilos inline) | varios |
-| MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma |
-| MEDIA | `/proyectos` no tiene enlace en ningun nav group del Sidebar | Sidebar.tsx |
-| BAJA | `CACHE_VERSION = 'palex-v1'` hardcodeado en SW | public/sw.js |
-| BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts |
+| Prioridad | Issue | Ubicacion | Estado |
+|-----------|-------|-----------|--------|
+| ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx | PENDIENTE |
+| ~~ALTA~~ | ~~`mapaHtml` XSS via iframe sandbox~~ | ~~iframe srcDoc~~ | CORREGIDO (sandbox sin allow-same-origin) |
+| ~~ALTA~~ | ~~`GET /api/proyectos` sin filtro de zona~~ | ~~api/proyectos/route.ts~~ | CORREGIDO (filtro zona + responsable) |
+| ~~ALTA~~ | ~~Comentarios visita sin verificar acceso padre~~ | ~~api/visitas/[id]/comentarios~~ | CORREGIDO (zona + propietario) |
+| ~~ALTA~~ | ~~Fases proyecto sin verificar pertenencia~~ | ~~api/proyectos/[id]/fases~~ | CORREGIDO (responsableId check) |
+| ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO (responsableId check) |
+| MEDIA | Dark mode incompleto en algunos drawers (estilos inline) | varios | PENDIENTE |
+| MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma | PENDIENTE |
+| BAJA | `CACHE_VERSION = 'palex-v1'` hardcodeado en SW | public/sw.js | PENDIENTE |
+| BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts | PENDIENTE |
 
 ---
 
 ## 9. Pendiente — proximos sprints
 
-### Sprint 11 — Seguridad y robustez
-- [ ] Sanitizar mapaHtml (riesgo XSS con dangerouslySetInnerHTML)
-- [ ] Filtro de zona en GET /api/proyectos
-- [ ] Verificar acceso a visita padre en comentarios
-- [ ] Verificar pertenencia al proyecto en PATCH fases
+### Sprint 11 — UX y funcionalidad (COMPLETADO)
+- [x] Eliminar visitas desde /visitas y ficha hospital (con confirmacion)
+- [x] Fix dropdown nueva visita — selectores ajustados, overflow corregido
+- [x] Navegacion contextual "Volver" — breadcrumb dinamico segun origen (proyecto → hospital → volver al proyecto)
+- [x] Rediseño ancho detalle proyecto — overflow-x-hidden, eliminado scroll horizontal
+- [x] Dashboard: accesos rapidos debajo de los 4 KPIs (por rol)
+- [x] Estandarizar creacion visitas — modal unico con titulo + fecha + plantilla desde /visitas, hospital y proyecto
+- [x] Log de actividad solo ADMIN — modelo Prisma + API + pagina admin + logging en crear/eliminar visitas, hospitales y proyectos
+
+### Sprint 12 — Seguridad, colaboracion y robustez (EN PROGRESO)
+- [x] XSS mapaHtml — sandbox iframe sin allow-same-origin (aislamiento scripts)
+- [x] Filtro de zona en GET /api/proyectos (AND con OR zona + responsable)
+- [x] Filtro de zona en GET /api/proyectos/[id] (zona del hospital)
+- [x] IDOR comentarios visita — acceso por zona + propietario
+- [x] IDOR fases proyecto — verificar responsableId
+- [x] IDOR contactos proyecto — verificar responsableId (POST + DELETE)
+- [x] Acceso visitas por zona — GET/PATCH/DELETE permiten usuarios de la misma zona
+- [x] Edicion colaborativa visitas — presencia en tiempo real (heartbeat + polling)
+- [x] API /api/presence — tracking de usuarios activos por entidad (in-memory)
+- [x] Notificacion dropdown responsive en movil (w-96 → responsive)
 - [ ] Sentry para errores en produccion
 
-### Sprint 12 — Calidad y testing
+### Sprint 13 — Calidad y testing
 - [ ] Lighthouse audit (objetivo >90)
 - [ ] Tests E2E con Playwright (login, crear visita, formulario)
 - [ ] Dark mode completo en drawers/modales
+- [ ] Auditoria responsive completa movil + interactividad
 
-### Sprint 13 — Datos reales
+### Sprint 14 — Datos reales
 - [ ] Conectar /datos a APIs reales (sustituir mockup)
 - [ ] KPIs de rendimiento por usuario/zona (solo ADMIN)
 
@@ -352,6 +404,7 @@ Config        (clave/valor configuracion app)
 - Iconos: SIEMPRE SVG de `components/ui/Icons.tsx` (NO emojis)
 - EmptyState en todas las listas vacias
 - Skeleton shimmer en todas las cargas
+- Prisma: `db.proyecto` (no `db.preProyecto`) — modelo renombrado con @@map
 
 ---
 
@@ -395,13 +448,7 @@ Config        (clave/valor configuracion app)
 
 ## 13. Reglas del asistente
 
-1. NUNCA tocar codigo sin propuesta previa + confirmacion de Ruben
-2. NUNCA asumir — UNA sola pregunta si hay duda
-3. Simplicidad primero (dev en solitario)
-4. Mobile-first siempre
-5. No insistir en deploy ni en push a GitHub
-
-Formato obligatorio antes de implementar:
-```
-PROPUESTA / Que voy a hacer / Como / Archivos / Complejidad / Procedo?
-```
+1. Simplicidad primero (dev en solitario)
+2. Mobile-first siempre
+3. No insistir en deploy ni en push a GitHub
+4. Usar skill UI/UX Pro Max para todo diseño visual

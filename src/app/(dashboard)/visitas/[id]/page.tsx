@@ -969,7 +969,7 @@ export default function VisitaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  // ── Edición colaborativa — polling cada 4s ──────────────────────────────────
+  // ── Edición colaborativa — polling cada 4s + presencia ──────────────────────
   const lastEditadoRef = useRef<string>("")
   const [colabUsers, setColabUsers] = useState<string[]>([])
   const [colabToast, setColabToast] = useState<string | null>(null)
@@ -978,6 +978,34 @@ export default function VisitaPage() {
     if (!visita) return
     lastEditadoRef.current = visita.editadoEn ?? ""
   }, [visita?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!visita || !online) return
+    const sendHeartbeat = async () => {
+      try {
+        const r = await fetch("/api/presence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entityType: "visita", entityId: id }),
+          signal: AbortSignal.timeout(5000),
+        })
+        if (r.ok) {
+          const data = await r.json()
+          if (Array.isArray(data.activeUsers)) setColabUsers(data.activeUsers)
+        }
+      } catch { /* skip */ }
+    }
+    sendHeartbeat()
+    const heartbeatInterval = setInterval(sendHeartbeat, 8000)
+    return () => {
+      clearInterval(heartbeatInterval)
+      fetch("/api/presence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType: "visita", entityId: id, action: "leave" }),
+      }).catch(() => {})
+    }
+  }, [visita?.id, online, id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!visita || !online) return
@@ -997,9 +1025,6 @@ export default function VisitaPage() {
           }
           setDatos(remoteDatos); datosRef.current = remoteDatos
           lastEditadoRef.current = remoteEditado
-        }
-        if (remote._activeUsers && Array.isArray(remote._activeUsers)) {
-          setColabUsers(remote._activeUsers.filter((n: string) => n !== userName))
         }
       } catch { /* timeout or network error — skip */ }
     }, 4000)
@@ -1320,9 +1345,9 @@ export default function VisitaPage() {
 
           {/* Colaboradores activos */}
           {colabUsers.length > 0 && (
-            <div className="hidden sm:flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50" title={`Editando también: ${colabUsers.join(", ")}`}>
+            <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50" title={`Editando también: ${colabUsers.join(", ")}`}>
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-medium text-blue-600 max-w-[80px] truncate">{colabUsers[0]}</span>
+              <span className="text-[10px] font-medium text-blue-600 max-w-[60px] sm:max-w-[80px] truncate">{colabUsers[0]}</span>
               {colabUsers.length > 1 && <span className="text-[10px] text-blue-400">+{colabUsers.length - 1}</span>}
             </div>
           )}

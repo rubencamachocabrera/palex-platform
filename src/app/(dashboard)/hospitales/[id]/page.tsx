@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import {
@@ -125,6 +125,8 @@ interface Proyecto {
 export default function HospitalDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromProyecto = searchParams.get("from") === "proyecto" ? searchParams.get("pid") : null
 
   const [hospital, setHospital] = useState<Hospital | null>(null)
   const [userRol, setUserRol] = useState<string>("")
@@ -133,7 +135,14 @@ export default function HospitalDetailPage() {
   const [timeline, setTimeline] = useState<TimelineEvento[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<TimelineFiltro>("todos")
+  const [showNuevaVisita, setShowNuevaVisita] = useState(false)
   const [creandoVisita, setCreandoVisita] = useState(false)
+  const [tituloVisita, setTituloVisita] = useState("")
+  const [fechaVisita, setFechaVisita] = useState("")
+  const [plantillas, setPlantillas] = useState<{ id: string; nombre: string }[]>([])
+  const [plantillaId, setPlantillaId] = useState("")
+  const [eliminarVisitaId, setEliminarVisitaId] = useState<string | null>(null)
+  const [eliminandoVisita, setEliminandoVisita] = useState(false)
 
   // Proyectos tab
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
@@ -176,15 +185,44 @@ export default function HospitalDetailPage() {
   }
   useEffect(() => { cargar() }, [id])
 
-  async function nuevaVisita() {
+  function abrirNuevaVisita() {
+    const hoy = new Date().toISOString().split("T")[0]
+    setFechaVisita(hoy)
+    setTituloVisita(hospital ? `Visita ${hospital.nombre} — ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}` : "")
+    setPlantillaId("")
+    setShowNuevaVisita(true)
+    if (plantillas.length === 0) {
+      fetch("/api/plantillas").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setPlantillas(d) }).catch(() => {})
+    }
+  }
+
+  async function crearVisita() {
     setCreandoVisita(true)
     const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
+    let datos = {}
+    if (plantillaId) {
+      const pl = await fetch(`/api/plantillas/${plantillaId}`).then(r => r.ok ? r.json() : null).catch(() => null)
+      if (pl?.datos) datos = pl.datos
+    }
     const r = await fetch("/api/visitas", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hospitalId: id, tipo }),
+      body: JSON.stringify({ hospitalId: id, tipo, titulo: tituloVisita || null, fecha: fechaVisita || undefined, datos }),
     })
     if (r.ok) { const v = await r.json(); router.push(`/visitas/${v.id}`) }
     else setCreandoVisita(false)
+  }
+
+  async function confirmarEliminarVisita() {
+    if (!eliminarVisitaId) return
+    setEliminandoVisita(true)
+    try {
+      const r = await fetch(`/api/visitas/${eliminarVisitaId}`, { method: "DELETE" })
+      if (r.ok && hospital) {
+        hospital.visitas = hospital.visitas.filter(v => v.id !== eliminarVisitaId)
+        setHospital({ ...hospital })
+        setEliminarVisitaId(null)
+      }
+    } finally { setEliminandoVisita(false) }
   }
 
   function abrirCrearContacto() { setEditContacto(null); setFormC({ ...CONTACTO_EMPTY }); setErrorC(""); setContactoModal(true) }
@@ -325,9 +363,9 @@ export default function HospitalDetailPage() {
         <div className="px-6 py-5">
           {/* Breadcrumb + acciones */}
           <div className="flex items-center justify-between gap-4 mb-4">
-            <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors cursor-pointer group">
+            <button onClick={() => fromProyecto ? router.push(`/proyectos/${fromProyecto}`) : router.back()} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors cursor-pointer group">
               <IconArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span className="hidden sm:inline">Hospitales</span>
+              <span className="hidden sm:inline">{fromProyecto ? "Volver al proyecto" : "Hospitales"}</span>
             </button>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowLlamada(true)}
@@ -346,7 +384,7 @@ export default function HospitalDetailPage() {
                   <path d="M14 14h1v1h-1z M17 14h1v1h-1z M14 17h1v1h-1z M17 17h3v3h-3z"/>
                 </svg>
               </button>
-              <button onClick={nuevaVisita} disabled={creandoVisita}
+              <button onClick={abrirNuevaVisita} disabled={creandoVisita}
                 className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60"
                 style={{ backgroundColor: TEAL }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -518,7 +556,7 @@ export default function HospitalDetailPage() {
                     Historial de visitas
                     {hospital.visitas.length > 0 && <span className="ml-2 text-xs font-semibold text-gray-400">({hospital.visitas.length})</span>}
                   </h2>
-                  <button onClick={nuevaVisita} disabled={creandoVisita}
+                  <button onClick={abrirNuevaVisita} disabled={creandoVisita}
                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border cursor-pointer transition-colors disabled:opacity-50"
                     style={{ borderColor: TEAL, color: TEAL }}>
                     <IconPlus size={12} /> {creandoVisita ? "Creando…" : "Nueva visita"}
@@ -550,6 +588,15 @@ export default function HospitalDetailPage() {
                             <p className="text-xs font-semibold text-gray-700">{fmtFecha(v.fecha)}</p>
                             <p className="text-[10px] text-gray-400">{fechaRel(v.fecha)}</p>
                           </div>
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEliminarVisitaId(v.id) }}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all shrink-0"
+                            title="Eliminar visita"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                          </button>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" className="group-hover:stroke-gray-400 transition-colors shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
                         </Link>
                       )
@@ -773,7 +820,7 @@ export default function HospitalDetailPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Acciones</p>
             <div className="space-y-2">
-              <button onClick={nuevaVisita} disabled={creandoVisita}
+              <button onClick={abrirNuevaVisita} disabled={creandoVisita}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-60"
                 style={{ backgroundColor: TEAL }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -811,6 +858,60 @@ export default function HospitalDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── MODAL: Nueva visita ── */}
+      {showNuevaVisita && hospital && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisita(false) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Nueva visita</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p>
+              </div>
+              <button onClick={() => setShowNuevaVisita(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Nombre de la visita</label>
+                <input value={tituloVisita} onChange={e => setTituloVisita(e.target.value)}
+                  placeholder="Se genera automáticamente"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Fecha</label>
+                <input type="date" value={fechaVisita} onChange={e => setFechaVisita(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+              </div>
+              {plantillas.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Plantilla (opcional)</label>
+                  <select value={plantillaId} onChange={e => setPlantillaId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
+                    <option value="">Sin plantilla — formulario en blanco</option>
+                    {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                  {plantillaId && (
+                    <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: TEAL }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      El formulario se abrirá pre-rellenado
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100">
+              <button onClick={() => setShowNuevaVisita(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+              <button onClick={crearVisita} disabled={creandoVisita}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: TEAL }}>
+                {creandoVisita ? "Creando…" : "Crear visita"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL: Llamada rápida ── */}
       {showLlamada && (
@@ -892,6 +993,26 @@ export default function HospitalDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Eliminar visita ── */}
+      {eliminarVisitaId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-bold text-red-600">Eliminar visita</h2>
+              <p className="text-xs text-gray-500 mt-1">Esta acción no se puede deshacer. La visita y todos sus datos asociados se eliminarán permanentemente.</p>
+            </div>
+            <div className="flex gap-2 px-5 py-4">
+              <button onClick={() => setEliminarVisitaId(null)} disabled={eliminandoVisita}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+              <button onClick={confirmarEliminarVisita} disabled={eliminandoVisita}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 cursor-pointer transition-colors">
+                {eliminandoVisita ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
           </div>
         </div>
       )}

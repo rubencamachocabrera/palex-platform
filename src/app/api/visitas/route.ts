@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { logActividad } from "@/lib/log-actividad"
 
 export async function GET(req: NextRequest) {
   try {
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
         ...(titulo && typeof titulo === "string" ? { titulo: titulo.trim() } : {}),
       },
     })
+    logActividad(session.user.id, "CREAR", "visita", visita.id, titulo || null)
     return NextResponse.json(visita, { status: 201 })
   } catch (err) {
     console.error("[POST]", err)

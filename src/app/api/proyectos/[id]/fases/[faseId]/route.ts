@@ -10,6 +10,10 @@ export async function PATCH(
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id: proyectoId, faseId } = await params
   try {
+    const proyecto = await db.proyecto.findUnique({ where: { id: proyectoId }, select: { responsableId: true, estado: true } })
+    if (!proyecto) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session.user.role !== "ADMIN" && proyecto.responsableId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     const body = await req.json()
     const data: Record<string, unknown> = {}
     if ("estado" in body) data.estado = body.estado
@@ -22,8 +26,7 @@ export async function PATCH(
 
     // Auto-transición de estado del proyecto según progreso de fases
     if (data.estado === "EN_PROGRESO" || data.estado === "COMPLETADO") {
-      const proyecto = await db.proyecto.findUnique({ where: { id: proyectoId }, select: { estado: true } })
-      if (proyecto?.estado === "NUEVO") {
+      if (proyecto.estado === "NUEVO") {
         await db.proyecto.update({ where: { id: proyectoId }, data: { estado: "EN_CURSO" } })
       }
       // EN_CURSO → COMPLETADO cuando todas las fases estén completadas

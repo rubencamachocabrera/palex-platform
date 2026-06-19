@@ -7,6 +7,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.proyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     const { contactoId } = await req.json()
     await db.proyectoContacto.upsert({
       where: { proyectoId_contactoId: { proyectoId: id, contactoId } },
@@ -24,6 +28,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
   try {
+    const pp = await db.proyecto.findUnique({ where: { id }, select: { responsableId: true } })
+    if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     const { contactoId } = await req.json()
     await db.proyectoContacto.delete({
       where: { proyectoId_contactoId: { proyectoId: id, contactoId } },

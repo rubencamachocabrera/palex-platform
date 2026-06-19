@@ -373,7 +373,7 @@ export function TopBar() {
         </button>
 
         {notifOpen && (
-          <div className="slide-down absolute right-0 top-full mt-2 w-96 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-xl overflow-hidden z-50">
+          <div className="slide-down absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[384px] bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-xl overflow-hidden z-50">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[rgba(255,255,255,0.07)]">
               <div className="flex items-center gap-2">

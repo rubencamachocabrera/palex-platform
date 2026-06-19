@@ -395,7 +395,7 @@ export default function ShareProyectoPage() {
             <iframe
               ref={iframeRef}
               srcDoc={d.mapaHtml}
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
               onLoad={handleMapLoad}
               className="w-full border-0 block"
               style={{ height: mapHeight }}

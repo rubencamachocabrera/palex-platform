@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { logActividad } from "@/lib/log-actividad"
 
 const FASES_DEFAULT = [
   { tipo: "FIRMA_CONTRATO",     nombre: "Firma de Contrato",        orden: 1 },
@@ -28,20 +29,29 @@ export async function GET(req: Request) {
   const rol    = session.user.role
   const userId = session.user.id
   try {
-    const items = await db.proyecto.findMany({
-      where: {
-        // hospitalId provisto: todos los proyectos de ese hospital (sin filtro de responsable)
-        // sin hospitalId: solo proyectos propios para no-ADMIN
-        ...(rol !== "ADMIN" && !hospitalId ? { responsableId: userId } : {}),
-        ...(estado ? { estado: estado as never } : {}),
-        ...(hospitalId ? { hospitalId } : {}),
-        ...(prioridad !== null && prioridad !== "" ? { prioridad: parseInt(prioridad) } : {}),
-        ...(responsableId ? { responsableId } : {}),
-        ...(q ? { OR: [
+    const conditions: Record<string, unknown>[] = []
+    if (rol !== "ADMIN") {
+      conditions.push({
+        OR: [
+          { responsableId: userId },
+          { hospital: { zona: { usuarios: { some: { usuarioId: userId } } } } },
+        ],
+      })
+    }
+    if (estado) conditions.push({ estado: estado as never })
+    if (hospitalId) conditions.push({ hospitalId })
+    if (prioridad !== null && prioridad !== "") conditions.push({ prioridad: parseInt(prioridad) })
+    if (responsableId) conditions.push({ responsableId })
+    if (q) {
+      conditions.push({
+        OR: [
           { titulo: { contains: q, mode: "insensitive" } },
           { hospital: { nombre: { contains: q, mode: "insensitive" } } },
-        ]} : {}),
-      },
+        ],
+      })
+    }
+    const items = await db.proyecto.findMany({
+      where: conditions.length > 0 ? { AND: conditions } : {},
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true } },
         responsable: { select: { id: true, nombre: true } },
@@ -95,6 +105,7 @@ export async function POST(req: Request) {
         modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
       },
     })
+    logActividad(session.user.id, "CREAR", "proyecto", proyecto.id, titulo)
     return NextResponse.json(proyecto, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

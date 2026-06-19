@@ -128,6 +128,8 @@ export default function VisitasPage() {
   const [userName, setUserName] = useState("")
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string; descripcion: string | null; datos: Record<string, unknown> }[]>([])
   const [plantillaId, setPlantillaId] = useState("")
+  const [eliminarId, setEliminarId] = useState<string | null>(null)
+  const [eliminando, setEliminando] = useState(false)
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
@@ -180,6 +182,18 @@ export default function VisitasPage() {
         setHasMore(visitas.length + data.length < total)
       }
     } finally { setLoadingMore(false) }
+  }
+
+  async function confirmarEliminar() {
+    if (!eliminarId) return
+    setEliminando(true)
+    try {
+      const r = await fetch(`/api/visitas/${eliminarId}`, { method: "DELETE" })
+      if (r.ok) {
+        setVisitas(prev => prev.filter(v => v.id !== eliminarId))
+        setEliminarId(null)
+      }
+    } finally { setEliminando(false) }
   }
 
   function generarTitulo(hospNombre: string, fecha: string) {
@@ -580,6 +594,16 @@ export default function VisitasPage() {
                             {est.label}
                           </span>
                         )}
+                        {/* Eliminar */}
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEliminarId(v.id) }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all shrink-0"
+                          title="Eliminar visita"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
                         {/* Chevron */}
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                           className="group-hover:stroke-gray-400 transition-colors shrink-0">
@@ -605,12 +629,45 @@ export default function VisitasPage() {
         </div>
       )}
 
+      {/* ── MODAL CONFIRMAR ELIMINAR ── */}
+      {eliminarId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !eliminando && setEliminarId(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in-95 dark:bg-[#1e293b]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">Eliminar visita</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Esta accion no se puede deshacer</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-5 dark:text-gray-300">
+              ¿Estas seguro de que quieres eliminar esta visita? Se borraran todos los datos, comentarios y fotos asociados.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setEliminarId(null)} disabled={eliminando}
+                className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                Cancelar
+              </button>
+              <button onClick={confirmarEliminar} disabled={eliminando}
+                className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50">
+                {eliminando ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+          <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
             style={{ borderTop: `3px solid ${TEAL}` }}>
 
             {/* Header */}
@@ -626,7 +683,7 @@ export default function VisitasPage() {
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="px-5 py-4 space-y-4 max-h-[60vh] sm:max-h-[65vh] overflow-y-auto">
 
               {/* Título */}
               <div>
@@ -676,7 +733,7 @@ export default function VisitasPage() {
                     className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent"
                     style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
                 </div>
-                <div className="max-h-44 overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-800">
+                <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-800">
                   {hospFiltrados.length > 0 ? hospFiltrados.map(h => (
                     <button key={h.id} onClick={() => seleccionarHospital(h.id)}
                       className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2.5 cursor-pointer ${hospitalId === h.id ? "" : "hover:bg-gray-50 dark:hover:bg-gray-800"}`}

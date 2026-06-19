@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { logActividad } from "@/lib/log-actividad"
 
 export async function GET(req: NextRequest) {
   try {
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest) {
         longitud:  lonNum != null && Number.isFinite(lonNum) && Math.abs(lonNum)  <= 180 ? lonNum  : null,
       },
     })
+    logActividad(session.user.id, "CREAR", "hospital", hospital.id, nombre.trim())
     return NextResponse.json(hospital, { status: 201 })
   } catch (err) {
     console.error("[POST /api/hospitales]", err)

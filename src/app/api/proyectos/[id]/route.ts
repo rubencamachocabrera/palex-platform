@@ -52,9 +52,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
-    // Solo ADMIN o el responsable pueden ver el detalle
-    if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id)
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (session.user.role !== "ADMIN" && pp.responsableId !== session.user.id) {
+      const zoneAccess = await db.hospital.findFirst({
+        where: { id: pp.hospital.id, zona: { usuarios: { some: { usuarioId: session.user.id } } } },
+        select: { id: true },
+      })
+      if (!zoneAccess) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
     return NextResponse.json(pp)
   } catch (err) {
     console.error("[GET /api/proyectos/[id]]", err)

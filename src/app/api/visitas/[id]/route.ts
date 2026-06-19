@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { calcularScore } from "@/lib/visita-analysis"
+import { logActividad } from "@/lib/log-actividad"
+
+async function canAccessVisita(userId: string, role: string, visita: { usuarioId: string; hospitalId: string }) {
+  if (role === "ADMIN") return true
+  if (visita.usuarioId === userId) return true
+  const zoneAccess = await db.hospital.findFirst({
+    where: { id: visita.hospitalId, zona: { usuarios: { some: { usuarioId: userId } } } },
+    select: { id: true },
+  })
+  return !!zoneAccess
+}
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -21,9 +32,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
 
-    // Solo el propietario o ADMIN pueden ver la visita
-    const rol = session.user.role
-    if (rol !== "ADMIN" && visita.usuarioId !== session.user.id)
+    if (!await canAccessVisita(session.user.id, session.user.role as string, visita))
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     return NextResponse.json(visita)
@@ -44,8 +53,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const visita = await db.visita.findUnique({ where: { id } })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
 
-    const rol = session.user.role
-    if (rol !== "ADMIN" && visita.usuarioId !== session.user.id)
+    if (!await canAccessVisita(session.user.id, session.user.role as string, visita))
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const datosParaScore = body.datos !== undefined
@@ -86,6 +94,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json(updated)
   } catch (err) {
     console.error("[PATCH]", err)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+    const { id } = await params
+    const visita = await db.visita.findUnique({ where: { id }, select: { id: true, usuarioId: true } })
+    if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+
+    const rol = session.user.role
+    if (rol !== "ADMIN" && visita.usuarioId !== session.user.id)
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+
+    await db.visita.delete({ where: { id } })
+    logActividad(session.user.id, "ELIMINAR", "visita", id)
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error("[DELETE visitas/[id]]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
