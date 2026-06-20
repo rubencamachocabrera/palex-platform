@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
-> Resumen compacto del proyecto. Actualizado sprint 17 (junio 2026).
-> Commit base: `5870420` (20 jun 2026 — sprint 17 completado)
+> Resumen compacto del proyecto. Actualizado sprint 18 (junio 2026).
+> Commit base: `19c022e` (20 jun 2026 — sprint 18 completado)
 
 ---
 
@@ -51,7 +51,8 @@ src/
 │   │   │   ├── page.tsx        ← Lista proyectos + Kanban
 │   │   │   └── [id]/page.tsx   ← Detalle: 10 tabs + Resumen 360
 │   │   ├── hardware/page.tsx   ← Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
-│   │   ├── admin/              ← CRUD: usuarios, zonas, hospitales, hardware + log actividad + panel equipo
+│   │   ├── llamadas/page.tsx    ← Registro rapido de llamadas (CRUD, KPIs, filtros)
+│   │   ├── admin/              ← CRUD: usuarios, zonas, hospitales, hardware + log + equipo + carga-trabajo
 │   │   ├── mapa/               ← Leaflet (MapaLeaflet), coordenadas por ciudad
 │   │   ├── datos/              ← KPIs explotacion de datos (MOCKUP)
 │   │   └── perfil/page.tsx     ← Editar nombre + contrasena + notificaciones + sync calendario
@@ -65,6 +66,8 @@ src/
 │   │   ├── favoritos/          ← GET (?tipo) + POST toggle (create/delete)
 │   │   ├── calendario/ical/    ← Feed .ics (visitas, recordatorios, hitos) con HMAC token
 │   │   ├── proyectos/[id]/excel/ ← Export Excel 6 hojas (xlsx)
+│   │   ├── admin/carga-trabajo/ ← Heatmap visitas por usuario/dia (solo ADMIN)
+│   │   ├── llamadas/           ← CRUD registro de llamadas
 │   │   └── ...                 ← auth, config, perfil, usuarios, zonas, health, share, notificaciones
 │   └── globals.css             ← Tailwind v4, dark mode via clase .dark, tokens CSS
 ├── components/
@@ -78,6 +81,7 @@ src/
 │   ├── BottomNav.tsx           ← Nav movil 5 tabs (glass effect, safe area, TEAL active)
 │   ├── OnboardingWizard.tsx    ← Tour 6 pasos con SVG, slide animations, keyboard nav
 │   ├── NotificationManager.tsx ← Browser Notification API, permission banner, polling 60s
+│   ├── AlertasPanel.tsx        ← Panel de alertas reutilizable (admin + proyectos variants)
 │   ├── Toast.tsx               ← Global ToastProvider + useToast() (god node: 42 edges)
 │   └── ui/                     ← EmptyState, Icons (SVG), PageHeader, Skeleton
 ├── hooks/
@@ -150,6 +154,7 @@ LogActividad (accion, entidad, usuario, fecha — solo ADMIN)
 Tag (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio (titulo, descripcion?, fecha, completado, usuario)
 Favorito (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,entidadId,tipo])
+RegistroLlamada (hospital, contacto?, usuario, fecha, duracion, asunto, notas, resultado, seguimiento)
 ```
 
 ---
@@ -190,6 +195,9 @@ Favorito (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,entidadI
 /api/favoritos             ← GET (?tipo=HOSPITAL|PROYECTO), POST toggle create/delete
 /api/calendario/ical       ← Feed .ics (visitas, recordatorios, hitos) con HMAC token
 /api/proyectos/[id]/excel  ← Export Excel 6 hojas (xlsx)
+/api/llamadas              ← GET lista + POST crear (filtro zona, ?desde=&hasta=)
+/api/llamadas/[id]         ← GET, PATCH (whitelist), DELETE (owner o ADMIN)
+/api/admin/carga-trabajo   ← GET heatmap visitas/usuario/dia (?mes=YYYY-MM, solo ADMIN)
 /api/presence              ← POST heartbeat presencia colaborativa (activeUsers[])
 /api/notificaciones        ← Alertas por rol
 /api/perfil                ← { rol, onboardingCompletado, calendarToken } — usar d?.rol
@@ -206,6 +214,7 @@ El route group `(dashboard)` NO anade nada a la URL:
 /dashboard      /hospitales      /visitas
 /proyectos      /hardware        /mapa
 /datos          /admin           /perfil
+/llamadas       /recordatorios
 ```
 **NO existe** `/pre-proyectos` — todo unificado en `/proyectos`.
 **NO usar** `/dashboard/hospitales`, `/dashboard/visitas`, etc.
@@ -230,7 +239,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-17):**
+**Completado (sprints 1-18):**
 - Auth completa (login, middleware, roles)
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos (DB-backed, cross-device)
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
@@ -268,6 +277,11 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Notificaciones navegador: Browser Notification API, banner permisos, polling 60s, preferencias en perfil
 - Sincronizacion calendario iCal: HMAC tokens, feed .ics (visitas+recordatorios+hitos), URL copiable en perfil
 - Dashboard: seccion Favoritos con acceso rapido a hospitales/proyectos favoritos
+- Heatmap carga de trabajo ADMIN: /admin/carga-trabajo, grid GitHub-style, KPIs, navegacion mes
+- Alertas hardware integradas en notificaciones TopBar y dashboard ADMIN
+- Firma digital cliente/tecnico en visitas: SignaturePad canvas + renderizado en PDF
+- Registro rapido de llamadas: modelo, API CRUD, pagina /llamadas, tab en hospital, dashboard Mi Dia
+- Llamadas en sidebar para todos los roles, 6 tipos resultado, seguimiento con fecha
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 

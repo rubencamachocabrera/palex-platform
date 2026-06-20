@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 17 completado — favoritos, equipo, excel, push, iCal).
+> Ultima actualizacion: 2026-06-20 (sprint 18 completado — heatmap, alertas HW, firma digital, llamadas).
 
 ---
 
@@ -52,7 +52,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ### URL routing
 - Route group `(dashboard)` NO aparece en la URL
-- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`
 - NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
 - NO existe `/pre-proyectos` — todo unificado en `/proyectos`
 
@@ -102,6 +102,8 @@ src/
       admin/                            CRUD: usuarios, zonas, hospitales, hardware
       admin/log/page.tsx                Log de actividad (solo ADMIN)
       admin/equipo/page.tsx             Panel de equipo — workload por usuario (solo ADMIN)
+      admin/carga-trabajo/page.tsx      Heatmap mensual visitas por tecnico (solo ADMIN)
+      llamadas/page.tsx                 Registro rapido de llamadas — CRUD, KPIs, filtros
       perfil/page.tsx                   Editar nombre + cambiar contrasena + notificaciones + sync calendario
     api/
       auth/[...nextauth]/route.ts
@@ -134,6 +136,9 @@ src/
       hardware/unidades/route.ts        GET Cache 30s, POST/PUT solo ADMIN+PROYECTOS
       modulos-inlab/route.ts            Catalogo modulos InLab
       proyectos/[id]/excel/route.ts      Export Excel 6 hojas (xlsx)
+      admin/carga-trabajo/route.ts     Heatmap datos visitas por usuario/dia (solo ADMIN)
+      llamadas/route.ts                GET lista + POST crear llamada
+      llamadas/[id]/route.ts           GET, PATCH, DELETE llamada
       tags/route.ts                     GET (filtro ?tipo), POST (solo ADMIN)
       tags/[id]/route.ts                PATCH (whitelist), DELETE (solo ADMIN)
       usuarios/menciones/route.ts       GET busqueda usuarios para @menciones
@@ -174,6 +179,7 @@ src/
       AnalisisPanel.tsx                 Score + riesgos
       PrintView.tsx                     PDF profesional Palex
       TodoChecklist.tsx
+      SignaturePad.tsx                   Firma digital canvas (dynamic import)
       VoiceNotes.tsx                    (dynamic import)
   hooks/
     useKeyboardShortcuts.ts             Cmd+K, G+H/V/P/D, Escape
@@ -236,6 +242,7 @@ VisitaTag        (pivot visita-tag — @@map "visitas_tags", cascade delete)
 ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
 Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "recordatorios")
 Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,entidadId,tipo])
+RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, notas, resultado, seguimiento, fechaSeguimiento — @@map "registros_llamadas")
 ```
 
 **Enums clave:**
@@ -269,6 +276,9 @@ Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,
 - `/api/favoritos` GET: lista favoritos del usuario (?tipo=HOSPITAL|PROYECTO). POST: toggle (create/delete).
 - `/api/calendario/ical` GET: feed .ics con visitas, recordatorios, hitos. Auth via HMAC token query param.
 - `/api/proyectos/[id]/excel` GET: export Excel 6 hojas (Resumen, Fases, Tareas, Hitos, Modulos, Materiales).
+- `/api/llamadas` GET: lista llamadas (filtro zona, ?desde=&hasta=, ?hospitalId=). POST: crear llamada.
+- `/api/llamadas/[id]` GET, PATCH (whitelist), DELETE (owner o ADMIN).
+- `/api/admin/carga-trabajo` GET: heatmap datos visitas por usuario/dia (?mes=YYYY-MM). Solo ADMIN.
 - Rate limiting: checkRateLimit() en todas las APIs de lectura.
 
 ---
@@ -401,6 +411,36 @@ Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,
 - Animaciones: skeleton-shimmer, stagger-grid (KPIs, hospital cards), card-hover lift, stagger-nav
 - Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
 - Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
+
+### Heatmap carga de trabajo (ADMIN)
+- Pagina /admin/carga-trabajo: grid GitHub-style, filas=usuarios, columnas=dias del mes
+- API /api/admin/carga-trabajo: visitas por usuario/dia con raw SQL groupBy
+- 3 KPIs: total visitas mes, media por usuario, dia mas activo
+- Navegacion por mes, dark mode, responsive scroll horizontal
+- Sidebar link con icono CargaTrabajo (solo ADMIN)
+
+### Alertas hardware integradas
+- Notificaciones TopBar: garantias vencidas + mantenimientos vencidos (solo ADMIN)
+- Dashboard ADMIN: banner alertas hardware con enlace a /hardware
+- Iconos IconShieldAlert + IconWrench en Icons.tsx y TopBar
+
+### Firma digital visitas
+- SignaturePad.tsx: canvas puro, pointer events, touch-action:none, high-DPI
+- Dos firmas: cliente + tecnico InLab en seccion final del formulario visita
+- Guardado en datos.firma_cliente / datos.firma_tecnico (base64 PNG)
+- Renderizado en PrintView PDF con layout profesional de documento
+- Dynamic import para carga lazy
+
+### Registro rapido de llamada
+- Modelo RegistroLlamada: hospital, contacto, usuario, duracion, asunto, notas, resultado, seguimiento
+- API CRUD /api/llamadas + /api/llamadas/[id] con IDOR por zona
+- Pagina /llamadas: KPIs, quick-create card, filtros (fecha/hospital/resultado/busqueda), cards expandibles con edicion inline
+- 6 tipos resultado con colores: Contactado, No contesta, Buzon de voz, Info enviada, Reunion agendada, Otro
+- Seguimiento con fecha, toggle inline
+- Sidebar link para TODOS los roles (Llamadas con icono Phone)
+- Tab "Llamadas" en ficha hospital con ultimas 10
+- Llamadas de hoy en dashboard Mi Dia
+- Middleware: /llamadas protegido
 
 ### Favoritos DB-backed
 - Modelo Favorito: usuarioId + entidadId + tipo (HOSPITAL|PROYECTO), unique constraint
@@ -542,13 +582,21 @@ Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,
 - [x] /api/perfil: incluye onboardingCompletado + calendarToken
 - [x] Dashboard: seccion Favoritos con acceso rapido a hospitales/proyectos favoritos
 
+### Sprint 18 — Heatmap, Alertas HW, Firma digital, Llamadas (COMPLETADO)
+- [x] Heatmap carga de trabajo ADMIN: /admin/carga-trabajo, grid GitHub-style, KPIs, navegacion mes
+- [x] Alertas hardware en notificaciones TopBar y dashboard ADMIN (garantia + mantenimiento)
+- [x] Firma digital cliente/tecnico en visitas: SignaturePad canvas + renderizado en PDF
+- [x] Modelo RegistroLlamada + API CRUD /api/llamadas con IDOR zona
+- [x] Pagina /llamadas premium: KPIs, quick-create, filtros, cards expandibles, edicion inline
+- [x] Llamadas: sidebar todos los roles, tab en hospital detail, dashboard Mi Dia
+- [x] Middleware: /llamadas protegido
+- [x] Iconos nuevos: Phone, CargaTrabajo, ShieldAlert, Wrench, ChevronDown
+
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
-- [ ] Dashboard carga de trabajo — heatmap mensual visitas por tecnico (ADMIN)
-- [ ] Alertas mantenimiento hardware — garantia expirada, tiempo sin revision
-- [ ] Firma digital del cliente en PDF
 - [ ] Vista Gantt de fases
-- [ ] Registro rapido de llamada
+- [ ] Deuda: Tarea.asignadoA String libre → FK a Usuario
+- [ ] Deuda: JWT sin maxAge explicito (default 30 dias NextAuth)
 
 ---
 
