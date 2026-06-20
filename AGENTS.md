@@ -594,7 +594,7 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
-- [ ] Vista Gantt de fases
+- [ ] Notificaciones push movil (requiere VAPID + service worker push + servicio externo tipo OneSignal o Firebase FCM — aplazado)
 - [ ] Deuda: Tarea.asignadoA String libre → FK a Usuario
 - [ ] Deuda: JWT sin maxAge explicito (default 30 dias NextAuth)
 
