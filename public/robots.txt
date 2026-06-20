@@ -1,2 +1,12 @@
 User-agent: *
-Disallow: /
+Allow: /login
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /hospitales
+Disallow: /visitas
+Disallow: /proyectos
+Disallow: /hardware
+Disallow: /mapa
+Disallow: /datos
+Disallow: /perfil

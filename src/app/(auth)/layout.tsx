@@ -131,7 +131,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* ══════════════════════════════════════════════════════════════════════
           PANEL DERECHO — Blanco limpio con formulario
       ══════════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12 bg-white relative">
+      <main id="main-content" className="flex-1 flex items-center justify-center px-8 py-12 bg-white relative">
 
         {/* Sombra sutil entre paneles */}
         <div className="absolute left-0 top-0 bottom-0 w-px hidden lg:block"
@@ -142,7 +142,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           style={{ background: `linear-gradient(90deg, ${TEAL}, ${ORANGE})` }} />
 
         {children}
-      </div>
+      </main>
     </div>
   )
 }
