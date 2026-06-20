@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
-> Resumen compacto del proyecto. Actualizado sprint 16 (junio 2026).
-> Commit base: `ac7649a` (20 jun 2026 — sprint 16 completado)
+> Resumen compacto del proyecto. Actualizado sprint 17 (junio 2026).
+> Commit base: `5870420` (20 jun 2026 — sprint 17 completado)
 
 ---
 
@@ -51,10 +51,10 @@ src/
 │   │   │   ├── page.tsx        ← Lista proyectos + Kanban
 │   │   │   └── [id]/page.tsx   ← Detalle: 10 tabs + Resumen 360
 │   │   ├── hardware/page.tsx   ← Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
-│   │   ├── admin/              ← CRUD: usuarios, zonas, hospitales, hardware + log actividad
+│   │   ├── admin/              ← CRUD: usuarios, zonas, hospitales, hardware + log actividad + panel equipo
 │   │   ├── mapa/               ← Leaflet (MapaLeaflet), coordenadas por ciudad
 │   │   ├── datos/              ← KPIs explotacion de datos (MOCKUP)
-│   │   └── perfil/page.tsx
+│   │   └── perfil/page.tsx     ← Editar nombre + contrasena + notificaciones + sync calendario
 │   ├── api/
 │   │   ├── search/             ← Busqueda unificada hospitales+visitas+proyectos
 │   │   ├── hospitales/         ← CRUD + contactos + timeline
@@ -62,6 +62,9 @@ src/
 │   │   ├── proyectos/          ← CRUD + fases + tareas + hitos + entradas + solicitudes + contactos + adjuntos + comentarios + modulos + share
 │   │   ├── hardware/           ← CRUD + tipos + unidades
 │   │   ├── modulos-inlab/      ← Catalogo modulos InLab
+│   │   ├── favoritos/          ← GET (?tipo) + POST toggle (create/delete)
+│   │   ├── calendario/ical/    ← Feed .ics (visitas, recordatorios, hitos) con HMAC token
+│   │   ├── proyectos/[id]/excel/ ← Export Excel 6 hojas (xlsx)
 │   │   └── ...                 ← auth, config, perfil, usuarios, zonas, health, share, notificaciones
 │   └── globals.css             ← Tailwind v4, dark mode via clase .dark, tokens CSS
 ├── components/
@@ -74,17 +77,20 @@ src/
 │   ├── TagSelector.tsx         ← Selector/pills de tags con colores + TagPills read-only
 │   ├── BottomNav.tsx           ← Nav movil 5 tabs (glass effect, safe area, TEAL active)
 │   ├── OnboardingWizard.tsx    ← Tour 6 pasos con SVG, slide animations, keyboard nav
+│   ├── NotificationManager.tsx ← Browser Notification API, permission banner, polling 60s
 │   ├── Toast.tsx               ← Global ToastProvider + useToast() (god node: 42 edges)
 │   └── ui/                     ← EmptyState, Icons (SVG), PageHeader, Skeleton
 ├── hooks/
 │   ├── useKeyboardShortcuts.ts ← Cmd+K, G+H/V/P/D, Escape
-│   └── useOfflineSync.ts       ← useOfflineSync(), useOnlineStatus(), SaveStatus
+│   ├── useOfflineSync.ts       ← useOfflineSync(), useOnlineStatus(), SaveStatus
+│   └── useFavoritos.ts         ← DB-backed favoritos hook (optimistic updates, rollback)
 ├── lib/
 │   ├── auth.config.ts          ← Edge-compatible
 │   ├── auth.ts                 ← Server-side NextAuth
 │   ├── brand.ts                ← TEAL=#00A99D, ORANGE=#F7941D (SIEMPRE importar)
 │   ├── db.ts                   ← Prisma singleton (SIEMPRE importar desde aqui)
 │   ├── form-schema.ts          ← FORM_SCHEMA: 13 secciones formulario visita
+│   ├── calendar-token.ts        ← HMAC-SHA256 tokens para iCal auth (deterministic)
 │   ├── log-actividad.ts        ← logActividad() helper para registrar acciones
 │   ├── presence.ts             ← heartbeat/getActiveUsers/leave — presencia colaborativa
 │   ├── rate-limit.ts           ← checkRateLimit() (god node: 22 edges)
@@ -143,6 +149,7 @@ Usuario, Zona, ModuloInlab, Comentario (mencionIds: Json), PlantillaVisita, Conf
 LogActividad (accion, entidad, usuario, fecha — solo ADMIN)
 Tag (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio (titulo, descripcion?, fecha, completado, usuario)
+Favorito (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,entidadId,tipo])
 ```
 
 ---
@@ -180,9 +187,12 @@ Recordatorio (titulo, descripcion?, fecha, completado, usuario)
 /api/onboarding            ← GET/PATCH estado onboarding usuario
 /api/recordatorios         ← GET (filtro ?pendientes), POST
 /api/recordatorios/[id]    ← PATCH (whitelist), DELETE (ownership check)
+/api/favoritos             ← GET (?tipo=HOSPITAL|PROYECTO), POST toggle create/delete
+/api/calendario/ical       ← Feed .ics (visitas, recordatorios, hitos) con HMAC token
+/api/proyectos/[id]/excel  ← Export Excel 6 hojas (xlsx)
 /api/presence              ← POST heartbeat presencia colaborativa (activeUsers[])
 /api/notificaciones        ← Alertas por rol
-/api/perfil                ← { rol: ... } — usar d?.rol
+/api/perfil                ← { rol, onboardingCompletado, calendarToken } — usar d?.rol
 /api/config                ← GET/PATCH configuracion app
 /api/health                ← Healthcheck Railway
 ```
@@ -220,9 +230,9 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-16):**
+**Completado (sprints 1-17):**
 - Auth completa (login, middleware, roles)
-- Hospitales: lista, detalle, contactos, timeline, QR, favoritos
+- Hospitales: lista, detalle, contactos, timeline, QR, favoritos (DB-backed, cross-device)
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
 - Visitas: eliminar con confirmacion desde /visitas y ficha hospital
 - Visitas: modal estandarizado de creacion con titulo + tipo (RadioPills) + contacto principal + fecha + plantilla (desde /visitas, hospital, proyecto)
@@ -252,6 +262,12 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Modo campo movil: BottomNav 5 tabs (glass, safe area, TEAL), acciones rapidas dashboard
 - Onboarding nuevo usuario: wizard 6 pasos con SVG, slide animations, skip, keyboard nav, admin reset
 - Recordatorios personales: CRUD, pagina /recordatorios, notificaciones TopBar, dashboard Mi Dia
+- Favoritos DB-backed: modelo Favorito, API toggle, hook useFavoritos con optimistic updates
+- Panel equipo ADMIN: /admin/equipo, card grid con workload por usuario (visitas, proyectos, ultimo acceso)
+- Export Excel proyecto: 6 hojas xlsx (Resumen, Fases, Tareas, Hitos, Modulos, Materiales)
+- Notificaciones navegador: Browser Notification API, banner permisos, polling 60s, preferencias en perfil
+- Sincronizacion calendario iCal: HMAC tokens, feed .ics (visitas+recordatorios+hitos), URL copiable en perfil
+- Dashboard: seccion Favoritos con acceso rapido a hospitales/proyectos favoritos
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 

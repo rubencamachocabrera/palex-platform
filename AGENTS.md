@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 16 completado — modo campo, onboarding, recordatorios).
+> Ultima actualizacion: 2026-06-20 (sprint 17 completado — favoritos, equipo, excel, push, iCal).
 
 ---
 
@@ -101,7 +101,8 @@ src/
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
       admin/                            CRUD: usuarios, zonas, hospitales, hardware
       admin/log/page.tsx                Log de actividad (solo ADMIN)
-      perfil/page.tsx                   Editar nombre + cambiar contrasena
+      admin/equipo/page.tsx             Panel de equipo — workload por usuario (solo ADMIN)
+      perfil/page.tsx                   Editar nombre + cambiar contrasena + notificaciones + sync calendario
     api/
       auth/[...nextauth]/route.ts
       search/route.ts                   Busqueda unificada (hospitales+visitas+proyectos). Cache 30s.
@@ -126,10 +127,13 @@ src/
       proyectos/[id]/modulos/route.ts        GET + POST (reemplaza modulos)
       proyectos/[id]/modulos/[moduloId]/route.ts  PATCH estado + DELETE
       proyectos/[id]/share/route.ts
+      favoritos/route.ts                 GET (?tipo filter) + POST toggle (create/delete)
+      calendario/ical/route.ts           Feed .ics (visitas, recordatorios, hitos) con HMAC token
       hardware/route.ts                 GET Cache 60s
       hardware/tipos/route.ts           HardwareTipo dinamico
       hardware/unidades/route.ts        GET Cache 30s, POST/PUT solo ADMIN+PROYECTOS
       modulos-inlab/route.ts            Catalogo modulos InLab
+      proyectos/[id]/excel/route.ts      Export Excel 6 hojas (xlsx)
       tags/route.ts                     GET (filtro ?tipo), POST (solo ADMIN)
       tags/[id]/route.ts                PATCH (whitelist), DELETE (solo ADMIN)
       usuarios/menciones/route.ts       GET busqueda usuarios para @menciones
@@ -156,6 +160,7 @@ src/
     TagSelector.tsx                     Selector/pills de tags con colores + TagPills read-only
     BottomNav.tsx                       Navegacion movil 5 tabs (glass effect, safe area, TEAL active)
     OnboardingWizard.tsx                Tour 6 pasos con SVG ilustraciones, slide transitions
+    NotificationManager.tsx              Browser Notification API, permission banner, polling 60s
     Toast.tsx                           Global toast provider (god node: 42 edges)
     PageTransition.tsx
     OfflineIndicator.tsx
@@ -173,6 +178,7 @@ src/
   hooks/
     useKeyboardShortcuts.ts             Cmd+K, G+H/V/P/D, Escape
     useOfflineSync.ts                   useOfflineSync(), useOnlineStatus(), SaveStatus
+    useFavoritos.ts                     DB-backed favoritos hook (optimistic updates, rollback)
   lib/
     auth.config.ts                      Edge-compatible
     auth.ts                             Server-side NextAuth
@@ -184,6 +190,7 @@ src/
     offline-db.ts                       IndexedDB: openDB, saveDraft, getDraft, enqueueSync
     log-actividad.ts                    logActividad() — helper para registrar acciones
     presence.ts                         heartbeat/getActiveUsers/leave — presencia colaborativa in-memory
+    calendar-token.ts                   HMAC-SHA256 tokens para iCal auth (deterministic, sin DB)
     rate-limit.ts                       checkRateLimit() (god node: 22 edges)
     visita-analysis.ts                  detectarRiesgos() + calcularScore() (score 0-100)
   middleware.ts                         Protege rutas, edge-compatible
@@ -228,12 +235,14 @@ Tag              (nombre, color hex, tipo: VISITA|PROYECTO, orden, activo — @@
 VisitaTag        (pivot visita-tag — @@map "visitas_tags", cascade delete)
 ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
 Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "recordatorios")
+Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique [usuarioId,entidadId,tipo])
 ```
 
 **Enums clave:**
 - `EstadoProyecto`: NUEVO | EN_CURSO | PAUSADO | COMPLETADO | CANCELADO
 - `EstadoModulo`: PENDIENTE | EN_INSTALACION | INSTALADO | FORMACION | VALIDADO
 - `TipoFase`: 11 tipos (FIRMA_CONTRATO → SOPORTE_POST)
+- `TipoFavorito`: HOSPITAL | PROYECTO
 
 ---
 
@@ -257,6 +266,9 @@ Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "
 - Seguridad: IDOR check en hospitales (zona), visitas (propietario + misma zona), proyectos (responsable + zona). Whitelist en PATCH.
 - Acceso visitas: propietario, ADMIN, o usuarios en la misma zona del hospital.
 - Acceso proyectos: responsable, ADMIN, o usuarios en la zona del hospital del proyecto.
+- `/api/favoritos` GET: lista favoritos del usuario (?tipo=HOSPITAL|PROYECTO). POST: toggle (create/delete).
+- `/api/calendario/ical` GET: feed .ics con visitas, recordatorios, hitos. Auth via HMAC token query param.
+- `/api/proyectos/[id]/excel` GET: export Excel 6 hojas (Resumen, Fases, Tareas, Hitos, Modulos, Materiales).
 - Rate limiting: checkRateLimit() en todas las APIs de lectura.
 
 ---
@@ -273,7 +285,7 @@ Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "
 - Atajos teclado: G+H/V/P/D, /, Escape
 
 ### Hospitales
-- Lista con filtro zona, toggle grid/lista, busqueda, favoritos (localStorage)
+- Lista con filtro zona, toggle grid/lista, busqueda, favoritos (DB-backed, cross-device)
 - Detalle: KPIs visitas, tabs Contactos/Visitas/Timeline
 - QR por hospital: generacion dinamica + descarga PNG
 - Contactos: creables por todos, edit/delete solo ADMIN
@@ -390,6 +402,36 @@ Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "
 - Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
 - Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
 
+### Favoritos DB-backed
+- Modelo Favorito: usuarioId + entidadId + tipo (HOSPITAL|PROYECTO), unique constraint
+- API /api/favoritos: GET con filtro tipo, POST toggle (crea o elimina)
+- Hook useFavoritos(): reemplaza localStorage, optimistic updates con rollback on error
+- Integrado en lista hospitales y lista proyectos (estrella toggle)
+
+### Panel de equipo (ADMIN)
+- Pagina /admin/equipo: server component, solo ADMIN
+- Card grid por usuario: nombre, rol, zona, visitas (total/mes), proyectos activos, ultimo acceso
+- Datos en tiempo real desde DB (visitas count, proyectos where responsable)
+
+### Exportar proyecto a Excel
+- API /api/proyectos/[id]/excel: genera .xlsx con 6 hojas (Resumen, Fases, Tareas, Hitos, Modulos, Materiales)
+- Libreria xlsx (SheetJS v0.18.5), auto-column-width, headers con estilo
+- Boton "Exportar Excel" en detalle proyecto (descarga directa)
+
+### Notificaciones navegador
+- NotificationManager: Browser Notification API (no Push API — sin VAPID)
+- Banner permisos: fixed bottom-right, glass effect, z-35
+- Polling /api/notificaciones cada 60s cuando granted
+- localStorage track de IDs mostrados (no duplicados)
+- Seccion preferencias en /perfil con toggle activar/desactivar
+
+### Sincronizacion calendario (iCal)
+- calendar-token.ts: HMAC-SHA256 tokens deterministas (sin storage DB)
+- API /api/calendario/ical: feed .ics con visitas, recordatorios pendientes, hitos proximos
+- Auth via ?token= query param (HMAC del userId)
+- Seccion en /perfil: URL copiable para Google Calendar/Outlook/Apple Calendar
+- /api/perfil incluye calendarToken en respuesta
+
 ---
 
 ## 8. Deuda tecnica y bugs conocidos
@@ -484,16 +526,27 @@ Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "
 - [x] Dashboard Mi Dia: recordatorios de hoy integrados
 - [x] Middleware: /recordatorios como ruta protegida
 
+### Sprint 17 — Favoritos, Equipo, Excel, Notificaciones, iCal (COMPLETADO)
+- [x] Modelo Favorito DB-backed: TipoFavorito enum (HOSPITAL|PROYECTO), unique constraint
+- [x] API /api/favoritos: GET con filtro tipo, POST toggle create/delete
+- [x] Hook useFavoritos(): reemplaza localStorage, optimistic updates con rollback
+- [x] Favoritos integrados en hospitales y proyectos (estrella toggle cross-device)
+- [x] Panel de equipo ADMIN: /admin/equipo, card grid con workload por usuario
+- [x] Sidebar: enlace Panel Equipo solo para ADMIN
+- [x] Export Excel proyecto: /api/proyectos/[id]/excel, 6 hojas xlsx, auto-column-width
+- [x] NotificationManager: Browser Notification API, banner permisos glass, polling 60s
+- [x] Preferencias notificaciones en /perfil con toggle
+- [x] calendar-token.ts: HMAC-SHA256 tokens deterministas para iCal
+- [x] API /api/calendario/ical: feed .ics (visitas, recordatorios, hitos) con token auth
+- [x] Seccion sync calendario en /perfil: URL copiable para Google/Outlook/Apple
+- [x] /api/perfil: incluye onboardingCompletado + calendarToken
+- [x] Dashboard: seccion Favoritos con acceso rapido a hospitales/proyectos favoritos
+
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
 - [ ] Dashboard carga de trabajo — heatmap mensual visitas por tecnico (ADMIN)
 - [ ] Alertas mantenimiento hardware — garantia expirada, tiempo sin revision
-- [ ] Favoritos/Acceso rapido — estrella en hospitales y proyectos
-- [ ] Panel de equipo (ADMIN) — quien hace que
-- [ ] Exportar proyecto a Excel formateado
 - [ ] Firma digital del cliente en PDF
-- [ ] Notificaciones push del navegador
-- [ ] Sincronizacion calendario (iCal)
 - [ ] Vista Gantt de fases
 - [ ] Registro rapido de llamada
 
