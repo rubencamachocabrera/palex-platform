@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 13 completado — calidad + testing).
+> Ultima actualizacion: 2026-06-20 (sprint 15 completado — tags, menciones, grupos).
 
 ---
 
@@ -213,7 +213,7 @@ Adjunto          (nombre, tipo, contenido base64)
 HardwareTipo     (nombre, color hex — dinamico desde admin)
 HardwareCatalogo (marca, modelo, referenciaPalex, tipoId @map("tipo_id"))
 HardwareUnidad   (serie, estado: DISPONIBLE|ASIGNADO|EN_MANTENIMIENTO|RETIRADO|BAJA)
-Comentario       (texto, autor, fecha — vinculado a visita o proyecto)
+Comentario       (texto, autor, fecha, mencionIds:JSON — vinculado a visita o proyecto)
 ModuloInlab      (nombre — catalogo de modulos InLab)
 PlantillaVisita  (nombre, tipo, datos JSON)
 ConfigApp        (clave/valor configuracion app)
