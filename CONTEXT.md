@@ -211,7 +211,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
 - Visitas: eliminar con confirmacion desde /visitas y ficha hospital
-- Visitas: modal estandarizado de creacion con titulo + fecha + plantilla (desde /visitas, hospital, proyecto)
+- Visitas: modal estandarizado de creacion con titulo + tipo (RadioPills) + contacto principal + fecha + plantilla (desde /visitas, hospital, proyecto)
 - Visitas: edicion colaborativa con presencia en tiempo real (misma zona)
 - Proyectos (UNIFICADO): 10 tabs, fases, tareas, hitos, timeline, materiales, contactos, modulos InLab, adjuntos, Resumen 360, Kanban, share publico
 - Hardware: tipos dinamicos, catalogo, inventario, drawer admin
@@ -223,8 +223,10 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Sentry error tracking (client/server/edge + global-error boundary + instrumentation)
 - Playwright E2E: 18 tests (visitas, proyectos, navegacion) + auth setup + mobile viewport
 - Dark mode completo: 20+ paginas con containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
+- Dark mode: globals.css overrides para hover states de colores de estado, RadioPills/CheckPills sin inline styles
+- Animaciones: skeleton-shimmer, stagger-grid, card-hover lift, stagger-nav
 - PWA, Error boundaries, Presencia colaborativa in-memory
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Pendiente: Lighthouse audit, auditoria responsive. Ver AGENTS.md seccion 9.**
+**Pendiente: Lighthouse audit, auditoria responsive, UE (Unidad Especializada) en modal visita. Ver AGENTS.md seccion 9.**

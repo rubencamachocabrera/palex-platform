@@ -226,7 +226,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - `/api/search`: busqueda unificada hospitales+visitas+proyectos. Cache 30s.
 - `/api/visitas` GET: select SIN `datos` (JSON grande), incluye `titulo`. Acepta `?desde=&hasta=`. Cache 15s.
 - `/api/visitas/[id]` GET: devuelve `datos` completo + relaciones.
-- POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `proyectoId`.
+- POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `proyectoId`, `contactoPrincipalId`.
 - PATCH visita acepta: `titulo`, `datos`, `estado`, `fecha`, `proyectoId`, `contactoPrincipalId`.
 - POST proyecto acepta: `moduloIds` array + `refConcurso` ademas de campos base.
 - GET proyecto incluye `modulos` con estado de cada modulo.
@@ -258,7 +258,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 
 ### Visitas
 - Lista con titulo, busqueda (titulo/hospital/ciudad/tecnico), filtros avanzados (fecha/estado/tipo/zona), ordenacion 3 modos
-- Quick-create modal estandarizado: titulo + hospital + fecha + plantilla (disponible desde /visitas, ficha hospital y proyecto)
+- Quick-create modal estandarizado: titulo + hospital + tipo (RadioPills) + contacto principal + fecha + plantilla (disponible desde /visitas, ficha hospital y proyecto)
 - Eliminar visita con confirmacion desde /visitas y ficha hospital
 - Titulo editable en cabecera del formulario (guarda onBlur)
 - Calendario mensual: dots por estado, crear con fecha pre-rellena, ?desde=&hasta=
@@ -318,6 +318,10 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - Presencia colaborativa in-memory (presence.ts) — sin dependencias externas
 - PWA: manifest + SW + IndexedDB
 - Dark mode completo: containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
+- Dark mode: globals.css con overrides !important para bg, text, borders, hover, sombras, inputs, scrollbar
+- Dark mode: hover states de colores de estado (red-50, teal-50, amber-50, etc.) con overrides globales
+- Dark mode: RadioPills/CheckPills usan clases CSS en vez de inline styles (compatible dark mode)
+- Animaciones: skeleton-shimmer, stagger-grid (KPIs, hospital cards), card-hover lift, stagger-nav
 - Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
 
 ---
@@ -367,6 +371,8 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [ ] Lighthouse audit (objetivo >90)
 - [x] Tests E2E con Playwright (auth setup + visitas 5 tests + proyectos 4 tests + navegacion 9 tests + mobile viewport)
 - [x] Dark mode completo en drawers/modales (20+ paginas: admin, hardware, hospitales, visitas, proyectos, perfil, loading skeletons, CommandPalette)
+- [x] Pulido visual global: skeleton-shimmer, card-hover, stagger-grid, hover states dark mode, RadioPills/CheckPills sin inline styles, calendario dark fix
+- [x] Modal nueva visita mejorado: tipo de visita (RadioPills) + contacto principal con auto-seleccion
 - [ ] Auditoria responsive completa movil + interactividad
 
 ### Sprint 14 — Datos reales
