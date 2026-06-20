@@ -485,9 +485,9 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 | ~~ALTA~~ | ~~Fases proyecto sin verificar pertenencia~~ | ~~api/proyectos/[id]/fases~~ | CORREGIDO (responsableId check) |
 | ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO (responsableId check) |
 | ~~MEDIA~~ | ~~Dark mode incompleto en algunos drawers (estilos inline)~~ | ~~varios~~ | CORREGIDO (20+ paginas actualizadas) |
-| MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma | PENDIENTE |
+| ~~MEDIA~~ | ~~`Tarea.asignadoA` es String libre, no FK a Usuario~~ | ~~schema.prisma~~ | CORREGIDO (asignadoAId FK + select dropdown + fallback legacy) |
 | ~~BAJA~~ | ~~`CACHE_VERSION = 'palex-v1'` hardcodeado en SW~~ | ~~public/sw.js~~ | CORREGIDO (v2 + network-first para _next/static + auto-update) |
-| BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts | PENDIENTE |
+| ~~BAJA~~ | ~~JWT sin `maxAge` explicito (default 30 dias NextAuth)~~ | ~~auth.config.ts~~ | CORREGIDO (maxAge 7 dias) |
 
 ---
 
@@ -592,11 +592,63 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [x] Middleware: /llamadas protegido
 - [x] Iconos nuevos: Phone, CargaTrabajo, ShieldAlert, Wrench, ChevronDown
 
+### Roadmap corporativo — escalado a 30-50 usuarios concurrentes
+
+> Resultado de auditoria completa (infraestructura + seguridad + frontend). Junio 2026.
+
+#### Fase 1 — Seguridad critica (3 horas) — COMPLETADA
+- [x] Brute-force login: checkRateLimitByKey en authorize (5 intentos/min por IP)
+- [x] CSP: eliminado `unsafe-eval` de script-src en next.config.ts
+- [x] HSTS: añadido Strict-Transport-Security max-age=31536000; includeSubDomains
+
+#### Fase 2 — Base de datos (3 horas) — INMEDIATA
+- [ ] Connection pooling: configurar max:15-20 en PrismaPg adapter o activar PgBouncer de Railway
+- [ ] Indices: añadir @@index en Visita [hospitalId, fecha], Hospital [zonaId], Proyecto [hospitalId, responsableId], Comentario [visitaId, proyectoId]
+
+#### Fase 3 — Redis para estado compartido (1 dia) — PRE-SCALING
+- [ ] Migrar rate-limit.ts de Map a Redis (Upstash serverless o Railway Redis)
+- [ ] Migrar presence.ts de Map a Redis (presencia colaborativa cross-instance)
+- [ ] Cache servidor: agregaciones costosas (scores hospital, busqueda) en Redis con TTL
+
+#### Fase 4 — Paginacion APIs (4 horas) — PRE-SCALING
+- [ ] GET /api/hospitales: añadir ?limit=50&page=N (actualmente sin take, carga todos)
+- [ ] GET /api/proyectos: añadir ?limit=50&page=N (actualmente sin take, carga todos)
+- [ ] Frontend hospitales/page.tsx y proyectos/page.tsx: patron "cargar mas" (como ya tiene visitas)
+
+#### Fase 5 — Object storage para archivos (2-3 dias) — PRE-SCALING
+- [ ] Migrar Adjunto.contenido (base64 en DB) a Cloudflare R2 o AWS S3
+- [ ] Migrar Visita.fotos (base64 en JSON) a R2/S3, guardar solo URLs
+- [ ] Migrar HardwareCatalogoDoc.contenido a R2/S3
+- [ ] API upload con presigned URLs + validacion MIME + limite tamaño
+
+#### Fase 6 — Validacion y rate limiting global (2 dias) — PROGRESIVO
+- [ ] Adoptar Zod para validacion de esquema en todas las rutas POST/PATCH
+- [ ] Rate limiting en las 56 rutas API que no lo tienen (especialmente sub-rutas de proyectos)
+- [ ] bodyParser size limits en next.config.ts
+
+#### Fase 7 — Code splitting frontend (1 dia) — PROGRESIVO
+- [ ] Extraer 10 tabs de proyectos/[id]/page.tsx (4900+ lineas) a componentes con next/dynamic
+- [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad
+
+#### Fase 8 — Rendimiento frontend (1-2 dias) — PROGRESIVO
+- [ ] SWR o React Query para cache de datos compartidos (hospitales, zonas, perfil)
+- [ ] Formulario visita: useReducer o estado por seccion + React.memo (evitar re-render 13 secciones)
+- [ ] Reducir polling colaborativo: heartbeat 8s→15s, data poll 4s→10s (o SSE)
+
+#### Fase 9 — Revocacion JWT y sesiones (2 horas) — PROGRESIVO
+- [ ] Check usuario.activo en callback jwt de NextAuth (revocacion inmediata al desactivar usuario)
+- [ ] Considerar database sessions si se necesita revocacion instantanea
+
+#### Estimacion total: ~10-12 dias de desarrollo
+- Fases 1-2: hacer ya (6 horas, impacto inmediato)
+- Fases 3-5: necesarias antes de superar 20 usuarios concurrentes (~4-5 dias)
+- Fases 6-9: mejora progresiva sprint a sprint (~5-6 dias)
+
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
 - [ ] Notificaciones push movil (requiere VAPID + service worker push + servicio externo tipo OneSignal o Firebase FCM — aplazado)
-- [ ] Deuda: Tarea.asignadoA String libre → FK a Usuario
-- [ ] Deuda: JWT sin maxAge explicito (default 30 dias NextAuth)
+- [ ] Conectar /datos a APIs reales (sustituir mockup) — Sprint 14 aplazado
+- [ ] Offline completo: crear registros sin conexion, no solo editar visitas existentes
 
 ---
 

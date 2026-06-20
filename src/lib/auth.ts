@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { authConfig } from "@/lib/auth.config"
+import { checkRateLimitByKey } from "@/lib/rate-limit"
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -13,7 +14,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Contraseña", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
+        const ip =
+          (request instanceof Request
+            ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+              request.headers.get("x-real-ip")
+            : null) ?? "unknown"
+
+        if (checkRateLimitByKey(`login:${ip}`, { limit: 5, windowMs: 60_000 })) {
+          return null
+        }
+
         if (!credentials?.email || !credentials?.password) return null
 
         const usuario = await db.usuario.findUnique({

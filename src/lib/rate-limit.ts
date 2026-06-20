@@ -22,6 +22,23 @@ interface RateLimitOptions {
   windowMs?: number
 }
 
+export function checkRateLimitByKey(
+  key: string,
+  options: RateLimitOptions = {}
+): boolean {
+  const { limit = 60, windowMs = 60_000 } = options
+  const now = Date.now()
+  maybePurge(now)
+  const entry = store.get(key)
+  if (!entry || now > entry.resetAt) {
+    store.set(key, { count: 1, resetAt: now + windowMs })
+    return false
+  }
+  if (entry.count >= limit) return true
+  entry.count++
+  return false
+}
+
 export function checkRateLimit(
   req: NextRequest,
   route: string,
