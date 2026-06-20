@@ -787,10 +787,12 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
                 : tipos.map(t => (
                   <button key={t.id} type="button"
                     onClick={() => set("tipoId", form.tipoId === t.id ? "" : t.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                      form.tipoId === t.id ? "text-white" : "bg-white text-gray-700 border-gray-200"
+                    }`}
                     style={form.tipoId === t.id
-                      ? { backgroundColor: t.color, borderColor: t.color, color: "white" }
-                      : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#374151" }}>
+                      ? { backgroundColor: t.color, borderColor: t.color }
+                      : undefined}>
                     <span style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block", flexShrink: 0,
                       backgroundColor: form.tipoId === t.id ? "rgba(255,255,255,0.6)" : t.color }} />
                     {t.nombre}

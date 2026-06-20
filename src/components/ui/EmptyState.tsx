@@ -122,12 +122,10 @@ export function EmptyState({ icon = "document", title, description, action, clas
 
   return (
     <div className={`flex flex-col items-center justify-center py-14 px-6 text-center ${className}`}>
-      {/* Ilustración */}
-      <div className="mb-5 opacity-90">
+      <div className="mb-5 opacity-90 dark:opacity-60">
         {illustration}
       </div>
 
-      {/* Texto */}
       <p className="text-gray-700 font-semibold text-sm mb-1">{title}</p>
       {description && (
         <p className="text-gray-400 text-xs max-w-xs leading-relaxed">{description}</p>

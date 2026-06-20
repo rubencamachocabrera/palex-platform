@@ -484,8 +484,8 @@ async function DashboardAdmin() {
           { label: "Usuarios", href: "/admin/usuarios", icon: <IconUsers size={14} /> },
         ].map(a => (
           <Link key={a.href} href={a.href}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
-            <span className="text-gray-400">{a.icon}</span>
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shrink-0">
+            <span className="text-gray-400 dark:text-gray-500">{a.icon}</span>
             {a.label}
           </Link>
         ))}
@@ -750,7 +750,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
           { label: "Visitas", href: "/visitas", icon: <IconClipboard size={14} /> },
         ].map(a => (
           <Link key={a.href} href={a.href}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shrink-0">
             <span className="text-gray-400">{a.icon}</span>
             {a.label}
           </Link>
@@ -964,7 +964,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
           { label: "Proyectos", href: "/proyectos", icon: <IconCheckCircle size={14} /> },
         ].map(a => (
           <Link key={a.href} href={a.href}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shrink-0">
             <span className="text-gray-400">{a.icon}</span>
             {a.label}
           </Link>

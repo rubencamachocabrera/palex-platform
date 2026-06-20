@@ -1037,10 +1037,12 @@ function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =
           <button
             key={tipo}
             onClick={() => setAddTipo(addTipo === tipo ? null : tipo)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              addTipo === tipo ? "text-white" : "bg-white text-gray-700 border-gray-200"
+            }`}
             style={addTipo === tipo
-              ? { backgroundColor: color, color: "white", borderColor: color }
-              : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}
+              ? { backgroundColor: color, borderColor: color }
+              : undefined}
           >
             {tipo === "EVENTO" && (
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1114,8 +1116,10 @@ function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =
                   {[{ v: "PRESENCIAL", l: "Presencial", dot: "#6b7280" }, { v: "TEAMS", l: "Teams", dot: "#7c3aed" }, { v: "ZOOM", l: "Zoom", dot: "#2563eb" }, { v: "GOOGLE_MEET", l: "Meet", dot: "#16a34a" }].map(opt => (
                     <button key={opt.v} type="button"
                       onClick={() => setAddForm(p => ({ ...p, lugarCita: p.lugarCita === opt.v ? "" : opt.v }))}
-                      className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5"
-                      style={addForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", color: "white", borderColor: "#3b82f6" } : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}>
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                        addForm.lugarCita === opt.v ? "text-white" : "bg-white text-gray-700 border-gray-200"
+                      }`}
+                      style={addForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", borderColor: "#3b82f6" } : undefined}>
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: addForm.lugarCita === opt.v ? "white" : opt.dot }} />
                       {opt.l}
                     </button>
@@ -1519,8 +1523,10 @@ function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =
                                 {[{ v: "PRESENCIAL", l: "Presencial" }, { v: "TEAMS", l: "Teams" }, { v: "ZOOM", l: "Zoom" }, { v: "GOOGLE_MEET", l: "Meet" }].map(opt => (
                                   <button key={opt.v} type="button"
                                     onClick={() => setEditEntradaForm(p => ({ ...p, lugarCita: p.lugarCita === opt.v ? "" : opt.v }))}
-                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-                                    style={editEntradaForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", color: "white", borderColor: "#3b82f6" } : { backgroundColor: "white", color: "#374151", borderColor: "#e5e7eb" }}>
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                                      editEntradaForm.lugarCita === opt.v ? "text-white" : "bg-white text-gray-700 border-gray-200"
+                                    }`}
+                                    style={editEntradaForm.lugarCita === opt.v ? { backgroundColor: "#3b82f6", borderColor: "#3b82f6" } : undefined}>
                                     {opt.l}
                                   </button>
                                 ))}
@@ -2330,8 +2336,10 @@ function TabVisitas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =>
               <div className="flex gap-2">
                 {["PROYECTOS", "VENTAS"].map(t => (
                   <button key={t} type="button" onClick={() => setTipoCrear(t)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all"
-                    style={tipoCrear === t ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL } : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}>
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                      tipoCrear === t ? "text-white" : "bg-white text-gray-700 border-gray-200"
+                    }`}
+                    style={tipoCrear === t ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}>
                     {t === "PROYECTOS" ? "Proyectos" : "Ventas"}
                   </button>
                 ))}

@@ -260,10 +260,12 @@ export default function CalendarioPage() {
                   >
                     {/* Número del día */}
                     <span
-                      className="w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium mb-1 transition-colors"
+                      className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium mb-1 transition-colors ${
+                        esHoy ? "text-white" : esSeleccionado ? "" : "text-gray-700"
+                      }`}
                       style={esHoy
-                        ? { backgroundColor: TEAL, color: "#fff" }
-                        : { color: esSeleccionado ? TEAL : "#374151" }
+                        ? { backgroundColor: TEAL }
+                        : esSeleccionado ? { color: TEAL } : undefined
                       }
                     >
                       {dia}

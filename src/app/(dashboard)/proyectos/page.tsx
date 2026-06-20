@@ -144,7 +144,7 @@ function KanbanCard({ item }: { item: Proyecto }) {
     : undefined
   return (
     <div ref={setNodeRef} style={style} className={`group ${isDragging ? "opacity-25" : ""}`}>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 hover:border-teal-200 transition-all">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 card-hover">
         <div className="flex items-center justify-between mb-2">
           <div
             {...listeners} {...attributes}
@@ -489,7 +489,7 @@ export default function ProyectosPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Total" value={total} />
         <KpiCard label="En curso" value={enCurso} color={TEAL} />
         <KpiCard label="Retrasados" value={retrasados} color="#dc2626" />
@@ -597,7 +597,7 @@ export default function ProyectosPage() {
                 <Link
                   key={item.id}
                   href={`/proyectos/${item.id}`}
-                  className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 hover:border-teal-200 hover:shadow-md transition-all group"
+                  className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 card-hover group"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="flex-1 min-w-0">

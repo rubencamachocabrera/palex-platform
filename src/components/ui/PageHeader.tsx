@@ -52,7 +52,7 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
       {/* Fila principal: título + acciones */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-gray-800 leading-tight truncate">{title}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight truncate">{title}</h1>
           {subtitle && (
             <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
           )}

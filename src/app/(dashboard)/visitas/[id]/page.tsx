@@ -237,9 +237,10 @@ function RadioPills({ field, value, onChange, onBlur, readOnly }: {
         return (
           <button key={o} type="button" disabled={readOnly}
             onClick={() => { if (!readOnly) { onChange(active ? "" : o); onBlur?.() } }}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] disabled:cursor-default"
-            style={active ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
-              : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
+            className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] disabled:cursor-default ${
+              active ? "text-white" : "bg-white text-gray-700 border-gray-200"
+            }`}
+            style={active ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}
           >{o}</button>
         )
       })}
@@ -262,9 +263,10 @@ function CheckPills({ field, value, onChange, onBlur, readOnly }: {
             onClick={() => {
               if (!readOnly) { onChange(active ? arr.filter(x => x !== o) : [...arr, o]); onBlur?.() }
             }}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default"
-            style={active ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
-              : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
+            className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default ${
+              active ? "text-white" : "bg-white text-gray-700 border-gray-200"
+            }`}
+            style={active ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}
           >
             {active && <IconCheck size={13} className="shrink-0" />}
             {o}
@@ -688,12 +690,12 @@ function VistaResumen({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
             { label: "Completado",    value: `${progreso}%`,           color: progreso === 100 ? "#10b981" : TEAL },
-            { label: "Secciones",     value: `${completadas}/${sections.length}`, color: "#374151" },
-            { label: "Fotos",         value: String(totalFotos),        color: "#374151" },
+            { label: "Secciones",     value: `${completadas}/${sections.length}`, color: "" },
+            { label: "Fotos",         value: String(totalFotos),        color: "" },
             { label: scoreLabel + " complejidad", value: String(score), color: scoreColor },
           ].map(kpi => (
             <div key={kpi.label} className="bg-white rounded-xl border border-gray-200 px-4 py-3.5 text-center shadow-sm">
-              <div className="text-2xl font-bold tabular-nums leading-none mb-1" style={{ color: kpi.color }}>{kpi.value}</div>
+              <div className={`text-2xl font-bold tabular-nums leading-none mb-1 ${kpi.color ? "" : "text-gray-800"}`} style={kpi.color ? { color: kpi.color } : undefined}>{kpi.value}</div>
               <div className="text-xs text-gray-400">{kpi.label}</div>
             </div>
           ))}

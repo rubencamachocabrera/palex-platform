@@ -181,7 +181,7 @@ export default function HospitalesPage() {
         subtitle={`${filtrados.length} de ${hospitales.length} centros${filtroZona !== "TODAS" ? ` · ${filtroZona}` : ""}`}
         actions={
           /* Toggle vista */
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
           <button
             onClick={() => setVista("lista")}
             title="Vista lista"
@@ -237,10 +237,10 @@ export default function HospitalesPage() {
         <div className="flex flex-wrap gap-2 mb-5">
           <button
             onClick={() => setFiltroZona("TODAS")}
-            className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${filtroZona === "TODAS" ? "text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"}`}
             style={filtroZona === "TODAS"
-              ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
-              : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
+              ? { backgroundColor: TEAL, borderColor: TEAL }
+              : {}}
           >
             Todas ({hospitales.length})
           </button>
@@ -250,10 +250,10 @@ export default function HospitalesPage() {
               <button
                 key={z}
                 onClick={() => setFiltroZona(filtroZona === z ? "TODAS" : z)}
-                className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${filtroZona === z ? "text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"}`}
                 style={filtroZona === z
-                  ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
-                  : { backgroundColor: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
+                  ? { backgroundColor: TEAL, borderColor: TEAL }
+                  : {}}
               >
                 {z} ({cnt})
               </button>
@@ -415,12 +415,12 @@ export default function HospitalesPage() {
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{zona}</span>
                 <span className="text-xs text-gray-300">({lista.length})</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="stagger-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {lista.map(h => (
                   <div key={h.id} className="relative group">
                     <Link
                       href={`/hospitales/${h.id}`}
-                      className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm hover:border-gray-300 transition-all active:bg-gray-50"
+                      className="card-hover block bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50"
                     >
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
