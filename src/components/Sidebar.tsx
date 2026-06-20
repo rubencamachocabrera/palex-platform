@@ -168,6 +168,17 @@ const Icons: Record<string, () => React.ReactElement> = {
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
   ),
+  Phone: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  ),
+  CargaTrabajo: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
@@ -186,8 +197,10 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/mapa",                label: "Mapa",              icon: "Mapa" },
       { href: "/visitas",             label: "Todas las visitas", icon: "TodasVisitas" },
       { href: "/recordatorios",       label: "Recordatorios",     icon: "Recordatorios" },
+      { href: "/llamadas",            label: "Llamadas",          icon: "Phone" },
       { href: "/hardware",            label: "Hardware",          icon: "Hardware" },
       { href: "/admin/configuracion", label: "Configuración",     icon: "Configuracion" },
+      { href: "/admin/carga-trabajo", label: "Carga de trabajo", icon: "CargaTrabajo" },
       { href: "/admin/log",           label: "Log de actividad", icon: "Actividad" },
     ],
   },
@@ -218,6 +231,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
       { href: "/recordatorios",      label: "Recordatorios",  icon: "Recordatorios" },
+      { href: "/llamadas",           label: "Llamadas",       icon: "Phone" },
       { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },
@@ -245,6 +259,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
       { href: "/recordatorios",      label: "Recordatorios",  icon: "Recordatorios" },
+      { href: "/llamadas",           label: "Llamadas",       icon: "Phone" },
       { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },

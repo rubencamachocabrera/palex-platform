@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest) {
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, hwGarantiaVencida, hwMantenimientoVencido] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -112,6 +112,38 @@ export async function GET(_req: NextRequest) {
         orderBy: { fecha: "asc" },
         take: 5,
       }),
+      // Hardware: warranty expired (ADMIN only)
+      rol === "ADMIN"
+        ? db.hardwareUnidad.findMany({
+            where: {
+              fechaGarantia: { lt: now },
+              estado: { notIn: ["BAJA", "RETIRADO"] },
+            },
+            select: {
+              id: true, fechaGarantia: true,
+              catalogo: { select: { marca: true, modelo: true } },
+              hospital: { select: { nombre: true } },
+            },
+            orderBy: { fechaGarantia: "asc" },
+            take: 5,
+          })
+        : Promise.resolve([]),
+      // Hardware: maintenance overdue (ADMIN only)
+      rol === "ADMIN"
+        ? db.hardwareUnidad.findMany({
+            where: {
+              proximoMantenimiento: { lt: now },
+              estado: { notIn: ["BAJA", "RETIRADO"] },
+            },
+            select: {
+              id: true, proximoMantenimiento: true,
+              catalogo: { select: { marca: true, modelo: true } },
+              hospital: { select: { nombre: true } },
+            },
+            orderBy: { proximoMantenimiento: "asc" },
+            take: 5,
+          })
+        : Promise.resolve([]),
     ])
 
     const items = [
@@ -184,6 +216,26 @@ export async function GET(_req: NextRequest) {
           titulo: r.titulo,
           href: "/recordatorios",
           mensaje: esHoy ? "Recordatorio de hoy" : `Vencido hace ${diasRetraso} día${diasRetraso === 1 ? "" : "s"}`,
+        }
+      }),
+      ...hwGarantiaVencida.map(u => {
+        const dias = Math.floor((now.getTime() - new Date(u.fechaGarantia!).getTime()) / 86400000)
+        return {
+          tipo: "hardware_garantia" as const,
+          id: u.id,
+          titulo: `${u.catalogo.marca} ${u.catalogo.modelo}`,
+          href: "/hardware",
+          mensaje: `Garantía vencida hace ${dias} día${dias === 1 ? "" : "s"}${u.hospital ? ` · ${u.hospital.nombre}` : ""}`,
+        }
+      }),
+      ...hwMantenimientoVencido.map(u => {
+        const dias = Math.floor((now.getTime() - new Date(u.proximoMantenimiento!).getTime()) / 86400000)
+        return {
+          tipo: "hardware_mantenimiento" as const,
+          id: u.id,
+          titulo: `${u.catalogo.marca} ${u.catalogo.modelo}`,
+          href: "/hardware",
+          mensaje: `Mantenimiento vencido hace ${dias} día${dias === 1 ? "" : "s"}${u.hospital ? ` · ${u.hospital.nombre}` : ""}`,
         }
       }),
     ]

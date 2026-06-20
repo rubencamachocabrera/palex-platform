@@ -138,7 +138,7 @@ export default function HospitalDetailPage() {
   const [hospital, setHospital] = useState<Hospital | null>(null)
   const [userRol, setUserRol] = useState<string>("")
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"actividad" | "timeline" | "informacion" | "proyectos">("actividad")
+  const [tab, setTab] = useState<"actividad" | "timeline" | "informacion" | "proyectos" | "llamadas">("actividad")
   const [timeline, setTimeline] = useState<TimelineEvento[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<TimelineFiltro>("todos")
@@ -182,6 +182,11 @@ export default function HospitalDetailPage() {
   const [showLlamada, setShowLlamada] = useState(false)
   const [llamadaForm, setLlamadaForm] = useState({ motivo: "", resultado: "", contacto: "", duracion: "" })
   const [registrandoLlamada, setRegistrandoLlamada] = useState(false)
+
+  // Llamadas tab
+  const [llamadasList, setLlamadasList] = useState<{ id: string; fecha: string; asunto: string; duracion: number | null; resultado: string | null; seguimiento: boolean; fechaSeguimiento: string | null; contacto: { nombre: string } | null; usuario: { nombre: string } }[]>([])
+  const [llamadasLoaded, setLlamadasLoaded] = useState(false)
+  const [llamadasLoading, setLlamadasLoading] = useState(false)
 
   const isAdmin = userRol === "ADMIN"
 
@@ -346,10 +351,25 @@ export default function HospitalDetailPage() {
     router.push(`/proyectos/${nuevo.id}`)
   }
 
+  async function cargarLlamadas() {
+    if (llamadasLoaded) return
+    setLlamadasLoading(true)
+    try {
+      const r = await fetch(`/api/llamadas?hospitalId=${id}`)
+      if (r.ok) {
+        const data = await r.json()
+        setLlamadasList(Array.isArray(data) ? data.slice(0, 10) : [])
+      }
+    } catch { /* silent */ }
+    setLlamadasLoaded(true)
+    setLlamadasLoading(false)
+  }
+
   function changeTab(t: typeof tab) {
     setTab(t)
     if (t === "timeline") cargarTimeline()
     if (t === "proyectos") cargarProyectos()
+    if (t === "llamadas") cargarLlamadas()
   }
 
   const filteredTimeline = timelineFilter === "todos" ? timeline : timeline.filter(ev => {
@@ -368,16 +388,29 @@ export default function HospitalDetailPage() {
     if (!llamadaForm.motivo.trim()) return
     setRegistrandoLlamada(true)
     try {
-      const rPP = await fetch(`/api/proyectos?hospitalId=${id}`)
-      const pps = rPP.ok ? await rPP.json() : []
-      const ppActivo = Array.isArray(pps) ? pps.find((p: { estado: string }) => ["EN_CURSO","NUEVO","PAUSADO"].includes(p.estado)) : null
-      const contenido = [llamadaForm.motivo.trim(), llamadaForm.resultado.trim() ? `Resultado: ${llamadaForm.resultado.trim()}` : "", llamadaForm.contacto.trim() ? `Contacto: ${llamadaForm.contacto.trim()}` : "", llamadaForm.duracion.trim() ? `Duración: ${llamadaForm.duracion.trim()} min` : ""].filter(Boolean).join("\n")
-      if (ppActivo) {
-        await fetch(`/api/proyectos/${ppActivo.id}/entradas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tipo: "EVENTO", titulo: `Llamada — ${hospital!.nombre}`, contenido }) })
-      } else {
-        await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospitalId: id, tipo: "VENTAS", estado: "ARCHIVADA", datos: { notas: contenido, tipo_registro: "llamada" } }) })
+      const body: Record<string, unknown> = {
+        hospitalId: id,
+        asunto: llamadaForm.motivo.trim(),
       }
-      setShowLlamada(false); setLlamadaForm({ motivo: "", resultado: "", contacto: "", duracion: "" }); await cargar()
+      if (llamadaForm.resultado.trim()) body.resultado = llamadaForm.resultado.trim()
+      if (llamadaForm.duracion.trim() && parseInt(llamadaForm.duracion) > 0) body.duracion = parseInt(llamadaForm.duracion)
+      // Find matching contact by name if typed
+      if (llamadaForm.contacto.trim() && hospital) {
+        const match = hospital.contactos.find((c: Contacto) => c.nombre.toLowerCase().includes(llamadaForm.contacto.trim().toLowerCase()))
+        if (match) body.contactoId = match.id
+      }
+      const r = await fetch("/api/llamadas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (r.ok) {
+        setShowLlamada(false)
+        setLlamadaForm({ motivo: "", resultado: "", contacto: "", duracion: "" })
+        // Refresh llamadas tab if loaded
+        setLlamadasLoaded(false)
+        if (tab === "llamadas") cargarLlamadas()
+      }
     } catch (e) { console.error(e) } finally { setRegistrandoLlamada(false) }
   }
 
@@ -544,6 +577,7 @@ export default function HospitalDetailPage() {
           <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
             {([
               { k: "actividad",    label: "Actividad", badge: hospital.contactos.length + hospital.visitas.length },
+              { k: "llamadas",     label: "Llamadas",  badge: llamadasLoaded ? llamadasList.length : null },
               { k: "proyectos",    label: "Proyectos", badge: proyectosLoaded ? proyectos.length : null },
               { k: "timeline",     label: "Timeline", badge: null },
               { k: "informacion",  label: "Info", badge: null },
@@ -687,6 +721,80 @@ export default function HospitalDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── Tab: Llamadas ── */}
+          {tab === "llamadas" && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50 dark:border-gray-800">
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                  Llamadas
+                  {llamadasList.length > 0 && <span className="ml-2 text-xs font-semibold text-gray-400">({llamadasList.length})</span>}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowLlamada(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl text-white cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: TEAL }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Registrar
+                  </button>
+                  <Link href={`/llamadas`}
+                    className="text-xs font-medium hover:underline transition-colors"
+                    style={{ color: TEAL }}>
+                    Ver todas
+                  </Link>
+                </div>
+              </div>
+              {llamadasLoading ? (
+                <div className="p-5 space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl skeleton-shimmer" />)}
+                </div>
+              ) : llamadasList.length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 10.3a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 0h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/>
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Sin llamadas registradas</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Las llamadas a este centro apareceran aqui.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                  {llamadasList.map(ll => {
+                    const rColor = ll.resultado === "Contactado" ? TEAL : ll.resultado === "Reunion agendada" ? "#16a34a" : ll.resultado === "No contesta" ? "#9ca3af" : ll.resultado === "Buzon de voz" ? "#f59e0b" : ll.resultado === "Informacion enviada" ? "#3b82f6" : "#d1d5db"
+                    return (
+                      <div key={ll.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: ll.seguimiento ? "#f59e0b" : rColor }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{ll.asunto}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {ll.contacto && <span className="text-xs text-gray-400 truncate">{ll.contacto.nombre}</span>}
+                            <span className="text-xs text-gray-300 dark:text-gray-600">
+                              {new Date(ll.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {ll.duracion && ll.duracion > 0 && (
+                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">{ll.duracion} min</span>
+                          )}
+                          {ll.resultado && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: rColor }}>{ll.resultado}</span>
+                          )}
+                          {ll.seguimiento && (
+                            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                              Seguimiento
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 

@@ -253,6 +253,68 @@ export default function PrintView({ visita, datos, sections }: PrintViewProps) {
         )
       })()}
 
+      {/* FIRMAS */}
+      {((datos.firma_cliente as string) || (datos.firma_tecnico as string)) && (
+        <div className="section-block" style={{ marginBottom: 32, pageBreakInside: "avoid" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            marginBottom: 20, paddingBottom: 10, borderBottom: `2px solid ${TEAL}`,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+              <path d="m15 5 4 4"/>
+            </svg>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111", margin: 0 }}>Firmas</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+            {/* Firma del cliente */}
+            <div style={{ textAlign: "center" }}>
+              <div style={{
+                minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "16px 12px", marginBottom: 12,
+              }}>
+                {(datos.firma_cliente as string) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={datos.firma_cliente as string}
+                    alt="Firma del cliente"
+                    style={{ maxWidth: 200, maxHeight: 100, objectFit: "contain" }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>Sin firma</span>
+                )}
+              </div>
+              <div style={{ borderTop: "1.5px solid #111", width: "80%", margin: "0 auto", paddingTop: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>Firma del cliente</div>
+                <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{fechaCorta}</div>
+              </div>
+            </div>
+            {/* Firma del tecnico */}
+            <div style={{ textAlign: "center" }}>
+              <div style={{
+                minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "16px 12px", marginBottom: 12,
+              }}>
+                {(datos.firma_tecnico as string) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={datos.firma_tecnico as string}
+                    alt="Firma del tecnico"
+                    style={{ maxWidth: 200, maxHeight: 100, objectFit: "contain" }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>Sin firma</span>
+                )}
+              </div>
+              <div style={{ borderTop: "1.5px solid #111", width: "80%", margin: "0 auto", paddingTop: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>Firma del tecnico InLab</div>
+                <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{fechaCorta}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-footer">
         <span>Palex Medical - Informe de visita preproyecto - {visita.hospital.nombre}</span>
         <span>Generado el {fechaCorta}</span>

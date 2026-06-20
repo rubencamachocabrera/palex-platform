@@ -162,6 +162,7 @@ model Usuario {
   logs              LogActividad[]
   recordatorios     Recordatorio[]
   favoritos         Favorito[]
+  llamadas          RegistroLlamada[]
 
   @@map("usuarios")
 }
@@ -219,6 +220,7 @@ model Hospital {
   oportunidades    Oportunidad[]
   proyectos     Proyecto[]
   hardwareUnidades HardwareUnidad[]
+  llamadas         RegistroLlamada[]
 
   @@map("hospitales")
 }
@@ -236,6 +238,7 @@ model Contacto {
   hospital         Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   proyectos     ProyectoContacto[]
   visitasPrincipal Visita[]              @relation("VisitaContactoPrincipal")
+  llamadas         RegistroLlamada[]
 
   @@map("contactos")
 }
@@ -696,4 +699,30 @@ model Favorito {
   @@unique([usuarioId, entidadId, tipo])
   @@index([usuarioId])
   @@map("favoritos")
+}
+
+// --- REGISTRO DE LLAMADAS ------------------------------------------------
+
+model RegistroLlamada {
+  id               String    @id @default(cuid())
+  hospitalId       String    @map("hospital_id")
+  contactoId       String?   @map("contacto_id")
+  usuarioId        String    @map("usuario_id")
+  fecha            DateTime  @default(now())
+  duracion         Int?
+  asunto           String
+  notas            String?   @db.Text
+  resultado        String?
+  seguimiento      Boolean   @default(false)
+  fechaSeguimiento DateTime? @map("fecha_seguimiento")
+  creadoEn         DateTime  @default(now()) @map("creado_en")
+  editadoEn        DateTime  @updatedAt @map("editado_en")
+
+  hospital  Hospital  @relation(fields: [hospitalId], references: [id])
+  contacto  Contacto? @relation(fields: [contactoId], references: [id], onDelete: SetNull)
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId, fecha])
+  @@index([hospitalId])
+  @@map("registros_llamadas")
 }

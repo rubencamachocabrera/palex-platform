@@ -6,6 +6,7 @@ import { TEAL, ORANGE } from "@/lib/brand"
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
   IconCheckCircle, IconFileText, IconMap, IconCalendar, IconStar,
+  IconShieldAlert,
 } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -422,6 +423,7 @@ async function DashboardAdmin({ userId }: { userId: string }) {
     totalOportunidades, valorPipeline, visitasChart, opCalientes, proximasVisitas,
     funnelRaw, opsPrevRaw, top5Raw,
     proyectosActivos, proximasCitas,
+    hwGarantiaVencidaCount, hwMantenimientoVencidoCount,
   ] = await Promise.all([
     db.hospital.count({ where: { activo: true } }),
     db.usuario.count({ where: { activo: true } }),
@@ -445,6 +447,12 @@ async function DashboardAdmin({ userId }: { userId: string }) {
       where: { tipo: "CITA", fechaCita: { gte: ahora, lte: en14dias } },
       select: { id: true, titulo: true, fechaCita: true, personaCita: true, lugarCita: true, importanciaCita: true, proyecto: { select: { id: true, titulo: true, hospital: { select: { nombre: true } } } } },
       orderBy: { fechaCita: "asc" }, take: 6,
+    }),
+    db.hardwareUnidad.count({
+      where: { fechaGarantia: { lt: ahora }, estado: { notIn: ["BAJA", "RETIRADO"] } },
+    }),
+    db.hardwareUnidad.count({
+      where: { proximoMantenimiento: { lt: ahora }, estado: { notIn: ["BAJA", "RETIRADO"] } },
     }),
   ])
 
@@ -611,6 +619,38 @@ async function DashboardAdmin({ userId }: { userId: string }) {
           : <KpiCard label="Proyectos activos" value={proyectosActivos.length} sub={`${promedioProgreso}% progreso medio`} icon={<IconCheckCircle size={18} />} />
         }
       </div>
+
+      {/* Alertas hardware */}
+      {(hwGarantiaVencidaCount > 0 || hwMantenimientoVencidoCount > 0) && (
+        <Link
+          href="/hardware"
+          className="card-hover flex items-center gap-4 p-4 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/30 hover:border-amber-300 dark:hover:border-amber-800 transition-all mb-6 group"
+        >
+          <span
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white"
+            style={{ backgroundColor: ORANGE }}
+          >
+            <IconShieldAlert size={20} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+              Alertas de hardware
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {[
+                hwGarantiaVencidaCount > 0 && `${hwGarantiaVencidaCount} garantía${hwGarantiaVencidaCount !== 1 ? "s" : ""} vencida${hwGarantiaVencidaCount !== 1 ? "s" : ""}`,
+                hwMantenimientoVencidoCount > 0 && `${hwMantenimientoVencidoCount} mantenimiento${hwMantenimientoVencidoCount !== 1 ? "s" : ""} vencido${hwMantenimientoVencidoCount !== 1 ? "s" : ""}`,
+              ].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          <span
+            className="text-lg font-black shrink-0 tabular-nums"
+            style={{ color: ORANGE }}
+          >
+            {hwGarantiaVencidaCount + hwMantenimientoVencidoCount}
+          </span>
+        </Link>
+      )}
 
       {/* Accesos rápidos */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
@@ -798,7 +838,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const finDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1)
   const en7dias = new Date(ahora.getTime() + 7 * 86400000)
 
-  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw, visitasHoy, opsProximas, recordatoriosHoyVentas] = await Promise.all([
+  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw, visitasHoy, opsProximas, recordatoriosHoyVentas, llamadasHoyVentas] = await Promise.all([
     db.oportunidad.findMany({ where: { usuarioId: userId }, orderBy: { editadoEn: "desc" }, take: 8, include: { hospital: { select: { nombre: true, ciudad: true } } } }),
     db.visita.findMany({ where: { usuarioId: userId }, take: 5, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -809,6 +849,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
     db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["GANADO", "PERDIDO"] }, fechaCierre: { gte: ahora, lte: en7dias } }, include: { hospital: { select: { nombre: true } } }, orderBy: { fechaCierre: "asc" }, take: 5 }),
     db.recordatorio.findMany({ where: { usuarioId: userId, completado: false, fecha: { gte: inicioDia, lt: finDia } }, select: { id: true, titulo: true, fecha: true }, orderBy: { fecha: "asc" }, take: 5 }),
+    db.registroLlamada.count({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } } }),
   ])
 
   const opsActivas = misOps.filter(o => o.etapa !== "PERDIDO")
@@ -829,7 +870,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
   const hayPrevision = previsionData.some(d => d.v > 0)
 
-  const hayMiDiaVentas = visitasHoy.length > 0 || opsProximas.length > 0 || recordatoriosHoyVentas.length > 0
+  const hayMiDiaVentas = visitasHoy.length > 0 || opsProximas.length > 0 || recordatoriosHoyVentas.length > 0 || llamadasHoyVentas > 0
 
   return (
     <div>
@@ -892,6 +933,22 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
                 </span>
               </Link>
             ))}
+            {llamadasHoyVentas > 0 && (
+              <Link href="/llamadas" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 10.3a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 0h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/>
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">Llamadas de hoy</p>
+                  <p className="text-xs text-gray-400">{llamadasHoyVentas} llamada{llamadasHoyVentas !== 1 ? "s" : ""} registrada{llamadasHoyVentas !== 1 ? "s" : ""}</p>
+                </div>
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full shrink-0">
+                  {llamadasHoyVentas}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -998,7 +1055,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
     proximasVisitas, estadoModulosRaw, totalVisitas,
     misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas, hitosRetrasados,
-    visitasHoy, tareasVencidas, recordatoriosHoy,
+    visitasHoy, tareasVencidas, recordatoriosHoy, llamadasHoy,
   ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -1040,6 +1097,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
     db.tarea.findMany({ where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA", "CANCELADA"] }, proyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } }, include: { proyecto: { select: { id: true, titulo: true } } }, orderBy: { fechaVencimiento: "asc" }, take: 5 }),
     db.recordatorio.findMany({ where: { usuarioId: userId, completado: false, fecha: { gte: inicioDia, lt: finDia } }, select: { id: true, titulo: true, fecha: true }, orderBy: { fecha: "asc" }, take: 5 }),
+    db.registroLlamada.count({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } } }),
   ])
 
   const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -1065,7 +1123,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     alertas.push({ key: `hr-${h.id}`, titulo: h.proyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/proyectos/${h.proyecto.id}`, color: "#f97316", bg: "#fff7ed" })
   })
 
-  const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0 || recordatoriosHoy.length > 0
+  const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0 || recordatoriosHoy.length > 0 || llamadasHoy > 0
 
   return (
     <div>
@@ -1125,6 +1183,22 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
                 </span>
               </Link>
             ))}
+            {llamadasHoy > 0 && (
+              <Link href="/llamadas" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 10.3a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 0h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/>
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">Llamadas de hoy</p>
+                  <p className="text-xs text-gray-400">{llamadasHoy} llamada{llamadasHoy !== 1 ? "s" : ""} registrada{llamadasHoy !== 1 ? "s" : ""}</p>
+                </div>
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full shrink-0">
+                  {llamadasHoy}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -15,6 +15,7 @@ import { calcularScore } from "@/lib/visita-analysis"
 
 const VoiceNotes = dynamic(() => import("@/components/visitas/VoiceNotes").then(m => ({ default: m.VoiceNotes })), { ssr: false })
 const ComentariosPanel = dynamic(() => import("@/components/ComentariosPanel").then(m => ({ default: m.ComentariosPanel })), { ssr: false })
+const SignaturePad = dynamic(() => import("@/components/visitas/SignaturePad").then(m => ({ default: m.SignaturePad })), { ssr: false })
 
 // Dynamic import — PrintView sólo se carga cuando el usuario pulsa "Imprimir"
 const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
@@ -1148,6 +1149,13 @@ export default function VisitaPage() {
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
+  function setFirma(key: "firma_cliente" | "firma_tecnico", dataUrl: string) {
+    setDatos(prev => { const next = { ...prev, [key]: dataUrl }; datosRef.current = next; return next })
+    setPendiente(true); setSavedAt(null)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => guardarRef.current(), 2000)
+  }
+
   const vincularProyecto = useCallback(async (proyectoId: string | null) => {
     if (!visitaRef.current) return
     setVinculandoPP(true)
@@ -1889,6 +1897,33 @@ export default function VisitaPage() {
           {/* Panel de análisis */}
           <div className="mt-4">
             <AnalisisPanel datos={datos} hospitalId={visita.hospital.id} />
+          </div>
+
+          {/* Firmas */}
+          <div className="mt-4 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-5">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${TEAL}15` }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                  </svg>
+                </span>
+                <h3 className="text-sm font-semibold text-gray-700">Firmas</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <SignaturePad
+                  label="Firma del cliente"
+                  initialValue={(datos.firma_cliente as string) || undefined}
+                  onSave={dataUrl => setFirma("firma_cliente", dataUrl)}
+                />
+                <SignaturePad
+                  label="Firma del tecnico InLab"
+                  initialValue={(datos.firma_tecnico as string) || undefined}
+                  onSave={dataUrl => setFirma("firma_tecnico", dataUrl)}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Comentarios del equipo */}
