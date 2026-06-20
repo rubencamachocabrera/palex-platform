@@ -52,6 +52,8 @@ interface Tarea {
   estado: "PENDIENTE" | "EN_PROGRESO" | "COMPLETADA" | "CANCELADA"
   prioridad: "BAJA" | "MEDIA" | "ALTA" | "CRITICA"
   asignadoA: string | null
+  asignadoAId: string | null
+  asignado: { id: string; nombre: string } | null
   fechaVencimiento: string | null; fechaCompletada: string | null
   orden: number; creadoEn: string
 }
@@ -2942,9 +2944,9 @@ function KanbanCard({ tarea, onClick }: { tarea: Tarea; onClick: () => void }) {
         <span className="w-2 h-2 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: PRIO_COLOR[tarea.prioridad] }}/>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
-        {tarea.asignadoA && (
+        {(tarea.asignado?.nombre || tarea.asignadoA) && (
           <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium truncate max-w-[80px]">
-            {tarea.asignadoA}
+            {tarea.asignado?.nombre ?? tarea.asignadoA}
           </span>
         )}
         {venc && (
@@ -4285,13 +4287,14 @@ function TareaCheck({ estado }: { estado: string }) {
 
 interface TareasQFProps {
   parentId: string | null
-  titulo: string; prioridad: string; fechaVencimiento: string; asignadoA: string
+  titulo: string; prioridad: string; fechaVencimiento: string; asignadoAId: string
+  usuarios: { id: string; nombre: string }[]
   guardando: boolean
-  onChange: (f: "titulo" | "prioridad" | "fechaVencimiento" | "asignadoA", v: string) => void
+  onChange: (f: "titulo" | "prioridad" | "fechaVencimiento" | "asignadoAId", v: string) => void
   onSubmit: () => void
   onCancel: () => void
 }
-function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asignadoA, guardando, onChange, onSubmit, onCancel }: TareasQFProps) {
+function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asignadoAId, usuarios, guardando, onChange, onSubmit, onCancel }: TareasQFProps) {
   return (
     <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 p-3 space-y-2">
       <input
@@ -4316,9 +4319,11 @@ function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asigna
           <input type="date" value={fechaVencimiento} onChange={e => onChange("fechaVencimiento", e.target.value)}
             className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
         </div>
-        <input value={asignadoA} onChange={e => onChange("asignadoA", e.target.value)}
-          placeholder="Asignado a..."
-          className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+        <select value={asignadoAId} onChange={e => onChange("asignadoAId", e.target.value)}
+          className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+          <option value="">Sin asignar</option>
+          {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+        </select>
       </div>
       <div className="flex gap-2">
         <button onClick={onSubmit} disabled={guardando}
@@ -4341,10 +4346,15 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
   const [filtro, setFiltro] = useState<Filtro>("TODAS")
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set())
   const [addingTo, setAddingTo] = useState<"ROOT" | string | null>(null)
-  const [qForm, setQForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
+  const [qForm, setQForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoAId: "" })
   const [guardando, setGuardando] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
+  const [editForm, setEditForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoAId: "" })
+  const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([])
+
+  useEffect(() => {
+    fetch("/api/usuarios/menciones?q=").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setUsuarios(d) })
+  }, [])
   const [vistaKanban, setVistaKanban] = useState(false)
 
   const tareas = pp.tareas ?? []
@@ -4406,12 +4416,12 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
     try {
       const r = await fetch(`/api/proyectos/${pp.id}/tareas`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titulo: qForm.titulo.trim(), prioridad: qForm.prioridad, fechaVencimiento: qForm.fechaVencimiento || null, asignadoA: qForm.asignadoA || null, parentId }),
+        body: JSON.stringify({ titulo: qForm.titulo.trim(), prioridad: qForm.prioridad, fechaVencimiento: qForm.fechaVencimiento || null, asignadoAId: qForm.asignadoAId || null, asignadoA: usuarios.find(u => u.id === qForm.asignadoAId)?.nombre ?? null, parentId }),
       })
       if (!r.ok) throw new Error()
       const nueva = await r.json()
       onUpdate({ ...pp, tareas: [...tareas, nueva] })
-      setQForm({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
+      setQForm({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoAId: "" })
       setAddingTo(null)
       if (parentId) setExpandidas(prev => new Set([...prev, parentId]))
       success(parentId ? "Subtarea creada" : "Tarea creada")
@@ -4452,7 +4462,7 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
   }
 
   function openAdd(to: "ROOT" | string) {
-    setQForm({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoA: "" })
+    setQForm({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoAId: "" })
     setAddingTo(to)
     setEditId(null)
   }
@@ -4463,7 +4473,7 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
       titulo: t.titulo,
       prioridad: t.prioridad,
       fechaVencimiento: t.fechaVencimiento ? fmtFechaInput(t.fechaVencimiento) : "",
-      asignadoA: t.asignadoA ?? "",
+      asignadoAId: t.asignadoAId ?? "",
     })
     setAddingTo(null)
   }
@@ -4478,7 +4488,8 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
           titulo: editForm.titulo.trim(),
           prioridad: editForm.prioridad,
           fechaVencimiento: editForm.fechaVencimiento || null,
-          asignadoA: editForm.asignadoA || null,
+          asignadoAId: editForm.asignadoAId || null,
+          asignadoA: usuarios.find(u => u.id === editForm.asignadoAId)?.nombre ?? null,
         }),
       })
       if (!r.ok) throw new Error()
@@ -4561,8 +4572,8 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
         <QuickFormInline
           parentId={null}
           titulo={qForm.titulo} prioridad={qForm.prioridad}
-          fechaVencimiento={qForm.fechaVencimiento} asignadoA={qForm.asignadoA}
-          guardando={guardando}
+          fechaVencimiento={qForm.fechaVencimiento} asignadoAId={qForm.asignadoAId}
+          usuarios={usuarios} guardando={guardando}
           onChange={(f, v) => setQForm(p => ({ ...p, [f]: v }))}
           onSubmit={() => crearTarea(null)}
           onCancel={() => setAddingTo(null)}
@@ -4602,7 +4613,7 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
             ]).map(col => (
               <KanbanCol key={col.estado} {...col}
                 tareas={tareasRaiz.filter(t => t.estado === col.estado)}
-                onCardClick={t => { setEditId(t.id); setEditForm({ titulo: t.titulo, prioridad: t.prioridad, fechaVencimiento: t.fechaVencimiento?.slice(0,10) ?? "", asignadoA: t.asignadoA ?? "" }) }}
+                onCardClick={t => { setEditId(t.id); setEditForm({ titulo: t.titulo, prioridad: t.prioridad, fechaVencimiento: t.fechaVencimiento?.slice(0,10) ?? "", asignadoAId: t.asignadoAId ?? "" }) }}
               />
             ))}
           </div>
@@ -4667,10 +4678,12 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
                         onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
                         className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
                     </div>
-                    <input value={editForm.asignadoA}
-                      onChange={e => setEditForm(p => ({ ...p, asignadoA: e.target.value }))}
-                      placeholder="Asignado a..."
-                      className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                    <select value={editForm.asignadoAId}
+                      onChange={e => setEditForm(p => ({ ...p, asignadoAId: e.target.value }))}
+                      className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white">
+                      <option value="">Sin asignar</option>
+                      {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                    </select>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => guardarEdit(tarea.id)} disabled={guardando}
@@ -4714,10 +4727,10 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
                     </span>
                   )}
                   {/* Asignado */}
-                  {tarea.asignadoA && (
+                  {(tarea.asignado?.nombre || tarea.asignadoA) && (
                     <span className="text-[11px] text-gray-400 hidden sm:inline max-w-24 truncate"
-                      title={tarea.asignadoA}>
-                      {tarea.asignadoA}
+                      title={tarea.asignado?.nombre ?? tarea.asignadoA ?? ""}>
+                      {tarea.asignado?.nombre ?? tarea.asignadoA}
                     </span>
                   )}
                   {/* Toggle subtareas */}
@@ -4808,10 +4821,12 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
                               <input type="date" value={editForm.fechaVencimiento}
                                 onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
                                 className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
-                              <input value={editForm.asignadoA}
-                                onChange={e => setEditForm(p => ({ ...p, asignadoA: e.target.value }))}
-                                placeholder="Asignado a..."
-                                className="flex-1 min-w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                              <select value={editForm.asignadoAId}
+                                onChange={e => setEditForm(p => ({ ...p, asignadoAId: e.target.value }))}
+                                className="flex-1 min-w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white">
+                                <option value="">Sin asignar</option>
+                                {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                              </select>
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => guardarEdit(sub.id)} disabled={guardando}
@@ -4842,8 +4857,8 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
                                   {sv.label}
                                 </span>
                               )}
-                              {sub.asignadoA && (
-                                <span className="text-[11px] text-gray-400 hidden sm:inline max-w-16 truncate">{sub.asignadoA}</span>
+                              {(sub.asignado?.nombre || sub.asignadoA) && (
+                                <span className="text-[11px] text-gray-400 hidden sm:inline max-w-16 truncate">{sub.asignado?.nombre ?? sub.asignadoA}</span>
                               )}
                               <button onClick={() => openEdit(sub)}
                                 className="p-1 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
@@ -4873,7 +4888,8 @@ function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => 
                       <QuickFormInline
                         parentId={tarea.id}
                         titulo={qForm.titulo} prioridad={qForm.prioridad}
-                        fechaVencimiento={qForm.fechaVencimiento} asignadoA={qForm.asignadoA}
+                        fechaVencimiento={qForm.fechaVencimiento} asignadoAId={qForm.asignadoAId}
+                        usuarios={usuarios}
                         guardando={guardando}
                         onChange={(f, v) => setQForm(p => ({ ...p, [f]: v }))}
                         onSubmit={() => crearTarea(tarea.id)}

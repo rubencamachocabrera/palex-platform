@@ -14,6 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
     const tareas = await db.tarea.findMany({
       where: { proyectoId: id },
+      include: { asignado: { select: { id: true, nombre: true } } },
       orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
     })
     return NextResponse.json(tareas)
@@ -42,6 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         estado: body.estado ?? "PENDIENTE",
         prioridad: body.prioridad ?? "MEDIA",
         asignadoA: body.asignadoA ?? null,
+        asignadoAId: body.asignadoAId ?? null,
         parentId: body.parentId ?? null,
         fechaVencimiento: body.fechaVencimiento ? new Date(body.fechaVencimiento) : null,
         orden: body.orden ?? 0,

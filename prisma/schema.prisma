@@ -163,6 +163,7 @@ model Usuario {
   recordatorios     Recordatorio[]
   favoritos         Favorito[]
   llamadas          RegistroLlamada[]
+  tareasAsignadas   Tarea[]          @relation("TareasAsignadas")
 
   @@map("usuarios")
 }
@@ -427,6 +428,7 @@ model Tarea {
   estado           EstadoTarea    @default(PENDIENTE)
   prioridad        PrioridadTarea @default(MEDIA)
   asignadoA        String?
+  asignadoAId      String?        @map("asignado_a_id")
   fechaVencimiento DateTime?
   fechaCompletada  DateTime?
   orden            Int            @default(0)
@@ -436,7 +438,9 @@ model Tarea {
   proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   parent      Tarea?      @relation("TareaSubtareas", fields: [parentId], references: [id], onDelete: Cascade)
   subtareas   Tarea[]     @relation("TareaSubtareas")
+  asignado    Usuario?    @relation("TareasAsignadas", fields: [asignadoAId], references: [id], onDelete: SetNull)
 
+  @@index([asignadoAId])
   @@map("tareas")
 }
 
