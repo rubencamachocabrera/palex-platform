@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
 > Resumen compacto del proyecto. Actualizado sprint 13 (junio 2026).
-> Commit base: `7b3b771` (20 jun 2026 — sprint 13 completado)
+> Commit base: `f9a04ec` (20 jun 2026 — sprint 13 completado)
 
 ---
 
@@ -226,7 +226,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Dark mode: globals.css overrides para hover states de colores de estado, RadioPills/CheckPills sin inline styles
 - Animaciones: skeleton-shimmer, stagger-grid, card-hover lift, stagger-nav
 - Responsive: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
-- Lighthouse audit: Performance 100, Accessibility 95+, Best Practices 96, SEO 95+ (contraste WCAG, landmarks, touch targets, robots.txt)
+- Lighthouse audit: Performance 100, Accessibility 100, Best Practices 96, SEO 100 (contraste WCAG, landmarks, touch targets, robots.txt)
 - PWA, Error boundaries, Presencia colaborativa in-memory
 
 **CRM / Pipeline comercial: DESACTIVADO.**

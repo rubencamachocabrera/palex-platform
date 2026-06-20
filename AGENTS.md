@@ -322,6 +322,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - Dark mode: hover states de colores de estado (red-50, teal-50, amber-50, etc.) con overrides globales
 - Dark mode: RadioPills/CheckPills usan clases CSS en vez de inline styles (compatible dark mode)
 - Animaciones: skeleton-shimmer, stagger-grid (KPIs, hospital cards), card-hover lift, stagger-nav
+- Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
 - Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
 
 ---
@@ -368,10 +369,10 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Sentry para errores en produccion (client/server/edge + global-error boundary)
 
 ### Sprint 13 — Calidad y testing (COMPLETADO)
-- [x] Lighthouse audit: Performance 100, Accessibility 95+, Best Practices 96, SEO 95+ (objetivo >90 cumplido)
+- [x] Lighthouse audit: Performance 100, Accessibility 100, Best Practices 96, SEO 100 (objetivo >90 cumplido)
   - robots.txt: permitir /login (SEO is-crawlable)
   - auth layout: `<main id="main-content">` (landmark + skip-link target)
-  - login: contraste textos WCAG AA (ORANGE→#b45309, gray-400→gray-500, boton ORANGE_DARK)
+  - login: contraste textos WCAG AA (ORANGE→#b45309, gray-400→gray-500, boton #b45309)
   - login: toggle password 44×44 touch target
   - layout: eliminar maximumScale:1 (bloquea zoom accesibilidad)
 - [x] Tests E2E con Playwright (auth setup + visitas 5 tests + proyectos 4 tests + navegacion 9 tests + mobile viewport)
