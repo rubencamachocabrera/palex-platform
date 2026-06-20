@@ -126,6 +126,11 @@ enum PrioridadTarea {
   CRITICA
 }
 
+enum TipoFavorito {
+  HOSPITAL
+  PROYECTO
+}
+
 // --- CONFIG ----------------------------------------------------------
 
 model ConfigApp {
@@ -156,6 +161,7 @@ model Usuario {
   fasesResponsable  FaseProyecto[]   @relation("FaseResponsable")
   logs              LogActividad[]
   recordatorios     Recordatorio[]
+  favoritos         Favorito[]
 
   @@map("usuarios")
 }
@@ -674,4 +680,20 @@ model Recordatorio {
   @@index([usuarioId, fecha])
   @@index([fecha])
   @@map("recordatorios")
+}
+
+// --- FAVORITOS -----------------------------------------------------------
+
+model Favorito {
+  id        String       @id @default(cuid())
+  usuarioId String       @map("usuario_id")
+  entidadId String       @map("entidad_id")
+  tipo      TipoFavorito
+  creadoEn  DateTime     @default(now()) @map("creado_en")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, entidadId, tipo])
+  @@index([usuarioId])
+  @@map("favoritos")
 }
