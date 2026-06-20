@@ -30,6 +30,7 @@ const PrintView = dynamic(() => import("@/components/visitas/PrintView"), {
 })
 
 
+import { TagSelector } from "@/components/TagSelector"
 import { TEAL, TEAL_DARK } from "@/lib/brand"
 import {
   IconHospital, IconUsers, IconCalendar, IconAlertTriangle, IconMonitor,
@@ -84,6 +85,7 @@ interface VisitaData {
   datos: Record<string, unknown>
   hospital: { id: string; nombre: string; ciudad: string; provincia?: string | null }
   usuario: { id: string; nombre: string }
+  tags?: { tag: { id: string; nombre: string; color: string } }[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1343,6 +1345,15 @@ export default function VisitaPage() {
               {visita.hospital.ciudad}
               {visita.tipo === "VENTAS" ? " · Visita comercial" : " · Visita técnica"}
             </p>
+            <div className="mt-1">
+              <TagSelector
+                entityType="VISITA"
+                entityId={visita.id}
+                tagIds={(visita.tags ?? []).map(t => t.tag.id)}
+                onUpdate={ids => setVisita(v => v ? { ...v, tags: ids.map(id => ({ tag: { id, nombre: "", color: "" } })) } : v)}
+                readOnly={readOnly}
+              />
+            </div>
           </div>
 
           {/* Colaboradores activos */}

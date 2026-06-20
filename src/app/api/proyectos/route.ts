@@ -60,6 +60,7 @@ export async function GET(req: Request) {
         solicitudes: { select: { id: true } },
         hardwareUnidades: { select: { id: true } },
         modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
+        tags: { include: { tag: true } },
       },
       orderBy: { creadoEn: "desc" },
     })

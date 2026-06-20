@@ -49,6 +49,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         modulos: {
           include: { modulo: { select: { id: true, nombre: true } } },
         },
+        tags: { include: { tag: true } },
       },
     })
     if (!pp) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -95,6 +96,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         }
       }
     }
+
+    // Sync tags if tagIds provided
+    if (Array.isArray(body.tagIds)) {
+      await db.proyectoTag.deleteMany({ where: { proyectoId: id } })
+      if (body.tagIds.length > 0) {
+        await db.proyectoTag.createMany({
+          data: body.tagIds.map((tagId: string) => ({ proyectoId: id, tagId })),
+          skipDuplicates: true,
+        })
+      }
+    }
+
     const updated = await db.proyecto.update({ where: { id }, data })
     return NextResponse.json(updated)
   } catch (err) {

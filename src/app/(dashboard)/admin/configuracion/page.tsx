@@ -412,6 +412,251 @@ function ModulosInlabSection() {
   )
 }
 
+// ---- Tags / Etiquetas ----
+
+const TAG_PRESET_COLORS = [
+  "#00A99D", "#0369a1", "#7c3aed", "#db2777", "#dc2626", "#ea580c",
+  "#d97706", "#65a30d", "#16a34a", "#0891b2", "#6366f1", "#4b5563",
+]
+
+interface TagItem {
+  id: string; nombre: string; color: string; tipo: string
+  orden: number; activo: boolean
+  _count?: { visitas: number; proyectos: number }
+}
+
+function TagsSection() {
+  const { success, error: toastError } = useToast()
+  const [tab, setTab] = useState<"VISITA" | "PROYECTO">("VISITA")
+  const [items, setItems] = useState<TagItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Inline form
+  const [showForm, setShowForm] = useState(false)
+  const [nuevoNombre, setNuevoNombre] = useState("")
+  const [nuevoColor, setNuevoColor] = useState(TAG_PRESET_COLORS[0])
+  const [customColor, setCustomColor] = useState("")
+  const [creando, setCreando] = useState(false)
+
+  // Edit mode
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editNombre, setEditNombre] = useState("")
+  const [editColor, setEditColor] = useState("")
+
+  useEffect(() => {
+    setLoading(true)
+    fetch("/api/tags")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setItems(d) })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filtered = items.filter(t => t.tipo === tab)
+
+  async function crear() {
+    if (!nuevoNombre.trim()) return
+    setCreando(true)
+    try {
+      const r = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nuevoNombre.trim(), color: nuevoColor, tipo: tab, orden: filtered.length }),
+      })
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? "Error") }
+      const nuevo = await r.json()
+      setItems(prev => [...prev, nuevo])
+      setNuevoNombre(""); setShowForm(false)
+      success("Etiqueta creada")
+    } catch (e: unknown) {
+      toastError(e instanceof Error ? e.message : "Error al crear")
+    } finally { setCreando(false) }
+  }
+
+  async function guardarEdit(id: string) {
+    if (!editNombre.trim()) return
+    const r = await fetch(`/api/tags/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: editNombre.trim(), color: editColor }),
+    })
+    if (r.ok) {
+      setItems(prev => prev.map(i => i.id === id ? { ...i, nombre: editNombre.trim(), color: editColor } : i))
+      setEditId(null)
+      success("Etiqueta actualizada")
+    } else {
+      const d = await r.json()
+      toastError(d.error ?? "Error al actualizar")
+    }
+  }
+
+  async function toggleActivo(item: TagItem) {
+    const r = await fetch(`/api/tags/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !item.activo }),
+    })
+    if (r.ok) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, activo: !item.activo } : i))
+      success(item.activo ? "Etiqueta desactivada" : "Etiqueta activada")
+    } else { toastError("Error al actualizar") }
+  }
+
+  async function eliminar(id: string) {
+    const r = await fetch(`/api/tags/${id}`, { method: "DELETE" })
+    if (r.ok) {
+      setItems(prev => prev.filter(i => i.id !== id))
+      success("Etiqueta eliminada")
+    } else { toastError("Error al eliminar") }
+  }
+
+  function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {TAG_PRESET_COLORS.map(c => (
+          <button key={c} type="button" onClick={() => { onChange(c); setCustomColor("") }}
+            className="w-6 h-6 rounded-full border-2 transition-all shrink-0 hover:scale-110"
+            style={{ backgroundColor: c, borderColor: value === c ? "#1f2937" : "transparent" }}
+            title={c}
+          />
+        ))}
+        <input
+          type="text"
+          value={customColor}
+          onChange={e => { setCustomColor(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onChange(e.target.value) }}
+          placeholder="#hex"
+          className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-teal-400"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-bold text-gray-900">Etiquetas</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Tags para clasificar visitas y proyectos</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl mb-4 w-fit">
+        {(["VISITA", "PROYECTO"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              tab === t ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t === "VISITA" ? "Tags de Visitas" : "Tags de Proyectos"}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2].map(i => <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />)}
+        </div>
+      ) : (
+        <>
+          {/* Tag list */}
+          {filtered.length === 0 && !showForm ? (
+            <div className="text-center py-8 text-sm text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+              Sin etiquetas de {tab === "VISITA" ? "visitas" : "proyectos"}. Crea la primera.
+            </div>
+          ) : (
+            <div className="space-y-2 mb-4">
+              {filtered.map(item => (
+                <div key={item.id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                    item.activo ? "border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800" : "border-gray-100 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 opacity-60"
+                  }`}
+                >
+                  {editId === item.id ? (
+                    /* Edit mode */
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input autoFocus value={editNombre} onChange={e => setEditNombre(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") guardarEdit(item.id); if (e.key === "Escape") setEditId(null) }}
+                          className="flex-1 px-3 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none" />
+                        <button onClick={() => guardarEdit(item.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
+                        <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                      <ColorPicker value={editColor} onChange={setEditColor} />
+                    </div>
+                  ) : (
+                    /* Display mode */
+                    <>
+                      <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <button onClick={() => { setEditId(item.id); setEditNombre(item.nombre); setEditColor(item.color) }}
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-teal-700 dark:hover:text-teal-400 transition-colors text-left flex-1 truncate">
+                        {item.nombre}
+                      </button>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                        style={{ backgroundColor: item.activo ? `${TEAL}18` : "#f3f4f6", color: item.activo ? TEAL : "#9ca3af" }}>
+                        {item.activo ? "Activo" : "Inactivo"}
+                      </span>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {item._count ? (tab === "VISITA" ? item._count.visitas : item._count.proyectos) : 0}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => toggleActivo(item)} className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline transition-colors">
+                          {item.activo ? "Desactivar" : "Activar"}
+                        </button>
+                        <button onClick={() => eliminar(item.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                          Eliminar
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New tag form */}
+          {showForm ? (
+            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 bg-white dark:bg-gray-900">
+              <input value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && crear()}
+                placeholder={`Nombre del tag (ej: ${tab === "VISITA" ? "Urgente, Seguimiento" : "Prioritario, Licitacion"})`}
+                autoFocus
+                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 dark:bg-gray-800 dark:text-white" />
+              <ColorPicker value={nuevoColor} onChange={setNuevoColor} />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2">
+                  <span className="text-xs text-gray-400">Vista previa:</span>
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full text-white"
+                    style={{ backgroundColor: nuevoColor }}>
+                    {nuevoNombre || "Etiqueta"}
+                  </span>
+                </div>
+                <button onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600 px-3 py-2 rounded-lg transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={crear} disabled={creando || !nuevoNombre.trim()}
+                  className="text-xs font-semibold px-4 py-2 rounded-xl text-white disabled:opacity-50 transition-all hover:opacity-90"
+                  style={{ backgroundColor: TEAL }}>
+                  {creando ? "Creando..." : "Crear"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => { setShowForm(true); setNuevoColor(TAG_PRESET_COLORS[0]); setNuevoNombre(""); setCustomColor("") }}
+              className="flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-300 transition-colors w-full justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nueva etiqueta
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ---- Scoring Section ----
 
 function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
@@ -671,6 +916,10 @@ export default function ConfiguracionPage() {
       <div className="border-t border-gray-100" />
 
       <PlantillasSection />
+
+      <div className="border-t border-gray-100" />
+
+      <TagsSection />
 
       <div className="border-t border-gray-100" />
 

@@ -101,6 +101,11 @@ enum EstadoSolicitud {
   CANCELADA
 }
 
+enum TipoTag {
+  VISITA
+  PROYECTO
+}
+
 enum TipoEntrada {
   EVENTO
   COMENTARIO
@@ -194,10 +199,13 @@ model Hospital {
   zonaId    String
   latitud   Float?
   longitud  Float?
+  grupoId   String?
   creadoEn  DateTime     @default(now())
   editadoEn DateTime     @updatedAt
 
   zona             Zona             @relation(fields: [zonaId], references: [id])
+  grupo            Hospital?        @relation("GrupoHospitalario", fields: [grupoId], references: [id], onDelete: SetNull)
+  centros          Hospital[]       @relation("GrupoHospitalario")
   contactos        Contacto[]
   visitas          Visita[]
   oportunidades    Oportunidad[]
@@ -249,6 +257,7 @@ model Visita {
   proyecto        Proyecto? @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
   contactoPrincipal  Contacto?    @relation("VisitaContactoPrincipal", fields: [contactoPrincipalId], references: [id], onDelete: SetNull)
   comentarios        Comentario[]
+  tags               VisitaTag[]
 
   @@map("visitas")
 }
@@ -336,6 +345,7 @@ model Proyecto {
   adjuntos         Adjunto[]
   comentarios      Comentario[]
   modulos          ProyectoModulo[]
+  tags             ProyectoTag[]
 
   @@map("pre_proyectos")
 }
@@ -566,6 +576,7 @@ model Comentario {
   autorNombre   String
   contenido     String   @db.Text
   fotos         Json     @default("[]")
+  mencionIds    Json     @default("[]")
   creadoEn      DateTime @default(now())
   editadoEn     DateTime @updatedAt
 
@@ -587,6 +598,48 @@ model PlantillaVisita {
 
   @@map("plantillas_visita")
 }
+
+// --- TAGS / ETIQUETAS ------------------------------------------------
+
+model Tag {
+  id       String  @id @default(cuid())
+  nombre   String
+  color    String  @default("#00A99D")
+  tipo     TipoTag
+  orden    Int     @default(0)
+  activo   Boolean @default(true)
+  creadoEn DateTime @default(now())
+
+  visitas   VisitaTag[]
+  proyectos ProyectoTag[]
+
+  @@unique([nombre, tipo])
+  @@map("tags")
+}
+
+model VisitaTag {
+  visitaId String
+  tagId    String
+
+  visita Visita @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([visitaId, tagId])
+  @@map("visitas_tags")
+}
+
+model ProyectoTag {
+  proyectoId String @map("preProyectoId")
+  tagId      String
+
+  proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([proyectoId, tagId])
+  @@map("proyectos_tags")
+}
+
+// --- LOG ACTIVIDAD ---------------------------------------------------
 
 model LogActividad {
   id        String   @id @default(cuid())

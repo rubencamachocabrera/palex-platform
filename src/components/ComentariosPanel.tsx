@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { TEAL } from "@/lib/brand"
 import { comprimirImagen } from "@/lib/img-compress"
+import { MentionInput, extractMentionIds } from "@/components/MentionInput"
+import { MentionText } from "@/components/MentionText"
 
 interface Comentario {
   id: string
@@ -78,10 +80,11 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
     const t = texto.trim()
     if ((!t && fotos.length === 0) || enviando) return
     setEnviando(true)
+    const mencionIds = extractMentionIds(t)
     const r = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contenido: t || "(foto)", fotos }),
+      body: JSON.stringify({ contenido: t || "(foto)", fotos, mencionIds }),
     })
     if (r.ok) { setTexto(""); setFotos([]); await cargar() }
     setEnviando(false)
@@ -122,7 +125,9 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
                     <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{c.autorNombre}</span>
                     <span className="text-[10px] text-gray-400">{fechaRel(c.creadoEn)}</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed break-words">{c.contenido !== "(foto)" ? c.contenido : ""}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed break-words">
+                    {c.contenido !== "(foto)" ? <MentionText text={c.contenido} /> : ""}
+                  </p>
                   {cFotos.length > 0 && (
                     <div className="flex gap-2 mt-2">
                       {cFotos.map((src, i) => (
@@ -167,14 +172,12 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
           </div>
         )}
         <div className="flex gap-2">
-          <textarea
+          <MentionInput
             value={texto}
-            onChange={e => setTexto(e.target.value)}
+            onChange={setTexto}
+            placeholder="Comentario… @ para mencionar (Enter para enviar)"
+            className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent resize-none min-h-[38px] max-h-24"
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar() } }}
-            placeholder="Comentario… (Enter para enviar)"
-            rows={1}
-            className="flex-1 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent resize-none min-h-[38px] max-h-24"
-            style={{ lineHeight: "1.45" }}
           />
           <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFotos} />
           <button onClick={() => fileRef.current?.click()} disabled={fotos.length >= 2}

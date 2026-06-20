@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest) {
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -82,6 +82,25 @@ export async function GET(_req: NextRequest) {
         orderBy: { fechaVencimiento: "asc" },
         take: 8,
       }),
+      // Mentions: comments from last 7 days where current user is mentioned
+      db.comentario.findMany({
+        where: {
+          mencionIds: { array_contains: [userId] },
+          autorId: { not: userId },
+          creadoEn: { gte: hace7dias },
+        },
+        select: {
+          id: true,
+          autorNombre: true,
+          creadoEn: true,
+          visitaId: true,
+          proyectoId: true,
+          visita: { select: { id: true, hospital: { select: { nombre: true } } } },
+          proyecto: { select: { id: true, titulo: true } },
+        },
+        orderBy: { creadoEn: "desc" },
+        take: 10,
+      }),
     ])
 
     const items = [
@@ -124,6 +143,22 @@ export async function GET(_req: NextRequest) {
           titulo: t.titulo,
           href: `/proyectos/${t.proyecto.id}`,
           mensaje: `En "${t.proyecto.titulo}" · ${diasRetraso === 0 ? "vencía hoy" : `retrasada ${diasRetraso}d`}`,
+        }
+      }),
+      ...mencionesRecientes.map(m => {
+        const esVisita = !!m.visitaId
+        const titulo = esVisita
+          ? (m.visita?.hospital?.nombre ?? "Visita")
+          : (m.proyecto?.titulo ?? "Proyecto")
+        const href = esVisita
+          ? `/visitas/${m.visitaId}`
+          : `/proyectos/${m.proyectoId}`
+        return {
+          tipo: "mencion" as const,
+          id: m.id,
+          titulo,
+          href,
+          mensaje: `${m.autorNombre} te mencionó en ${esVisita ? "una visita" : "un proyecto"}`,
         }
       }),
     ]

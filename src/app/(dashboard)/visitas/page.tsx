@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
+import { TagPills } from "@/components/TagSelector"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { IconSearch } from "@/components/ui/Icons"
@@ -48,6 +49,8 @@ function mesLabel(iso: string) {
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
+interface TagRef { tag: { id: string; nombre: string; color: string } }
+
 interface Visita {
   id: string
   titulo?: string | null
@@ -57,6 +60,7 @@ interface Visita {
   score?: number | null
   hospital: { id: string; nombre: string; ciudad: string; zona: { nombre: string } }
   usuario: { id: string; nombre: string; rol: string }
+  tags?: TagRef[]
 }
 
 interface Hospital { id: string; nombre: string; ciudad: string; zona?: { id: string; nombre: string } }
@@ -133,11 +137,16 @@ export default function VisitasPage() {
   const [contactoId, setContactoId] = useState("")
   const [eliminarId, setEliminarId] = useState<string | null>(null)
   const [eliminando, setEliminando] = useState(false)
+  const [tagsDisponibles, setTagsDisponibles] = useState<{ id: string; nombre: string; color: string }[]>([])
+  const [filtroTag, setFiltroTag] = useState("")
   const searchParams = useSearchParams()
   const autoAbierto = useRef(false)
 
   useEffect(() => {
     fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol); if (d?.nombre) setUserName(d.nombre) }).catch(() => {})
+    fetch("/api/tags?tipo=VISITA").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setTagsDisponibles(d.filter((t: { activo: boolean }) => t.activo))
+    }).catch(() => {})
     cargarVisitas()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

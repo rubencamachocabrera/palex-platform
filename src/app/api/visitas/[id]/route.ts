@@ -28,6 +28,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
         proyecto: { select: { id: true, titulo: true } },
         contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
+        tags: { include: { tag: true } },
       },
     })
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -61,6 +62,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       : (visita.datos as Record<string, unknown> ?? {})
     const { score } = calcularScore(datosParaScore)
 
+    // Sync tags if tagIds provided
+    if (Array.isArray(body.tagIds)) {
+      await db.visitaTag.deleteMany({ where: { visitaId: id } })
+      if (body.tagIds.length > 0) {
+        await db.visitaTag.createMany({
+          data: body.tagIds.map((tagId: string) => ({ visitaId: id, tagId })),
+          skipDuplicates: true,
+        })
+      }
+    }
+
     const updated = await db.visita.update({
       where: { id },
       data: {
@@ -77,6 +89,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         oportunidad: { select: { id: true, titulo: true, etapa: true } },
         proyecto: { select: { id: true, titulo: true } },
         contactoPrincipal: { select: { id: true, nombre: true, cargo: true } },
+        tags: { include: { tag: true } },
       },
     })
 

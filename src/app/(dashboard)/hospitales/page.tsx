@@ -66,7 +66,10 @@ interface Hospital {
   provincia: string | null
   tipo: string
   camas: number | null
+  grupoId?: string | null
   zona: { id: string; nombre: string }
+  grupo?: { id: string; nombre: string } | null
+  centros?: { id: string; nombre: string; ciudad: string; tipo: string }[]
   _count: { visitas: number; contactos: number }
   score?: number
 }
@@ -355,12 +358,29 @@ export default function HospitalesPage() {
                           {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{h.nombre}</p>
+                            {h.centros && h.centros.length > 0 && !h.grupoId && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                                style={{ backgroundColor: TEAL + "15", color: TEAL }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                                {h.centros.length}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-400 mt-0.5">
                             {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
                             {h.camas ? ` · ${h.camas} camas` : ""}
                           </p>
-                          <p className="text-xs text-gray-300 mt-0.5">{TIPO_LABELS[h.tipo] ?? h.tipo}</p>
+                          <p className="text-xs text-gray-300 mt-0.5">
+                            {TIPO_LABELS[h.tipo] ?? h.tipo}
+                            {h.grupo && (
+                              <span className="ml-1.5 text-gray-400">
+                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline -mt-px mr-0.5"><polyline points="9 18 15 12 9 6"/></svg>
+                                {h.grupo.nombre}
+                              </span>
+                            )}
+                          </p>
                         </div>
                         <div className="text-right shrink-0 space-y-0.5">
                           {h.score !== undefined && (() => {
@@ -427,9 +447,24 @@ export default function HospitalesPage() {
                           {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">{h.nombre}</p>
+                            {h.centros && h.centros.length > 0 && !h.grupoId && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                                style={{ backgroundColor: TEAL + "15", color: TEAL }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                                {h.centros.length}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-400 mt-0.5 truncate">
                             {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
+                            {h.grupo && (
+                              <span className="ml-1 text-gray-400">
+                                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline -mt-px mr-0.5"><polyline points="9 18 15 12 9 6"/></svg>
+                                {h.grupo.nombre}
+                              </span>
+                            )}
                           </p>
                         </div>
                         {h.score !== undefined && (() => {

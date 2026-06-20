@@ -24,6 +24,15 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       where: { id },
       include: {
         zona: true,
+        grupo: { select: { id: true, nombre: true } },
+        centros: {
+          select: {
+            id: true, nombre: true, ciudad: true, tipo: true,
+            _count: { select: { visitas: true, proyectos: true } },
+          },
+          where: { activo: true },
+          orderBy: { nombre: "asc" },
+        },
         contactos: { orderBy: [{ principal: "desc" }, { nombre: "asc" }] },
         visitas: {
           include: { usuario: { select: { id: true, nombre: true, rol: true } } },
@@ -48,8 +57,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await req.json()
     const { nombre, ciudad, provincia, pais, tipo, camas, direccion, activo, zonaId, latitud, longitud } = body
+    // grupoId: allow setting to null explicitly (to remove from group)
+    const grupoId = body.grupoId !== undefined ? (body.grupoId || null) : undefined
     const data = Object.fromEntries(
-      Object.entries({ nombre, ciudad, provincia, pais, tipo, camas, direccion, activo, zonaId, latitud, longitud })
+      Object.entries({ nombre, ciudad, provincia, pais, tipo, camas, direccion, activo, zonaId, latitud, longitud, grupoId })
         .filter(([, v]) => v !== undefined)
     )
     const hospital = await db.hospital.update({ where: { id }, data })

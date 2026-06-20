@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { TagSelector } from "@/components/TagSelector"
 import { ComentariosPanel } from "@/components/ComentariosPanel"
 import QRCode from "qrcode"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from "@dnd-kit/core"
@@ -83,6 +84,7 @@ interface Proyecto {
   entradas: EntradaTimeline[]; tareas: Tarea[]
   adjuntos?: { id: string }[]
   modulos?: ProyectoModuloItem[]
+  tags?: { tag: { id: string; nombre: string; color: string } }[]
 }
 
 // ---- constantes ----
@@ -305,6 +307,14 @@ export default function ProyectoDetalle() {
                 Ref: <span className="text-gray-700 font-medium font-mono">{pp.refContrato}</span>
               </p>
             )}
+            <div className="mt-2">
+              <TagSelector
+                entityType="PROYECTO"
+                entityId={pp.id}
+                tagIds={(pp.tags ?? []).map(t => t.tag.id)}
+                onUpdate={ids => setPp(prev => prev ? { ...prev, tags: ids.map(id => ({ tag: { id, nombre: "", color: "" } })) } : prev)}
+              />
+            </div>
           </div>
           <div className="shrink-0 text-sm text-right space-y-1">
             {pp.presupuesto != null && (

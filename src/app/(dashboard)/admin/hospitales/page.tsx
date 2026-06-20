@@ -65,14 +65,17 @@ interface Hospital {
   id: string; nombre: string; ciudad: string; provincia: string | null
   tipo: string; activo: boolean; camas: number | null
   latitud: number | null; longitud: number | null
+  grupoId?: string | null
   zona: { id: string; nombre: string }
+  grupo?: { id: string; nombre: string } | null
+  centros?: { id: string; nombre: string }[]
   _count?: { visitas: number; contactos: number }
 }
 
 const FORM_EMPTY = {
   nombre: "", ciudad: "", provincia: "", pais: "España",
   tipo: "HOSPITAL_PUBLICO", camas: "", zonaId: "", activo: true,
-  latitud: "", longitud: "",
+  latitud: "", longitud: "", grupoId: "",
 }
 
 function SkeletonRow() {
@@ -244,6 +247,7 @@ export default function HospitalesAdminPage() {
       pais: "España", tipo: h.tipo, camas: h.camas?.toString() ?? "",
       zonaId: h.zona.id, activo: h.activo,
       latitud: h.latitud?.toString() ?? "", longitud: h.longitud?.toString() ?? "",
+      grupoId: h.grupoId ?? "",
     })
     setGeoStatus(h.latitud != null && h.longitud != null ? "ok" : "idle")
     setGeoLabel(h.latitud != null && h.longitud != null ? "Coordenadas guardadas en el sistema" : "")
@@ -263,6 +267,7 @@ export default function HospitalesAdminPage() {
         zonaId: form.zonaId, activo: form.activo,
         latitud: form.latitud ? parseFloat(form.latitud) : null,
         longitud: form.longitud ? parseFloat(form.longitud) : null,
+        grupoId: form.grupoId || null,
       }
       const url = editId ? `/api/hospitales/${editId}` : "/api/hospitales"
       const method = editId ? "PATCH" : "POST"
@@ -533,8 +538,25 @@ export default function HospitalesAdminPage() {
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{h.nombre}</p>
-                      <p className="text-xs text-gray-400 truncate">{h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{h.nombre}</p>
+                        {h.centros && h.centros.length > 0 && !h.grupoId && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                            style={{ backgroundColor: TEAL + "15", color: TEAL }}>
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            {h.centros.length}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        {h.ciudad}{h.provincia ? `, ${h.provincia}` : ""}
+                        {h.grupo && (
+                          <span className="ml-1 text-gray-400">
+                            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline -mt-px mr-0.5"><polyline points="9 18 15 12 9 6"/></svg>
+                            {h.grupo.nombre}
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
 
@@ -772,6 +794,40 @@ export default function HospitalesAdminPage() {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Sección: Grupo hospitalario */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Grupo hospitalario</p>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1.5">Hospital cabecera (grupo)</label>
+                  <select
+                    value={form.grupoId}
+                    onChange={e => f("grupoId", e.target.value)}
+                    className={INPUT + " bg-white dark:bg-gray-800"}
+                    style={RING}
+                  >
+                    <option value="">Sin grupo</option>
+                    {hospitales
+                      .filter(h => {
+                        // Show hospitals that can be group heads:
+                        // - not the current hospital being edited
+                        // - either already has centros (is a group head) OR has no grupoId (not a center themselves)
+                        if (editId && h.id === editId) return false
+                        return !h.grupoId
+                      })
+                      .map(h => (
+                        <option key={h.id} value={h.id}>
+                          {h.nombre} — {h.ciudad}
+                          {h.centros && h.centros.length > 0 ? ` (grupo: ${h.centros.length} centros)` : ""}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  <p className="text-[10px] text-gray-400 mt-1.5">
+                    Asigna este hospital como centro de un grupo hospitalario existente.
+                  </p>
                 </div>
               </div>
 

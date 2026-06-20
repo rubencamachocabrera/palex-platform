@@ -26,7 +26,12 @@ export async function GET(req: NextRequest) {
             { ciudad: { contains: q, mode: "insensitive" } },
           ],
         },
-        select: { id: true, nombre: true, ciudad: true, zona: { select: { nombre: true } } },
+        select: {
+          id: true, nombre: true, ciudad: true,
+          zona: { select: { nombre: true } },
+          grupo: { select: { id: true, nombre: true } },
+          centros: { select: { id: true, nombre: true }, where: { activo: true }, take: 5 },
+        },
         take: 5,
         orderBy: { nombre: "asc" },
       }),

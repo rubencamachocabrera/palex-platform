@@ -22,6 +22,8 @@ export async function GET(req: NextRequest) {
       },
       include: {
         zona: { select: { id: true, nombre: true } },
+        grupo: { select: { id: true, nombre: true } },
+        centros: { select: { id: true, nombre: true, ciudad: true, tipo: true }, where: { activo: true } },
         _count: { select: { visitas: true, contactos: true } },
       },
       orderBy: { nombre: "asc" },
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const body = await req.json()
-    const { nombre, ciudad, provincia, pais, tipo, camas, direccion, zonaId, latitud, longitud } = body
+    const { nombre, ciudad, provincia, pais, tipo, camas, direccion, zonaId, latitud, longitud, grupoId } = body
     if (!nombre?.trim() || !ciudad?.trim() || !zonaId)
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 })
 
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
         zonaId,
         latitud:   latNum != null && Number.isFinite(latNum) && Math.abs(latNum)  <= 90  ? latNum  : null,
         longitud:  lonNum != null && Number.isFinite(lonNum) && Math.abs(lonNum)  <= 180 ? lonNum  : null,
+        grupoId:   grupoId || null,
       },
     })
     logActividad(session.user.id, "CREAR", "hospital", hospital.id, nombre.trim())

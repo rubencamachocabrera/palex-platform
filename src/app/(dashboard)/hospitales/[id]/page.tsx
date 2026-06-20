@@ -103,11 +103,18 @@ interface Visita {
 interface TimelineEvento {
   id: string; tipo: string; titulo: string; descripcion: string; fecha: string; href?: string
 }
+interface CentroGrupo {
+  id: string; nombre: string; ciudad: string; tipo: string
+  _count: { visitas: number; proyectos: number }
+}
 interface Hospital {
   id: string; nombre: string; ciudad: string; provincia: string | null
   pais: string; tipo: string; camas: number | null; direccion: string | null
   activo: boolean; zona: { id: string; nombre: string }
   latitud?: number | null; longitud?: number | null
+  grupoId?: string | null
+  grupo?: { id: string; nombre: string } | null
+  centros?: CentroGrupo[]
   score?: number
   contactos: Contacto[]; visitas: Visita[]
 }
@@ -160,6 +167,12 @@ export default function HospitalDetailPage() {
   const [formC, setFormC] = useState({ ...CONTACTO_EMPTY })
   const [guardandoC, setGuardandoC] = useState(false)
   const [errorC, setErrorC] = useState("")
+
+  // Grupo hospitalario
+  const [showAddCentro, setShowAddCentro] = useState(false)
+  const [candidatosCentro, setCandidatosCentro] = useState<{ id: string; nombre: string; ciudad: string }[]>([])
+  const [buscandoCandidatos, setBuscandoCandidatos] = useState(false)
+  const [addingCentro, setAddingCentro] = useState<string | null>(null)
 
   // QR
   const [showQR, setShowQR] = useState(false)
@@ -244,6 +257,54 @@ export default function HospitalDetailPage() {
   async function eliminarContacto(contactoId: string, nombre: string) {
     if (!confirm(`Eliminar el contacto "${nombre}"?`)) return
     await fetch(`/api/contactos/${contactoId}`, { method: "DELETE" }); await cargar()
+  }
+
+  async function cargarCandidatosCentro() {
+    if (buscandoCandidatos) return
+    setBuscandoCandidatos(true)
+    try {
+      const r = await fetch("/api/hospitales")
+      if (r.ok) {
+        const all = await r.json()
+        if (Array.isArray(all)) {
+          // Filter: not this hospital, not already a center (no grupoId), not already in this group
+          const centroIds = new Set(hospital?.centros?.map(c => c.id) ?? [])
+          const candidates = all.filter((h: { id: string; grupoId?: string | null }) =>
+            h.id !== id && !h.grupoId && !centroIds.has(h.id)
+          )
+          setCandidatosCentro(candidates.map((h: { id: string; nombre: string; ciudad: string }) => ({ id: h.id, nombre: h.nombre, ciudad: h.ciudad })))
+        }
+      }
+    } catch (e) { console.error("[cargarCandidatosCentro]", e) }
+    finally { setBuscandoCandidatos(false) }
+  }
+
+  async function addCentroToGroup(centroId: string) {
+    setAddingCentro(centroId)
+    try {
+      const r = await fetch(`/api/hospitales/${centroId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grupoId: id }),
+      })
+      if (r.ok) {
+        await cargar()
+        setCandidatosCentro(prev => prev.filter(c => c.id !== centroId))
+      }
+    } catch (e) { console.error("[addCentroToGroup]", e) }
+    finally { setAddingCentro(null) }
+  }
+
+  async function removeCentroFromGroup(centroId: string) {
+    if (!confirm("Quitar este centro del grupo?")) return
+    try {
+      const r = await fetch(`/api/hospitales/${centroId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grupoId: null }),
+      })
+      if (r.ok) await cargar()
+    } catch (e) { console.error("[removeCentroFromGroup]", e) }
   }
 
   async function cargarTimeline() {
@@ -360,6 +421,23 @@ export default function HospitalDetailPage() {
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
         {/* Franja de color del tipo */}
         <div className="h-1.5 w-full" style={{ backgroundColor: tipoCol.dot }} />
+
+        {/* Banner: pertenece a un grupo */}
+        {hospital.grupo && (
+          <div className="px-5 py-2.5 flex items-center gap-2.5 border-b border-teal-100 dark:border-teal-900"
+            style={{ backgroundColor: TEAL + "0a" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Pertenece al grupo{" "}
+              <Link href={`/hospitales/${hospital.grupo.id}`} className="font-semibold hover:underline" style={{ color: TEAL }}>
+                {hospital.grupo.nombre}
+              </Link>
+            </p>
+          </div>
+        )}
+
         <div className="px-6 py-5">
           {/* Breadcrumb + acciones */}
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -816,6 +894,93 @@ export default function HospitalDetailPage() {
             </div>
           </div>
 
+          {/* ── Grupo hospitalario ── */}
+          {/* Case 1: Hospital IS a group head (has centros, no grupoId) */}
+          {hospital.centros && hospital.centros.length > 0 && !hospital.grupoId && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden"
+              style={{ borderLeft: `3px solid ${TEAL}` }}>
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-50 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Grupo hospitalario</p>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: TEAL + "18", color: TEAL }}>
+                    {hospital.centros.length}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => { setShowAddCentro(true); cargarCandidatosCentro() }}
+                    className="text-[10px] font-semibold px-2 py-1 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ color: TEAL, backgroundColor: TEAL + "10" }}>
+                    + Centro
+                  </button>
+                )}
+              </div>
+              <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                {hospital.centros.map(c => {
+                  const cTipo = TIPO_COLOR[c.tipo] ?? TIPO_COLOR.OTRO
+                  return (
+                    <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                        style={{ backgroundColor: cTipo.bg, color: cTipo.text }}>
+                        {c.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <Link href={`/hospitales/${c.id}`} className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate hover:underline">{c.nombre}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{c.ciudad}</p>
+                      </Link>
+                      <div className="text-right shrink-0 space-y-0.5">
+                        <span className="text-[10px] font-medium text-gray-400 block">{c._count.visitas}v · {c._count.proyectos}p</span>
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: cTipo.bg, color: cTipo.text }}>
+                          {TIPO_LABELS[c.tipo] ?? c.tipo}
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <button
+                          onClick={() => removeCentroFromGroup(c.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-300 hover:text-red-500 transition-all shrink-0"
+                          title="Quitar del grupo">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Case 2: Hospital IS a center (has grupoId) — show siblings */}
+          {hospital.grupo && (
+            (() => {
+              // We need to fetch siblings from the grupo page, but for now we show a reference to the parent
+              return (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4"
+                  style={{ borderLeft: `3px solid ${TEAL}` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Grupo hospitalario</p>
+                  </div>
+                  <Link href={`/hospitales/${hospital.grupo.id}`}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: TEAL }}>
+                      {hospital.grupo.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{hospital.grupo.nombre}</p>
+                      <p className="text-[10px] text-gray-400">Hospital cabecera del grupo</p>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" className="shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
+                  </Link>
+                </div>
+              )
+            })()
+          )}
+
           {/* Acciones rápidas */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Acciones</p>
@@ -1012,6 +1177,53 @@ export default function HospitalDetailPage() {
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 cursor-pointer transition-colors">
                 {eliminandoVisita ? "Eliminando…" : "Eliminar"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Añadir centro al grupo ── */}
+      {showAddCentro && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowAddCentro(false) }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Añadir centro al grupo</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p>
+              </div>
+              <button onClick={() => setShowAddCentro(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 py-3">
+              {buscandoCandidatos ? (
+                <div className="py-10 text-center">
+                  <div className="w-6 h-6 border-2 border-gray-200 border-t-teal-500 rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-xs text-gray-400">Cargando hospitales...</p>
+                </div>
+              ) : candidatosCentro.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Sin hospitales disponibles</p>
+                  <p className="text-xs text-gray-400 mt-1">Todos los hospitales ya pertenecen a un grupo o son este mismo.</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {candidatosCentro.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{c.nombre}</p>
+                        <p className="text-xs text-gray-400">{c.ciudad}</p>
+                      </div>
+                      <button
+                        onClick={() => addCentroToGroup(c.id)}
+                        disabled={addingCentro === c.id}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
+                        style={{ backgroundColor: TEAL }}>
+                        {addingCentro === c.id ? "..." : "Añadir"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

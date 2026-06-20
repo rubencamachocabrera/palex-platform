@@ -38,12 +38,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!visita) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
     if (!await canAccessVisita(session.user.id, session.user.role as string, visita))
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-    const { contenido, fotos } = await req.json()
+    const { contenido, fotos, mencionIds } = await req.json()
     if (!contenido?.trim()) return NextResponse.json({ error: "Contenido requerido" }, { status: 400 })
     const fotosArr = Array.isArray(fotos) ? fotos.slice(0, 2) : []
+    const menciones = Array.isArray(mencionIds) ? mencionIds.filter((id: unknown) => typeof id === "string") : []
     const usuario = await db.usuario.findUnique({ where: { id: session.user.id }, select: { nombre: true } })
     const comentario = await db.comentario.create({
-      data: { visitaId: id, autorId: session.user.id, autorNombre: usuario?.nombre ?? "Usuario", contenido: contenido.trim(), fotos: fotosArr },
+      data: {
+        visitaId: id,
+        autorId: session.user.id,
+        autorNombre: usuario?.nombre ?? "Usuario",
+        contenido: contenido.trim(),
+        fotos: fotosArr,
+        mencionIds: menciones,
+      },
     })
     return NextResponse.json(comentario, { status: 201 })
   } catch {
