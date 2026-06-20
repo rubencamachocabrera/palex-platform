@@ -128,6 +128,9 @@ export default function VisitasPage() {
   const [userName, setUserName] = useState("")
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string; descripcion: string | null; datos: Record<string, unknown> }[]>([])
   const [plantillaId, setPlantillaId] = useState("")
+  const [tipoModal, setTipoModal] = useState<"PROYECTOS" | "VENTAS">("PROYECTOS")
+  const [contactos, setContactos] = useState<{ id: string; nombre: string; cargo: string | null; principal: boolean }[]>([])
+  const [contactoId, setContactoId] = useState("")
   const [eliminarId, setEliminarId] = useState<string | null>(null)
   const [eliminando, setEliminando] = useState(false)
   const searchParams = useSearchParams()
@@ -205,7 +208,8 @@ export default function VisitasPage() {
     const hoy = new Date().toISOString().slice(0, 10)
     setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setTituloAutoGen(true)
     setPlantillaId(""); setZonaModal("TODAS"); setProyectoId(""); setProyectos([])
-    setFechaModal(hoy)
+    setFechaModal(hoy); setTipoModal(userRol === "VENTAS" ? "VENTAS" : "PROYECTOS")
+    setContactos([]); setContactoId("")
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
       const data = r.ok ? await r.json() : []
@@ -216,8 +220,8 @@ export default function VisitasPage() {
         setZonasLista(Array.from(zonas.values()).sort((a, b) => a.nombre.localeCompare(b.nombre)))
       }
     }
-    const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
-    fetch(`/api/plantillas?tipo=${tipo}`)
+    const tipoInicial = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
+    fetch(`/api/plantillas?tipo=${tipoInicial}`)
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setPlantillas(d) })
       .catch(() => {})
@@ -227,27 +231,37 @@ export default function VisitasPage() {
     setHospitalId(hId)
     const hosp = hospitalesLista.find(h => h.id === hId)
     if (hosp && tituloAutoGen) setTituloModal(generarTitulo(hosp.nombre, fechaModal))
-    setProyectoId("")
+    setProyectoId(""); setContactoId(""); setContactos([])
     if (hId) {
       fetch(`/api/proyectos?hospitalId=${hId}`)
         .then(r => r.ok ? r.json() : [])
         .then(d => setProyectos(Array.isArray(d) ? d.filter((p: ProyectoMini) => p.estado !== "CANCELADO") : []))
         .catch(() => setProyectos([]))
+      fetch(`/api/hospitales/${hId}/contactos`)
+        .then(r => r.ok ? r.json() : [])
+        .then(d => {
+          if (Array.isArray(d)) {
+            setContactos(d)
+            const principal = d.find((c: { principal: boolean }) => c.principal)
+            if (principal) setContactoId(principal.id)
+          }
+        })
+        .catch(() => setContactos([]))
     } else {
-      setProyectos([])
+      setProyectos([]); setContactos([])
     }
   }
 
   async function crearVisita() {
     if (!hospitalId) return; setCreando(true)
     try {
-      const tipo = userRol === "VENTAS" ? "VENTAS" : "PROYECTOS"
       const plantilla = plantillas.find(p => p.id === plantillaId)
-      const body: Record<string, unknown> = { hospitalId, tipo }
+      const body: Record<string, unknown> = { hospitalId, tipo: tipoModal }
       if (tituloModal.trim()) body.titulo = tituloModal.trim()
       if (fechaModal) body.fecha = fechaModal
       if (plantilla) body.datos = plantilla.datos
       if (proyectoId) body.proyectoId = proyectoId
+      if (contactoId) body.contactoPrincipalId = contactoId
       const res = await fetch("/api/visitas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       if (!res.ok) { setCreando(false); return }
       const nueva = await res.json()
@@ -664,10 +678,10 @@ export default function VisitasPage() {
 
       {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh] sm:pt-[10vh] p-4 backdrop-blur-sm overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200"
             style={{ borderTop: `3px solid ${TEAL}` }}>
 
             {/* Header */}
@@ -693,6 +707,27 @@ export default function VisitasPage() {
                   placeholder="Se genera automáticamente al seleccionar hospital"
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
                   style={{ "--tw-ring-color": TEAL } as React.CSSProperties} />
+              </div>
+
+              {/* Tipo de visita */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Tipo de visita</label>
+                <div className="flex gap-2">
+                  {([
+                    { value: "PROYECTOS" as const, label: "Técnica", color: TEAL },
+                    { value: "VENTAS" as const, label: "Comercial", color: "#f59e0b" },
+                  ]).map(t => (
+                    <button key={t.value} type="button" onClick={() => setTipoModal(t.value)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer border ${
+                        tipoModal === t.value
+                          ? "text-white shadow-sm"
+                          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                      }`}
+                      style={tipoModal === t.value ? { backgroundColor: t.color, borderColor: t.color } : {}}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Zona + Fecha en fila */}
@@ -759,6 +794,45 @@ export default function VisitasPage() {
                   )}
                 </div>
               </div>
+
+              {/* Contacto principal (solo si hay hospital y tiene contactos) */}
+              {hospitalId && contactos.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
+                    Contacto principal
+                    <span className="font-normal normal-case text-gray-400 dark:text-gray-500 ml-1">(opcional)</span>
+                  </label>
+                  <div className="space-y-1 max-h-32 overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-800">
+                    <button type="button" onClick={() => setContactoId("")}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer ${!contactoId ? "font-medium" : "text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                      style={!contactoId ? { backgroundColor: `${TEAL}12`, color: TEAL } : {}}>
+                      Sin contacto asignado
+                    </button>
+                    {contactos.map(c => (
+                      <button key={c.id} type="button" onClick={() => setContactoId(c.id)}
+                        className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2.5 cursor-pointer ${contactoId === c.id ? "" : "hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                        style={contactoId === c.id ? { backgroundColor: `${TEAL}12` } : {}}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                          style={{ backgroundColor: avatarColor(c.nombre) }}>
+                          {c.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate ${contactoId === c.id ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
+                            {c.nombre}
+                            {c.principal && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}18`, color: TEAL }}>Principal</span>}
+                          </p>
+                          {c.cargo && <p className="text-xs text-gray-400 truncate">{c.cargo}</p>}
+                        </div>
+                        {contactoId === c.id && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Proyecto (solo si hay hospital seleccionado y tiene proyectos) */}
               {hospitalId && proyectos.length > 0 && (

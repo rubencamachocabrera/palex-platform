@@ -481,6 +481,7 @@ async function DashboardAdmin() {
           { label: "Proyectos", href: "/proyectos", icon: <IconCheckCircle size={14} /> },
           { label: "Hardware", href: "/hardware", icon: <IconFileText size={14} /> },
           { label: "Mapa", href: "/mapa", icon: <IconMap size={14} /> },
+          { label: "Usuarios", href: "/admin/usuarios", icon: <IconUsers size={14} /> },
         ].map(a => (
           <Link key={a.href} href={a.href}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
@@ -641,19 +642,6 @@ async function DashboardAdmin() {
           </div>
         </div>
       )}
-
-      <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <SectionHeader title="Accesos rapidos" />
-        <div className="stagger-grid grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickLink href="/admin/usuarios"   label="Gestionar usuarios" Icon={IconUsers}       color="bg-blue-50 text-blue-700" />
-          <QuickLink href="/admin/hospitales" label="Ver hospitales"     Icon={IconHospital}    color="bg-teal-50 text-teal-700" />
-          <QuickLink href="/proyectos"    label="Proyectos InLab"    Icon={IconCheckCircle} color="bg-green-50 text-green-700" />
-          {crmActivo
-            ? <QuickLink href="/ventas/pipeline" label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
-            : <QuickLink href="/admin/zonas"     label="Configurar zonas"   Icon={IconMap}        color="bg-amber-50 text-amber-700" />
-          }
-        </div>
-      </div>
 
       <AlertasPanel alertas={alertas} variant="admin" />
     </div>
