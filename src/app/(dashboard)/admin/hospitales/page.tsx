@@ -77,7 +77,7 @@ const FORM_EMPTY = {
 
 function SkeletonRow() {
   return (
-    <div className="grid grid-cols-12 gap-3 px-5 py-4 items-center border-b border-gray-50 last:border-0">
+    <div className="grid grid-cols-12 gap-3 px-5 py-4 items-center border-b border-gray-50 last:border-0 min-w-[700px]">
       <div className="col-span-4 space-y-1.5">
         <div className="h-3.5 bg-gray-100 rounded-full w-3/4 animate-pulse" />
         <div className="h-2.5 bg-gray-100 rounded-full w-1/2 animate-pulse" />
@@ -466,8 +466,8 @@ export default function HospitalesAdminPage() {
 
       {/* Tabla / contenido */}
       {loading ? (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-          <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-gray-50 bg-gray-50">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden overflow-x-auto">
+          <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-gray-50 bg-gray-50 min-w-[700px]">
             {["Hospital", "Zona", "Tipo", "Camas", "Visitas", "Acciones"].map(h => (
               <p key={h} className={`text-xs font-semibold text-gray-300 uppercase tracking-wider ${h === "Acciones" ? "col-span-2 text-right" : h === "Camas" || h === "Visitas" ? "col-span-1" : "col-span-2 " + (h === "Hospital" ? "col-span-4" : "")}`}>{h}</p>
             ))}
@@ -498,9 +498,9 @@ export default function HospitalesAdminPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden overflow-x-auto">
           {/* Header tabla */}
-          <div className="grid grid-cols-12 gap-2 px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+          <div className="grid grid-cols-12 gap-2 px-5 py-3 border-b border-gray-100 bg-gray-50/80 min-w-[700px]">
             <p className="col-span-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Hospital</p>
             <p className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Zona</p>
             <p className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</p>
@@ -516,7 +516,7 @@ export default function HospitalesAdminPage() {
               const barPct = Math.round((visitasCount / maxVisitas) * 100)
               return (
                 <div key={h.id}
-                  className="group grid grid-cols-12 gap-2 px-5 py-3.5 items-center hover:bg-gray-50/80 transition-colors"
+                  className="group grid grid-cols-12 gap-2 px-5 py-3.5 items-center hover:bg-gray-50/80 transition-colors min-w-[700px]"
                 >
                   {/* Hospital name */}
                   <div className="col-span-4 min-w-0 flex items-center gap-2.5">

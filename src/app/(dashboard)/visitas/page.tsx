@@ -414,10 +414,12 @@ export default function VisitasPage() {
           CSV
         </button>
         <button onClick={() => setFiltrosAvanzados(v => !v)}
-          className="flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border transition-colors shrink-0"
+          className={`flex items-center gap-1.5 text-sm px-3 py-2.5 rounded-xl border transition-colors shrink-0 ${
+            filtrosAvanzados || filtrosActivos ? "" : "border-gray-200 text-gray-500 bg-white"
+          }`}
           style={filtrosAvanzados || filtrosActivos
             ? { borderColor: TEAL, color: TEAL, backgroundColor: `${TEAL}0c` }
-            : { borderColor: "#e5e7eb", color: "#6b7280", backgroundColor: "white" }}>
+            : undefined}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
           Filtros
           {filtrosActivos && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: TEAL }} />}
@@ -432,10 +434,10 @@ export default function VisitasPage() {
             <span className="text-xs font-semibold text-gray-500 shrink-0">Tipo:</span>
             {(["TODOS", "VENTAS", "PROYECTOS"] as const).map(t => (
               <button key={t} onClick={() => setFiltroTipo(t)}
-                className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer"
-                style={filtroTipo === t
-                  ? { backgroundColor: TEAL, borderColor: TEAL, color: "white" }
-                  : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                  filtroTipo === t ? "text-white" : "bg-white border-gray-200 text-gray-500"
+                }`}
+                style={filtroTipo === t ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}>
                 {t === "TODOS" ? "Todos" : TIPO_CONFIG[t]?.label}
               </button>
             ))}
@@ -446,10 +448,10 @@ export default function VisitasPage() {
               <span className="text-xs font-semibold text-gray-500 shrink-0">Zona:</span>
               {(["TODOS", ...zonasDisponibles]).map(z => (
                 <button key={z} onClick={() => setFiltroZona(z)}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer"
-                  style={filtroZona === z
-                    ? { backgroundColor: "#6366f1", borderColor: "#6366f1", color: "white" }
-                    : { backgroundColor: "white", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                    filtroZona === z ? "text-white" : "bg-white border-gray-200 text-gray-500"
+                  }`}
+                  style={filtroZona === z ? { backgroundColor: "#6366f1", borderColor: "#6366f1" } : undefined}>
                   {z === "TODOS" ? "Todas" : z}
                 </button>
               ))}

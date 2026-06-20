@@ -168,20 +168,20 @@ export default function CalendarioPage() {
     <div className="max-w-5xl mx-auto">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-gray-900">Calendario de visitas</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {cargando ? "Cargando…" : visitas.length > 0 ? visitas.length + " visitas este mes" : "Sin visitas este mes"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/visitas"
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <IcoList />
-            Vista lista
+            <span className="hidden sm:inline">Vista lista</span>
           </Link>
           <Link
             href="/visitas"
@@ -189,12 +189,12 @@ export default function CalendarioPage() {
             style={{ backgroundColor: TEAL }}
           >
             <IcoPlus />
-            Nueva visita
+            <span className="hidden sm:inline">Nueva visita</span>
           </Link>
         </div>
       </div>
 
-      <div className="flex gap-5 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
 
         {/* Calendario */}
         <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
@@ -304,7 +304,7 @@ export default function CalendarioPage() {
 
         {/* Panel lateral — visitas del día seleccionado */}
         {diaSeleccionado && (
-          <div className="w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden shrink-0">
+          <div className="w-full lg:w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden shrink-0">
 
             {/* Header panel */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">

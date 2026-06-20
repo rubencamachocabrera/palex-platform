@@ -144,7 +144,7 @@ function IconSpinner({ className, style }: IconProps) {
 
 function SkeletonRow() {
   return (
-    <div className="grid grid-cols-12 items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
+    <div className="grid grid-cols-12 items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 min-w-[640px]">
       <div className="col-span-4 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse shrink-0" />
         <div className="space-y-1.5 flex-1">
@@ -500,10 +500,10 @@ export default function UsuariosPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden overflow-x-auto">
 
         {/* Table header */}
-        <div className="grid grid-cols-12 items-center gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+        <div className="grid grid-cols-12 items-center gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60 min-w-[640px]">
           <div className="col-span-4 text-xs font-semibold text-gray-400 uppercase tracking-wide">Usuario</div>
           <div className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Rol</div>
           <div className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</div>
@@ -545,7 +545,7 @@ export default function UsuariosPage() {
             return (
               <div
                 key={u.id}
-                className="grid grid-cols-12 items-center gap-4 px-5 py-3.5 hover:bg-gray-50/70 transition-colors border-b border-gray-50 last:border-0"
+                className="grid grid-cols-12 items-center gap-4 px-5 py-3.5 hover:bg-gray-50/70 transition-colors border-b border-gray-50 last:border-0 min-w-[640px]"
                 style={idx % 2 === 0 ? {} : { backgroundColor: "rgba(249,250,251,0.4)" }}
               >
                 {/* Col: Usuario */}

@@ -801,7 +801,8 @@ function UnidadesModal({ item, onClose, onChanged }: {
           ) : unidades.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">Sin unidades registradas para este modelo</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
                   <th className="text-left pb-2 font-semibold">Nº Serie</th>
@@ -845,6 +846,7 @@ function UnidadesModal({ item, onClose, onChanged }: {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>
@@ -1098,8 +1100,8 @@ function InventarioTab({ tipos }: { tipos: HardwareTipo[] }) {
       ) : filtradas.length === 0 ? (
         <div className="text-center py-14 text-gray-400 text-sm">Sin unidades registradas</div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 font-semibold">Modelo</th>

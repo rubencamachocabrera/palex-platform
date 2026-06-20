@@ -165,8 +165,8 @@ function PlantillasSection() {
           <p className="text-xs mt-1">Abre una visita y usa el icono de marcador en la barra de acciones para guardar una.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
@@ -348,8 +348,8 @@ function ModulosInlabSection() {
           Sin módulos. Añade el primero arriba.
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
@@ -486,7 +486,7 @@ function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
         <p className="text-xs text-gray-400 mb-4">
           Define el valor máximo de score (0–100) para cada nivel de complejidad.
         </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(["baja", "media", "alta"] as const).map(key => {
             const colors = { baja: "#10b981", media: "#f59e0b", alta: "#f97316" }
             const labels = { baja: "Baja", media: "Media", alta: "Alta (>alta = Muy alta)" }
