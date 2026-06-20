@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 15 completado — tags, menciones, grupos).
+> Ultima actualizacion: 2026-06-20 (sprint 16 completado — modo campo, onboarding, recordatorios).
 
 ---
 
@@ -85,8 +85,9 @@ src/
   app/
     (auth)/login/page.tsx               Login split-screen animado
     (dashboard)/
-      layout.tsx                        Sidebar + TopBar + KeyboardShortcutsProvider
-      dashboard/page.tsx                Dashboard por rol + widget "Mi Dia"
+      layout.tsx                        Sidebar + TopBar + KeyboardShortcutsProvider + OnboardingWizard + BottomNav
+      dashboard/page.tsx                Dashboard por rol + widget "Mi Dia" + acciones rapidas campo
+      recordatorios/page.tsx            CRUD recordatorios personales (grupos: vencidos/hoy/proximos/completados)
       hospitales/page.tsx               Lista + filtro zona + grid/list + favoritos
       hospitales/[id]/page.tsx          Detalle: KPIs, tabs Contactos/Visitas/Timeline, QR
       visitas/page.tsx                  Lista + busqueda + filtros avanzados + quick-create modal
@@ -132,6 +133,9 @@ src/
       tags/route.ts                     GET (filtro ?tipo), POST (solo ADMIN)
       tags/[id]/route.ts                PATCH (whitelist), DELETE (solo ADMIN)
       usuarios/menciones/route.ts       GET busqueda usuarios para @menciones
+      onboarding/route.ts               GET/PATCH estado onboarding usuario
+      recordatorios/route.ts            GET (filtro ?pendientes), POST
+      recordatorios/[id]/route.ts       PATCH (whitelist), DELETE (ownership check)
       oportunidades/route.ts            (DESACTIVADO — no usar)
       notificaciones/route.ts
       config/route.ts
@@ -150,6 +154,8 @@ src/
     MentionInput.tsx                    Textarea con dropdown @menciones, debounced, keyboard nav
     MentionText.tsx                     Renderiza texto con pills de mencion (@[id:Nombre])
     TagSelector.tsx                     Selector/pills de tags con colores + TagPills read-only
+    BottomNav.tsx                       Navegacion movil 5 tabs (glass effect, safe area, TEAL active)
+    OnboardingWizard.tsx                Tour 6 pasos con SVG ilustraciones, slide transitions
     Toast.tsx                           Global toast provider (god node: 42 edges)
     PageTransition.tsx
     OfflineIndicator.tsx
@@ -221,6 +227,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 Tag              (nombre, color hex, tipo: VISITA|PROYECTO, orden, activo — @@map "tags")
 VisitaTag        (pivot visita-tag — @@map "visitas_tags", cascade delete)
 ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
+Recordatorio     (titulo, descripcion?, fecha, completado, usuarioId — @@map "recordatorios")
 ```
 
 **Enums clave:**
@@ -337,6 +344,33 @@ ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
 - API /api/usuarios/menciones: busqueda ligera sin restriccion de rol
 - Notificaciones: mencion aparece en dropdown TopBar con icono @ teal
 
+### Modo campo movil
+- BottomNav: 5 tabs fijos en bottom (Dashboard, Visitas, Hospitales, Proyectos, Mas)
+- Glass effect: backdrop-blur + semi-transparente, safe area insets
+- Active tab: TEAL con scale animation + filled icon
+- "Mas" abre sidebar overlay via useSidebarToggle()
+- Acciones rapidas en dashboard: 3 cards (Nueva visita, Visitas hoy, Calendario)
+- Padding bottom en main para no ocultar contenido bajo bottom nav
+
+### Onboarding nuevo usuario
+- OnboardingWizard: overlay z-60 con card centrada, 6 pasos animados (slide translateX)
+- Pasos: Bienvenida (logo), Dashboard, Navegacion, Visitas, Proyectos, Todo listo
+- SVG ilustraciones custom por paso, dots de progreso TEAL
+- Keyboard nav (flechas, Enter, Escape), boton Saltar, Comenzar en paso final
+- API /api/onboarding: GET/PATCH estado onboardingCompletado
+- Flag onboardingCompletado en Usuario (default false)
+- Admin usuarios: boton "Reiniciar onboarding" en formulario edicion
+- /api/perfil incluye onboardingCompletado en respuesta
+
+### Recordatorios personales
+- Modelo Recordatorio: titulo, descripcion?, fecha, completado, usuario
+- API CRUD /api/recordatorios con ownership check, rate limit, cache
+- Pagina /recordatorios: grupos (Vencidos rojo, Hoy amber, Proximos teal, Completados gris)
+- Crear inline, editar inline, checkbox completar, eliminar con confirmacion
+- Notificaciones: recordatorios vencidos aparecen en TopBar con icono reloj TEAL
+- Sidebar: enlace Recordatorios para todos los roles
+- Dashboard Mi Dia: recordatorios de hoy integrados con badge hora
+
 ### Calidad tecnica
 - Brand tokens en brand.ts (TEAL, ORANGE — importar, NO hardcodear)
 - SVG icons en todo (NO emojis)
@@ -434,10 +468,21 @@ ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
 - [x] Admin hospitales: selector de grupo en formulario de edicion
 - [x] Busqueda /api/search incluye grupo/centros
 
-### Sprint 16 — Proximo (planificado)
-- [ ] Modo campo simplificado (movil): UI reducida para trabajo de campo, formulario simplificado, acciones rapidas
-- [ ] Onboarding guiado nuevo usuario: tour interactivo multi-paso, flag completado por usuario, reset desde admin
-- [ ] Recordatorios personales: alarmas por usuario con fecha/hora, notificaciones en app
+### Sprint 16 — Modo campo, Onboarding, Recordatorios (COMPLETADO)
+- [x] BottomNav movil: 5 tabs fijos (glass effect, backdrop-blur, safe area, TEAL active, filled icons)
+- [x] Acciones rapidas campo en dashboard: 3 cards teal (Nueva visita, Visitas hoy, Calendario)
+- [x] Padding bottom en main para contenido no oculto bajo bottom nav
+- [x] OnboardingWizard: 6 pasos con SVG custom, slide animations, keyboard nav, skip
+- [x] API /api/onboarding: GET/PATCH onboardingCompletado en Usuario
+- [x] Admin usuarios: reiniciar onboarding desde formulario edicion
+- [x] /api/perfil incluye onboardingCompletado
+- [x] Modelo Recordatorio (titulo, descripcion?, fecha, completado, usuario)
+- [x] API CRUD /api/recordatorios + /api/recordatorios/[id] con ownership check
+- [x] Pagina /recordatorios: grupos vencidos/hoy/proximos/completados, CRUD inline
+- [x] Notificaciones recordatorios vencidos en TopBar (icono reloj TEAL)
+- [x] Sidebar: enlace Recordatorios para todos los roles
+- [x] Dashboard Mi Dia: recordatorios de hoy integrados
+- [x] Middleware: /recordatorios como ruta protegida
 
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar

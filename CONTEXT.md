@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
-> Resumen compacto del proyecto. Actualizado sprint 15 (junio 2026).
-> Commit base: `074fb78` (20 jun 2026 — sprint 15 completado)
+> Resumen compacto del proyecto. Actualizado sprint 16 (junio 2026).
+> Commit base: `ac7649a` (20 jun 2026 — sprint 16 completado)
 
 ---
 
@@ -37,7 +37,8 @@ src/
 │   │   └── login/page.tsx      ← Formulario con NextAuth signIn(), shake en error
 │   ├── (dashboard)/
 │   │   ├── layout.tsx          ← DashboardLayout: Sidebar + TopBar + KeyboardShortcutsProvider
-│   │   ├── dashboard/page.tsx  ← Dashboard por rol (Admin/Ventas/Proyectos)
+│   │   ├── dashboard/page.tsx  ← Dashboard por rol + acciones rapidas campo + recordatorios hoy
+│   │   ├── recordatorios/page.tsx ← CRUD recordatorios personales (grupos vencidos/hoy/proximos)
 │   │   ├── hospitales/
 │   │   │   ├── page.tsx        ← Lista + filtro zona + grid/list + favoritos
 │   │   │   └── [id]/page.tsx   ← Detalle: KPIs, tabs Contactos/Visitas/Timeline
@@ -71,6 +72,8 @@ src/
 │   ├── MentionInput.tsx        ← Textarea con @menciones dropdown, debounced, keyboard nav
 │   ├── MentionText.tsx         ← Renderiza @[id:Nombre] como pills teal
 │   ├── TagSelector.tsx         ← Selector/pills de tags con colores + TagPills read-only
+│   ├── BottomNav.tsx           ← Nav movil 5 tabs (glass effect, safe area, TEAL active)
+│   ├── OnboardingWizard.tsx    ← Tour 6 pasos con SVG, slide animations, keyboard nav
 │   ├── Toast.tsx               ← Global ToastProvider + useToast() (god node: 42 edges)
 │   └── ui/                     ← EmptyState, Icons (SVG), PageHeader, Skeleton
 ├── hooks/
@@ -139,6 +142,7 @@ HardwareTipo, HardwareCatalogo, HardwareUnidad
 Usuario, Zona, ModuloInlab, Comentario (mencionIds: Json), PlantillaVisita, ConfigApp
 LogActividad (accion, entidad, usuario, fecha — solo ADMIN)
 Tag (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
+Recordatorio (titulo, descripcion?, fecha, completado, usuario)
 ```
 
 ---
@@ -173,6 +177,9 @@ Tag (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 /api/tags                  ← GET (filtro ?tipo), POST (solo ADMIN)
 /api/tags/[id]             ← PATCH (whitelist), DELETE (solo ADMIN)
 /api/usuarios/menciones    ← GET busqueda usuarios para @menciones (Cache 30s)
+/api/onboarding            ← GET/PATCH estado onboarding usuario
+/api/recordatorios         ← GET (filtro ?pendientes), POST
+/api/recordatorios/[id]    ← PATCH (whitelist), DELETE (ownership check)
 /api/presence              ← POST heartbeat presencia colaborativa (activeUsers[])
 /api/notificaciones        ← Alertas por rol
 /api/perfil                ← { rol: ... } — usar d?.rol
@@ -213,7 +220,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-15):**
+**Completado (sprints 1-16):**
 - Auth completa (login, middleware, roles)
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
@@ -242,7 +249,10 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Grupos hospitalarios: FK auto-referencial grupoId, hospital cabecera con centros, banner pertenencia
 - Indicadores grupo en lista hospitales, selector en admin, busqueda incluye grupo
 - Service Worker: network-first para _next/static (evita CSS roto en deploys), auto-update
+- Modo campo movil: BottomNav 5 tabs (glass, safe area, TEAL), acciones rapidas dashboard
+- Onboarding nuevo usuario: wizard 6 pasos con SVG, slide animations, skip, keyboard nav, admin reset
+- Recordatorios personales: CRUD, pagina /recordatorios, notificaciones TopBar, dashboard Mi Dia
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Pendiente: Ver AGENTS.md seccion 9 (sprint 14+).**
+**Pendiente: Ver AGENTS.md seccion 9 (sprint 14 aplazado + backlog).**
