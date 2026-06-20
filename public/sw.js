@@ -1,7 +1,7 @@
 // Palex Medical — Service Worker
 // Cache-first para assets estáticos, Network-first para APIs y navegación
 
-const CACHE_VERSION = 'palex-v1';
+const CACHE_VERSION = 'palex-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
@@ -58,9 +58,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Next.js internals (_next/static, _next/image) → Cache-first
+  // Next.js internals (_next/static) → Network-first (hash en URL = inmutable, pero
+  // cache-first rompe deploys cuando el HTML nuevo referencia hashes nuevos)
   if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    event.respondWith(networkFirstStatic(request));
     return;
   }
 
@@ -89,6 +90,21 @@ async function cacheFirst(request, cacheName) {
     return response;
   } catch {
     return new Response('Offline — recurso no disponible', { status: 503 });
+  }
+}
+
+async function networkFirstStatic(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    return new Response('Offline', { status: 503 });
   }
 }
 

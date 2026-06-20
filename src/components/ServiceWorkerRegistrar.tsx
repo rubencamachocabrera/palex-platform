@@ -10,12 +10,24 @@ export function ServiceWorkerRegistrar() {
         .then((reg) => {
           console.log("[PWA] Service Worker registrado:", reg.scope);
 
-          // Escuchar mensajes del SW (ej: SYNC_REQUESTED)
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                newWorker.postMessage({ type: "SKIP_WAITING" });
+              }
+            });
+          });
+
           navigator.serviceWorker.addEventListener("message", (event) => {
             if (event.data?.type === "SYNC_REQUESTED") {
-              // Disparar evento global para que useOfflineSync lo procese
               window.dispatchEvent(new CustomEvent("palex-sync-requested"));
             }
+          });
+
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            window.location.reload();
           });
         })
         .catch((err) => {
