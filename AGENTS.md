@@ -129,6 +129,9 @@ src/
       hardware/tipos/route.ts           HardwareTipo dinamico
       hardware/unidades/route.ts        GET Cache 30s, POST/PUT solo ADMIN+PROYECTOS
       modulos-inlab/route.ts            Catalogo modulos InLab
+      tags/route.ts                     GET (filtro ?tipo), POST (solo ADMIN)
+      tags/[id]/route.ts                PATCH (whitelist), DELETE (solo ADMIN)
+      usuarios/menciones/route.ts       GET busqueda usuarios para @menciones
       oportunidades/route.ts            (DESACTIVADO — no usar)
       notificaciones/route.ts
       config/route.ts
@@ -143,7 +146,10 @@ src/
     ThemeProvider.tsx                    dark/light, localStorage palex_theme, anti-FOUC
     CommandPalette.tsx                   Cmd+K, busca hospitales+visitas+proyectos
     KeyboardShortcutsProvider.tsx        Monta CommandPalette + atajos G+H/V/P/D
-    ComentariosPanel.tsx                Sistema comentarios (dynamic import)
+    ComentariosPanel.tsx                Sistema comentarios con @menciones (dynamic import)
+    MentionInput.tsx                    Textarea con dropdown @menciones, debounced, keyboard nav
+    MentionText.tsx                     Renderiza texto con pills de mencion (@[id:Nombre])
+    TagSelector.tsx                     Selector/pills de tags con colores + TagPills read-only
     Toast.tsx                           Global toast provider (god node: 42 edges)
     PageTransition.tsx
     OfflineIndicator.tsx
@@ -212,6 +218,9 @@ ModuloInlab      (nombre — catalogo de modulos InLab)
 PlantillaVisita  (nombre, tipo, datos JSON)
 ConfigApp        (clave/valor configuracion app)
 LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log ADMIN)
+Tag              (nombre, color hex, tipo: VISITA|PROYECTO, orden, activo — @@map "tags")
+VisitaTag        (pivot visita-tag — @@map "visitas_tags", cascade delete)
+ProyectoTag      (pivot proyecto-tag — @@map "proyectos_tags", cascade delete)
 ```
 
 **Enums clave:**
@@ -229,7 +238,14 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - POST visita acepta: `hospitalId`, `tipo`, `titulo`, `fecha`, `datos`, `proyectoId`, `contactoPrincipalId`.
 - PATCH visita acepta: `titulo`, `datos`, `estado`, `fecha`, `proyectoId`, `contactoPrincipalId`.
 - POST proyecto acepta: `moduloIds` array + `refConcurso` ademas de campos base.
-- GET proyecto incluye `modulos` con estado de cada modulo.
+- GET proyecto incluye `modulos` con estado de cada modulo + `tags` con color.
+- PATCH proyecto acepta `tagIds` array para asignar tags.
+- PATCH visita acepta `tagIds` array para asignar tags.
+- GET visitas incluye `tags` con tag info.
+- `/api/tags` GET: lista tags (filtro ?tipo=VISITA|PROYECTO). POST: crear tag (solo ADMIN).
+- `/api/tags/[id]` PATCH: editar tag (whitelist: nombre, color, orden, activo). DELETE: eliminar.
+- `/api/usuarios/menciones` GET: busqueda ligera de usuarios activos (?q=nombre). Cache 30s.
+- Comentarios POST aceptan `mencionIds` array para registrar menciones.
 - `/api/presence` POST: heartbeat de presencia colaborativa (entityType, entityId). Devuelve activeUsers[].
 - Seguridad: IDOR check en hospitales (zona), visitas (propietario + misma zona), proyectos (responsable + zona). Whitelist en PATCH.
 - Acceso visitas: propietario, ADMIN, o usuarios en la misma zona del hospital.
@@ -255,6 +271,10 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - QR por hospital: generacion dinamica + descarga PNG
 - Contactos: creables por todos, edit/delete solo ADMIN
 - Timeline de actividad: historial cronologico completo
+- Grupos hospitalarios: hospital cabecera con N centros (FK auto-referencial grupoId)
+- Banner de pertenencia a grupo con link al hospital cabecera
+- Lista de centros con añadir/quitar, indicadores pill en lista hospitales
+- Selector de grupo en admin hospitales
 
 ### Visitas
 - Lista con titulo, busqueda (titulo/hospital/ciudad/tecnico), filtros avanzados (fecha/estado/tipo/zona), ordenacion 3 modos
@@ -272,6 +292,8 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - Edicion colaborativa: usuarios de la misma zona pueden ver/editar visitas simultaneamente
 - Presencia en tiempo real: indicador de quien esta editando (heartbeat cada 8s, timeout 15s)
 - Toast de actualizacion cuando otro usuario guarda cambios (polling cada 4s)
+- Tags/Etiquetas: pills de color asignables desde detalle visita con TagSelector
+- Filtro por tags en lista de visitas
 
 ### Proyectos (unificado — antes PreProyecto + Proyecto separados)
 - Lista + detalle con 10 tabs: Cockpit, Info, Fases, Tareas, Timeline, Materiales, Contactos, Visitas, Modulos, Adjuntos
@@ -285,6 +307,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - Link compartir publico con token criptografico (sin PII)
 - Boton "Nueva visita" desde cabecera del proyecto
 - Kanban drag-drop en lista de proyectos
+- Tags/Etiquetas: pills de color asignables desde detalle proyecto con TagSelector
 
 ### Hardware
 - HardwareTipo dinamico con color hex desde admin
@@ -305,6 +328,14 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - Export CSV
 - Asignacion zonas a usuarios
 - Log de actividad: registro de acciones (crear/editar/eliminar) con usuario, entidad y fecha
+- Tags/Etiquetas: gestion completa en Admin > Configuracion (crear, editar color/nombre, activar/desactivar, eliminar, separado por VISITA/PROYECTO)
+
+### Comentarios (visitas + proyectos)
+- @Menciones: textarea con dropdown debounced y navegacion teclado (ArrowUp/Down, Enter, Escape)
+- Dropdown con avatar, nombre y rol del usuario (color-coded por rol)
+- Formato almacenamiento: `@[userId:Nombre]`, parseo con MentionText (pills teal)
+- API /api/usuarios/menciones: busqueda ligera sin restriccion de rol
+- Notificaciones: mencion aparece en dropdown TopBar con icono @ teal
 
 ### Calidad tecnica
 - Brand tokens en brand.ts (TEAL, ORANGE — importar, NO hardcodear)
@@ -339,7 +370,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 | ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO (responsableId check) |
 | ~~MEDIA~~ | ~~Dark mode incompleto en algunos drawers (estilos inline)~~ | ~~varios~~ | CORREGIDO (20+ paginas actualizadas) |
 | MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma | PENDIENTE |
-| BAJA | `CACHE_VERSION = 'palex-v1'` hardcodeado en SW | public/sw.js | PENDIENTE |
+| ~~BAJA~~ | ~~`CACHE_VERSION = 'palex-v1'` hardcodeado en SW~~ | ~~public/sw.js~~ | CORREGIDO (v2 + network-first para _next/static + auto-update) |
 | BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts | PENDIENTE |
 
 ---
@@ -381,9 +412,32 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Modal nueva visita mejorado: tipo de visita (RadioPills) + contacto principal con auto-seleccion
 - [x] Auditoria responsive completa movil: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
 
-### Sprint 14 — Datos reales
+### Sprint 14 — Datos reales (APLAZADO)
 - [ ] Conectar /datos a APIs reales (sustituir mockup)
 - [ ] KPIs de rendimiento por usuario/zona (solo ADMIN)
+
+### Sprint 15 — Tags, Menciones y Grupos (COMPLETADO)
+- [x] Tags/Etiquetas: modelo Tag (TipoTag: VISITA|PROYECTO), pivots VisitaTag/ProyectoTag
+- [x] API CRUD /api/tags y /api/tags/[id] (solo ADMIN crea/edita/elimina)
+- [x] TagSelector reusable con pills de color, dropdown asignacion, sync al servidor
+- [x] Gestion completa en Admin > Configuracion: crear tags con nombre/color/tipo, activar/desactivar, eliminar
+- [x] Tags integrados en detalle visita, lista visitas (filtro pills), detalle proyecto, lista proyectos
+- [x] @Menciones en comentarios: MentionInput con dropdown debounced (200ms), navegacion teclado
+- [x] Dropdown menciones: avatar con inicial, nombre, rol color-coded (ADMIN rojo, VENTAS naranja, PROYECTOS azul, TECNICO morado)
+- [x] MentionText: parseo patron @[userId:Nombre] a pills teal inline
+- [x] API /api/usuarios/menciones: busqueda ligera usuarios activos (sin restriccion ADMIN)
+- [x] mencionIds guardados en comentarios (visitas + proyectos), notificacion en TopBar con icono @ teal
+- [x] Grupos hospitalarios: FK auto-referencial grupoId en Hospital
+- [x] Hospital cabecera: seccion con lista de centros, modal añadir centro (filtro: no-grupoId, no-self)
+- [x] Hospital centro: banner con link al hospital cabecera del grupo
+- [x] Lista hospitales: pill "Grupo" + badge con numero de centros
+- [x] Admin hospitales: selector de grupo en formulario de edicion
+- [x] Busqueda /api/search incluye grupo/centros
+
+### Sprint 16 — Proximo (planificado)
+- [ ] Modo campo simplificado (movil): UI reducida para trabajo de campo, formulario simplificado, acciones rapidas
+- [ ] Onboarding guiado nuevo usuario: tour interactivo multi-paso, flag completado por usuario, reset desde admin
+- [ ] Recordatorios personales: alarmas por usuario con fecha/hora, notificaciones en app
 
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar
@@ -391,18 +445,12 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [ ] Alertas mantenimiento hardware — garantia expirada, tiempo sin revision
 - [ ] Favoritos/Acceso rapido — estrella en hospitales y proyectos
 - [ ] Panel de equipo (ADMIN) — quien hace que
-- [ ] Etiquetas/Tags para hospitales y visitas
 - [ ] Exportar proyecto a Excel formateado
-- [ ] Modo campo simplificado (movil)
 - [ ] Firma digital del cliente en PDF
 - [ ] Notificaciones push del navegador
 - [ ] Sincronizacion calendario (iCal)
-- [ ] Onboarding guiado nuevo usuario
 - [ ] Vista Gantt de fases
 - [ ] Registro rapido de llamada
-- [ ] Mencion @usuario en comentarios
-- [ ] Hospitales relacionados / Grupo
-- [ ] Recordatorios personales
 
 ---
 

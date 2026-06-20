@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
-> Resumen compacto del proyecto. Actualizado sprint 13 (junio 2026).
-> Commit base: `f9a04ec` (20 jun 2026 — sprint 13 completado)
+> Resumen compacto del proyecto. Actualizado sprint 15 (junio 2026).
+> Commit base: `074fb78` (20 jun 2026 — sprint 15 completado)
 
 ---
 
@@ -68,6 +68,9 @@ src/
 │   ├── TopBar.tsx              ← Busqueda global debounced, toggle dark/light, notificaciones
 │   ├── ThemeProvider.tsx       ← Context dark/light, localStorage palex_theme, anti-FOUC
 │   ├── CommandPalette.tsx      ← Cmd+K, busca hospitales+visitas+proyectos, cache 60s
+│   ├── MentionInput.tsx        ← Textarea con @menciones dropdown, debounced, keyboard nav
+│   ├── MentionText.tsx         ← Renderiza @[id:Nombre] como pills teal
+│   ├── TagSelector.tsx         ← Selector/pills de tags con colores + TagPills read-only
 │   ├── Toast.tsx               ← Global ToastProvider + useToast() (god node: 42 edges)
 │   └── ui/                     ← EmptyState, Icons (SVG), PageHeader, Skeleton
 ├── hooks/
@@ -133,8 +136,9 @@ Proyecto (@@map "pre_proyectos"), FaseProyecto, ProyectoModulo, ProyectoContacto
 Hospital, Contacto, Visita (datos: JSON), Oportunidad (DESACTIVADO)
 Hito, Tarea (subtareas), EntradaTimeline, SolicitudMaterial, Adjunto
 HardwareTipo, HardwareCatalogo, HardwareUnidad
-Usuario, Zona, ModuloInlab, Comentario, PlantillaVisita, ConfigApp
+Usuario, Zona, ModuloInlab, Comentario (mencionIds: Json), PlantillaVisita, ConfigApp
 LogActividad (accion, entidad, usuario, fecha — solo ADMIN)
+Tag (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 ```
 
 ---
@@ -166,6 +170,9 @@ LogActividad (accion, entidad, usuario, fecha — solo ADMIN)
 /api/hardware/unidades     ← GET Cache 30s, POST/PUT
 /api/modulos-inlab         ← Catalogo modulos InLab
 /api/share/[token]         ← Proyecto publico (sin PII)
+/api/tags                  ← GET (filtro ?tipo), POST (solo ADMIN)
+/api/tags/[id]             ← PATCH (whitelist), DELETE (solo ADMIN)
+/api/usuarios/menciones    ← GET busqueda usuarios para @menciones (Cache 30s)
 /api/presence              ← POST heartbeat presencia colaborativa (activeUsers[])
 /api/notificaciones        ← Alertas por rol
 /api/perfil                ← { rol: ... } — usar d?.rol
@@ -206,7 +213,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-13):**
+**Completado (sprints 1-15):**
 - Auth completa (login, middleware, roles)
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
@@ -228,6 +235,13 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Responsive: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
 - Lighthouse audit: Performance 100, Accessibility 100, Best Practices 96, SEO 100 (contraste WCAG, landmarks, touch targets, robots.txt)
 - PWA, Error boundaries, Presencia colaborativa in-memory
+- Tags/Etiquetas: modelo Tag (VISITA/PROYECTO), API CRUD, TagSelector con pills de color, gestion en Admin > Configuracion
+- Tags integrados en visitas (detalle + filtro lista) y proyectos (detalle + lista)
+- @Menciones en comentarios: MentionInput con dropdown debounced y keyboard nav, MentionText con pills teal
+- Menciones en ComentariosPanel (visitas + proyectos), notificaciones en TopBar con icono @ teal
+- Grupos hospitalarios: FK auto-referencial grupoId, hospital cabecera con centros, banner pertenencia
+- Indicadores grupo en lista hospitales, selector en admin, busqueda incluye grupo
+- Service Worker: network-first para _next/static (evita CSS roto en deploys), auto-update
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
