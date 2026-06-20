@@ -225,8 +225,9 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Dark mode completo: 20+ paginas con containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
 - Dark mode: globals.css overrides para hover states de colores de estado, RadioPills/CheckPills sin inline styles
 - Animaciones: skeleton-shimmer, stagger-grid, card-hover lift, stagger-nav
+- Responsive: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
 - PWA, Error boundaries, Presencia colaborativa in-memory
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Pendiente: Lighthouse audit, auditoria responsive, UE (Unidad Especializada) en modal visita. Ver AGENTS.md seccion 9.**
+**Pendiente: Lighthouse audit, UE (Unidad Especializada) en modal visita. Ver AGENTS.md seccion 9.**

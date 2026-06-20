@@ -373,7 +373,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Dark mode completo en drawers/modales (20+ paginas: admin, hardware, hospitales, visitas, proyectos, perfil, loading skeletons, CommandPalette)
 - [x] Pulido visual global: skeleton-shimmer, card-hover, stagger-grid, hover states dark mode, RadioPills/CheckPills sin inline styles, calendario dark fix
 - [x] Modal nueva visita mejorado: tipo de visita (RadioPills) + contacto principal con auto-seleccion
-- [ ] Auditoria responsive completa movil + interactividad
+- [x] Auditoria responsive completa movil: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
 
 ### Sprint 14 — Datos reales
 - [ ] Conectar /datos a APIs reales (sustituir mockup)
