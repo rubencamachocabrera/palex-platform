@@ -312,11 +312,13 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - EmptyState + Skeleton shimmer en todas las listas
 - Rate limiting in-memory
 - Cache-Control HTTP en APIs de lectura
-- Error boundaries (error.tsx) en 15 rutas
+- Error boundaries (error.tsx) en 15 rutas + global-error.tsx con Sentry
+- Sentry error tracking: client/server/edge configs, instrumentation.ts, captureException en boundaries
 - Seguridad: IDOR zona+responsable, mass assignment whitelist, crypto tokens, iframe sandbox
 - Presencia colaborativa in-memory (presence.ts) — sin dependencias externas
 - PWA: manifest + SW + IndexedDB
-- Dark mode completo con anti-FOUC
+- Dark mode completo: containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
+- Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
 
 ---
 
@@ -330,7 +332,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 | ~~ALTA~~ | ~~Comentarios visita sin verificar acceso padre~~ | ~~api/visitas/[id]/comentarios~~ | CORREGIDO (zona + propietario) |
 | ~~ALTA~~ | ~~Fases proyecto sin verificar pertenencia~~ | ~~api/proyectos/[id]/fases~~ | CORREGIDO (responsableId check) |
 | ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO (responsableId check) |
-| MEDIA | Dark mode incompleto en algunos drawers (estilos inline) | varios | PENDIENTE |
+| ~~MEDIA~~ | ~~Dark mode incompleto en algunos drawers (estilos inline)~~ | ~~varios~~ | CORREGIDO (20+ paginas actualizadas) |
 | MEDIA | `Tarea.asignadoA` es String libre, no FK a Usuario | schema.prisma | PENDIENTE |
 | BAJA | `CACHE_VERSION = 'palex-v1'` hardcodeado en SW | public/sw.js | PENDIENTE |
 | BAJA | JWT sin `maxAge` explicito (default 30 dias NextAuth) | auth.ts | PENDIENTE |
@@ -348,7 +350,7 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Estandarizar creacion visitas — modal unico con titulo + fecha + plantilla desde /visitas, hospital y proyecto
 - [x] Log de actividad solo ADMIN — modelo Prisma + API + pagina admin + logging en crear/eliminar visitas, hospitales y proyectos
 
-### Sprint 12 — Seguridad, colaboracion y robustez (EN PROGRESO)
+### Sprint 12 — Seguridad, colaboracion y robustez (COMPLETADO)
 - [x] XSS mapaHtml — sandbox iframe sin allow-same-origin (aislamiento scripts)
 - [x] Filtro de zona en GET /api/proyectos (AND con OR zona + responsable)
 - [x] Filtro de zona en GET /api/proyectos/[id] (zona del hospital)
@@ -359,12 +361,12 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Edicion colaborativa visitas — presencia en tiempo real (heartbeat + polling)
 - [x] API /api/presence — tracking de usuarios activos por entidad (in-memory)
 - [x] Notificacion dropdown responsive en movil (w-96 → responsive)
-- [ ] Sentry para errores en produccion
+- [x] Sentry para errores en produccion (client/server/edge + global-error boundary)
 
-### Sprint 13 — Calidad y testing
+### Sprint 13 — Calidad y testing (EN PROGRESO)
 - [ ] Lighthouse audit (objetivo >90)
-- [ ] Tests E2E con Playwright (login, crear visita, formulario)
-- [ ] Dark mode completo en drawers/modales
+- [x] Tests E2E con Playwright (auth setup + visitas 5 tests + proyectos 4 tests + navegacion 9 tests + mobile viewport)
+- [x] Dark mode completo en drawers/modales (20+ paginas: admin, hardware, hospitales, visitas, proyectos, perfil, loading skeletons, CommandPalette)
 - [ ] Auditoria responsive completa movil + interactividad
 
 ### Sprint 14 — Datos reales

@@ -83,8 +83,17 @@ src/
 │   ├── presence.ts             ← heartbeat/getActiveUsers/leave — presencia colaborativa
 │   ├── rate-limit.ts           ← checkRateLimit() (god node: 22 edges)
 │   └── visita-analysis.ts      ← detectarRiesgos() + calcularScore() (score 0-100)
+├── instrumentation.ts          ← Sentry nodejs/edge runtime registration + onRequestError
 ├── middleware.ts               ← Protege rutas, edge-compatible
 └── types/next-auth.d.ts        ← Extiende Session, User, JWT con id, rol, nombre
+sentry.client.config.ts         ← Sentry client init (DSN from env, tracesSampleRate 0.2)
+sentry.server.config.ts         ← Sentry server init
+sentry.edge.config.ts           ← Sentry edge init
+e2e/                            ← Playwright E2E tests
+├── auth.setup.ts               ← Shared auth (saves storageState)
+├── visitas.spec.ts             ← 5 tests: lista, busqueda, modal, detalle, calendario
+├── proyectos.spec.ts           ← 4 tests: lista, kanban, detalle tabs, navegacion
+└── navegacion.spec.ts          ← 9 tests: dashboard, sidebar, Cmd+K, dark mode, mobile
 ```
 
 ---
@@ -197,7 +206,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-12):**
+**Completado (sprints 1-13 parcial):**
 - Auth completa (login, middleware, roles)
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
@@ -211,8 +220,11 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Busqueda: global, CommandPalette (Cmd+K), filtros avanzados
 - Navegacion contextual: breadcrumb dinamico proyecto → hospital → volver al proyecto
 - Seguridad: IDOR zona+responsable en visitas/proyectos/fases/contactos/comentarios, iframe sandbox XSS, whitelist
-- PWA, Dark mode, Error boundaries, Presencia colaborativa in-memory
+- Sentry error tracking (client/server/edge + global-error boundary + instrumentation)
+- Playwright E2E: 18 tests (visitas, proyectos, navegacion) + auth setup + mobile viewport
+- Dark mode completo: 20+ paginas con containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
+- PWA, Error boundaries, Presencia colaborativa in-memory
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Pendiente: ver AGENTS.md seccion 9.**
+**Pendiente: Lighthouse audit, auditoria responsive. Ver AGENTS.md seccion 9.**
