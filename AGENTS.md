@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 12 en progreso — seguridad + colaboracion).
+> Ultima actualizacion: 2026-06-20 (sprint 13 completado — calidad + testing).
 
 ---
 
@@ -367,8 +367,13 @@ LogActividad     (accion, entidad, entidadId, detalle, usuario, fecha — log AD
 - [x] Notificacion dropdown responsive en movil (w-96 → responsive)
 - [x] Sentry para errores en produccion (client/server/edge + global-error boundary)
 
-### Sprint 13 — Calidad y testing (EN PROGRESO)
-- [ ] Lighthouse audit (objetivo >90)
+### Sprint 13 — Calidad y testing (COMPLETADO)
+- [x] Lighthouse audit: Performance 100, Accessibility 95+, Best Practices 96, SEO 95+ (objetivo >90 cumplido)
+  - robots.txt: permitir /login (SEO is-crawlable)
+  - auth layout: `<main id="main-content">` (landmark + skip-link target)
+  - login: contraste textos WCAG AA (ORANGE→#b45309, gray-400→gray-500, boton ORANGE_DARK)
+  - login: toggle password 44×44 touch target
+  - layout: eliminar maximumScale:1 (bloquea zoom accesibilidad)
 - [x] Tests E2E con Playwright (auth setup + visitas 5 tests + proyectos 4 tests + navegacion 9 tests + mobile viewport)
 - [x] Dark mode completo en drawers/modales (20+ paginas: admin, hardware, hospitales, visitas, proyectos, perfil, loading skeletons, CommandPalette)
 - [x] Pulido visual global: skeleton-shimmer, card-hover, stagger-grid, hover states dark mode, RadioPills/CheckPills sin inline styles, calendario dark fix

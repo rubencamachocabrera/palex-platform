@@ -218,19 +218,19 @@ export default function LoginPage() {
               disabled={loading || redirecting}
               className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50"
               style={{
-                backgroundColor: ORANGE_DARK,
+                backgroundColor: "#b45309",
                 color: "white",
                 boxShadow: `0 4px 18px ${ORANGE}45`,
               }}
               onMouseEnter={e => {
                 if (!loading && !redirecting) {
-                  e.currentTarget.style.backgroundColor = "#b45309"
+                  e.currentTarget.style.backgroundColor = "#92400e"
                   e.currentTarget.style.boxShadow       = `0 6px 24px ${ORANGE}60`
                   e.currentTarget.style.transform        = "translateY(-1px)"
                 }
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = ORANGE_DARK
+                e.currentTarget.style.backgroundColor = "#b45309"
                 e.currentTarget.style.boxShadow       = `0 4px 18px ${ORANGE}45`
                 e.currentTarget.style.transform        = "translateY(0)"
               }}>
@@ -258,7 +258,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="mt-10 flex items-center justify-between">
-          <p className="text-[10px] tracking-widest uppercase font-medium text-gray-400">
+          <p className="text-[10px] tracking-widest uppercase font-medium text-gray-500">
             © {new Date().getFullYear()} Palex Medical
           </p>
           <div className="flex items-center gap-1.5">
