@@ -7,6 +7,7 @@ import {
   useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCenter,
 } from "@dnd-kit/core"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { useFavoritos } from "@/hooks/useFavoritos"
 
 // ---- tipos ----
 
@@ -329,28 +330,12 @@ function ModalCrear({
 
 // ---- página principal ----
 
-// ── Favoritos ──────────────────────────────────────────────────────────────────
-function useFavoritosPP() {
-  const [ids, setIds] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set()
-    try { return new Set<string>(JSON.parse(localStorage.getItem("palex_favoritos_preproyectos") ?? "[]")) }
-    catch { return new Set() }
-  })
-  function toggle(id: string) {
-    setIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      localStorage.setItem("palex_favoritos_preproyectos", JSON.stringify([...next]))
-      return next
-    })
-  }
-  return { ids, toggle }
-}
+// ── Favoritos (DB-backed via useFavoritos hook) ──────────────────────────────
 
 export default function ProyectosPage() {
   const [items, setItems] = useState<Proyecto[]>([])
   const [loading, setLoading] = useState(true)
-  const { ids: favPP, toggle: toggleFavPP } = useFavoritosPP()
+  const { ids: favPP, toggle: toggleFavPP } = useFavoritos("PROYECTO")
   const [q, setQ] = useState("")
   const [filtroEstado, setFiltroEstado] = useState("")
   const [filtroPrioridad, setFiltroPrioridad] = useState("")

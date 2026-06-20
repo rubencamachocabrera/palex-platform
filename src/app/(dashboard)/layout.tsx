@@ -8,6 +8,7 @@ import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvide
 import { PageTransition } from "@/components/PageTransition"
 import { BottomNav } from "@/components/BottomNav"
 import { OnboardingWizard } from "@/components/OnboardingWizard"
+import { NotificationManager } from "@/components/NotificationManager"
 
 export default async function DashboardLayout({
   children,
@@ -31,6 +32,7 @@ export default async function DashboardLayout({
           </div>
         </div>
         <BottomNav />
+        <NotificationManager />
       </ToastProvider>
     </KeyboardShortcutsProvider>
   )

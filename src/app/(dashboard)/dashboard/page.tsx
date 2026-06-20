@@ -5,7 +5,7 @@ import { TEAL, ORANGE } from "@/lib/brand"
 
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
-  IconCheckCircle, IconFileText, IconMap, IconCalendar,
+  IconCheckCircle, IconFileText, IconMap, IconCalendar, IconStar,
 } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -325,8 +325,88 @@ function OpCard({ titulo, hospitalNombre, etapa, valorEstimado, probabilidad }: 
   )
 }
 
+// ── Mis Favoritos ─────────────────────────────────────────────────────────────
+async function FavoritosSection({ userId }: { userId: string }) {
+  const favoritos = await db.favorito.findMany({
+    where: { usuarioId: userId },
+    orderBy: { creadoEn: "desc" },
+    take: 12,
+  })
+
+  if (favoritos.length === 0) return null
+
+  const hospitalIds = favoritos.filter(f => f.tipo === "HOSPITAL").map(f => f.entidadId)
+  const proyectoIds = favoritos.filter(f => f.tipo === "PROYECTO").map(f => f.entidadId)
+
+  const [hospitales, proyectos] = await Promise.all([
+    hospitalIds.length > 0
+      ? db.hospital.findMany({
+          where: { id: { in: hospitalIds } },
+          select: { id: true, nombre: true, ciudad: true, tipo: true },
+        })
+      : Promise.resolve([]),
+    proyectoIds.length > 0
+      ? db.proyecto.findMany({
+          where: { id: { in: proyectoIds } },
+          select: { id: true, titulo: true, estado: true, hospital: { select: { nombre: true } } },
+        })
+      : Promise.resolve([]),
+  ])
+
+  const hospitalMap = new Map(hospitales.map(h => [h.id, h]))
+  const proyectoMap = new Map(proyectos.map(p => [p.id, p]))
+
+  const items: { key: string; tipo: "HOSPITAL" | "PROYECTO"; href: string; titulo: string; sub: string }[] = []
+  for (const f of favoritos) {
+    if (f.tipo === "HOSPITAL") {
+      const h = hospitalMap.get(f.entidadId)
+      if (h) items.push({ key: f.id, tipo: "HOSPITAL", href: `/hospitales/${h.id}`, titulo: h.nombre, sub: h.ciudad })
+    } else {
+      const p = proyectoMap.get(f.entidadId)
+      if (p) items.push({ key: f.id, tipo: "PROYECTO", href: `/proyectos/${p.id}`, titulo: p.titulo, sub: p.hospital.nombre })
+    }
+  }
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <IconStar size={16} filled className="text-amber-400" />
+        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">Mis favoritos</h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {items.map(item => (
+          <Link
+            key={item.key}
+            href={item.href}
+            className="card-hover flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600 transition-all group"
+          >
+            <span
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={item.tipo === "HOSPITAL"
+                ? { backgroundColor: "#f0fdfa", color: TEAL }
+                : { backgroundColor: "#f0fdf4", color: "#16a34a" }
+              }
+            >
+              {item.tipo === "HOSPITAL" ? <IconHospital size={16} /> : <IconCheckCircle size={16} />}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">
+                {item.titulo}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{item.sub}</p>
+            </div>
+            <IconStar size={14} filled className="text-amber-400 shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Dashboard ADMIN ────────────────────────────────────────────────────────────
-async function DashboardAdmin() {
+async function DashboardAdmin({ userId }: { userId: string }) {
   const ahora = new Date()
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
   const inicioPrevMes = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
@@ -518,6 +598,8 @@ async function DashboardAdmin() {
       <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
 
       <QuickActionsField />
+
+      <FavoritosSection userId={userId} />
 
       {/* KPIs */}
       <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -755,6 +837,8 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
 
       <QuickActionsField />
 
+      <FavoritosSection userId={userId} />
+
       {hayMiDiaVentas && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-50">
@@ -989,6 +1073,8 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
 
       <QuickActionsField />
 
+      <FavoritosSection userId={userId} />
+
       {hayMiDia && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-50">
@@ -1193,7 +1279,7 @@ export default async function DashboardPage() {
   const userId = session.user.id
   const nombre = session.user.name ?? "Usuario"
 
-  if (rol === "ADMIN") return <DashboardAdmin />
+  if (rol === "ADMIN") return <DashboardAdmin userId={userId} />
   if (rol === "VENTAS") return <DashboardVentas userId={userId} nombre={nombre} />
   return <DashboardProyectos userId={userId} nombre={nombre} />
 }

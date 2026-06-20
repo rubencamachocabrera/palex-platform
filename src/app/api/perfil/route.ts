@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { generateCalendarToken } from "@/lib/calendar-token"
 
 // GET /api/perfil — datos del usuario en sesion
 export async function GET() {
@@ -13,7 +14,12 @@ export async function GET() {
       where: { id: session.user.id },
       select: { id: true, nombre: true, email: true, rol: true, creadoEn: true, onboardingCompletado: true },
     })
-    return NextResponse.json(usuario)
+    if (!usuario) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+
+    return NextResponse.json({
+      ...usuario,
+      calendarToken: generateCalendarToken(usuario.id),
+    })
   } catch (err) {
     console.error("[GET]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { useFavoritos } from "@/hooks/useFavoritos"
 import { IconHospital, IconBuilding, IconMicroscope, IconActivity, IconGraduation } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -83,25 +84,7 @@ function scoreStyle(s: number): { bg: string; text: string } {
 
 type Vista = "lista" | "grid"
 
-// ─── Favoritos (localStorage) ────────────────────────────────────────────────
-function useFavoritos(clave: string) {
-  const [ids, setIds] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set()
-    try {
-      const raw = localStorage.getItem(clave)
-      return new Set<string>(raw ? JSON.parse(raw) : [])
-    } catch { return new Set() }
-  })
-  function toggle(id: string) {
-    setIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      localStorage.setItem(clave, JSON.stringify([...next]))
-      return next
-    })
-  }
-  return { ids, toggle }
-}
+// ─── Favoritos (DB-backed via useFavoritos hook) ────────────────────────────
 
 function StarBtn({ activo, onClick }: { activo: boolean; onClick: (e: React.MouseEvent) => void }) {
   return (
@@ -130,7 +113,7 @@ export default function HospitalesPage() {
   const [vista, setVista] = useState<Vista>("lista")
   const [esAdmin, setEsAdmin] = useState(false)
   const [eliminando, setEliminando] = useState<string | null>(null)
-  const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("palex_favoritos_hospitales")
+  const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("HOSPITAL")
 
   useEffect(() => {
     fetch("/api/hospitales")

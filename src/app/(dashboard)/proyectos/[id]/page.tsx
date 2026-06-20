@@ -3456,6 +3456,15 @@ ${pp.mapaHtml ? `<div class="map-page">
               CSV
             </button>
           )}
+          <button onClick={() => window.open(`/api/proyectos/${pp.id}/excel`)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M8 13h3l1 3 2-6 1 3h3"/>
+            </svg>
+            Excel
+          </button>
           <div className="w-px h-6 bg-gray-200 hidden sm:block" />
           <button onClick={() => fileInputRef.current?.click()} disabled={savingMapa}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40">

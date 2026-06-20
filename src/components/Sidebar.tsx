@@ -56,6 +56,13 @@ const Icons: Record<string, () => React.ReactElement> = {
       <line x1="3" y1="18" x2="3.01" y2="18"/>
     </svg>
   ),
+  Equipo: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="5" r="3"/><path d="M12 8a5 5 0 0 0-5 5v1h10v-1a5 5 0 0 0-5-5z"/>
+      <circle cx="4" cy="9" r="2.5"/><path d="M4 11.5c-2 0-3.5 1.5-3.5 3.5h5"/>
+      <circle cx="20" cy="9" r="2.5"/><path d="M20 11.5c2 0 3.5 1.5 3.5 3.5h-5"/>
+    </svg>
+  ),
   Usuarios: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -172,7 +179,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Gestión",
     items: [
-      { href: "/admin/equipo",         label: "Equipo",            icon: "Usuarios" },
+      { href: "/admin/equipo",         label: "Equipo",            icon: "Equipo" },
       { href: "/admin/usuarios",      label: "Usuarios",          icon: "Usuarios" },
       { href: "/admin/zonas",         label: "Zonas",             icon: "Zonas" },
       { href: "/admin/hospitales",    label: "Hospitales",        icon: "Hospitales" },
