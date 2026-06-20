@@ -36,6 +36,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (body.activo !== undefined) data.activo = Boolean(body.activo)
     if (body.password !== undefined && typeof body.password === "string" && body.password.length >= 8)
       data.password = await bcrypt.hash(body.password, 12)
+    if (body.onboardingCompletado !== undefined) data.onboardingCompletado = Boolean(body.onboardingCompletado)
 
     const updated = await db.usuario.update({
       where: { id },

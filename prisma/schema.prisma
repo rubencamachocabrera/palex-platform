@@ -139,21 +139,23 @@ model ConfigApp {
 // --- USUARIOS --------------------------------------------------------
 
 model Usuario {
-  id        String   @id @default(cuid())
-  nombre    String
-  email     String   @unique
-  password  String
-  rol       Rol      @default(VENTAS)
-  activo    Boolean  @default(true)
-  creadoEn  DateTime @default(now())
-  editadoEn DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  nombre                String
+  email                 String   @unique
+  password              String
+  rol                   Rol      @default(VENTAS)
+  activo                Boolean  @default(true)
+  onboardingCompletado  Boolean  @default(false)
+  creadoEn              DateTime @default(now())
+  editadoEn             DateTime @updatedAt
 
   zonas             UsuarioZona[]
   visitas           Visita[]
   oportunidades     Oportunidad[]
-  proyectos      Proyecto[]      @relation("ProyectoResponsable")
-  fasesResponsable  FaseProyecto[]  @relation("FaseResponsable")
+  proyectos         Proyecto[]       @relation("ProyectoResponsable")
+  fasesResponsable  FaseProyecto[]   @relation("FaseResponsable")
   logs              LogActividad[]
+  recordatorios     Recordatorio[]
 
   @@map("usuarios")
 }
@@ -654,4 +656,22 @@ model LogActividad {
   @@index([creadoEn])
   @@index([usuarioId])
   @@map("log_actividad")
+}
+
+// --- RECORDATORIOS ---------------------------------------------------
+
+model Recordatorio {
+  id          String    @id @default(cuid())
+  titulo      String
+  descripcion String?
+  fecha       DateTime
+  completado  Boolean   @default(false)
+  usuarioId   String    @map("usuario_id")
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadoEn    DateTime  @default(now()) @map("creado_en")
+  editadoEn   DateTime  @updatedAt @map("editado_en")
+
+  @@index([usuarioId, fecha])
+  @@index([fecha])
+  @@map("recordatorios")
 }

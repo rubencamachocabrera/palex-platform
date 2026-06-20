@@ -5,7 +5,7 @@ import { TEAL, ORANGE } from "@/lib/brand"
 
 import {
   IconHospital, IconUsers, IconClipboard, IconTrendingUp,
-  IconCheckCircle, IconFileText, IconMap,
+  IconCheckCircle, IconFileText, IconMap, IconCalendar,
 } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -225,6 +225,61 @@ function QuickLink({ href, label, Icon, color }: {
       <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${color}`}><Icon size={18} /></span>
       <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 leading-tight">{label}</span>
     </Link>
+  )
+}
+
+function QuickActionsField() {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 md:hidden">Acciones rapidas</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Link
+          href="/visitas"
+          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+        >
+          <span
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+            style={{ backgroundColor: TEAL }}
+          >
+            <IconClipboard size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">Nueva visita</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Registrar visita a hospital</p>
+          </div>
+        </Link>
+        <Link
+          href="/visitas?fecha=hoy"
+          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+        >
+          <span
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+            style={{ backgroundColor: TEAL }}
+          >
+            <IconFileText size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">Mis visitas hoy</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ver agenda del dia</p>
+          </div>
+        </Link>
+        <Link
+          href="/visitas/calendario"
+          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+        >
+          <span
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+            style={{ backgroundColor: TEAL }}
+          >
+            <IconCalendar size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">Calendario</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Vista mensual de visitas</p>
+          </div>
+        </Link>
+      </div>
+    </div>
   )
 }
 
@@ -462,6 +517,8 @@ async function DashboardAdmin() {
     <div>
       <PageHeader title="Dashboard" subtitle="Vision general del sistema" />
 
+      <QuickActionsField />
+
       {/* KPIs */}
       <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="Hospitales activos" value={totalHospitales} icon={<IconHospital size={18} />} />
@@ -659,7 +716,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const finDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1)
   const en7dias = new Date(ahora.getTime() + 7 * 86400000)
 
-  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw, visitasHoy, opsProximas] = await Promise.all([
+  const [misOps, misVisitas, misHospitales, visitasPrevMes, visitasChart, funnelRaw, opsPrevRaw, visitasHoy, opsProximas, recordatoriosHoyVentas] = await Promise.all([
     db.oportunidad.findMany({ where: { usuarioId: userId }, orderBy: { editadoEn: "desc" }, take: 8, include: { hospital: { select: { nombre: true, ciudad: true } } } }),
     db.visita.findMany({ where: { usuarioId: userId }, take: 5, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -669,6 +726,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
     db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["PERDIDO", "GANADO"] }, fechaCierre: { not: null } }, select: { valorEstimado: true, probabilidad: true, fechaCierre: true } }),
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
     db.oportunidad.findMany({ where: { usuarioId: userId, etapa: { notIn: ["GANADO", "PERDIDO"] }, fechaCierre: { gte: ahora, lte: en7dias } }, include: { hospital: { select: { nombre: true } } }, orderBy: { fechaCierre: "asc" }, take: 5 }),
+    db.recordatorio.findMany({ where: { usuarioId: userId, completado: false, fecha: { gte: inicioDia, lt: finDia } }, select: { id: true, titulo: true, fecha: true }, orderBy: { fecha: "asc" }, take: 5 }),
   ])
 
   const opsActivas = misOps.filter(o => o.etapa !== "PERDIDO")
@@ -689,11 +747,13 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
   const previsionData = agruparPrevisionPorMes(opsPrevRaw.map(o => ({ ...o, fechaCierre: o.fechaCierre ? new Date(o.fechaCierre) : null })), 6)
   const hayPrevision = previsionData.some(d => d.v > 0)
 
-  const hayMiDiaVentas = visitasHoy.length > 0 || opsProximas.length > 0
+  const hayMiDiaVentas = visitasHoy.length > 0 || opsProximas.length > 0 || recordatoriosHoyVentas.length > 0
 
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
+      <QuickActionsField />
 
       {hayMiDiaVentas && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -732,6 +792,22 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
                 </Link>
               )
             })}
+            {recordatoriosHoyVentas.map(r => (
+              <Link key={r.id} href="/recordatorios" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{r.titulo}</p>
+                  <p className="text-xs text-gray-400">Recordatorio de hoy</p>
+                </div>
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0">
+                  {new Date(r.fecha).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       )}
@@ -838,7 +914,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     misVisitasRecientes, misHospitales, visitasPrevMes, visitasChart,
     proximasVisitas, estadoModulosRaw, totalVisitas,
     misProyectos, fasesRetrasadas, proyectosVenc, proximasCitas, hitosRetrasados,
-    visitasHoy, tareasVencidas,
+    visitasHoy, tareasVencidas, recordatoriosHoy,
   ] = await Promise.all([
     db.visita.findMany({ where: { usuarioId: userId }, take: 6, orderBy: { fecha: "desc" }, include: { hospital: { select: { nombre: true } } } }),
     db.hospital.count({ where: { activo: true, zona: { usuarios: { some: { usuarioId: userId } } } } }),
@@ -879,6 +955,7 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     }),
     db.visita.findMany({ where: { usuarioId: userId, fecha: { gte: inicioDia, lt: finDia } }, include: { hospital: { select: { nombre: true } } }, take: 8 }),
     db.tarea.findMany({ where: { fechaVencimiento: { lte: ahora }, estado: { notIn: ["COMPLETADA", "CANCELADA"] }, proyecto: { responsableId: userId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } }, include: { proyecto: { select: { id: true, titulo: true } } }, orderBy: { fechaVencimiento: "asc" }, take: 5 }),
+    db.recordatorio.findMany({ where: { usuarioId: userId, completado: false, fecha: { gte: inicioDia, lt: finDia } }, select: { id: true, titulo: true, fecha: true }, orderBy: { fecha: "asc" }, take: 5 }),
   ])
 
   const visitasMes = misVisitasRecientes.filter(v => new Date(v.creadoEn) >= inicioMes).length
@@ -904,11 +981,13 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
     alertas.push({ key: `hr-${h.id}`, titulo: h.proyecto.titulo, sub: `Hito "${h.titulo}" sin completar desde ${new Date(h.fecha).toLocaleDateString("es-ES")}`, href: `/proyectos/${h.proyecto.id}`, color: "#f97316", bg: "#fff7ed" })
   })
 
-  const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0
+  const hayMiDia = visitasHoy.length > 0 || tareasVencidas.length > 0 || recordatoriosHoy.length > 0
 
   return (
     <div>
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
+
+      <QuickActionsField />
 
       {hayMiDia && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -942,6 +1021,22 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
                   <p className="text-xs text-gray-400 truncate">{t.proyecto.titulo} · Tarea vencida</p>
                 </div>
                 <span className="text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full shrink-0">Vencida</span>
+              </Link>
+            ))}
+            {recordatoriosHoy.map(r => (
+              <Link key={r.id} href="/recordatorios" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{r.titulo}</p>
+                  <p className="text-xs text-gray-400">Recordatorio de hoy</p>
+                </div>
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0">
+                  {new Date(r.fecha).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                </span>
               </Link>
             ))}
           </div>

@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest) {
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -101,6 +101,17 @@ export async function GET(_req: NextRequest) {
         orderBy: { creadoEn: "desc" },
         take: 10,
       }),
+      // Recordatorios: due/overdue, not completed, user's own
+      db.recordatorio.findMany({
+        where: {
+          usuarioId: userId,
+          completado: false,
+          fecha: { lte: now },
+        },
+        select: { id: true, titulo: true, fecha: true },
+        orderBy: { fecha: "asc" },
+        take: 5,
+      }),
     ])
 
     const items = [
@@ -159,6 +170,20 @@ export async function GET(_req: NextRequest) {
           titulo,
           href,
           mensaje: `${m.autorNombre} te mencionó en ${esVisita ? "una visita" : "un proyecto"}`,
+        }
+      }),
+      ...recordatoriosPendientes.map(r => {
+        const fechaR = new Date(r.fecha)
+        const hoyR = new Date(now)
+        hoyR.setHours(0, 0, 0, 0)
+        const esHoy = fechaR.getFullYear() === hoyR.getFullYear() && fechaR.getMonth() === hoyR.getMonth() && fechaR.getDate() === hoyR.getDate()
+        const diasRetraso = Math.floor((now.getTime() - fechaR.getTime()) / 86400000)
+        return {
+          tipo: "recordatorio" as const,
+          id: r.id,
+          titulo: r.titulo,
+          href: "/recordatorios",
+          mensaje: esHoy ? "Recordatorio de hoy" : `Vencido hace ${diasRetraso} día${diasRetraso === 1 ? "" : "s"}`,
         }
       }),
     ]

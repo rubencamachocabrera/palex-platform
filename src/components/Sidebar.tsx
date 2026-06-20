@@ -156,6 +156,11 @@ const Icons: Record<string, () => React.ReactElement> = {
       <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
     </svg>
   ),
+  Recordatorios: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
@@ -173,6 +178,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/admin/hospitales",    label: "Hospitales",        icon: "Hospitales" },
       { href: "/mapa",                label: "Mapa",              icon: "Mapa" },
       { href: "/visitas",             label: "Todas las visitas", icon: "TodasVisitas" },
+      { href: "/recordatorios",       label: "Recordatorios",     icon: "Recordatorios" },
       { href: "/hardware",            label: "Hardware",          icon: "Hardware" },
       { href: "/admin/configuracion", label: "Configuración",     icon: "Configuracion" },
       { href: "/admin/log",           label: "Log de actividad", icon: "Actividad" },
@@ -204,6 +210,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
       { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+      { href: "/recordatorios",      label: "Recordatorios",  icon: "Recordatorios" },
       { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },
@@ -230,6 +237,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/hospitales",         label: "Mis hospitales", icon: "Hospitales" },
       { href: "/visitas",            label: "Mis visitas",    icon: "Visitas" },
       { href: "/visitas/calendario", label: "Calendario",     icon: "Calendar" },
+      { href: "/recordatorios",      label: "Recordatorios",  icon: "Recordatorios" },
       { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
     ],
   },

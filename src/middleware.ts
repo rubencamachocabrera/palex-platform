@@ -18,6 +18,7 @@ const PROTECTED_PREFIXES = [
   "/perfil",
   "/datos",
   "/transporte",
+  "/recordatorios",
 ]
 
 export default auth((req) => {
