@@ -357,7 +357,7 @@ export default function HospitalDetailPage() {
     <div className="max-w-6xl mx-auto space-y-5">
 
       {/* ── HERO HEADER ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
         {/* Franja de color del tipo */}
         <div className="h-1.5 w-full" style={{ backgroundColor: tipoCol.dot }} />
         <div className="px-6 py-5">
@@ -486,7 +486,7 @@ export default function HospitalDetailPage() {
             <div className="space-y-5">
 
               {/* Contactos */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                   <h2 className="text-sm font-bold text-gray-800">
                     Contactos
@@ -550,7 +550,7 @@ export default function HospitalDetailPage() {
               </div>
 
               {/* Visitas recientes */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                   <h2 className="text-sm font-bold text-gray-800">
                     Historial de visitas
@@ -614,7 +614,7 @@ export default function HospitalDetailPage() {
 
           {/* ── Tab: Proyectos ── */}
           {tab === "proyectos" && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                 <h2 className="text-sm font-bold text-gray-800">
                   Proyectos
@@ -690,7 +690,7 @@ export default function HospitalDetailPage() {
 
           {/* ── Tab: Timeline ── */}
           {tab === "timeline" && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50">
                 <h2 className="text-sm font-bold text-gray-800 mb-3">Actividad completa del centro</h2>
                 <div className="flex gap-1.5 flex-wrap">
@@ -737,7 +737,7 @@ export default function HospitalDetailPage() {
           {/* ── Tab: Información ── */}
           {tab === "informacion" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-50">
                   <h2 className="text-sm font-bold text-gray-800">Datos del centro</h2>
                 </div>
@@ -778,7 +778,7 @@ export default function HospitalDetailPage() {
 
           {/* Mapa */}
           {osmEmbed && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
               <iframe
                 src={osmEmbed}
                 width="100%" height="180"
@@ -799,7 +799,7 @@ export default function HospitalDetailPage() {
           )}
 
           {/* Info rápida */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3.5">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 space-y-3.5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Resumen del centro</p>
             <div className="space-y-2.5">
               {[
@@ -817,7 +817,7 @@ export default function HospitalDetailPage() {
           </div>
 
           {/* Acciones rápidas */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Acciones</p>
             <div className="space-y-2">
               <button onClick={abrirNuevaVisita} disabled={creandoVisita}
@@ -863,7 +863,7 @@ export default function HospitalDetailPage() {
       {showNuevaVisita && hospital && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisita(false) }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Nueva visita</h2>
@@ -916,7 +916,7 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Llamada rápida ── */}
       {showLlamada && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div><h2 className="text-sm font-bold text-gray-900">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
               <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
@@ -944,7 +944,7 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: QR ── */}
       {showQR && hospital && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setShowQR(false) }}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full">
             <div className="flex items-center justify-between w-full">
               <p className="font-semibold text-gray-800 text-sm">QR del hospital</p>
               <button onClick={() => setShowQR(false)} aria-label="Cerrar QR" className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 cursor-pointer"><IconX size={16} /></button>
@@ -968,7 +968,7 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Nuevo proyecto ── */}
       {showNuevoProyecto && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid #6366f1` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid #6366f1` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Nuevo proyecto</h2>
@@ -1000,7 +1000,7 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Eliminar visita ── */}
       {eliminarVisitaId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-red-600">Eliminar visita</h2>
               <p className="text-xs text-gray-500 mt-1">Esta acción no se puede deshacer. La visita y todos sus datos asociados se eliminarán permanentemente.</p>
@@ -1020,7 +1020,7 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Contacto ── */}
       {contactoModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-900">{editContacto ? "Editar contacto" : "Nuevo contacto"}</h2>
               <button onClick={() => setContactoModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>

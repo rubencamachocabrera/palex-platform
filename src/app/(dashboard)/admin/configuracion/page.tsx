@@ -60,7 +60,7 @@ function ModuleCard({
   onToggle: (v: boolean) => void; saving: boolean; icon: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-start gap-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex items-start gap-5 shadow-sm">
       <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
         style={{ backgroundColor: activo ? `${TEAL}18` : "#f3f4f6" }}>
         <span style={{ color: activo ? TEAL : "#9ca3af" }}>{icon}</span>
@@ -165,7 +165,7 @@ function PlantillasSection() {
           <p className="text-xs mt-1">Abre una visita y usa el icono de marcador en la barra de acciones para guardar una.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left">
@@ -348,7 +348,7 @@ function ModulosInlabSection() {
           Sin módulos. Añade el primero arriba.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left">
@@ -481,7 +481,7 @@ function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
       </div>
 
       {/* Umbrales de nivel */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
         <h3 className="text-sm font-semibold text-gray-700 mb-1">Umbrales de nivel</h3>
         <p className="text-xs text-gray-400 mb-4">
           Define el valor máximo de score (0–100) para cada nivel de complejidad.
@@ -516,7 +516,7 @@ function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
       </div>
 
       {/* Pesos de categorías */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-sm font-semibold text-gray-700">Pesos por categoría</h3>
           <span className="text-xs text-gray-400">Máx. posible: <span className="font-bold text-gray-600">{maxTotal} pts</span></span>
@@ -556,7 +556,7 @@ function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
       </div>
 
       {/* Reglas de alerta */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
         <h3 className="text-sm font-semibold text-gray-700 mb-1">Reglas de alerta</h3>
         <p className="text-xs text-gray-400 mb-4">
           Activa o desactiva cada regla y ajusta su nivel de gravedad.

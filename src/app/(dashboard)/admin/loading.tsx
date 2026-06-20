@@ -26,7 +26,7 @@ export default function AdminLoading() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
         {/* Cabecera */}
         <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
           {Array.from({ length: 4 }).map((_, i) => (

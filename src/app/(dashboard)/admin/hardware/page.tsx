@@ -69,7 +69,7 @@ function fmtTamano(bytes: number) {
 
 // ─── Shared classes ───────────────────────────────────────────────────────────
 
-const INPUT_CLS = "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white transition-colors placeholder:text-gray-300"
+const INPUT_CLS = "w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 dark:text-gray-200 transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-500"
 const ringStyle = { "--tw-ring-color": TEAL } as React.CSSProperties
 
 // ─── Iconos inline ────────────────────────────────────────────────────────────
@@ -469,7 +469,7 @@ function TiposModal({ tipos, onClose, onTiposChanged }: {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
             <div>
@@ -746,7 +746,7 @@ function UnidadesModal({ item, onClose, onChanged }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0">
           {item.tipo && (
@@ -1096,7 +1096,7 @@ function InventarioTab({ tipos }: { tipos: HardwareTipo[] }) {
       ) : filtradas.length === 0 ? (
         <div className="text-center py-14 text-gray-400 text-sm">Sin unidades registradas</div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">

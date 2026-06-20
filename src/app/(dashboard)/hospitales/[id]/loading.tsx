@@ -27,7 +27,7 @@ export default function HospitalDetalleLoading() {
       </div>
 
       {/* Contenido tab */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="border-b border-gray-50 last:border-0">
             <SkeletonRow />

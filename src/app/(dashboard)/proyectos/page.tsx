@@ -93,7 +93,7 @@ function IconGrip() {
 
 function KpiCard({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
       <p className="text-sm text-gray-500">{label}</p>
       <p className="text-3xl font-bold mt-1" style={{ color: color ?? "#111827" }}>{value}</p>
     </div>
@@ -144,7 +144,7 @@ function KanbanCard({ item }: { item: Proyecto }) {
     : undefined
   return (
     <div ref={setNodeRef} style={style} className={`group ${isDragging ? "opacity-25" : ""}`}>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-teal-200 transition-all">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 hover:border-teal-200 transition-all">
         <div className="flex items-center justify-between mb-2">
           <div
             {...listeners} {...attributes}
@@ -241,7 +241,7 @@ function ModalCrear({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">Nuevo Proyecto</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50">
@@ -597,7 +597,7 @@ export default function ProyectosPage() {
                 <Link
                   key={item.id}
                   href={`/proyectos/${item.id}`}
-                  className="block bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-teal-200 hover:shadow-md transition-all group"
+                  className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 hover:border-teal-200 hover:shadow-md transition-all group"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="flex-1 min-w-0">

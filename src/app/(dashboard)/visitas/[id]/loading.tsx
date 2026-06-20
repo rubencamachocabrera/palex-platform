@@ -2,9 +2,9 @@ import { Skeleton, SkeletonFormSection } from "@/components/ui/Skeleton"
 
 export default function VisitaLoading() {
   return (
-    <div className="min-h-screen bg-gray-50 animate-in fade-in duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-in fade-in duration-300">
       {/* Header fijo */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 sm:px-8 py-4 flex items-center gap-4">
+      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 sm:px-8 py-4 flex items-center gap-4">
         <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
         <div className="flex-1 space-y-1.5">
           <Skeleton className="h-5 w-48" />
@@ -29,7 +29,7 @@ export default function VisitaLoading() {
 
       {/* Sección del formulario */}
       <div className="px-4 sm:px-8 pb-32">
-        <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
           <SkeletonFormSection />
           <div className="border-t border-gray-50 px-6 pb-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">

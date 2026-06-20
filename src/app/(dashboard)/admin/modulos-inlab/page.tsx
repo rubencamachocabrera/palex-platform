@@ -105,7 +105,7 @@ export default function ModulosInlabPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Módulos INLAB</h1>
+          <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Módulos INLAB</h1>
           <p className="text-sm text-gray-400 mt-0.5">
             {modulos.length} módulo{modulos.length !== 1 ? "s" : ""} definido{modulos.length !== 1 ? "s" : ""}
           </p>
@@ -123,7 +123,7 @@ export default function ModulosInlabPage() {
       {mostrarForm && (
         <form
           onSubmit={crear}
-          className="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-end"
+          className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-end"
         >
           <div className="flex-1 w-full">
             <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -135,7 +135,7 @@ export default function ModulosInlabPage() {
               value={nuevoNombre}
               onChange={e => setNuevoNombre(e.target.value)}
               placeholder="Ej: Sistema de Gestión de Peticiones Analíticas"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2"
               style={{ ["--tw-ring-color" as string]: TEAL }}
             />
             {formError && <p className="text-xs text-red-500 mt-1">{formError}</p>}
@@ -152,7 +152,7 @@ export default function ModulosInlabPage() {
       )}
 
       {/* Lista */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
           <p className="text-sm text-gray-400 p-6">Cargando...</p>
         ) : modulos.length === 0 ? (
@@ -163,7 +163,7 @@ export default function ModulosInlabPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
-              <thead className="border-b border-gray-100 bg-gray-50">
+              <thead className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <tr>
                   {["Módulo", "Proyectos", "Estado", "Acciones"].map(h => (
                     <th
@@ -177,8 +177,8 @@ export default function ModulosInlabPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {modulos.map(m => (
-                  <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-4 font-medium text-gray-800">
+                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <td className="px-5 py-4 font-medium text-gray-800 dark:text-gray-100">
                       <span
                         title={m.nombre}
                         className="block max-w-[260px] truncate"
@@ -248,21 +248,21 @@ export default function ModulosInlabPage() {
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setRenameModal(null) }}
         >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-1">Renombrar módulo</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">Renombrar módulo</h2>
             <p className="text-xs text-gray-400 mb-4 truncate">{renameModal.nombre}</p>
             <input
               autoFocus
               value={renameNombre}
               onChange={e => setRenameNombre(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") renombrar(); if (e.key === "Escape") setRenameModal(null) }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 mb-5"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 mb-5"
               style={{ ["--tw-ring-color" as string]: TEAL }}
             />
             <div className="flex gap-3">
               <button
                 onClick={() => setRenameModal(null)}
-                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar
               </button>

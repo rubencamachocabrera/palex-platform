@@ -273,7 +273,7 @@ export default function ProyectoDetalle() {
       </nav>
 
       {/* Header card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 mb-5">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -391,7 +391,7 @@ export default function ProyectoDetalle() {
       {showNuevaVisitaModal && pp && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisitaModal(false) }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <p className="text-sm font-bold text-gray-900">Nueva visita</p>
@@ -485,7 +485,7 @@ function TabInfo({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => vo
 
   return (
     <>
-    <form onSubmit={guardar} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <form onSubmit={guardar} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 space-y-5">
       <div className="grid sm:grid-cols-2 gap-5">
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Título</label>
@@ -1266,7 +1266,7 @@ function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =
                 <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[22px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm z-10"
                     style={{ backgroundColor: s.dot }} />
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -2107,7 +2107,7 @@ function TabContactos({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) 
   return (
     <div className="space-y-5">
       {/* Contactos vinculados */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900">
             Contactos del proyecto
@@ -2218,7 +2218,7 @@ function TabContactos({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) 
 
       {/* Contactos del hospital disponibles para vincular */}
       {disponibles.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">
             Otros contactos del hospital
             <span className="ml-1.5 text-gray-400 font-normal">— vincular directamente</span>
@@ -2645,7 +2645,7 @@ function TabAdjuntos({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) =
           {adjuntos.map(adj => {
             const ct = colorTipo(adj.tipo)
             return (
-              <div key={adj.id} className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-3 hover:border-gray-200 transition-colors group">
+              <div key={adj.id} className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-3 hover:border-gray-200 transition-colors group">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-bold" style={{ backgroundColor: ct.bg, color: ct.color }}>
                   {ct.label}
                 </div>
@@ -2756,7 +2756,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
       {/* ── KPIs row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* Health + ring */}
-        <div className="sm:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4"
+        <div className="sm:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 flex items-center gap-4"
           style={{ borderTop: `3px solid ${HM.color}` }}>
           <div className="relative shrink-0 w-20 h-20">
             <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
@@ -2784,7 +2784,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
         </div>
 
         {/* Tiempo */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Tiempo</p>
           {diasPlan !== null ? (
             <>
@@ -2798,7 +2798,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
         </div>
 
         {/* Hardware */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Hardware</p>
           <p className="text-2xl font-bold text-gray-900">{pp.hardwareUnidades.length}</p>
           <p className="text-[11px] text-gray-400 mt-0.5">
@@ -2816,7 +2816,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
       </div>
 
       {/* ── Progress bars ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 space-y-4">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Avance por sección</p>
         <PBar value={pctFases}  label="Fases"  sub={`${fasesOk}/${totalFases} completadas`}   color={pctFases>=70?"#16a34a":pctFases>=40?TEAL:"#9ca3af"}/>
         <PBar value={pctTareas} label="Tareas" sub={`${tareasOk}/${totalTareas} completadas`} color={pctTareas>=70?"#16a34a":pctTareas>=40?TEAL:"#9ca3af"}/>
@@ -2825,7 +2825,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
 
       {/* ── Ruta crítica ── */}
       {ca.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-50">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -2854,7 +2854,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
 
       {/* ── Equipo + Visitas ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Equipo del proyecto</p>
           <div className="space-y-2.5">
             {pp.responsable && (
@@ -2876,7 +2876,7 @@ function TabCockpit({ pp, onChangeTab }: { pp: Proyecto; onChangeTab: (t: Tab) =
             {pp.contactos.length === 0 && !pp.responsable && <p className="text-sm text-gray-300">Sin equipo asignado</p>}
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Últimas visitas</p>
             {pp.visitas.length > 0 && (
@@ -3475,7 +3475,7 @@ ${pp.mapaHtml ? `<div class="map-page">
           const isRetrasado = pp.fechaFinPlan && new Date(pp.fechaFinPlan) < new Date()
             && pp.estado !== "COMPLETADO" && pp.estado !== "CANCELADO"
           return (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden print:hidden">
               {/* Gradient accent bar */}
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${TEAL} 0%, ${ORANGE} 100%)` }} />
               <div className="p-6">
@@ -3591,7 +3591,7 @@ ${pp.mapaHtml ? `<div class="map-page">
         })()}
 
         {/* Header card — solo impresión */}
-        <div className="hidden print:block bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="hidden print:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -3635,7 +3635,7 @@ ${pp.mapaHtml ? `<div class="map-page">
             { label: "Visitas",   val: `${pp.visitas.length}`,              sub: `${visitasOK} completadas`,                                                                  color: "#0369a1" },
             { label: "Duración",  val: duracionDias ? `${duracionDias} d` : "—", sub: duracionDias ? "días planificados" : (pp.fechaFinReal ? "Entregado" : "Sin fechas"),    color: ORANGE },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div key={k.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
               <div className="h-1 w-full" style={{ backgroundColor: k.color }} />
               <div className="p-5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{k.label}</p>
@@ -3660,7 +3660,7 @@ ${pp.mapaHtml ? `<div class="map-page">
 
         {/* Map */}
         {pp.mapaHtml ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             {/* Map toolbar */}
             <div
               className={`px-5 py-3 flex items-center justify-between print:hidden bg-gray-50/60 transition-colors ${mapaExpanded ? "border-b border-gray-100" : ""}`}>
@@ -3801,7 +3801,7 @@ ${pp.mapaHtml ? `<div class="map-page">
         {/* ── Hospital (enriquecido) + Contactos ───────────────────── */}
         <div className="grid sm:grid-cols-2 gap-4">
           {/* Hospital card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between" style={{ backgroundColor: `${TEAL}06` }}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${TEAL}18` }}>
@@ -3861,7 +3861,7 @@ ${pp.mapaHtml ? `<div class="map-page">
           </div>
 
           {/* Contactos */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#f8fafc" }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-purple-50">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -3910,7 +3910,7 @@ ${pp.mapaHtml ? `<div class="map-page">
 
         {/* ── Hardware table ────────────────────────────────────────── */}
         {pp.hardwareUnidades.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#faf5ff" }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-purple-100">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -3980,7 +3980,7 @@ ${pp.mapaHtml ? `<div class="map-page">
 
         {/* ── Visitas ───────────────────────────────────────────────── */}
         {pp.visitas.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: "#f0f9ff" }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-blue-100">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -4017,7 +4017,7 @@ ${pp.mapaHtml ? `<div class="map-page">
 
         {/* ── FASES (al final, como solicitado) ─────────────────────── */}
         {pp.fases.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2.5" style={{ backgroundColor: `${TEAL}06` }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${TEAL}18` }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -4070,13 +4070,13 @@ ${pp.mapaHtml ? `<div class="map-page">
         {(pp.descripcion || pp.notas) && (
           <div className="grid sm:grid-cols-2 gap-4">
             {pp.descripcion && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción</p>
                 <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{pp.descripcion}</p>
               </div>
             )}
             {pp.notas && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Notas internas</p>
                 <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{pp.notas}</p>
               </div>
@@ -4095,7 +4095,7 @@ ${pp.mapaHtml ? `<div class="map-page">
       {shareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           onClick={e => { if (e.target === e.currentTarget) setShareModal(false) }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             {/* Header */}
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-start justify-between">

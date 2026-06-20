@@ -18,7 +18,7 @@ export default function DashboardLoading() {
 
       {/* Contenido principal */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 space-y-3">
           <Skeleton className="h-4 w-32" />
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 py-2">
@@ -30,7 +30,7 @@ export default function DashboardLoading() {
             </div>
           ))}
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 space-y-3">
           <Skeleton className="h-4 w-28" />
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 py-2">

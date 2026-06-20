@@ -288,7 +288,7 @@ export default function HospitalesAdminPage() {
 
   const f = (k: keyof typeof FORM_EMPTY, v: string | boolean) => setForm(prev => ({ ...prev, [k]: v }))
 
-  const INPUT = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent bg-white transition-shadow"
+  const INPUT = "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-800 transition-shadow"
   const RING = { "--tw-ring-color": TEAL } as React.CSSProperties
 
   return (
@@ -466,7 +466,7 @@ export default function HospitalesAdminPage() {
 
       {/* Tabla / contenido */}
       {loading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-gray-50 bg-gray-50">
             {["Hospital", "Zona", "Tipo", "Camas", "Visitas", "Acciones"].map(h => (
               <p key={h} className={`text-xs font-semibold text-gray-300 uppercase tracking-wider ${h === "Acciones" ? "col-span-2 text-right" : h === "Camas" || h === "Visitas" ? "col-span-1" : "col-span-2 " + (h === "Hospital" ? "col-span-4" : "")}`}>{h}</p>
@@ -498,7 +498,7 @@ export default function HospitalesAdminPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           {/* Header tabla */}
           <div className="grid grid-cols-12 gap-2 px-5 py-3 border-b border-gray-100 bg-gray-50/80">
             <p className="col-span-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Hospital</p>
@@ -647,7 +647,7 @@ export default function HospitalesAdminPage() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
             {/* Header modal */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">

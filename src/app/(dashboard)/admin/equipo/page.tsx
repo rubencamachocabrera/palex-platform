@@ -82,7 +82,7 @@ export default async function EquipoPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Panel del equipo</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Panel del equipo</h1>
         <p className="text-sm text-gray-400 mt-0.5">{equipo.length} usuarios activos · vista de actividad y carga de trabajo</p>
       </div>
 
@@ -94,7 +94,7 @@ export default async function EquipoPage() {
           { label: "Tareas vencidas",     value: String(totalVencidas),     color: totalVencidas > 0 ? "#dc2626" : "#16a34a", sub: "sin completar" },
           { label: "Pipeline del equipo", value: fmtEuros(totalValorOps),   color: ORANGE,    sub: "valor activo total" },
         ].map(k => (
-          <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm" style={{ borderTop: `3px solid ${k.color}` }}>
+          <div key={k.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm" style={{ borderTop: `3px solid ${k.color}` }}>
             <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             <p className="text-xs font-semibold text-gray-700 mt-1">{k.label}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">{k.sub}</p>
@@ -103,8 +103,8 @@ export default async function EquipoPage() {
       </div>
 
       {/* Tabla de equipo */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60 dark:bg-gray-800/60">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actividad individual</p>
         </div>
         <div className="divide-y divide-gray-50">
@@ -113,7 +113,7 @@ export default async function EquipoPage() {
             const dias = diasDesde(u.ultimaActividad)
             const inactivo = dias === null || dias > 14
             return (
-              <div key={u.id} className="px-5 py-4 hover:bg-gray-50/40 transition-colors">
+              <div key={u.id} className="px-5 py-4 hover:bg-gray-50/40 dark:hover:bg-gray-800/40 transition-colors">
                 <div className="flex items-start gap-4">
                   {/* Avatar */}
                   <div className="relative shrink-0">
@@ -128,7 +128,7 @@ export default async function EquipoPage() {
                   {/* Info principal */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-900">{u.nombre}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{u.nombre}</p>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: rc.bg, color: rc.text }}>
                         {ROL_LABEL[u.rol] ?? u.rol}
                       </span>
@@ -146,7 +146,7 @@ export default async function EquipoPage() {
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                         </svg>
-                        <span className="font-semibold text-gray-800">{u.visitasMes}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{u.visitasMes}</span>
                         <span className="text-gray-400">visitas este mes</span>
                         {u.trend !== null && (
                           <span className={`font-bold text-[10px] ${u.trend > 0 ? "text-green-600" : u.trend < 0 ? "text-red-500" : "text-gray-400"}`}>
@@ -159,7 +159,7 @@ export default async function EquipoPage() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                           </svg>
-                          <span className="font-semibold text-gray-800">{u.proyectosActivos}</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-200">{u.proyectosActivos}</span>
                           <span className="text-gray-400">proyecto{u.proyectosActivos>1?"s":""} activo{u.proyectosActivos>1?"s":""}</span>
                         </div>
                       )}
@@ -168,7 +168,7 @@ export default async function EquipoPage() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                           </svg>
-                          <span className="font-semibold text-gray-800">{fmtEuros(u.oportunidades.valor)}</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-200">{fmtEuros(u.oportunidades.valor)}</span>
                           <span className="text-gray-400">pipeline</span>
                         </div>
                       )}
@@ -184,7 +184,7 @@ export default async function EquipoPage() {
                     {u.visitasRecientes.length > 0 && (
                       <div className="flex gap-1.5 mt-2 flex-wrap">
                         {u.visitasRecientes.map(v => (
-                          <span key={v.fecha.toString()} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full truncate max-w-[120px]">
+                          <span key={v.fecha.toString()} className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full truncate max-w-[120px]">
                             {v.hospital.nombre}
                           </span>
                         ))}
@@ -206,8 +206,8 @@ export default async function EquipoPage() {
 
       {/* Actividad reciente del equipo */}
       {visitasRecientes.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60 dark:bg-gray-800/60">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actividad reciente (últimos 7 días)</p>
           </div>
           <div className="divide-y divide-gray-50">
@@ -217,7 +217,7 @@ export default async function EquipoPage() {
                 <div key={i} className="flex items-center gap-3 px-5 py-3">
                   <span className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: v.estado === "COMPLETADA" ? "#16a34a" : v.estado === "BORRADOR" ? "#f59e0b" : "#9ca3af" }} />
-                  <span className="text-xs font-medium text-gray-700 flex-1 truncate">{v.hospital.nombre}</span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1 truncate">{v.hospital.nombre}</span>
                   <span className="text-[10px] text-gray-400 shrink-0">{user?.nombre.split(" ")[0]}</span>
                   <span className="text-[10px] text-gray-300 shrink-0">{new Date(v.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</span>
                 </div>

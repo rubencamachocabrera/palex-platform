@@ -354,7 +354,7 @@ export default function VisitasPage() {
             { label: "Última visita", value: ultimaFecha ? fechaRelativa(ultimaFecha) : "—", color: "#6366f1", bg: "#eef2ff",
               icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div key={k.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm px-4 py-3 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: k.bg, color: k.color }}>{k.icon}</div>
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-none truncate" style={{ color: typeof k.value === "number" && k.value === 0 ? "#9ca3af" : k.color }}>{k.value}</p>
@@ -489,11 +489,11 @@ export default function VisitasPage() {
       {/* ── LISTA ── */}
       <div className="space-y-1">
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-50">
             {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         ) : filtradas.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
             <EmptyState
               icon={busqueda ? "search" : "document"}
               title={busqueda ? `Sin resultados para "${busqueda}"` : filtroEstado === "TODOS" ? "No hay visitas registradas" : `No hay visitas "${ESTADO[filtroEstado]?.label ?? filtroEstado}"`}
@@ -511,7 +511,7 @@ export default function VisitasPage() {
                 <div className="flex-1 h-px bg-gray-100 ml-1" />
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50/80">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden divide-y divide-gray-50/80">
                 {items.map(v => {
                   const est = ESTADO[v.estado]
                   const tipoC = TIPO_CONFIG[v.tipo]

@@ -284,14 +284,14 @@ export function CommandPalette() {
 
       {/* Panel */}
       <div
-        className="fixed left-1/2 top-[15%] z-50 w-full max-w-xl -translate-x-1/2 rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden"
+        className="fixed left-1/2 top-[15%] z-50 w-full max-w-xl -translate-x-1/2 rounded-2xl bg-white dark:bg-[#1e293b] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden"
         role="dialog"
         aria-modal
         aria-label="Búsqueda global"
       >
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
-          <span className="text-gray-300 shrink-0"><IcoSearch /></span>
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-700">
+          <span className="text-gray-300 dark:text-gray-500 shrink-0"><IcoSearch /></span>
           <input
             ref={inputRef}
             type="text"
@@ -299,7 +299,7 @@ export function CommandPalette() {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Buscar hospitales, visitas, proyectos, páginas..."
-            className="flex-1 text-sm text-gray-800 placeholder-gray-400 bg-transparent outline-none"
+            className="flex-1 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent outline-none"
           />
           {cargando && (
             <div
@@ -307,7 +307,7 @@ export function CommandPalette() {
               style={{ borderTopColor: TEAL }}
             />
           )}
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-400 text-[10px] font-mono shrink-0">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-400 text-[10px] font-mono shrink-0">
             ESC
           </kbd>
         </div>
@@ -336,7 +336,7 @@ export function CommandPalette() {
                     onClick={() => item.onSelect?.()}
                     onMouseEnter={() => setIndiceActivo(idx)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                    style={{ backgroundColor: activo ? "#F9FAFB" : "transparent" }}
+                    style={{ backgroundColor: activo ? "var(--cp-hover, #F9FAFB)" : "transparent" }}
                   >
                     <span
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -345,7 +345,7 @@ export function CommandPalette() {
                       {item.icono}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{item.titulo}</p>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{item.titulo}</p>
                       {item.subtitulo && (
                         <p className="text-xs text-gray-400 truncate">{item.subtitulo}</p>
                       )}
@@ -367,17 +367,17 @@ export function CommandPalette() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 bg-gray-50/60">
+        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60">
           <span className="flex items-center gap-1 text-[11px] text-gray-400">
-            <kbd className="px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 font-mono text-[10px]">↑↓</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 font-mono text-[10px]">↑↓</kbd>
             navegar
           </span>
           <span className="flex items-center gap-1 text-[11px] text-gray-400">
-            <kbd className="px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 font-mono text-[10px]">↵</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 font-mono text-[10px]">↵</kbd>
             abrir
           </span>
           <span className="flex items-center gap-1 text-[11px] text-gray-400">
-            <kbd className="px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 font-mono text-[10px]">ESC</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 font-mono text-[10px]">ESC</kbd>
             cerrar
           </span>
         </div>

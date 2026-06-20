@@ -69,7 +69,7 @@ const INPUT = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text
 // ── Section card ───────────────────────────────────────────────────────────────
 function SectionCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "#f0fdfa", color: TEAL }}>
           {icon}
@@ -180,7 +180,7 @@ export default function PerfilPage() {
     <div className="max-w-2xl mx-auto space-y-5">
 
       {/* ── Identity card ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
         <div className="flex items-center gap-5">
           {/* Avatar */}
           <div className="relative shrink-0">

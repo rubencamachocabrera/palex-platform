@@ -218,7 +218,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
       {/* Fila 1: KPIs de estado */}
       <div className="stagger-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {kpis1.map(k => (
-          <div key={k.label} className="card-hover bg-white rounded-2xl border border-gray-100 p-5 shadow-sm" style={{ borderTop: `3px solid ${k.color}` }}>
+          <div key={k.label} className="card-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm" style={{ borderTop: `3px solid ${k.color}` }}>
             <p className="text-3xl font-bold number-reveal" style={{ color: k.color }}>{k.value}</p>
             <p className="text-xs font-medium text-gray-500 mt-1">{k.label}</p>
           </div>
@@ -227,17 +227,17 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
 
       {/* Fila 2: KPIs financieros */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Valor total parque</p>
           <p className="text-2xl font-bold text-gray-900">{valorTotal > 0 ? fmtEuros(valorTotal) : "—"}</p>
           <p className="text-xs text-gray-400 mt-0.5">coste total inventario</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Valor en campo</p>
           <p className="text-2xl font-bold" style={{ color: TEAL }}>{valorEnCampo > 0 ? fmtEuros(valorEnCampo) : "—"}</p>
           <p className="text-xs text-gray-400 mt-0.5">hardware instalado en clientes</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Utilización</p>
           <div className="flex items-end gap-2">
             <p className="text-2xl font-bold text-gray-900">{pctUtil}%</p>
@@ -249,7 +249,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
           </div>
           <p className="text-xs text-gray-400 mt-0.5">{asignados} de {total} unidades asignadas</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Antigüedad media</p>
           <p className="text-2xl font-bold text-gray-900">{antigMediaMeses > 0 ? `${antigMediaMeses}m` : "—"}</p>
           <p className="text-xs text-gray-400 mt-0.5">parque instalado · {pctCobertura}% con garantía</p>
@@ -258,7 +258,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
 
       {/* Fila 3: Donut + Top hospitales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-700 mb-4">Estado del parque</h3>
           <DonutChart
             total={total}
@@ -272,7 +272,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
           />
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-700">Top clientes por equipamiento</h3>
             <button onClick={() => onTabChange("instalaciones")} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>Ver todos</button>
@@ -301,7 +301,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
       </div>
 
       {/* Fila 4: Calendario 12 meses garantías */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-700">Vencimientos de garantía — próximos 12 meses</h3>
@@ -331,7 +331,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
 
       {/* Fila 5: Garantías próximas + catálogo */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-700">Garantías próximas a vencer</h3>
             {garantiaProxima.length > 0 && (
@@ -366,7 +366,7 @@ function ResumenTab({ unidades, catalogo, onTabChange }: {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-700">Catálogo de modelos</h3>
             <button onClick={() => onTabChange("materiales")} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>Gestionar materiales</button>
@@ -461,15 +461,15 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
     <div className="space-y-4">
       {/* Resumen rápido */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 text-center">
           <p className="text-2xl font-bold text-gray-900">{Object.keys(byHosp).length}</p>
           <p className="text-xs text-gray-500 mt-0.5">Hospitales con hardware</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 text-center">
           <p className="text-2xl font-bold" style={{ color: TEAL }}>{totalInstalado}</p>
           <p className="text-xs text-gray-500 mt-0.5">Unidades instaladas</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 text-center">
           <p className="text-2xl font-bold text-gray-900">{totalValor > 0 ? fmtEuros(totalValor) : "—"}</p>
           <p className="text-xs text-gray-500 mt-0.5">Valor total en campo</p>
         </div>
@@ -498,7 +498,7 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
 
       {/* Cards hospitales */}
       {hospitalesData.length === 0 ? (
-        <div className="text-center py-14 bg-white rounded-2xl border border-gray-100">
+        <div className="text-center py-14 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
           <p className="text-sm font-medium text-gray-600">{Object.keys(byHosp).length === 0 ? "Sin hardware asignado a hospitales" : "Sin resultados para los filtros"}</p>
         </div>
       ) : (
@@ -512,7 +512,7 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
               const d = diasHasta(u.fechaGarantia); return (d !== null && d <= 30) || u.estado === "EN_MANTENIMIENTO" || u.estado === "BAJA"
             }).length
             return (
-              <div key={hospital.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={hospital.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <div
                   className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
                   onClick={() => setExpandido(isOpen ? null : hospital.id)}>
@@ -602,7 +602,7 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
 
       {/* En proyecto */}
       {enProyecto.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">En proyecto ({enProyecto.length})</h3>
           <div className="space-y-1.5">
             {enProyecto.map(u => (
@@ -1008,7 +1008,7 @@ function CatTiposModal({ tipos, onClose, onChanged }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0" style={{ borderTop: `3px solid ${TEAL}` }}>
           <div>
             <h2 className="text-base font-bold text-gray-900">Tipos de hardware</h2>
@@ -1149,7 +1149,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
           {unidad.catalogo.tipo && (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white shrink-0"
@@ -1515,7 +1515,7 @@ function NuevaUnidadModal({ catalogo, onClose, onCreated }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
         style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
@@ -2025,7 +2025,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
           { label: "Disponibles",          value: `${totalDisp} (${pctDisp}%)`,                  sub: `${totalAsig} asignadas a clientes`,                  color: "#16a34a" },
           { label: "Valor de la flota",    value: valorFlota > 0 ? fmtEuros(valorFlota) : "—",  sub: "coste acumulado de unidades",                       color: "#f59e0b" },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm" style={{ borderTop: `3px solid ${s.color}` }}>
+          <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm" style={{ borderTop: `3px solid ${s.color}` }}>
             <p className="text-xl font-bold leading-none" style={{ color: s.color }}>{s.value}</p>
             <p className="text-xs font-semibold text-gray-700 mt-1.5">{s.label}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
@@ -2166,7 +2166,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
       {/* ══ VISTA: POR MODELO ══════════════════════════════════════════════════ */}
       {vista === "modelos" && (
         catalogoFiltrado.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 text-center">
+          <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300"><IcoBox /></div>
             <h3 className="text-base font-bold text-gray-700 mb-1">{busqueda || filtroTipoId ? "Sin resultados" : "Catálogo vacío"}</h3>
             <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
@@ -2224,7 +2224,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
               </>
             ) : (
               /* Vista lista de modelos */
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/60">
@@ -2276,13 +2276,13 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
       {/* ══ VISTA: TODAS LAS UNIDADES ══════════════════════════════════════════ */}
       {vista === "unidades" && (
         unidadesOrdenadas.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 text-center">
+          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-200 text-gray-300"><IcoBox /></div>
             <p className="text-sm font-semibold text-gray-600">{unidades.length === 0 ? "Sin unidades registradas" : "Sin resultados para los filtros activos"}</p>
             {unidades.length === 0 && <button onClick={() => setNuevaUnidad(true)} className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer" style={{ backgroundColor: ORANGE }}><IcoPlus /> Nueva unidad</button>}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -2443,7 +2443,7 @@ function AlertasTab({ unidades, onUpdated }: {
 
   if (totalAlertas === 0) {
     return (
-      <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+      <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
         <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: `${TEAL}18` }}>
           <IcoCheck />
         </div>
@@ -2464,7 +2464,7 @@ function AlertasTab({ unidades, onUpdated }: {
       return (new Date(fa ?? "9999").getTime()) - (new Date(fb ?? "9999").getTime())
     })
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100" style={{ borderLeft: `4px solid ${color}` }}>
           <span style={{ color }}><IcoWarning /></span>
           <h3 className="text-sm font-semibold text-gray-800">{titulo}</h3>

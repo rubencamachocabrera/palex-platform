@@ -26,7 +26,7 @@ const ROL_CONFIG: Record<Rol, RolConfig> = {
   TECNICO:   { label: "Técnico",   dot: "#0ea5e9", bg: "#f0f9ff", text: "#0369a1" },
 }
 
-const INPUT = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent bg-white transition-shadow"
+const INPUT = "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-800 transition-shadow"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -500,7 +500,7 @@ export default function UsuariosPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
 
         {/* Table header */}
         <div className="grid grid-cols-12 items-center gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
@@ -643,7 +643,7 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) { setMostrarForm(false); setFormError("") } }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -781,7 +781,7 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setEditModal(null) }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -888,7 +888,7 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setZonaModal(null) }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">

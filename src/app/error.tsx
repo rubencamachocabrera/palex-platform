@@ -7,6 +7,7 @@
  */
 
 import { useEffect } from "react"
+import * as Sentry from "@sentry/nextjs"
 
 interface ErrorPageProps {
   error: Error & { digest?: string }
@@ -15,8 +16,7 @@ interface ErrorPageProps {
 
 export default function GlobalError({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // En producción se podría enviar el error a Sentry aquí
-    console.error("[Palex Error]", error)
+    Sentry.captureException(error)
   }, [error])
 
   return (

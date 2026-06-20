@@ -197,7 +197,7 @@ export default function CalendarioPage() {
       <div className="flex gap-5 items-start">
 
         {/* Calendario */}
-        <div className="flex-1 bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
 
           {/* Navegación de mes */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -302,7 +302,7 @@ export default function CalendarioPage() {
 
         {/* Panel lateral — visitas del día seleccionado */}
         {diaSeleccionado && (
-          <div className="w-72 bg-white rounded-2xl border border-gray-100 flex flex-col overflow-hidden shrink-0">
+          <div className="w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden shrink-0">
 
             {/* Header panel */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">

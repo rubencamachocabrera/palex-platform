@@ -31,7 +31,7 @@ function zonaColor(nombre: string): { bg: string; ring: string; text: string } {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-xl skeleton-shimmer shrink-0" />
         <div className="flex-1 space-y-2 pt-1">
@@ -183,7 +183,7 @@ export default function ZonasPage() {
             bg: "#FEF3C7",
           },
         ].map(k => (
-          <div key={k.label} className="bg-white rounded-xl border border-gray-100 px-4 py-3.5 shadow-sm flex items-center gap-3">
+          <div key={k.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3.5 shadow-sm flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
               style={{ backgroundColor: k.bg, color: k.color }}>
               {k.icon}
@@ -218,7 +218,7 @@ export default function ZonasPage() {
           {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtradas.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center shadow-sm">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: "#E0F7F5" }}>
             <IconZona size={24} />
           </div>
@@ -247,7 +247,7 @@ export default function ZonasPage() {
             const pct   = totalHospitales > 0 ? Math.round((hosp / totalHospitales) * 100) : 0
             return (
               <div key={z.id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col overflow-hidden group">
+                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col overflow-hidden group">
 
                 {/* Franja de color superior */}
                 <div className="h-1.5 w-full" style={{ backgroundColor: col.ring }} />
@@ -341,7 +341,7 @@ export default function ZonasPage() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onMouseDown={e => { if (e.target === e.currentTarget) cerrar() }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in scale-in duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md animate-in scale-in duration-150">
             {/* Cabecera modal */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
