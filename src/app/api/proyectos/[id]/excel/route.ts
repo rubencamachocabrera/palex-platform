@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 import * as XLSX from "xlsx"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/excel")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
