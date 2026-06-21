@@ -273,12 +273,23 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - PWA: manifest + SW (network-first) + IndexedDB
 - BD optimizada: connection pooling max:20, 15 indices en FKs frecuentes
 - Frontend perf: SWR usePerfil() compartido (10 paginas), polling reducido 60% (heartbeat 15s, data 10s)
+- Validacion: Zod v4 schemas centralizados (schemas.ts) + rate limiting en ~50 rutas API
+- Code splitting: proyectos/[id] de 4902→300 lineas, 10 tabs lazy con next/dynamic
+- Modales scroll safety: ~20 modales con overflow-y-auto + my-auto (nunca se cortan)
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Deuda tecnica resuelta:** XSS sandbox, IDOR 5 rutas, dark mode, Tarea FK, JWT maxAge, CSP, HSTS, brute-force, pooling, indices. Unica pendiente: `/datos` es mockup (Sprint 14 aplazado).
+**Deuda tecnica resuelta:** XSS sandbox, IDOR 5 rutas, dark mode, Tarea FK, JWT maxAge, CSP, HSTS, brute-force, pooling, indices, validacion Zod, rate limiting global, code splitting. Unica pendiente: `/datos` es mockup (Sprint 14 aplazado).
 
-**Pendiente: Ver AGENTS.md seccion 9 (roadmap corporativo fases 3-9 + backlog).**
+**Pendiente concreto:**
+- F5 Object storage (~2-3d): migrar fotos/adjuntos de base64 en DB a R2/S3 — necesita elegir proveedor
+- bodyParser size limits en next.config.ts (menor)
+- Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad (menor)
+- Formulario visita: useReducer o estado por seccion + React.memo (menor)
+- `/datos` es 100% mockup — sin APIs reales (Sprint 14 aplazado)
+- Notificaciones por email (Resend o similar) — backlog
+- Notificaciones push movil (VAPID + FCM/OneSignal) — backlog
+- Offline completo: crear registros sin conexion — backlog
 
 **Roadmap corporativo (auditoria junio 2026) — ~2-3 dias restantes:**
 - ~~F1 Seguridad critica — COMPLETADA~~
