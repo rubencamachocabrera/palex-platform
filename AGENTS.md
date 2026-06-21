@@ -397,11 +397,12 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Brand tokens en brand.ts (TEAL, ORANGE — importar, NO hardcodear)
 - SVG icons en todo (NO emojis)
 - EmptyState + Skeleton shimmer en todas las listas
-- Rate limiting in-memory
+- Rate limiting in-memory (14 rutas API) + brute-force login (5 intentos/min por IP)
 - Cache-Control HTTP en APIs de lectura
 - Error boundaries (error.tsx) en 15 rutas + global-error.tsx con Sentry
 - Sentry error tracking: client/server/edge configs, instrumentation.ts, captureException en boundaries
 - Seguridad: IDOR zona+responsable, mass assignment whitelist, crypto tokens, iframe sandbox
+- Seguridad headers: CSP (sin unsafe-eval), HSTS 1 año, X-Frame-Options DENY, nosniff, referrer-policy
 - Presencia colaborativa in-memory (presence.ts) — sin dependencias externas
 - PWA: manifest + SW + IndexedDB
 - Dark mode completo: containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
@@ -411,6 +412,13 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Animaciones: skeleton-shimmer, stagger-grid (KPIs, hospital cards), card-hover lift, stagger-nav
 - Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
 - Playwright E2E: auth setup, visitas (5 tests), proyectos (4 tests), navegacion (9 tests), mobile viewport
+- JWT sesion: maxAge 7 dias, estrategia stateless
+- Tarea.asignadoAId: FK a Usuario (select dropdown, fallback legacy asignadoA String)
+
+### Hardening corporativo (auditoria junio 2026)
+- Connection pooling: PrismaPg max:20 conexiones (evita agotamiento pool Railway)
+- 15 indices DB en FKs frecuentes: Hospital[zonaId], Contacto[hospitalId], Visita[hospitalId,usuarioId,fecha], Proyecto[hospitalId,responsableId], FaseProyecto, Tarea, Hito, EntradaTimeline, SolicitudMaterial, Adjunto, Comentario[visitaId,proyectoId], HardwareUnidad[hospitalId,catalogoId]
+- checkRateLimitByKey(): rate limiter standalone reutilizable sin dependencia de NextRequest
 
 ### Heatmap carga de trabajo (ADMIN)
 - Pagina /admin/carga-trabajo: grid GitHub-style, filas=usuarios, columnas=dias del mes
@@ -478,16 +486,21 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 
 | Prioridad | Issue | Ubicacion | Estado |
 |-----------|-------|-----------|--------|
-| ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx | PENDIENTE |
-| ~~ALTA~~ | ~~`mapaHtml` XSS via iframe sandbox~~ | ~~iframe srcDoc~~ | CORREGIDO (sandbox sin allow-same-origin) |
-| ~~ALTA~~ | ~~`GET /api/proyectos` sin filtro de zona~~ | ~~api/proyectos/route.ts~~ | CORREGIDO (filtro zona + responsable) |
-| ~~ALTA~~ | ~~Comentarios visita sin verificar acceso padre~~ | ~~api/visitas/[id]/comentarios~~ | CORREGIDO (zona + propietario) |
-| ~~ALTA~~ | ~~Fases proyecto sin verificar pertenencia~~ | ~~api/proyectos/[id]/fases~~ | CORREGIDO (responsableId check) |
-| ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO (responsableId check) |
-| ~~MEDIA~~ | ~~Dark mode incompleto en algunos drawers (estilos inline)~~ | ~~varios~~ | CORREGIDO (20+ paginas actualizadas) |
-| ~~MEDIA~~ | ~~`Tarea.asignadoA` es String libre, no FK a Usuario~~ | ~~schema.prisma~~ | CORREGIDO (asignadoAId FK + select dropdown + fallback legacy) |
-| ~~BAJA~~ | ~~`CACHE_VERSION = 'palex-v1'` hardcodeado en SW~~ | ~~public/sw.js~~ | CORREGIDO (v2 + network-first para _next/static + auto-update) |
-| ~~BAJA~~ | ~~JWT sin `maxAge` explicito (default 30 dias NextAuth)~~ | ~~auth.config.ts~~ | CORREGIDO (maxAge 7 dias) |
+| ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx | PENDIENTE (Sprint 14 aplazado) |
+| ~~ALTA~~ | ~~`mapaHtml` XSS via iframe sandbox~~ | ~~iframe srcDoc~~ | CORREGIDO sprint 12 |
+| ~~ALTA~~ | ~~`GET /api/proyectos` sin filtro de zona~~ | ~~api/proyectos/route.ts~~ | CORREGIDO sprint 12 |
+| ~~ALTA~~ | ~~Comentarios visita sin verificar acceso padre~~ | ~~api/visitas/[id]/comentarios~~ | CORREGIDO sprint 12 |
+| ~~ALTA~~ | ~~Fases proyecto sin verificar pertenencia~~ | ~~api/proyectos/[id]/fases~~ | CORREGIDO sprint 12 |
+| ~~ALTA~~ | ~~Contactos proyecto sin IDOR check~~ | ~~api/proyectos/[id]/contactos~~ | CORREGIDO sprint 12 |
+| ~~ALTA~~ | ~~CSP unsafe-eval en script-src~~ | ~~next.config.ts~~ | CORREGIDO fase 1 corp |
+| ~~ALTA~~ | ~~Sin brute-force protection en login~~ | ~~auth.ts~~ | CORREGIDO fase 1 corp |
+| ~~ALTA~~ | ~~Sin HSTS header~~ | ~~next.config.ts~~ | CORREGIDO fase 1 corp |
+| ~~ALTA~~ | ~~Sin connection pooling en PostgreSQL~~ | ~~db.ts~~ | CORREGIDO fase 2 corp (max:20) |
+| ~~ALTA~~ | ~~Sin indices en FKs frecuentes (full table scans)~~ | ~~schema.prisma~~ | CORREGIDO fase 2 corp (15 indices) |
+| ~~MEDIA~~ | ~~Dark mode incompleto en drawers~~ | ~~varios~~ | CORREGIDO sprint 13 |
+| ~~MEDIA~~ | ~~`Tarea.asignadoA` String libre, no FK~~ | ~~schema.prisma~~ | CORREGIDO (asignadoAId FK + select + fallback) |
+| ~~BAJA~~ | ~~`CACHE_VERSION = 'palex-v1'` hardcodeado en SW~~ | ~~public/sw.js~~ | CORREGIDO sprint 13 |
+| ~~BAJA~~ | ~~JWT sin `maxAge` explicito (30 dias)~~ | ~~auth.config.ts~~ | CORREGIDO (maxAge 7 dias) |
 
 ---
 
@@ -639,10 +652,10 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [ ] Check usuario.activo en callback jwt de NextAuth (revocacion inmediata al desactivar usuario)
 - [ ] Considerar database sessions si se necesita revocacion instantanea
 
-#### Estimacion total: ~10-12 dias de desarrollo
-- Fases 1-2: hacer ya (6 horas, impacto inmediato)
+#### Estimacion total restante: ~8-10 dias de desarrollo
+- Fases 1-2: COMPLETADAS (seguridad critica + BD optimizada)
 - Fases 3-5: necesarias antes de superar 20 usuarios concurrentes (~4-5 dias)
-- Fases 6-9: mejora progresiva sprint a sprint (~5-6 dias)
+- Fases 6-9: mejora progresiva sprint a sprint (~4-5 dias)
 
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar

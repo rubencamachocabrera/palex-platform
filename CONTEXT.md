@@ -239,50 +239,47 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 ## 9. Estado actual (junio 2026)
 
-**Completado (sprints 1-18):**
-- Auth completa (login, middleware, roles)
+**Completado (sprints 1-18 + hardening corporativo):**
+- Auth completa (login con brute-force protection 5/min por IP, middleware edge, roles, JWT maxAge 7d)
 - Hospitales: lista, detalle, contactos, timeline, QR, favoritos (DB-backed, cross-device)
 - Visitas: titulo editable, formulario 13 secciones, calendario, PDF, offline, analisis, comentarios
-- Visitas: eliminar con confirmacion desde /visitas y ficha hospital
-- Visitas: modal estandarizado de creacion con titulo + tipo (RadioPills) + contacto principal + fecha + plantilla (desde /visitas, hospital, proyecto)
-- Visitas: edicion colaborativa con presencia en tiempo real (misma zona)
-- Proyectos (UNIFICADO): 10 tabs, fases, tareas, hitos, timeline, materiales, contactos, modulos InLab, adjuntos, Resumen 360, Kanban, share publico
-- Hardware: tipos dinamicos, catalogo, inventario, drawer admin
-- Admin: CRUD completo, export CSV, log de actividad
-- Dashboard: KPIs por rol, widget "Mi Dia", accesos rapidos por rol
+- Visitas: eliminar con confirmacion, modal estandarizado creacion (titulo + tipo + contacto + fecha + plantilla)
+- Visitas: edicion colaborativa con presencia en tiempo real (misma zona), firma digital cliente/tecnico
+- Proyectos (UNIFICADO): 10 tabs, fases, tareas (asignadas por FK), hitos, timeline, materiales, contactos, modulos InLab, adjuntos, Resumen 360, Kanban, share publico, export Excel 6 hojas
+- Hardware: tipos dinamicos, catalogo, inventario, alertas garantia/mantenimiento, drawer admin
+- Admin: CRUD completo, export CSV, log actividad, panel equipo, heatmap carga trabajo, gestion tags
+- Dashboard: KPIs por rol, widget "Mi Dia" (visitas+tareas+recordatorios+llamadas+favoritos), accesos rapidos
 - Busqueda: global, CommandPalette (Cmd+K), filtros avanzados
-- Navegacion contextual: breadcrumb dinamico proyecto → hospital → volver al proyecto
-- Seguridad: IDOR zona+responsable en visitas/proyectos/fases/contactos/comentarios, iframe sandbox XSS, whitelist
-- Sentry error tracking (client/server/edge + global-error boundary + instrumentation)
-- Playwright E2E: 18 tests (visitas, proyectos, navegacion) + auth setup + mobile viewport
-- Dark mode completo: 20+ paginas con containers, modales, drawers, tablas, inputs, loading skeletons, CommandPalette
-- Dark mode: globals.css overrides para hover states de colores de estado, RadioPills/CheckPills sin inline styles
-- Animaciones: skeleton-shimmer, stagger-grid, card-hover lift, stagger-nav
-- Responsive: calendario stacking, admin tables overflow-x-auto, grids mobile-first, filter pills dark mode
-- Lighthouse audit: Performance 100, Accessibility 100, Best Practices 96, SEO 100 (contraste WCAG, landmarks, touch targets, robots.txt)
-- PWA, Error boundaries, Presencia colaborativa in-memory
-- Tags/Etiquetas: modelo Tag (VISITA/PROYECTO), API CRUD, TagSelector con pills de color, gestion en Admin > Configuracion
-- Tags integrados en visitas (detalle + filtro lista) y proyectos (detalle + lista)
-- @Menciones en comentarios: MentionInput con dropdown debounced y keyboard nav, MentionText con pills teal
-- Menciones en ComentariosPanel (visitas + proyectos), notificaciones en TopBar con icono @ teal
-- Grupos hospitalarios: FK auto-referencial grupoId, hospital cabecera con centros, banner pertenencia
-- Indicadores grupo en lista hospitales, selector en admin, busqueda incluye grupo
-- Service Worker: network-first para _next/static (evita CSS roto en deploys), auto-update
+- Llamadas: CRUD, KPIs, filtros, cards expandibles, tab en hospital, dashboard Mi Dia
+- Comentarios: @menciones con dropdown debounced, keyboard nav, pills teal, notificaciones TopBar
+- Grupos hospitalarios: FK auto-referencial, cabecera con centros, banner, indicadores lista
 - Modo campo movil: BottomNav 5 tabs (glass, safe area, TEAL), acciones rapidas dashboard
-- Onboarding nuevo usuario: wizard 6 pasos con SVG, slide animations, skip, keyboard nav, admin reset
-- Recordatorios personales: CRUD, pagina /recordatorios, notificaciones TopBar, dashboard Mi Dia
-- Favoritos DB-backed: modelo Favorito, API toggle, hook useFavoritos con optimistic updates
-- Panel equipo ADMIN: /admin/equipo, card grid con workload por usuario (visitas, proyectos, ultimo acceso)
-- Export Excel proyecto: 6 hojas xlsx (Resumen, Fases, Tareas, Hitos, Modulos, Materiales)
-- Notificaciones navegador: Browser Notification API, banner permisos, polling 60s, preferencias en perfil
-- Sincronizacion calendario iCal: HMAC tokens, feed .ics (visitas+recordatorios+hitos), URL copiable en perfil
-- Dashboard: seccion Favoritos con acceso rapido a hospitales/proyectos favoritos
-- Heatmap carga de trabajo ADMIN: /admin/carga-trabajo, grid GitHub-style, KPIs, navegacion mes
-- Alertas hardware integradas en notificaciones TopBar y dashboard ADMIN
-- Firma digital cliente/tecnico en visitas: SignaturePad canvas + renderizado en PDF
-- Registro rapido de llamadas: modelo, API CRUD, pagina /llamadas, tab en hospital, dashboard Mi Dia
-- Llamadas en sidebar para todos los roles, 6 tipos resultado, seguimiento con fecha
+- Onboarding: wizard 6 pasos SVG, slide animations, keyboard nav, admin reset
+- Recordatorios: CRUD inline, grupos temporales, notificaciones TopBar, dashboard Mi Dia
+- Favoritos DB-backed: toggle optimistic, cross-device, integrado en hospitales y proyectos
+- Notificaciones navegador: Browser Notification API, polling 60s, preferencias en perfil
+- Sincronizacion calendario iCal: HMAC tokens, feed .ics, URL copiable en perfil
+- Seguridad: IDOR zona+responsable, CSP (sin unsafe-eval), HSTS 1 año, brute-force login, whitelist PATCH
+- Sentry error tracking (client/server/edge + global-error boundary + instrumentation)
+- Playwright E2E: 18 tests + auth setup + mobile viewport
+- Dark mode completo: 20+ paginas, hover states, RadioPills/CheckPills CSS
+- Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
+- PWA: manifest + SW (network-first) + IndexedDB
+- BD optimizada: connection pooling max:20, 15 indices en FKs frecuentes
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Pendiente: Ver AGENTS.md seccion 9 (sprint 14 aplazado + backlog).**
+**Deuda tecnica resuelta:** XSS sandbox, IDOR 5 rutas, dark mode, Tarea FK, JWT maxAge, CSP, HSTS, brute-force, pooling, indices. Unica pendiente: `/datos` es mockup (Sprint 14 aplazado).
+
+**Pendiente: Ver AGENTS.md seccion 9 (roadmap corporativo fases 3-9 + backlog).**
+
+**Roadmap corporativo (auditoria junio 2026) — ~8-10 dias restantes:**
+- ~~F1 Seguridad critica — COMPLETADA~~
+- ~~F2 BD optimizacion — COMPLETADA~~
+- F3 Redis (1d): rate-limit + presence + cache servidor — PRE-SCALING
+- F4 Paginacion (4h): hospitales + proyectos APIs — PRE-SCALING
+- F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
+- F6 Validacion (2d): Zod + rate limit global 70 rutas — PROGRESIVO
+- F7 Code splitting (1d): proyectos/[id] 4900 lineas → tabs dinamicos — PROGRESIVO
+- F8 Frontend perf (1-2d): SWR, useReducer visita, polling SSE — PROGRESIVO
+- F9 JWT revocacion (2h): check usuario.activo en callback jwt — PROGRESIVO
