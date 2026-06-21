@@ -180,7 +180,7 @@ export default function HospitalDetailPage() {
 
   // Llamada rápida
   const [showLlamada, setShowLlamada] = useState(false)
-  const [llamadaForm, setLlamadaForm] = useState({ motivo: "", resultado: "", contacto: "", duracion: "" })
+  const [llamadaForm, setLlamadaForm] = useState({ motivo: "", resultado: "", contactoId: "", duracion: "", notas: "", seguimiento: false, fechaSeguimiento: "" })
   const [registrandoLlamada, setRegistrandoLlamada] = useState(false)
 
   // Llamadas tab
@@ -392,12 +392,13 @@ export default function HospitalDetailPage() {
         hospitalId: id,
         asunto: llamadaForm.motivo.trim(),
       }
-      if (llamadaForm.resultado.trim()) body.resultado = llamadaForm.resultado.trim()
+      if (llamadaForm.resultado) body.resultado = llamadaForm.resultado
       if (llamadaForm.duracion.trim() && parseInt(llamadaForm.duracion) > 0) body.duracion = parseInt(llamadaForm.duracion)
-      // Find matching contact by name if typed
-      if (llamadaForm.contacto.trim() && hospital) {
-        const match = hospital.contactos.find((c: Contacto) => c.nombre.toLowerCase().includes(llamadaForm.contacto.trim().toLowerCase()))
-        if (match) body.contactoId = match.id
+      if (llamadaForm.contactoId) body.contactoId = llamadaForm.contactoId
+      if (llamadaForm.notas.trim()) body.notas = llamadaForm.notas.trim()
+      if (llamadaForm.seguimiento) {
+        body.seguimiento = true
+        if (llamadaForm.fechaSeguimiento) body.fechaSeguimiento = llamadaForm.fechaSeguimiento
       }
       const r = await fetch("/api/llamadas", {
         method: "POST",
@@ -406,8 +407,7 @@ export default function HospitalDetailPage() {
       })
       if (r.ok) {
         setShowLlamada(false)
-        setLlamadaForm({ motivo: "", resultado: "", contacto: "", duracion: "" })
-        // Refresh llamadas tab if loaded
+        setLlamadaForm({ motivo: "", resultado: "", contactoId: "", duracion: "", notas: "", seguimiento: false, fechaSeguimiento: "" })
         setLlamadasLoaded(false)
         if (tab === "llamadas") cargarLlamadas()
       }
@@ -1188,25 +1188,68 @@ export default function HospitalDetailPage() {
 
       {/* ── MODAL: Llamada rápida ── */}
       {showLlamada && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setShowLlamada(false) }}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <div><h2 className="text-sm font-bold text-gray-900">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
-              <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div><h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
+              <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <form onSubmit={registrarLlamada} className="px-5 py-4 space-y-3.5">
-              <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Motivo / Asunto <span className="text-red-400">*</span></label>
-                <input value={llamadaForm.motivo} onChange={e => setLlamadaForm(p => ({ ...p, motivo: e.target.value }))} required placeholder="¿Sobre qué se llamó?" autoFocus className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" /></div>
-              <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Resultado / Siguiente paso</label>
-                <textarea value={llamadaForm.resultado} onChange={e => setLlamadaForm(p => ({ ...p, resultado: e.target.value }))} rows={2} placeholder="Qué se acordó, qué hay que hacer…" className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" /></div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Asunto <span className="text-red-400">*</span></label>
+                <input value={llamadaForm.motivo} onChange={e => setLlamadaForm(p => ({ ...p, motivo: e.target.value }))} required placeholder="Consulta disponibilidad, seguimiento propuesta..." autoFocus
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 min-h-[44px]" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Contacto</label>
-                  <input value={llamadaForm.contacto} onChange={e => setLlamadaForm(p => ({ ...p, contacto: e.target.value }))} placeholder="Nombre" className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" /></div>
-                <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Duración (min)</label>
-                  <input type="number" min="1" value={llamadaForm.duracion} onChange={e => setLlamadaForm(p => ({ ...p, duracion: e.target.value }))} placeholder="15" className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" /></div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Contacto</label>
+                  <select value={llamadaForm.contactoId} onChange={e => setLlamadaForm(p => ({ ...p, contactoId: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 min-h-[44px]">
+                    <option value="">Sin especificar</option>
+                    {hospital.contactos.map((c: Contacto) => <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Duración (min)</label>
+                  <input type="number" min="1" value={llamadaForm.duracion} onChange={e => setLlamadaForm(p => ({ ...p, duracion: e.target.value }))} placeholder="15"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 min-h-[44px]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Resultado</label>
+                <select value={llamadaForm.resultado} onChange={e => setLlamadaForm(p => ({ ...p, resultado: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 min-h-[44px]">
+                  <option value="">Sin resultado</option>
+                  <option value="Contactado">Contactado</option>
+                  <option value="No contesta">No contesta</option>
+                  <option value="Buzon de voz">Buzón de voz</option>
+                  <option value="Informacion enviada">Información enviada</option>
+                  <option value="Reunion agendada">Reunión agendada</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Notas</label>
+                <textarea value={llamadaForm.notas} onChange={e => setLlamadaForm(p => ({ ...p, notas: e.target.value }))} rows={2} placeholder="Qué se acordó, observaciones..."
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 resize-none" />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <label className="flex items-center gap-2.5 cursor-pointer min-h-[44px]">
+                  <button type="button" role="switch" aria-checked={llamadaForm.seguimiento}
+                    onClick={() => setLlamadaForm(p => ({ ...p, seguimiento: !p.seguimiento }))}
+                    className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${llamadaForm.seguimiento ? "" : "bg-gray-200 dark:bg-gray-700"}`}
+                    style={llamadaForm.seguimiento ? { backgroundColor: TEAL } : undefined}>
+                    <span className={`absolute left-0 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${llamadaForm.seguimiento ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                  </button>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Seguimiento</span>
+                </label>
+                {llamadaForm.seguimiento && (
+                  <input type="date" value={llamadaForm.fechaSeguimiento} onChange={e => setLlamadaForm(p => ({ ...p, fechaSeguimiento: e.target.value }))}
+                    className="px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 dark:text-gray-200 min-h-[44px]" />
+                )}
               </div>
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => setShowLlamada(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowLlamada(false)} className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">Cancelar</button>
                 <button type="submit" disabled={registrandoLlamada || !llamadaForm.motivo.trim()} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90" style={{ backgroundColor: TEAL }}>{registrandoLlamada ? "Guardando…" : "Registrar"}</button>
               </div>
             </form>

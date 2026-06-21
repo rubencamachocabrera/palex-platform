@@ -678,7 +678,7 @@ export default function LlamadasPage() {
                     style={formSeguimiento ? { backgroundColor: TEAL } : undefined}
                   >
                     <span
-                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                      className={`absolute left-0 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
                         formSeguimiento ? "translate-x-[18px]" : "translate-x-0.5"
                       }`}
                     />
@@ -943,7 +943,7 @@ export default function LlamadasPage() {
                               }`}
                               style={editForm.seguimiento ? { backgroundColor: TEAL } : undefined}
                             >
-                              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${editForm.seguimiento ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                              <span className={`absolute left-0 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${editForm.seguimiento ? "translate-x-[18px]" : "translate-x-0.5"}`} />
                             </button>
                             <span className="text-sm text-gray-700 dark:text-gray-300">Seguimiento</span>
                           </label>
