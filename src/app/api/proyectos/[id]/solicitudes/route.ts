@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, SolicitudCreate } from "@/lib/schemas"
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/solicitudes")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -24,6 +28,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/solicitudes", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -34,22 +40,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
     const body = await req.json()
-    if (!body.titulo) return NextResponse.json({ error: "Título requerido" }, { status: 400 })
+    const parsed = parseBody(SolicitudCreate, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const d = parsed.data
     const solicitud = await db.solicitudMaterial.create({
       data: {
         proyectoId: id,
-        titulo: body.titulo,
-        estado: body.estado || "PENDIENTE",
-        fechaEntregaPlan: body.fechaEntregaPlan ? new Date(body.fechaEntregaPlan) : null,
-        notas: body.notas || null,
-        lineas: body.lineas?.length
+        titulo: d.titulo,
+        estado: d.estado as "PENDIENTE" | "APROBADA" | "EN_PREPARACION" | "ENVIADA" | "ENTREGADA" | "CANCELADA",
+        fechaEntregaPlan: d.fechaEntregaPlan ? new Date(d.fechaEntregaPlan) : null,
+        notas: d.notas ?? null,
+        lineas: d.lineas?.length
           ? {
-              create: body.lineas.map((l: { nombre: string; referencia?: string; cantidad: number; unidad?: string; notas?: string }) => ({
+              create: d.lineas.map((l) => ({
                 nombre: l.nombre,
-                referencia: l.referencia || null,
-                cantidad: parseInt(l.cantidad as unknown as string),
-                unidad: l.unidad || "ud",
-                notas: l.notas || null,
+                referencia: l.referencia ?? null,
+                cantidad: l.cantidad,
+                unidad: l.unidad,
+                notas: l.notas ?? null,
               })),
             }
           : undefined,

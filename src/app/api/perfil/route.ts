@@ -3,10 +3,14 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { generateCalendarToken } from "@/lib/calendar-token"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 // GET /api/perfil — datos del usuario en sesion
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/perfil")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -29,6 +33,9 @@ export async function GET() {
 // PATCH /api/perfil — actualiza nombre y/o contraseña
 export async function PATCH(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/perfil", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

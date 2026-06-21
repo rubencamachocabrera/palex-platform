@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, RecordatorioPatch } from "@/lib/schemas"
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/recordatorios/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -20,23 +25,25 @@ export async function PATCH(
     }
 
     const body = await req.json()
+    const parsed = parseBody(RecordatorioPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
     // Whitelist
     const data: Record<string, unknown> = {}
-    if ("titulo" in body && typeof body.titulo === "string" && body.titulo.trim()) {
-      data.titulo = body.titulo.trim()
+    if ("titulo" in parsed.data && parsed.data.titulo) {
+      data.titulo = parsed.data.titulo.trim()
     }
-    if ("descripcion" in body) {
-      data.descripcion = body.descripcion && typeof body.descripcion === "string"
-        ? body.descripcion.trim()
+    if ("descripcion" in parsed.data) {
+      data.descripcion = parsed.data.descripcion
+        ? parsed.data.descripcion.trim()
         : null
     }
-    if ("fecha" in body) {
-      const f = new Date(body.fecha)
+    if ("fecha" in parsed.data && parsed.data.fecha) {
+      const f = new Date(parsed.data.fecha)
       if (!isNaN(f.getTime())) data.fecha = f
     }
-    if ("completado" in body && typeof body.completado === "boolean") {
-      data.completado = body.completado
+    if ("completado" in parsed.data && typeof parsed.data.completado === "boolean") {
+      data.completado = parsed.data.completado
     }
 
     if (Object.keys(data).length === 0) {
@@ -56,6 +63,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/recordatorios/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

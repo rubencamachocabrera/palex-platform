@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/hardware/tipos")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   try {
@@ -19,6 +22,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const rl = checkRateLimit(req as NextRequest, "/api/hardware/tipos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   const role = (session?.user as { role?: string } | undefined)?.role
   if (!session?.user || role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })

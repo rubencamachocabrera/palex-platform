@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/search")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

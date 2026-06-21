@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/modulos-inlab")
+  if (rl) return rl
   try {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -32,6 +35,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/modulos-inlab", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (!session?.user || session.user.role !== "ADMIN")

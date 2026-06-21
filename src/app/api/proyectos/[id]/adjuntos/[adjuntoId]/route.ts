@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; adjuntoId: string }> }
 ) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/adjuntos")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, adjuntoId } = await params
@@ -34,6 +37,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; adjuntoId: string }> }
 ) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/adjuntos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, adjuntoId } = await params

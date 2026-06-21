@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(_req, "/api/plantillas/[id]")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -16,6 +19,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req, "/api/plantillas/[id]", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Prohibido" }, { status: 403 })
@@ -35,6 +40,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(_req, "/api/plantillas/[id]", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Prohibido" }, { status: 403 })

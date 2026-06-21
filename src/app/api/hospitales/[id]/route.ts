@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(_, "/api/hospitales/id")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -51,6 +55,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(req, "/api/hospitales/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
@@ -73,6 +80,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(_, "/api/hospitales/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 

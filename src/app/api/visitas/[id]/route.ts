@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { calcularScore } from "@/lib/visita-analysis"
 import { logActividad } from "@/lib/log-actividad"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 async function canAccessVisita(userId: string, role: string, visita: { usuarioId: string; hospitalId: string }) {
   if (role === "ADMIN") return true
@@ -16,6 +17,9 @@ async function canAccessVisita(userId: string, role: string, visita: { usuarioId
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(_, "/api/visitas/id")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -45,6 +49,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(req, "/api/visitas/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -113,6 +120,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(_, "/api/visitas/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

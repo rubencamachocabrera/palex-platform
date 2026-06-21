@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = checkRateLimit(req, "/api/modulos-inlab/[id]", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (!session?.user || session.user.role !== "ADMIN")
@@ -34,6 +37,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = checkRateLimit(_req, "/api/modulos-inlab/[id]", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (!session?.user || session.user.role !== "ADMIN")

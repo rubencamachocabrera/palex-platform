@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, TareaCreate } from "@/lib/schemas"
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/tareas")
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -24,6 +28,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id } = await params
@@ -34,19 +40,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
     const body = await req.json()
-    if (!body.titulo?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 })
+    const parsed = parseBody(TareaCreate, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
     const tarea = await db.tarea.create({
       data: {
         proyectoId: id,
-        titulo: body.titulo.trim(),
-        descripcion: body.descripcion ?? null,
-        estado: body.estado ?? "PENDIENTE",
-        prioridad: body.prioridad ?? "MEDIA",
-        asignadoA: body.asignadoA ?? null,
-        asignadoAId: body.asignadoAId ?? null,
-        parentId: body.parentId ?? null,
-        fechaVencimiento: body.fechaVencimiento ? new Date(body.fechaVencimiento) : null,
-        orden: body.orden ?? 0,
+        titulo: parsed.data.titulo.trim(),
+        descripcion: parsed.data.descripcion ?? null,
+        estado: parsed.data.estado,
+        prioridad: parsed.data.prioridad,
+        asignadoA: parsed.data.asignadoA ?? null,
+        asignadoAId: parsed.data.asignadoAId ?? null,
+        parentId: parsed.data.parentId ?? null,
+        fechaVencimiento: parsed.data.fechaVencimiento ? new Date(parsed.data.fechaVencimiento) : null,
+        orden: parsed.data.orden,
       },
     })
     return NextResponse.json(tarea, { status: 201 })

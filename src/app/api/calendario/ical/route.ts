@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { generateCalendarToken } from "@/lib/calendar-token"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 /** Escape special chars for iCal text fields */
 function icalEscape(text: string): string {
@@ -37,6 +38,9 @@ function foldLine(line: string): string {
 // GET /api/calendario/ical?uid=xxx&token=xxx
 export async function GET(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/calendario/ical", { limit: 20 })
+    if (rl) return rl
+
     const { searchParams } = new URL(req.url)
     const uid = searchParams.get("uid")
     const token = searchParams.get("token")

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, TagPatch } from "@/lib/schemas"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(req, "/api/tags/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     if ((session.user.role as string) !== "ADMIN")
@@ -11,25 +16,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { id } = await params
     const body = await req.json()
+    const parsed = parseBody(TagPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
     const existing = await db.tag.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
 
-    const allowed = ["nombre", "color", "orden", "activo"]
     const data: Record<string, unknown> = {}
-    for (const key of allowed) {
-      if (key in body) {
-        if (key === "nombre") {
-          data[key] = String(body[key]).trim()
-        } else if (key === "orden") {
-          data[key] = typeof body[key] === "number" ? body[key] : parseInt(body[key])
-        } else if (key === "activo") {
-          data[key] = Boolean(body[key])
-        } else {
-          data[key] = body[key]
-        }
-      }
-    }
+    if (parsed.data.nombre !== undefined) data.nombre = parsed.data.nombre.trim()
+    if (parsed.data.color !== undefined) data.color = parsed.data.color
+    if (parsed.data.orden !== undefined) data.orden = parsed.data.orden
+    if (parsed.data.activo !== undefined) data.activo = parsed.data.activo
 
     const updated = await db.tag.update({ where: { id }, data })
     return NextResponse.json(updated)
@@ -44,6 +41,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const rl = checkRateLimit(_req, "/api/tags/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     if ((session.user.role as string) !== "ADMIN")

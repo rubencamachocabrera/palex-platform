@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_: NextRequest, { params }: Params) {
+  const rl = checkRateLimit(_, "/api/usuarios/[id]")
+  if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
@@ -20,6 +23,8 @@ export async function GET(_: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const rl = checkRateLimit(req, "/api/usuarios/[id]", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
@@ -51,6 +56,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_: NextRequest, { params }: Params) {
+  const rl = checkRateLimit(_, "/api/usuarios/[id]", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })

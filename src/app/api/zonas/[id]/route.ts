@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(req, "/api/zonas/[id]", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
@@ -22,6 +25,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = checkRateLimit(_, "/api/zonas/[id]", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (session?.user?.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })

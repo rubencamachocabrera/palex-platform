@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, ContactoPatch } from "@/lib/schemas"
 
 // PATCH /api/contactos/[id] — edita un contacto (solo ADMIN)
 export async function PATCH(
@@ -8,17 +10,20 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/contactos/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
 
     const { id } = await params
-    const { nombre, cargo, email, telefono, principal } = await req.json()
+    const body = await req.json()
+    const parsed = parseBody(ContactoPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    if (!nombre?.trim()) {
-      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 })
-    }
+    const { nombre, cargo, email, telefono, principal } = parsed.data
 
     const actual = await db.contacto.findUnique({ where: { id } })
     if (!actual) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
@@ -34,11 +39,11 @@ export async function PATCH(
     const contacto = await db.contacto.update({
       where: { id },
       data: {
-        nombre: nombre.trim(),
-        cargo: cargo?.trim() || null,
-        email: email?.trim() || null,
-        telefono: telefono?.trim() || null,
-        principal: !!principal,
+        ...(nombre !== undefined && { nombre: nombre.trim() }),
+        ...(cargo !== undefined && { cargo: cargo?.trim() || null }),
+        ...(email !== undefined && { email: email?.trim() || null }),
+        ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
+        ...(principal !== undefined && { principal: !!principal }),
       },
     })
 
@@ -55,6 +60,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(_, "/api/contactos/id", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })

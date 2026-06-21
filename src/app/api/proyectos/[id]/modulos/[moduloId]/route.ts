@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, ModuloPatch } from "@/lib/schemas"
 
 async function checkAccess(id: string, userId: string, role: string) {
   const pp = await db.proyecto.findUnique({ where: { id }, select: { responsableId: true } })
@@ -14,6 +16,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; moduloId: string }> }
 ) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/modulos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, moduloId } = await params
@@ -24,14 +28,13 @@ export async function PATCH(
     const denied = await checkAccess(id, session.user.id, role)
     if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
 
-    const { estado } = await req.json()
-    const valid = ["PENDIENTE", "EN_INSTALACION", "INSTALADO", "FORMACION", "VALIDADO"]
-    if (!valid.includes(estado))
-      return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
+    const body = await req.json()
+    const parsed = parseBody(ModuloPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
     const updated = await db.proyectoModulo.update({
       where: { proyectoId_moduloId: { proyectoId: id, moduloId } },
-      data: { estado },
+      data: { estado: parsed.data.estado },
       include: { modulo: { select: { id: true, nombre: true } } },
     })
     return NextResponse.json(updated)
@@ -44,6 +47,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; moduloId: string }> }
 ) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/modulos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, moduloId } = await params

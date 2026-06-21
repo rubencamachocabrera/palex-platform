@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, HitoPatch } from "@/lib/schemas"
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; hitoId: string }> }
 ) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/hitos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, hitoId } = await params
@@ -19,12 +23,15 @@ export async function PATCH(
     if (!hito) return NextResponse.json({ error: "No encontrado" }, { status: 404 })
 
     const body = await req.json()
+    const parsed = parseBody(HitoPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const d = parsed.data
     const data: Record<string, unknown> = {}
-    if ("titulo" in body) data.titulo = body.titulo
-    if ("descripcion" in body) data.descripcion = body.descripcion
-    if ("fecha" in body) data.fecha = body.fecha ? new Date(body.fecha) : undefined
-    if ("fechaReal" in body) data.fechaReal = body.fechaReal ? new Date(body.fechaReal) : null
-    if ("completado" in body) data.completado = body.completado
+    if ("titulo" in d) data.titulo = d.titulo
+    if ("descripcion" in d) data.descripcion = d.descripcion
+    if ("fecha" in d) data.fecha = d.fecha ? new Date(d.fecha) : undefined
+    if ("fechaReal" in d) data.fechaReal = d.fechaReal ? new Date(d.fechaReal) : null
+    if ("completado" in d) data.completado = d.completado
     const updated = await db.hito.update({ where: { id: hitoId }, data })
     return NextResponse.json(updated)
   } catch {
@@ -36,6 +43,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; hitoId: string }> }
 ) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/hitos", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id, hitoId } = await params

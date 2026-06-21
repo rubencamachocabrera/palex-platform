@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, ContactoCreate } from "@/lib/schemas"
 
 // GET /api/hospitales/[id]/contactos — lista contactos del hospital (todos los roles)
 export async function GET(
@@ -8,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(_, "/api/hospitales/contactos")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -29,17 +34,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
     const { id: hospitalId } = await params
-    const { nombre, cargo, email, telefono, principal } = await req.json()
+    const body = await req.json()
+    const parsed = parseBody(ContactoCreate, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    if (!nombre?.trim()) {
-      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 })
-    }
+    const { nombre, cargo, email, telefono, principal } = parsed.data
 
     // Si este contacto es principal, quitar el flag al anterior principal
     if (principal) {

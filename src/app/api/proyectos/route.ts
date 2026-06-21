@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logActividad } from "@/lib/log-actividad"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 const FASES_DEFAULT = [
   { tipo: "FIRMA_CONTRATO",     nombre: "Firma de Contrato",        orden: 1 },
@@ -17,7 +18,10 @@ const FASES_DEFAULT = [
   { tipo: "SOPORTE_POST",       nombre: "Soporte Post-Instalación", orden: 11 },
 ] as const
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/proyectos")
+  if (rl) return rl
+
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { searchParams } = new URL(req.url)
@@ -82,7 +86,10 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/proyectos", { limit: 30 })
+  if (rl) return rl
+
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   try {

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, OnboardingPatch } from "@/lib/schemas"
 
 // GET /api/onboarding — estado del onboarding del usuario en sesion
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/onboarding")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -24,20 +29,22 @@ export async function GET() {
 // PATCH /api/onboarding — marcar onboarding como completado/pendiente
 export async function PATCH(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/onboarding", { limit: 30 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const body = await req.json()
-    if (typeof body.completado !== "boolean") {
-      return NextResponse.json({ error: "Campo 'completado' requerido (boolean)" }, { status: 400 })
-    }
+    const parsed = parseBody(OnboardingPatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
     await db.usuario.update({
       where: { id: session.user.id },
-      data: { onboardingCompletado: body.completado },
+      data: { onboardingCompletado: parsed.data.completado },
     })
 
-    return NextResponse.json({ completado: body.completado })
+    return NextResponse.json({ completado: parsed.data.completado })
   } catch (err) {
     console.error("[PATCH /api/onboarding]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })

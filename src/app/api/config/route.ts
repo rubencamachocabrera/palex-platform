@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 async function getOrCreateConfig() {
   let config = await db.configApp.findUnique({ where: { id: 1 } })
@@ -8,7 +9,10 @@ async function getOrCreateConfig() {
   return config
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/config")
+  if (rl) return rl
+
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   try {
@@ -19,7 +23,10 @@ export async function GET() {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/config", { limit: 30 })
+  if (rl) return rl
+
   const session = await auth()
   const role = (session?.user as { role?: string } | undefined)?.role
   if (!session?.user || role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })

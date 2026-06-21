@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { parseBody, FasePatch } from "@/lib/schemas"
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; faseId: string }> }
 ) {
+  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/fases", { limit: 30 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const { id: proyectoId, faseId } = await params
@@ -15,13 +19,17 @@ export async function PATCH(
     if (session.user.role !== "ADMIN" && proyecto.responsableId !== session.user.id)
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     const body = await req.json()
+    const parsed = parseBody(FasePatch, body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const d = parsed.data
     const data: Record<string, unknown> = {}
-    if ("estado" in body) data.estado = body.estado
+    if ("estado" in d) data.estado = d.estado
+    if ("notas" in d) data.notas = d.notas
+    if ("fechaPlan" in d) data.fechaPlan = d.fechaPlan ? new Date(d.fechaPlan) : null
+    if ("fechaReal" in d) data.fechaReal = d.fechaReal ? new Date(d.fechaReal) : null
+    // Fields not in FasePatch schema — keep from raw body
     if ("nombre" in body) data.nombre = body.nombre
-    if ("notas" in body) data.notas = body.notas
     if ("responsableId" in body) data.responsableId = body.responsableId || null
-    if ("fechaPlan" in body) data.fechaPlan = body.fechaPlan ? new Date(body.fechaPlan) : null
-    if ("fechaReal" in body) data.fechaReal = body.fechaReal ? new Date(body.fechaReal) : null
     const updated = await db.faseProyecto.update({ where: { id: faseId }, data })
 
     // Auto-transición de estado del proyecto según progreso de fases

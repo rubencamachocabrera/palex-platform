@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 // Returns score statistics: avg for a given hospital + global avg
 export async function GET(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "/api/visitas/estadisticas")
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

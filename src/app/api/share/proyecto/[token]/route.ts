@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+  const rl = checkRateLimit(_req as NextRequest, "/api/share/proyecto/[token]", { limit: 20 })
+  if (rl) return rl
   const { token } = await params
   try {
     const pp = await db.proyecto.findUnique({

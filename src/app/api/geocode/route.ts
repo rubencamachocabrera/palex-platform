@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 // Proxy para Nominatim (OpenStreetMap) — requiere User-Agent propio y rate-limit 1 req/s
 // Cached 24h en Edge para no martillar el servicio
 export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, "/api/geocode", { limit: 20 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
