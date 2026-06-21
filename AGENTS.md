@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # INLAB PALEX PLATFORM — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-20 (sprint 18 completado — heatmap, alertas HW, firma digital, llamadas).
+> Ultima actualizacion: 2026-06-22 (auditoria exhaustiva completada + optimizaciones rendimiento).
 
 ---
 
@@ -322,8 +322,8 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Vista resumen 360 con edicion inline
 - Vinculacion visita -> proyecto con selector + progreso fases
 - Edicion colaborativa: usuarios de la misma zona pueden ver/editar visitas simultaneamente
-- Presencia en tiempo real: indicador de quien esta editando (heartbeat cada 8s, timeout 15s)
-- Toast de actualizacion cuando otro usuario guarda cambios (polling cada 4s)
+- Presencia en tiempo real: indicador de quien esta editando (heartbeat cada 15s, timeout 15s)
+- Toast de actualizacion cuando otro usuario guarda cambios (polling cada 10s)
 - Tags/Etiquetas: pills de color asignables desde detalle visita con TagSelector
 - Filtro por tags en lista de visitas
 
@@ -427,6 +427,10 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - SWR: hook usePerfil() con cache deduplicado (dedupingInterval 60s, revalidateOnFocus false)
 - 10 paginas migradas de fetch("/api/perfil") manual a usePerfil() (hospitales, visitas, llamadas, hardware, datos, transporte, ventas, proyectos/[id], hospitales/[id], admin/carga-trabajo)
 - Polling colaborativo reducido: heartbeat 8s→15s, data poll 4s→10s (60% menos peticiones)
+- Loading skeletons: dashboard/loading.tsx y mapa/loading.tsx (server components con dark mode)
+- Brand tokens: ~25 hardcoded #00A99D reemplazados con TEAL importado (7 archivos)
+- Formulario visita: useReducer consolida 8 useState en formReducer (10 acciones tipadas)
+  - setField: 3 setState → 1 dispatch; guardar: 4-6 setState → 2 dispatch
 
 ### Revocacion JWT (F9)
 - auth.ts: jwt callback con check usuario.activo cada 5 min (cache in-memory activeCache)
@@ -513,6 +517,18 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Seccion en /perfil: URL copiable para Google Calendar/Outlook/Apple Calendar
 - /api/perfil incluye calendarToken en respuesta
 
+### Auditoria exhaustiva (junio 2026)
+- Dead links corregidos: /visitas/nueva → /visitas?abrir=1, /ventas/hospitales → /hospitales
+- Bug fecha calendario: abrirModal(fechaInicial?) preserva fecha seleccionada del calendario
+- Modal nueva visita scroll safety: flex col + maxHeight calc(100vh-2rem) + shrink-0 header/footer
+- Dark mode completado en modales nueva visita (hospital/proyecto), /unauthorized, /not-found, mapa
+- Error boundaries añadidos: llamadas, recordatorios, datos, transporte
+- Rate limit añadido a 2 rutas comentarios faltantes
+- XSS fix: javascript:history.back() → router.back() en unauthorized y not-found
+- Brand tokens: ~25 hardcoded #00A99D → TEAL importado en 7 archivos
+- Loading skeletons: dashboard/loading.tsx y mapa/loading.tsx
+- useReducer: formulario visita consolida 8 useState en formReducer (10 acciones tipadas)
+
 ---
 
 ## 8. Deuda tecnica y bugs conocidos
@@ -520,6 +536,15 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 | Prioridad | Issue | Ubicacion | Estado |
 |-----------|-------|-----------|--------|
 | ALTA | `/datos` es 100% mockup — no hay APIs reales | datos/page.tsx | PENDIENTE (Sprint 14 aplazado) |
+| ~~MEDIA~~ | ~~Dead links en dashboard VENTAS (/visitas/nueva, /ventas/hospitales)~~ | ~~dashboard/page.tsx~~ | CORREGIDO auditoria |
+| ~~MEDIA~~ | ~~Dead link en calendario (/visitas/nueva)~~ | ~~calendario/page.tsx~~ | CORREGIDO auditoria |
+| ~~MEDIA~~ | ~~Fecha calendario perdida al crear visita (abrirModal sobreescribia)~~ | ~~visitas/page.tsx~~ | CORREGIDO auditoria |
+| ~~MEDIA~~ | ~~Modal nueva visita cortado en tecnico sin visitas~~ | ~~visitas/page.tsx~~ | CORREGIDO auditoria |
+| ~~BAJA~~ | ~~Dark mode incompleto en modal nueva visita (hospital/proyecto)~~ | ~~hospitales/[id], proyectos/[id]~~ | CORREGIDO auditoria |
+| ~~BAJA~~ | ~~Dark mode incompleto en /unauthorized y /not-found~~ | ~~unauthorized, not-found~~ | CORREGIDO auditoria |
+| ~~BAJA~~ | ~~Rate limit faltante en 2 rutas comentarios~~ | ~~comentarios/[comentarioId]~~ | CORREGIDO auditoria |
+| ~~BAJA~~ | ~~Error boundaries faltantes en 4 rutas~~ | ~~llamadas, recordatorios, datos, transporte~~ | CORREGIDO auditoria |
+| ~~BAJA~~ | ~~javascript:history.back() XSS pattern~~ | ~~unauthorized, not-found~~ | CORREGIDO auditoria |
 | ~~ALTA~~ | ~~`mapaHtml` XSS via iframe sandbox~~ | ~~iframe srcDoc~~ | CORREGIDO sprint 12 |
 | ~~ALTA~~ | ~~`GET /api/proyectos` sin filtro de zona~~ | ~~api/proyectos/route.ts~~ | CORREGIDO sprint 12 |
 | ~~ALTA~~ | ~~Comentarios visita sin verificar acceso padre~~ | ~~api/visitas/[id]/comentarios~~ | CORREGIDO sprint 12 |
@@ -685,7 +710,9 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 #### Fase 8 — Rendimiento frontend (1-2 dias) — COMPLETADA
 - [x] SWR para cache de datos compartidos: hook usePerfil() reemplaza fetch("/api/perfil") en 10 paginas
 - [x] Reducir polling colaborativo: heartbeat 8s→15s, data poll 4s→10s
-- [ ] Formulario visita: useReducer o estado por seccion + React.memo (pendiente — bajo impacto actual)
+- [x] Formulario visita: useReducer consolida 8 useState en formReducer (10 acciones tipadas)
+- [x] Loading skeletons para dashboard y mapa (server components)
+- [x] Brand tokens: ~25 hardcoded #00A99D reemplazados con TEAL importado
 
 #### Fase 9 — Revocacion JWT y sesiones (2 horas) — COMPLETADA
 - [x] Check usuario.activo en callback jwt de NextAuth (cache in-memory 5 min, revocacion en <5 min)

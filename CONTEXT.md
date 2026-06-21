@@ -1,6 +1,6 @@
 # CONTEXT — InLab Palex Platform
-> Resumen compacto del proyecto. Actualizado sprint 18 (junio 2026).
-> Commit base: `19c022e` (20 jun 2026 — sprint 18 completado)
+> Resumen compacto del proyecto. Actualizado post-auditoria (junio 2026).
+> Commit base: `13ca3bf` (22 jun 2026 — auditoria exhaustiva + optimizaciones rendimiento)
 
 ---
 
@@ -273,19 +273,22 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - PWA: manifest + SW (network-first) + IndexedDB
 - BD optimizada: connection pooling max:20, 15 indices en FKs frecuentes
 - Frontend perf: SWR usePerfil() compartido (10 paginas), polling reducido 60% (heartbeat 15s, data 10s)
+- Frontend perf: useReducer en formulario visita (8 useState → 1 reducer, 10 acciones tipadas)
+- Frontend perf: loading skeletons para dashboard y mapa (server components)
 - Validacion: Zod v4 schemas centralizados (schemas.ts) + rate limiting en ~50 rutas API
 - Code splitting: proyectos/[id] de 4902→300 lineas, 10 tabs lazy con next/dynamic
+- Brand tokens: ~25 hardcoded #00A99D reemplazados con TEAL importado
 - Modales scroll safety: ~20 modales con overflow-y-auto + my-auto (nunca se cortan)
+- Auditoria exhaustiva: dead links, fecha calendario, dark mode gaps, error boundaries, XSS patterns
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
-**Deuda tecnica resuelta:** XSS sandbox, IDOR 5 rutas, dark mode, Tarea FK, JWT maxAge, CSP, HSTS, brute-force, pooling, indices, validacion Zod, rate limiting global, code splitting. Unica pendiente: `/datos` es mockup (Sprint 14 aplazado).
+**Deuda tecnica resuelta:** XSS sandbox, IDOR 5 rutas, dark mode, Tarea FK, JWT maxAge, CSP, HSTS, brute-force, pooling, indices, validacion Zod, rate limiting global, code splitting, dead links, modal scroll, useReducer visita. Unica pendiente: `/datos` es mockup (Sprint 14 aplazado).
 
 **Pendiente concreto:**
 - F5 Object storage (~2-3d): migrar fotos/adjuntos de base64 en DB a R2/S3 — necesita elegir proveedor
 - bodyParser size limits en next.config.ts (menor)
 - Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad (menor)
-- Formulario visita: useReducer o estado por seccion + React.memo (menor)
 - `/datos` es 100% mockup — sin APIs reales (Sprint 14 aplazado)
 - Notificaciones por email (Resend o similar) — backlog
 - Notificaciones push movil (VAPID + FCM/OneSignal) — backlog
@@ -299,5 +302,5 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
 - ~~F6 Validacion — COMPLETADA~~ (Zod v4 + rate limiting ~50 rutas, schemas centralizados en schemas.ts)
 - ~~F7 Code splitting — COMPLETADA~~ (proyectos/[id] 4902→300 lineas, 10 tabs con next/dynamic)
-- ~~F8 Frontend perf — COMPLETADA~~ (SWR usePerfil 10 paginas + polling reducido 60%)
+- ~~F8 Frontend perf — COMPLETADA~~ (SWR + polling + useReducer + loading skeletons + brand tokens)
 - ~~F9 JWT revocacion — COMPLETADA~~ (check activo cada 5 min + sync rol)
