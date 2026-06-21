@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; contactoId: string }> }
 ) {
+  const rl = checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
+  if (rl) return rl
   try {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

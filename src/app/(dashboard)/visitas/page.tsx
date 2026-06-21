@@ -688,14 +688,14 @@ export default function VisitasPage() {
 
       {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center py-6 sm:py-10 px-4 backdrop-blur-sm overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-start justify-center py-4 sm:py-8 px-4 backdrop-blur-sm overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto animate-in fade-in zoom-in-95 duration-200"
-            style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            style={{ borderTop: `3px solid ${TEAL}`, maxHeight: "calc(100vh - 2rem)" }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div>
                 <p className="font-bold text-gray-900 dark:text-white">Nueva visita</p>
                 {userName && <p className="text-xs text-gray-400 mt-0.5">Responsable: <span className="font-medium text-gray-600 dark:text-gray-300">{userName}</span></p>}
@@ -707,7 +707,7 @@ export default function VisitasPage() {
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
 
               {/* Título */}
               <div>
@@ -880,7 +880,7 @@ export default function VisitasPage() {
             </div>
 
             {/* Footer acciones */}
-            <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
               <button onClick={() => setMostrarModal(false)}
                 className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 Cancelar

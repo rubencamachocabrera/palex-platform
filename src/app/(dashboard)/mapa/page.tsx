@@ -28,7 +28,7 @@ export default async function MapaPage() {
   return (
     <div className="-m-4 sm:-m-6 lg:-m-8 flex flex-col" style={{ height: "calc(100vh - 56px)" }}>
       {/* Title bar */}
-      <div className="shrink-0 px-5 py-3 bg-white border-b border-gray-100 flex items-center gap-4 flex-wrap">
+      <div className="shrink-0 px-5 py-3 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 flex-wrap">
         {/* Left: title + count */}
         <div className="flex items-center gap-3 mr-auto">
           <div
@@ -41,7 +41,7 @@ export default async function MapaPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900 leading-none">Mapa de hospitales</h1>
+            <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-none">Mapa de hospitales</h1>
             <p className="text-xs text-gray-400 mt-0.5 leading-none">{hospitales.length} centros activos · España</p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default async function MapaPage() {
           </div>
         )}
 
-        <span className="text-[10px] text-gray-300 font-medium hidden sm:block">© OpenStreetMap</span>
+        <span className="text-[10px] text-gray-300 dark:text-gray-600 font-medium hidden sm:block">© OpenStreetMap</span>
       </div>
 
       {/* Map fills remaining height */}

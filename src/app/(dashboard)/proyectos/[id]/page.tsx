@@ -245,32 +245,32 @@ export default function ProyectoDetalle() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisitaModal(false) }}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="text-sm font-bold text-gray-900">Nueva visita</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Nueva visita</p>
                 <p className="text-xs text-gray-400 mt-0.5">{pp.hospital.nombre} · {pp.titulo}</p>
               </div>
-              <button onClick={() => setShowNuevaVisitaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer">
+              <button onClick={() => setShowNuevaVisitaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <div className="px-5 py-4 space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Nombre de la visita</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nombre de la visita</label>
                 <input value={tituloVisitaModal} onChange={e => setTituloVisitaModal(e.target.value)}
                   placeholder="Se genera automáticamente" autoFocus
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Fecha</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Fecha</label>
                 <input type="date" value={fechaVisitaModal} onChange={e => setFechaVisitaModal(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
               </div>
               {plantillasVisita.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Plantilla (opcional)</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Plantilla (opcional)</label>
                   <select value={plantillaVisitaId} onChange={e => setPlantillaVisitaId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
+                    className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
                     <option value="">Sin plantilla — formulario en blanco</option>
                     {plantillasVisita.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                   </select>
@@ -283,9 +283,9 @@ export default function ProyectoDetalle() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 px-5 py-4 border-t border-gray-100">
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-gray-800">
               <button onClick={() => setShowNuevaVisitaModal(false)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">Cancelar</button>
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">Cancelar</button>
               <button onClick={crearVisitaRapida} disabled={creandoV}
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: TEAL }}>

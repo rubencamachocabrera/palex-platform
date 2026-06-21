@@ -1,19 +1,17 @@
-/**
- * Página 404 — ruta no encontrada.
- * Next.js App Router la activa automáticamente cuando notFound() se lanza
- * o cuando la URL no coincide con ninguna ruta.
- */
+"use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function NotFound() {
+  const router = useRouter()
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-6">
       <div className="text-center max-w-sm w-full">
-        {/* Ilustración */}
         <div className="flex justify-center mb-8">
           <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="120" height="120" rx="32" fill="#E6F7F6"/>
+            <rect width="120" height="120" rx="32" fill="#E6F7F6" className="dark:fill-teal-950/30"/>
             <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle"
               fontSize="48" fontWeight="700" fill="#00A99D" fontFamily="system-ui">
               404
@@ -22,16 +20,15 @@ export default function NotFound() {
           </svg>
         </div>
 
-        {/* Logo Palex */}
         <div className="flex items-center justify-center gap-2 mb-6">
           <div className="w-6 h-6 rounded-md flex items-center justify-center bg-teal-500">
             <span className="text-white font-bold text-xs">P</span>
           </div>
-          <span className="text-gray-700 font-semibold text-sm">Palex Medical</span>
+          <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">Palex Medical</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Página no encontrada</h1>
-        <p className="text-gray-500 text-sm leading-relaxed mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Página no encontrada</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
           La dirección que intentas acceder no existe o ha sido movida.
         </p>
 
@@ -45,12 +42,12 @@ export default function NotFound() {
             </svg>
             Ir al dashboard
           </Link>
-          <Link
-            href="javascript:history.back()"
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors font-medium"
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors font-medium cursor-pointer"
           >
-            ← Volver atrás
-          </Link>
+            &larr; Volver atrás
+          </button>
         </div>
       </div>
     </div>

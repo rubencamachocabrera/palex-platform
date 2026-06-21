@@ -1,24 +1,19 @@
-/**
- * Página 403 — acceso denegado.
- * Se accede redirigiendo a /unauthorized cuando el middleware detecta
- * que el usuario no tiene el rol necesario para la ruta solicitada.
- *
- * Ejemplo de uso en middleware.ts:
- *   return NextResponse.redirect(new URL("/unauthorized", req.url))
- */
+"use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function UnauthorizedPage() {
+  const router = useRouter()
+
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-6">
       <div className="text-center max-w-sm w-full">
-        {/* Ilustración */}
         <div className="flex justify-center mb-8">
           <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="120" height="120" rx="32" fill="#FEF2F2"/>
-            <circle cx="60" cy="50" r="18" fill="#FECACA"/>
-            <rect x="44" y="52" width="32" height="22" rx="4" fill="#FCA5A5"/>
+            <rect width="120" height="120" rx="32" fill="#FEF2F2" className="dark:fill-red-950/30"/>
+            <circle cx="60" cy="50" r="18" fill="#FECACA" className="dark:fill-red-900/40"/>
+            <rect x="44" y="52" width="32" height="22" rx="4" fill="#FCA5A5" className="dark:fill-red-800/50"/>
             <rect x="52" y="44" width="16" height="12" rx="8" fill="none" stroke="#F87171" strokeWidth="3"/>
             <circle cx="60" cy="62" r="3" fill="#EF4444"/>
             <line x1="60" y1="64" x2="60" y2="68" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"/>
@@ -29,8 +24,8 @@ export default function UnauthorizedPage() {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso denegado</h1>
-        <p className="text-gray-500 text-sm leading-relaxed mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Acceso denegado</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
           No tienes permisos para acceder a esta sección.
           Si crees que es un error, contacta con el administrador del sistema.
         </p>
@@ -45,12 +40,12 @@ export default function UnauthorizedPage() {
             </svg>
             Ir al dashboard
           </Link>
-          <Link
-            href="javascript:history.back()"
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors font-medium"
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors font-medium cursor-pointer"
           >
-            ← Volver atrás
-          </Link>
+            &larr; Volver atrás
+          </button>
         </div>
       </div>
     </div>
