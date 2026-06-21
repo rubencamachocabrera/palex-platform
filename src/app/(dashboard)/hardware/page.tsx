@@ -1010,7 +1010,7 @@ function CatTiposModal({ tipos, onClose, onChanged }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0" style={{ borderTop: `3px solid ${TEAL}` }}>
           <div>
@@ -1151,7 +1151,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
           {unidad.catalogo.tipo && (
@@ -1517,7 +1517,7 @@ function NuevaUnidadModal({ catalogo, onClose, onCreated }: {
   const FL = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white"
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
         style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">

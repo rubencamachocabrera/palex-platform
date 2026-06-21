@@ -1131,9 +1131,9 @@ export default function HospitalDetailPage() {
 
       {/* ── MODAL: Nueva visita ── */}
       {showNuevaVisita && hospital && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisita(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Nueva visita</h2>
@@ -1185,13 +1185,13 @@ export default function HospitalDetailPage() {
 
       {/* ── MODAL: Llamada rápida ── */}
       {showLlamada && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setShowLlamada(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setShowLlamada(false) }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div><h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
               <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
-            <form onSubmit={registrarLlamada} className="px-5 py-4 space-y-3.5">
+            <form onSubmit={registrarLlamada} className="px-5 py-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Asunto <span className="text-red-400">*</span></label>
                 <input value={llamadaForm.motivo} onChange={e => setLlamadaForm(p => ({ ...p, motivo: e.target.value }))} required placeholder="Consulta disponibilidad, seguimiento propuesta..." autoFocus
@@ -1280,8 +1280,8 @@ export default function HospitalDetailPage() {
 
       {/* ── MODAL: Nuevo proyecto ── */}
       {showNuevoProyecto && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid #6366f1` }}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid #6366f1` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Nuevo proyecto</h2>
@@ -1379,8 +1379,8 @@ export default function HospitalDetailPage() {
 
       {/* ── MODAL: Contacto ── */}
       {contactoModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" style={{ borderTop: `3px solid ${TEAL}` }}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-900">{editContacto ? "Editar contacto" : "Nuevo contacto"}</h2>
               <button onClick={() => setContactoModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>

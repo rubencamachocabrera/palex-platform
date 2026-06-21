@@ -688,10 +688,10 @@ export default function VisitasPage() {
 
       {/* ── MODAL NUEVA VISITA ── */}
       {mostrarModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh] sm:pt-[10vh] p-4 backdrop-blur-sm overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-start justify-center py-6 sm:py-10 px-4 backdrop-blur-sm overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200"
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto animate-in fade-in zoom-in-95 duration-200"
             style={{ borderTop: `3px solid ${TEAL}` }}>
 
             {/* Header */}
@@ -707,7 +707,7 @@ export default function VisitasPage() {
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4 max-h-[60vh] sm:max-h-[65vh] overflow-y-auto">
+            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
 
               {/* Título */}
               <div>

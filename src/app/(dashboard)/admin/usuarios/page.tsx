@@ -657,10 +657,10 @@ export default function UsuariosPage() {
       {/* ── Modal: Nuevo usuario ── */}
       {mostrarForm && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) { setMostrarForm(false); setFormError("") } }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -795,10 +795,10 @@ export default function UsuariosPage() {
       {/* ── Modal: Editar usuario ── */}
       {editModal && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setEditModal(null) }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -927,10 +927,10 @@ export default function UsuariosPage() {
       {/* ── Modal: Gestionar zonas ── */}
       {zonaModal && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setZonaModal(null) }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
