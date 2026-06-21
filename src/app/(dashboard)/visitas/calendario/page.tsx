@@ -334,7 +334,7 @@ export default function CalendarioPage() {
                 <div className="py-10 text-center">
                   <p className="text-sm text-gray-400 mb-3">No hay visitas este día</p>
                   <Link
-                    href="/visitas/nueva"
+                    href={"/visitas?abrir=1&fecha=" + (diaSeleccionado ?? "")}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-80"
                     style={{ backgroundColor: TEAL }}
                   >

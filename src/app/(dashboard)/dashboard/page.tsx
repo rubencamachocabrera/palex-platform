@@ -1030,9 +1030,9 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <SectionHeader title="Accesos rapidos" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <QuickLink href="/visitas/nueva"     label="Nueva visita"       Icon={IconClipboard}  color="bg-teal-50 text-teal-700" />
+          <QuickLink href="/visitas?abrir=1"    label="Nueva visita"       Icon={IconClipboard}  color="bg-teal-50 text-teal-700" />
           <QuickLink href="/ventas/pipeline"   label="Pipeline de ventas" Icon={IconTrendingUp} color="bg-purple-50 text-purple-700" />
-          <QuickLink href="/ventas/hospitales" label="Mis hospitales"     Icon={IconHospital}   color="bg-blue-50 text-blue-700" />
+          <QuickLink href="/hospitales"        label="Mis hospitales"     Icon={IconHospital}   color="bg-blue-50 text-blue-700" />
         </div>
       </div>
     </div>

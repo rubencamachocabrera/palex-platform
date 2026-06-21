@@ -176,8 +176,7 @@ export default function VisitasPage() {
     if (autoAbierto.current) return
     if (searchParams.get("abrir") === "1") {
       autoAbierto.current = true
-      setFechaModal(searchParams.get("fecha") ?? "")
-      abrirModal()
+      abrirModal(searchParams.get("fecha") || undefined)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
@@ -212,11 +211,11 @@ export default function VisitasPage() {
     return `Visita ${hospNombre} — ${f.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`
   }
 
-  async function abrirModal() {
-    const hoy = new Date().toISOString().slice(0, 10)
+  async function abrirModal(fechaInicial?: string) {
+    const fecha = fechaInicial || new Date().toISOString().slice(0, 10)
     setMostrarModal(true); setHospitalId(""); setBusqHosp(""); setTituloModal(""); setTituloAutoGen(true)
     setPlantillaId(""); setZonaModal("TODAS"); setProyectoId(""); setProyectos([])
-    setFechaModal(hoy); setTipoModal(userRol === "VENTAS" ? "VENTAS" : "PROYECTOS")
+    setFechaModal(fecha); setTipoModal(userRol === "VENTAS" ? "VENTAS" : "PROYECTOS")
     setContactos([]); setContactoId("")
     if (hospitalesLista.length === 0) {
       const r = await fetch("/api/hospitales")
@@ -352,7 +351,7 @@ export default function VisitasPage() {
             </svg>
             <span className="hidden sm:inline">Calendario</span>
           </Link>
-          <button onClick={abrirModal}
+          <button onClick={() => abrirModal()}
             className="flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl text-white hover:opacity-90 transition min-h-[42px]"
             style={{ backgroundColor: TEAL, boxShadow: `0 2px 8px ${TEAL}50` }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -522,7 +521,7 @@ export default function VisitasPage() {
               icon={busqueda ? "search" : "document"}
               title={busqueda ? `Sin resultados para "${busqueda}"` : filtroEstado === "TODOS" ? "No hay visitas registradas" : `No hay visitas "${ESTADO[filtroEstado]?.label ?? filtroEstado}"`}
               description={busqueda ? "Prueba con otro hospital, ciudad o nombre de técnico." : filtroEstado === "TODOS" ? "Crea tu primera visita seleccionando un hospital." : undefined}
-              action={busqueda ? { label: "Limpiar búsqueda", variant: "ghost", onClick: () => setBusqueda("") } : filtroEstado === "TODOS" ? { label: "Nueva visita", onClick: abrirModal } : undefined}
+              action={busqueda ? { label: "Limpiar búsqueda", variant: "ghost", onClick: () => setBusqueda("") } : filtroEstado === "TODOS" ? { label: "Nueva visita", onClick: () => abrirModal() } : undefined}
             />
           </div>
         ) : (
