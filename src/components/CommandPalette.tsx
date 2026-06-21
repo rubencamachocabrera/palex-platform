@@ -260,7 +260,7 @@ export function CommandPalette() {
 
   const TIPO_COLOR: Record<string, { bg: string; color: string }> = {
     accion:      { bg: "#F0F9FF", color: "#0EA5E9" },
-    hospital:    { bg: "#E6F7F6", color: "#00A99D" },
+    hospital:    { bg: "#E6F7F6", color: TEAL },
     visita:      { bg: "#FEF3E5", color: "#F7941D" },
     proyecto:    { bg: "#EEF2FF", color: "#4F46E5" },
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo, useReducer } from "react"
 import { useParams, useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { getSections } from "@/lib/form-schema"
@@ -88,6 +88,69 @@ interface VisitaData {
   hospital: { id: string; nombre: string; ciudad: string; provincia?: string | null }
   usuario: { id: string; nombre: string }
   tags?: { tag: { id: string; nombre: string; color: string } }[]
+}
+
+// ─── Form Reducer ────────────────────────────────────────────────────────────
+
+interface FormState {
+  visita: VisitaData | null
+  datos: Record<string, unknown>
+  loading: boolean
+  saving: boolean
+  savedAt: Date | null
+  pendiente: boolean
+  saveError: boolean
+  cambiandoEstado: boolean
+}
+
+type FormAction =
+  | { type: "LOADED"; visita: VisitaData; datos: Record<string, unknown> }
+  | { type: "NOT_FOUND" }
+  | { type: "SET_FIELD"; fieldId: string; value: unknown }
+  | { type: "SET_DATOS"; datos: Record<string, unknown> }
+  | { type: "SET_DATOS_REMOTE"; datos: Record<string, unknown> }
+  | { type: "SET_VISITA"; updates: Partial<VisitaData> }
+  | { type: "SAVE_START" }
+  | { type: "SAVE_SUCCESS"; updates?: Partial<VisitaData> }
+  | { type: "SAVE_ERROR" }
+  | { type: "SYNC_SUCCESS" }
+  | { type: "SET_CAMBIANDO_ESTADO"; value: boolean }
+
+const initialFormState: FormState = {
+  visita: null, datos: {}, loading: true, saving: false,
+  savedAt: null, pendiente: false, saveError: false, cambiandoEstado: false,
+}
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case "LOADED":
+      return { ...state, visita: action.visita, datos: action.datos, loading: false }
+    case "NOT_FOUND":
+      return { ...state, loading: false }
+    case "SET_FIELD":
+      return { ...state, datos: { ...state.datos, [action.fieldId]: action.value }, pendiente: true, savedAt: null }
+    case "SET_DATOS":
+      return { ...state, datos: action.datos, pendiente: true, savedAt: null }
+    case "SET_DATOS_REMOTE":
+      return { ...state, datos: action.datos }
+    case "SET_VISITA":
+      return { ...state, visita: state.visita ? { ...state.visita, ...action.updates } : state.visita }
+    case "SAVE_START":
+      return { ...state, saving: true, saveError: false }
+    case "SAVE_SUCCESS":
+      return {
+        ...state, saving: false, savedAt: new Date(), pendiente: false,
+        visita: state.visita && action.updates ? { ...state.visita, ...action.updates } : state.visita,
+      }
+    case "SAVE_ERROR":
+      return { ...state, saving: false, saveError: true }
+    case "SYNC_SUCCESS":
+      return { ...state, savedAt: new Date(), pendiente: false }
+    case "SET_CAMBIANDO_ESTADO":
+      return { ...state, cambiandoEstado: action.value }
+    default:
+      return state
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -898,18 +961,13 @@ export default function VisitaPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
-  const [visita, setVisita] = useState<VisitaData | null>(null)
-  const [datos, setDatos] = useState<Record<string, unknown>>({})
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [savedAt, setSavedAt] = useState<Date | null>(null)
-  const [pendiente, setPendiente] = useState(false)
+  const [formState, dispatch] = useReducer(formReducer, initialFormState)
+  const { visita, datos, loading, saving, savedAt, pendiente, saveError, cambiandoEstado } = formState
+
   const [openSection, setOpenSection] = useState<string>("s0")
-  const [cambiandoEstado, setCambiandoEstado] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [navOpen, setNavOpen] = useState(false)
-  const [saveError, setSaveError] = useState(false)
   const [proyectos, setProyectos] = useState<ProyectoItem[]>([])
   const [vinculandoPP, setVinculandoPP] = useState(false)
   const [contactos, setContactos] = useState<ContactoItem[]>([])
@@ -932,7 +990,7 @@ export default function VisitaPage() {
   const headerRef = useRef<HTMLDivElement>(null)
 
   const handleSyncSuccess = useCallback(() => {
-    setSavedAt(new Date()); setPendiente(false)
+    dispatch({ type: "SYNC_SUCCESS" })
   }, [])
 
   const { online, loadDraft, syncToServer } = useOfflineSync({
@@ -950,11 +1008,12 @@ export default function VisitaPage() {
       .then(r => r.ok ? r.json() : null)
       .then(async data => {
         if (data) {
-          setVisita(data); visitaRef.current = data
+          visitaRef.current = data
           const d = typeof data.datos === "object" && data.datos !== null ? (data.datos as Record<string, unknown>) : {}
           const localDraft = await loadDraft()
           const resolved = localDraft && Object.keys(localDraft).length > Object.keys(d).length ? localDraft : d
-          setDatos(resolved); datosRef.current = resolved
+          datosRef.current = resolved
+          dispatch({ type: "LOADED", visita: data, datos: resolved })
           // Cargar proyectos, contactos y rol usuario
           fetch(`/api/proyectos?hospitalId=${data.hospital.id}`)
             .then(r => r.ok ? r.json() : [])
@@ -965,7 +1024,7 @@ export default function VisitaPage() {
             .then(cs => { if (Array.isArray(cs)) setContactos(cs.map((c: { id: string; nombre: string; cargo: string | null }) => ({ id: c.id, nombre: c.nombre, cargo: c.cargo }))) })
             .catch(() => {})
         }
-        setLoading(false)
+        if (!data) dispatch({ type: "NOT_FOUND" })
       })
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1025,7 +1084,8 @@ export default function VisitaPage() {
             setColabToast(`${remoteUser} ha actualizado el formulario`)
             setTimeout(() => setColabToast(null), 4000)
           }
-          setDatos(remoteDatos); datosRef.current = remoteDatos
+          datosRef.current = remoteDatos
+          dispatch({ type: "SET_DATOS_REMOTE", datos: remoteDatos })
           lastEditadoRef.current = remoteEditado
         }
       } catch { /* timeout or network error — skip */ }
@@ -1071,8 +1131,7 @@ export default function VisitaPage() {
     const body: Record<string, unknown> = { datos: datosRef.current }
     if (nuevoEstado) body.estado = nuevoEstado
     if (!online) { await syncToServer(body); return }
-    setSaving(true)
-    setSaveError(false)
+    dispatch({ type: "SAVE_START" })
     try {
       const r = await fetch(`/api/visitas/${id}`, {
         method: "PATCH",
@@ -1082,26 +1141,26 @@ export default function VisitaPage() {
       })
       if (r.ok) {
         const updated = await r.json()
-        setVisita(v => { const next = v ? { ...v, estado: updated.estado, editadoEn: updated.editadoEn } : v; visitaRef.current = next; return next })
+        const updates = { estado: updated.estado, editadoEn: updated.editadoEn }
+        visitaRef.current = visitaRef.current ? { ...visitaRef.current, ...updates } : visitaRef.current
         if (updated.editadoEn) lastEditadoRef.current = updated.editadoEn
-        setSavedAt(new Date()); setPendiente(false)
+        dispatch({ type: "SAVE_SUCCESS", updates })
       } else {
-        setSaveError(true)
+        dispatch({ type: "SAVE_ERROR" })
       }
     } catch {
-      setSaveError(true)
-    } finally { setSaving(false) }
+      dispatch({ type: "SAVE_ERROR" })
+    }
   }, [id, online, syncToServer])
 
   const guardarRef = useRef(guardar)
   useEffect(() => { guardarRef.current = guardar }, [guardar])
 
   function setField(fieldId: string, value: unknown) {
-    setDatos(prev => { const next = { ...prev, [fieldId]: value }; datosRef.current = next; return next })
-    setPendiente(true); setSavedAt(null)
+    datosRef.current = { ...datosRef.current, [fieldId]: value }
+    dispatch({ type: "SET_FIELD", fieldId, value })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
-    // Limpiar error cuando el usuario empieza a rellenar
     if (fieldErrors[fieldId]) setFieldErrors(prev => { const n = { ...prev }; delete n[fieldId]; return n })
   }
 
@@ -1114,41 +1173,42 @@ export default function VisitaPage() {
   }
 
   const setFotos = useCallback((sectionId: string, fotos: Foto[]) => {
-    setDatos(prev => {
-      const fotosMap = ((prev.fotos as FotosMap) ?? {})
-      const next = { ...prev, fotos: { ...fotosMap, [sectionId]: fotos } }
-      datosRef.current = next
-      return next
-    })
-    setPendiente(true); setSavedAt(null)
+    const fotosMap = ((datosRef.current.fotos as FotosMap) ?? {})
+    const newDatos = { ...datosRef.current, fotos: { ...fotosMap, [sectionId]: fotos } }
+    datosRef.current = newDatos
+    dispatch({ type: "SET_DATOS", datos: newDatos })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }, [])
 
   function setTodos(todos: TodoItem[]) {
-    setDatos(prev => { const next = { ...prev, todos }; datosRef.current = next; return next })
-    setPendiente(true); setSavedAt(null)
+    const newDatos = { ...datosRef.current, todos }
+    datosRef.current = newDatos
+    dispatch({ type: "SET_DATOS", datos: newDatos })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
   function setAudioNotas(audioNotas: AudioNota[]) {
-    setDatos(prev => { const next = { ...prev, audioNotas }; datosRef.current = next; return next })
-    setPendiente(true); setSavedAt(null)
+    const newDatos = { ...datosRef.current, audioNotas }
+    datosRef.current = newDatos
+    dispatch({ type: "SET_DATOS", datos: newDatos })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
   function setNotasLibres(notasLibres: string) {
-    setDatos(prev => { const next = { ...prev, notasLibres }; datosRef.current = next; return next })
-    setPendiente(true); setSavedAt(null)
+    const newDatos = { ...datosRef.current, notasLibres }
+    datosRef.current = newDatos
+    dispatch({ type: "SET_DATOS", datos: newDatos })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
 
   function setFirma(key: "firma_cliente" | "firma_tecnico", dataUrl: string) {
-    setDatos(prev => { const next = { ...prev, [key]: dataUrl }; datosRef.current = next; return next })
-    setPendiente(true); setSavedAt(null)
+    const newDatos = { ...datosRef.current, [key]: dataUrl }
+    datosRef.current = newDatos
+    dispatch({ type: "SET_DATOS", datos: newDatos })
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => guardarRef.current(), 2000)
   }
@@ -1164,7 +1224,7 @@ export default function VisitaPage() {
       })
       if (r.ok) {
         const updated = await r.json()
-        setVisita(v => v ? { ...v, proyectoId: updated.proyectoId, proyecto: updated.proyecto ?? null } : v)
+        dispatch({ type: "SET_VISITA", updates: { proyectoId: updated.proyectoId, proyecto: updated.proyecto ?? null } })
       }
     } catch { /* silencioso */ } finally {
       setVinculandoPP(false)
@@ -1183,7 +1243,7 @@ export default function VisitaPage() {
       })
       if (r.ok) {
         const updated = await r.json()
-        setVisita(v => v ? { ...v, contactoPrincipalId: updated.contactoPrincipalId, contactoPrincipal: updated.contactoPrincipal ?? null } : v)
+        dispatch({ type: "SET_VISITA", updates: { contactoPrincipalId: updated.contactoPrincipalId, contactoPrincipal: updated.contactoPrincipal ?? null } })
       }
     } catch { /* silencioso */ } finally {
       setVinculandoContacto(false)
@@ -1214,7 +1274,7 @@ export default function VisitaPage() {
   }
 
   const cambiarEstado = useCallback(async (estado: string) => {
-    setCambiandoEstado(true); await guardar(estado); setCambiandoEstado(false)
+    dispatch({ type: "SET_CAMBIANDO_ESTADO", value: true }); await guardar(estado); dispatch({ type: "SET_CAMBIANDO_ESTADO", value: false })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1321,13 +1381,13 @@ export default function VisitaPage() {
             ) : (
               <input
                 value={visita.titulo ?? ""}
-                onChange={e => setVisita(v => v ? { ...v, titulo: e.target.value } : v)}
+                onChange={e => dispatch({ type: "SET_VISITA", updates: { titulo: e.target.value } })}
                 onBlur={e => {
                   const val = e.target.value.trim() || null
                   if (val !== (visitaRef.current?.titulo ?? null)) {
                     fetch(`/api/visitas/${visita.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ titulo: val ?? "" }) })
                       .then(r => r.ok ? r.json() : null)
-                      .then(d => { if (d) { setVisita(v => v ? { ...v, titulo: d.titulo } : v); if (visitaRef.current) visitaRef.current.titulo = d.titulo } })
+                      .then(d => { if (d) { dispatch({ type: "SET_VISITA", updates: { titulo: d.titulo } }); if (visitaRef.current) visitaRef.current.titulo = d.titulo } })
                   }
                 }}
                 placeholder="Nombre de la visita (opcional)"
@@ -1355,7 +1415,7 @@ export default function VisitaPage() {
                 entityType="VISITA"
                 entityId={visita.id}
                 tagIds={(visita.tags ?? []).map(t => t.tag.id)}
-                onUpdate={ids => setVisita(v => v ? { ...v, tags: ids.map(id => ({ tag: { id, nombre: "", color: "" } })) } : v)}
+                onUpdate={ids => dispatch({ type: "SET_VISITA", updates: { tags: ids.map(id => ({ tag: { id, nombre: "", color: "" } })) } })}
                 readOnly={readOnly}
               />
             </div>
@@ -1577,7 +1637,7 @@ export default function VisitaPage() {
           <div className="mb-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 shrink-0">
               <span className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00A99D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
                 </svg>
               </span>

@@ -78,7 +78,7 @@ function TareaCheck({ estado }: { estado: string }) {
     </svg>
   )
   if (estado === "EN_PROGRESO") return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A99D" strokeWidth="2" strokeLinecap="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 7v5l3 3"/>
     </svg>
@@ -115,7 +115,7 @@ function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asigna
         onKeyDown={e => { if (e.key === "Enter") onSubmit(); if (e.key === "Escape") onCancel() }}
         placeholder={parentId ? "Nombre de la subtarea..." : "Nombre de la tarea..."}
         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
-        style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+        style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
       />
       <div className="flex flex-wrap gap-2">
         <select value={prioridad} onChange={e => onChange("prioridad", e.target.value)}
@@ -139,7 +139,7 @@ function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asigna
       <div className="flex gap-2">
         <button onClick={onSubmit} disabled={guardando}
           className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity disabled:opacity-50"
-          style={{ backgroundColor: "#00A99D" }}>
+          style={{ backgroundColor: TEAL }}>
           {guardando ? "Guardando..." : "Añadir"}
         </button>
         <button onClick={onCancel}
@@ -355,17 +355,17 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
         <div className="flex-1">
           <div className="flex justify-between text-xs text-gray-500 mb-1.5">
             <span>{completadasRaiz} de {totalRaiz} tareas completadas</span>
-            <span className="font-semibold" style={{ color: pct === 100 ? "#16a34a" : "#00A99D" }}>{pct}%</span>
+            <span className="font-semibold" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : "#00A99D" }} />
+              style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
           </div>
         </div>
         <button
           onClick={() => openAdd("ROOT")}
           className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity active:opacity-80"
-          style={{ backgroundColor: "#00A99D" }}
+          style={{ backgroundColor: TEAL }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -405,7 +405,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
             style={filtro === k
               ? k === "RETRASADAS"
                 ? { backgroundColor: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
-                : { backgroundColor: "#E6F7F6", color: "#00A99D", borderColor: "#00A99D" }
+                : { backgroundColor: "#E6F7F6", color: TEAL, borderColor: TEAL }
               : { backgroundColor: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
             {label}{count > 0 ? ` · ${count}` : ""}
           </button>
@@ -418,7 +418,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
           <div className="flex gap-3 overflow-x-auto pb-3 min-h-[300px]">
             {([
               { estado: "PENDIENTE",   label: "Pendiente",   color: "#9ca3af", bg: "#f9fafb" },
-              { estado: "EN_PROGRESO", label: "En progreso", color: "#00A99D", bg: "#E6F7F6" },
+              { estado: "EN_PROGRESO", label: "En progreso", color: TEAL, bg: "#E6F7F6" },
               { estado: "COMPLETADA",  label: "Completada",  color: "#16a34a", bg: "#f0fdf4" },
               { estado: "CANCELADA",   label: "Cancelada",   color: "#dc2626", bg: "#fef2f2" },
             ]).map(col => (
@@ -464,7 +464,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
           return (
             <div key={tarea.id}
               className="bg-white rounded-2xl border shadow-sm overflow-hidden transition-all"
-              style={{ borderColor: editId === tarea.id ? "#00A99D" : retrasada ? "#fca5a5" : "#f3f4f6" }}>
+              style={{ borderColor: editId === tarea.id ? TEAL : retrasada ? "#fca5a5" : "#f3f4f6" }}>
 
               {/* Modo edición */}
               {editId === tarea.id ? (
@@ -475,7 +475,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                     onChange={e => setEditForm(p => ({ ...p, titulo: e.target.value }))}
                     onKeyDown={e => { if (e.key === "Enter") guardarEdit(tarea.id); if (e.key === "Escape") setEditId(null) }}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
-                    style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+                    style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
                   />
                   <div className="flex flex-wrap gap-2">
                     <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
@@ -499,7 +499,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                   <div className="flex gap-2">
                     <button onClick={() => guardarEdit(tarea.id)} disabled={guardando}
                       className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
-                      style={{ backgroundColor: "#00A99D" }}>
+                      style={{ backgroundColor: TEAL }}>
                       {guardando ? "Guardando..." : "Guardar"}
                     </button>
                     <button onClick={() => setEditId(null)}
@@ -599,7 +599,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                       <span>{subs.length} subtarea{subs.length > 1 ? "s" : ""}</span>
                       <div className="flex-1 max-w-20 h-1 bg-gray-200 rounded-full">
                         <div className="h-full rounded-full transition-all"
-                          style={{ width: `${subs.length ? Math.round(subComp / subs.length * 100) : 0}%`, backgroundColor: "#00A99D" }} />
+                          style={{ width: `${subs.length ? Math.round(subComp / subs.length * 100) : 0}%`, backgroundColor: TEAL }} />
                       </div>
                       <span>{subComp} completada{subComp !== 1 ? "s" : ""}</span>
                     </button>
@@ -621,7 +621,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                               onChange={e => setEditForm(p => ({ ...p, titulo: e.target.value }))}
                               onKeyDown={e => { if (e.key === "Enter") guardarEdit(sub.id); if (e.key === "Escape") setEditId(null) }}
                               className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
-                              style={{ "--tw-ring-color": "#00A99D" } as React.CSSProperties}
+                              style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
                             />
                             <div className="flex flex-wrap gap-2">
                               <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
@@ -642,7 +642,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                             <div className="flex gap-2">
                               <button onClick={() => guardarEdit(sub.id)} disabled={guardando}
                                 className="px-3 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
-                                style={{ backgroundColor: "#00A99D" }}>
+                                style={{ backgroundColor: TEAL }}>
                                 {guardando ? "..." : "Guardar"}
                               </button>
                               <button onClick={() => setEditId(null)}

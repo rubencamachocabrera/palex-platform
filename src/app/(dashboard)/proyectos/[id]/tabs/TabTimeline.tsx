@@ -787,7 +787,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
               return (
                 <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[24px] top-3.5 w-4 h-4 rotate-45 border-2 border-white shadow-sm z-10 rounded-sm"
-                    style={{ backgroundColor: editingHito ? "#00A99D" : h.completado ? "#16a34a" : ORANGE }} />
+                    style={{ backgroundColor: editingHito ? TEAL : h.completado ? "#16a34a" : ORANGE }} />
                   <div className={`rounded-2xl border p-4 ${editingHito ? "bg-teal-50 border-teal-200" : "bg-amber-50 border-amber-100"}`}>
                     {editingHito ? (
                       <div className="space-y-3">
@@ -826,7 +826,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
                         <div className="flex gap-2">
                           <button onClick={() => guardarHito(h.id)} disabled={guardando}
                             className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
-                            style={{ backgroundColor: "#00A99D" }}>
+                            style={{ backgroundColor: TEAL }}>
                             {guardando ? "Guardando…" : "Guardar"}
                           </button>
                           <button onClick={() => setEditHitoId(null)}
@@ -903,7 +903,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
               return (
                 <div key={ri.rKey} className="relative mb-3">
                   <div className="absolute -left-[22px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm z-10"
-                    style={{ backgroundColor: editing ? "#00A99D" : cs.dotColor }} />
+                    style={{ backgroundColor: editing ? TEAL : cs.dotColor }} />
                   <div className={`rounded-2xl border p-4 ${cs.bg} ${editing ? "border-teal-300" : cs.border}`}>
                     {editing ? (
                       /* ── Modo edición ── */
@@ -994,7 +994,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
                         <div className="flex gap-2">
                           <button onClick={() => guardarEntrada(e.id, e.tipo)} disabled={guardando}
                             className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50 transition-opacity"
-                            style={{ backgroundColor: "#00A99D" }}>
+                            style={{ backgroundColor: TEAL }}>
                             {guardando ? "Guardando…" : "Guardar"}
                           </button>
                           <button onClick={() => setEditEntradaId(null)}

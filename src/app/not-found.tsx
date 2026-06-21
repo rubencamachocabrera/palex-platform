@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { TEAL } from "@/lib/brand"
 
 export default function NotFound() {
   const router = useRouter()
@@ -13,10 +14,10 @@ export default function NotFound() {
           <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="120" height="120" rx="32" fill="#E6F7F6" className="dark:fill-teal-950/30"/>
             <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle"
-              fontSize="48" fontWeight="700" fill="#00A99D" fontFamily="system-ui">
+              fontSize="48" fontWeight="700" fill={TEAL} fontFamily="system-ui">
               404
             </text>
-            <circle cx="60" cy="88" r="4" fill="#00A99D" opacity="0.3"/>
+            <circle cx="60" cy="88" r="4" fill={TEAL} opacity="0.3"/>
           </svg>
         </div>
 
