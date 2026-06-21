@@ -95,7 +95,9 @@ src/
       visitas/[id]/page.tsx             Formulario 13 secciones, titulo editable, fotos, PDF, offline
       ventas/pipeline/page.tsx          CRM pipeline (DESACTIVADO)
       proyectos/page.tsx                Lista proyectos (unificado)
-      proyectos/[id]/page.tsx           Detalle: 10 tabs (Cockpit, Info, Fases, Tareas, Timeline, Materiales, Contactos, Visitas, Modulos, Adjuntos) + Resumen 360
+      proyectos/[id]/page.tsx           Detalle: header + tabs selector + modal (300 lineas)
+      proyectos/[id]/types.ts           Interfaces, constantes, helpers compartidos
+      proyectos/[id]/tabs/              10 tabs con next/dynamic (TabCockpit, TabInfo, TabTareas, TabTimeline, TabMateriales, TabContactos, TabVisitas, TabModulos, TabAdjuntos, TabResumen)
       hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
       mapa/page.tsx                     Leaflet, coordenadas por ciudad
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
@@ -432,6 +434,17 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Sync de rol automatico: cambio de rol por admin efectivo en <5 min sin re-login
 - Graceful: si DB falla en el check, se mantiene token existente (no bloquea)
 
+### Code splitting proyectos (F7)
+- proyectos/[id]/page.tsx: 4902 → 300 lineas (94% reduccion)
+- 10 tabs extraidos a tabs/ con next/dynamic (lazy loading bajo demanda)
+- types.ts compartido: interfaces, constantes, helpers
+- Tabs: TabCockpit, TabInfo, TabTareas, TabTimeline, TabMateriales, TabContactos, TabVisitas, TabModulos, TabAdjuntos, TabResumen
+
+### Modales globales — scroll safety
+- ~20 modales corregidos: overlay overflow-y-auto + card my-auto
+- Modales nunca se cortan en viewports pequeños (centrado + scroll automatico)
+- Archivos: visitas, hospitales/[id], proyectos/[id], proyectos, admin/usuarios, admin/zonas, admin/hardware, hardware, ventas/pipeline
+
 ### Heatmap carga de trabajo (ADMIN)
 - Pagina /admin/carga-trabajo: grid GitHub-style, filas=usuarios, columnas=dias del mes
 - API /api/admin/carga-trabajo: visitas por usuario/dia con raw SQL groupBy
@@ -656,9 +669,10 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [ ] Rate limiting en las 56 rutas API que no lo tienen (especialmente sub-rutas de proyectos)
 - [ ] bodyParser size limits en next.config.ts
 
-#### Fase 7 — Code splitting frontend (1 dia) — PROGRESIVO
-- [ ] Extraer 10 tabs de proyectos/[id]/page.tsx (4900+ lineas) a componentes con next/dynamic
-- [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad
+#### Fase 7 — Code splitting frontend (1 dia) — COMPLETADA
+- [x] Extraer 10 tabs de proyectos/[id]/page.tsx (4902→300 lineas) a componentes con next/dynamic
+- [x] types.ts compartido con interfaces, constantes y helpers
+- [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad (pendiente — bajo impacto)
 
 #### Fase 8 — Rendimiento frontend (1-2 dias) — COMPLETADA
 - [x] SWR para cache de datos compartidos: hook usePerfil() reemplaza fetch("/api/perfil") en 10 paginas
@@ -670,10 +684,11 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [x] Sync de rol: si admin cambia rol de usuario, se actualiza en <5 min sin re-login
 - [x] Callbacks jwt+session overridden en auth.ts (server-side, con Prisma)
 
-#### Estimacion total restante: ~3-4 dias de desarrollo
+#### Estimacion total restante: ~3 dias de desarrollo
 - Fases 1-4: COMPLETADAS (seguridad + BD + Redis + paginacion)
 - Fase 5: necesaria antes de superar 20 usuarios concurrentes (~2-3 dias)
-- Fases 6-7: mejora progresiva sprint a sprint (~1-2 dias)
+- Fase 6: mejora progresiva sprint a sprint (~1 dia)
+- Fase 7: COMPLETADA (code splitting proyectos 4902→300 lineas)
 - Fases 8-9: COMPLETADAS (SWR + polling + JWT revocacion)
 
 ### Backlog — features futuras (no priorizado)

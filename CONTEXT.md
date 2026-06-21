@@ -49,7 +49,10 @@ src/
 │   │   ├── ventas/pipeline/    ← CRM Kanban (DESACTIVADO)
 │   │   ├── proyectos/
 │   │   │   ├── page.tsx        ← Lista proyectos + Kanban
-│   │   │   └── [id]/page.tsx   ← Detalle: 10 tabs + Resumen 360
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx    ← Detalle: header + tabs selector (300 lineas, code-split)
+│   │   │       ├── types.ts    ← Interfaces, constantes, helpers compartidos
+│   │   │       └── tabs/       ← 10 tabs con next/dynamic lazy loading
 │   │   ├── hardware/page.tsx   ← Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
 │   │   ├── llamadas/page.tsx    ← Registro rapido de llamadas (CRUD, KPIs, filtros)
 │   │   ├── admin/              ← CRUD: usuarios, zonas, hospitales, hardware + log + equipo + carga-trabajo
@@ -283,6 +286,6 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - ~~F4 Paginacion hospitales + proyectos — COMPLETADA~~ (limit/page/X-Total-Count + cargar mas)
 - F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
 - F6 Validacion (2d): Zod + rate limit global 70 rutas — PROGRESIVO
-- F7 Code splitting (1d): proyectos/[id] 4900 lineas → tabs dinamicos — PROGRESIVO
+- ~~F7 Code splitting — COMPLETADA~~ (proyectos/[id] 4902→300 lineas, 10 tabs con next/dynamic)
 - ~~F8 Frontend perf — COMPLETADA~~ (SWR usePerfil 10 paginas + polling reducido 60%)
 - ~~F9 JWT revocacion — COMPLETADA~~ (check activo cada 5 min + sync rol)
