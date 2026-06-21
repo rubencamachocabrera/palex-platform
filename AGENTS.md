@@ -601,9 +601,9 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [x] CSP: eliminado `unsafe-eval` de script-src en next.config.ts
 - [x] HSTS: añadido Strict-Transport-Security max-age=31536000; includeSubDomains
 
-#### Fase 2 — Base de datos (3 horas) — INMEDIATA
-- [ ] Connection pooling: configurar max:15-20 en PrismaPg adapter o activar PgBouncer de Railway
-- [ ] Indices: añadir @@index en Visita [hospitalId, fecha], Hospital [zonaId], Proyecto [hospitalId, responsableId], Comentario [visitaId, proyectoId]
+#### Fase 2 — Base de datos (3 horas) — COMPLETADA
+- [x] Connection pooling: max:20 en PrismaPg adapter (src/lib/db.ts)
+- [x] Indices: 15 @@index añadidos — Hospital[zonaId], Contacto[hospitalId], Visita[hospitalId,usuarioId,fecha], Proyecto[hospitalId,responsableId], FaseProyecto[proyectoId], Tarea[proyectoId], Hito[proyectoId], EntradaTimeline[proyectoId], SolicitudMaterial[proyectoId], Adjunto[proyectoId], Comentario[visitaId,proyectoId], HardwareUnidad[hospitalId,catalogoId]
 
 #### Fase 3 — Redis para estado compartido (1 dia) — PRE-SCALING
 - [ ] Migrar rate-limit.ts de Map a Redis (Upstash serverless o Railway Redis)

@@ -223,6 +223,7 @@ model Hospital {
   hardwareUnidades HardwareUnidad[]
   llamadas         RegistroLlamada[]
 
+  @@index([zonaId])
   @@map("hospitales")
 }
 
@@ -241,6 +242,7 @@ model Contacto {
   visitasPrincipal Visita[]              @relation("VisitaContactoPrincipal")
   llamadas         RegistroLlamada[]
 
+  @@index([hospitalId])
   @@map("contactos")
 }
 
@@ -271,6 +273,9 @@ model Visita {
   comentarios        Comentario[]
   tags               VisitaTag[]
 
+  @@index([hospitalId])
+  @@index([usuarioId])
+  @@index([fecha])
   @@map("visitas")
 }
 
@@ -359,6 +364,8 @@ model Proyecto {
   modulos          ProyectoModulo[]
   tags             ProyectoTag[]
 
+  @@index([hospitalId])
+  @@index([responsableId])
   @@map("pre_proyectos")
 }
 
@@ -379,6 +386,7 @@ model FaseProyecto {
   proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   responsable Usuario?    @relation("FaseResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
 
+  @@index([proyectoId])
   @@map("fases_pre_proyectos")
 }
 
@@ -395,6 +403,7 @@ model Hito {
 
   proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
+  @@index([proyectoId])
   @@map("hitos")
 }
 
@@ -416,6 +425,7 @@ model EntradaTimeline {
 
   proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
+  @@index([proyectoId])
   @@map("entradas_timeline")
 }
 
@@ -440,6 +450,7 @@ model Tarea {
   subtareas   Tarea[]     @relation("TareaSubtareas")
   asignado    Usuario?    @relation("TareasAsignadas", fields: [asignadoAId], references: [id], onDelete: SetNull)
 
+  @@index([proyectoId])
   @@index([asignadoAId])
   @@map("tareas")
 }
@@ -459,6 +470,7 @@ model SolicitudMaterial {
   proyecto Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   lineas      LineaMaterial[]
 
+  @@index([proyectoId])
   @@map("solicitudes_material")
 }
 
@@ -546,6 +558,8 @@ model HardwareUnidad {
   hospital    Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
   proyecto Proyecto?     @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
 
+  @@index([hospitalId])
+  @@index([catalogoId])
   @@map("hardware_unidades")
 }
 
@@ -576,6 +590,7 @@ model Adjunto {
 
   proyecto Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
+  @@index([proyectoId])
   @@map("adjuntos")
 }
 
@@ -598,6 +613,8 @@ model Comentario {
   visita      Visita?      @relation(fields: [visitaId], references: [id], onDelete: Cascade)
   proyecto Proyecto? @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 
+  @@index([visitaId])
+  @@index([proyectoId])
   @@map("comentarios")
 }
 
