@@ -102,6 +102,7 @@ src/
 │   ├── log-actividad.ts        ← logActividad() helper para registrar acciones
 │   ├── presence.ts             ← heartbeat/getActiveUsers/leave — presencia colaborativa
 │   ├── rate-limit.ts           ← checkRateLimit() (god node: 22 edges)
+│   ├── schemas.ts              ← Zod v4 schemas centralizados + parseBody() helper
 │   └── visita-analysis.ts      ← detectarRiesgos() + calcularScore() (score 0-100)
 ├── instrumentation.ts          ← Sentry nodejs/edge runtime registration + onRequestError
 ├── middleware.ts               ← Protege rutas, edge-compatible
@@ -279,13 +280,13 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 **Pendiente: Ver AGENTS.md seccion 9 (roadmap corporativo fases 3-9 + backlog).**
 
-**Roadmap corporativo (auditoria junio 2026) — ~3-4 dias restantes:**
+**Roadmap corporativo (auditoria junio 2026) — ~2-3 dias restantes:**
 - ~~F1 Seguridad critica — COMPLETADA~~
 - ~~F2 BD optimizacion — COMPLETADA~~
 - ~~F3 Redis (Upstash) para rate-limit + presence — COMPLETADA~~ (env: UPSTASH_REDIS_REST_URL/TOKEN)
 - ~~F4 Paginacion hospitales + proyectos — COMPLETADA~~ (limit/page/X-Total-Count + cargar mas)
 - F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
-- F6 Validacion (2d): Zod + rate limit global 70 rutas — PROGRESIVO
+- ~~F6 Validacion — COMPLETADA~~ (Zod v4 + rate limiting ~50 rutas, schemas centralizados en schemas.ts)
 - ~~F7 Code splitting — COMPLETADA~~ (proyectos/[id] 4902→300 lineas, 10 tabs con next/dynamic)
 - ~~F8 Frontend perf — COMPLETADA~~ (SWR usePerfil 10 paginas + polling reducido 60%)
 - ~~F9 JWT revocacion — COMPLETADA~~ (check activo cada 5 min + sync rol)

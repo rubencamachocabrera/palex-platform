@@ -445,6 +445,13 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Modales nunca se cortan en viewports pequeños (centrado + scroll automatico)
 - Archivos: visitas, hospitales/[id], proyectos/[id], proyectos, admin/usuarios, admin/zonas, admin/hardware, hardware, ventas/pipeline
 
+### Validacion Zod + rate limiting global (F6)
+- Zod v4 (4.4.3): schemas centralizados en src/lib/schemas.ts con parseBody() helper
+- ~50 rutas API con checkRateLimit() (GET 60/min, POST/PATCH/DELETE 30/min, share 20/min, presence 120/min)
+- Schemas: TareaCreate/Patch, HitoCreate/Patch, EntradaCreate, SolicitudCreate/Patch, ContactoCreate/Patch, ModulosReplace, ModuloPatch, FasePatch, RecordatorioCreate/Patch, OnboardingPatch, ComentarioCreate, TagCreate/Patch, HardwareUnidadCreate, LlamadaCreate/Patch, ContactoPivot
+- Validacion en POST/PATCH de: tareas, hitos, entradas, solicitudes, contactos, modulos, fases, recordatorios, onboarding, tags, hardware unidades, llamadas
+- Rate limiting en todas las rutas restantes: hardware/*, plantillas/*, share/*, usuarios/*, zonas/*, geocode, presence, calendario/ical, estadisticas, timeline, notificaciones, search, config, perfil
+
 ### Heatmap carga de trabajo (ADMIN)
 - Pagina /admin/carga-trabajo: grid GitHub-style, filas=usuarios, columnas=dias del mes
 - API /api/admin/carga-trabajo: visitas por usuario/dia con raw SQL groupBy
@@ -664,10 +671,11 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [ ] Migrar HardwareCatalogoDoc.contenido a R2/S3
 - [ ] API upload con presigned URLs + validacion MIME + limite tamaño
 
-#### Fase 6 — Validacion y rate limiting global (2 dias) — PROGRESIVO
-- [ ] Adoptar Zod para validacion de esquema en todas las rutas POST/PATCH
-- [ ] Rate limiting en las 56 rutas API que no lo tienen (especialmente sub-rutas de proyectos)
-- [ ] bodyParser size limits en next.config.ts
+#### Fase 6 — Validacion y rate limiting global (2 dias) — COMPLETADA
+- [x] Zod v4 (4.4.3): schemas centralizados en src/lib/schemas.ts con parseBody() helper
+- [x] Validacion Zod en POST/PATCH de ~20 rutas (tareas, hitos, entradas, solicitudes, contactos, modulos, fases, recordatorios, onboarding, tags, hardware, llamadas, comentarios)
+- [x] Rate limiting checkRateLimit() en ~50 rutas API (GET 60/min, POST/PATCH/DELETE 30/min)
+- [ ] bodyParser size limits en next.config.ts (pendiente — bajo impacto)
 
 #### Fase 7 — Code splitting frontend (1 dia) — COMPLETADA
 - [x] Extraer 10 tabs de proyectos/[id]/page.tsx (4902→300 lineas) a componentes con next/dynamic
@@ -684,10 +692,10 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [x] Sync de rol: si admin cambia rol de usuario, se actualiza en <5 min sin re-login
 - [x] Callbacks jwt+session overridden en auth.ts (server-side, con Prisma)
 
-#### Estimacion total restante: ~3 dias de desarrollo
+#### Estimacion total restante: ~2-3 dias de desarrollo
 - Fases 1-4: COMPLETADAS (seguridad + BD + Redis + paginacion)
 - Fase 5: necesaria antes de superar 20 usuarios concurrentes (~2-3 dias)
-- Fase 6: mejora progresiva sprint a sprint (~1 dia)
+- Fase 6: COMPLETADA (Zod v4 + rate limiting ~50 rutas)
 - Fase 7: COMPLETADA (code splitting proyectos 4902→300 lineas)
 - Fases 8-9: COMPLETADAS (SWR + polling + JWT revocacion)
 
