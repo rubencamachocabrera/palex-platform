@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { usePerfil } from "@/hooks/usePerfil"
 import { TagSelector } from "@/components/TagSelector"
 import { ComentariosPanel } from "@/components/ComentariosPanel"
 import QRCode from "qrcode"
@@ -158,13 +159,9 @@ function relativo(s: string) {
 // ─── Comentarios embebidos en Info ───────────────────────────────────────────
 
 function ComentariosInInfo({ ppId }: { ppId: string }) {
-  const [userInfo, setUserInfo] = useState<{ id: string; rol: string } | null>(null)
-  useEffect(() => {
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.id) setUserInfo({ id: d.id, rol: d.rol }) })
-      .catch(() => {})
-  }, [])
-  if (!userInfo) return null
+  const { perfil } = usePerfil()
+  if (!perfil) return null
+  const userInfo = { id: perfil.id, rol: perfil.rol }
   return (
     <ComentariosPanel
       endpoint={`/api/proyectos/${ppId}/comentarios`}
@@ -2989,16 +2986,10 @@ const TIPO_H_LABEL: Record<string, string> = {
 }
 
 function TabComentarios({ pp }: { pp: Proyecto }) {
-  const [userInfo, setUserInfo] = useState<{ id: string; rol: string } | null>(null)
+  const { perfil } = usePerfil()
 
-  useEffect(() => {
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.id) setUserInfo({ id: d.id, rol: d.rol }) })
-      .catch(() => {})
-  }, [])
-
-  if (!userInfo) return <div className="py-10 text-center text-sm text-gray-400">Cargando…</div>
+  if (!perfil) return <div className="py-10 text-center text-sm text-gray-400">Cargando…</div>
+  const userInfo = { id: perfil.id, rol: perfil.rol }
 
   return (
     <div className="max-w-2xl">

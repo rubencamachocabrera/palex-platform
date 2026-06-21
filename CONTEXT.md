@@ -87,7 +87,8 @@ src/
 ├── hooks/
 │   ├── useKeyboardShortcuts.ts ← Cmd+K, G+H/V/P/D, Escape
 │   ├── useOfflineSync.ts       ← useOfflineSync(), useOnlineStatus(), SaveStatus
-│   └── useFavoritos.ts         ← DB-backed favoritos hook (optimistic updates, rollback)
+│   ├── useFavoritos.ts         ← DB-backed favoritos hook (optimistic updates, rollback)
+│   └── usePerfil.ts            ← SWR hook — cache perfil (rol, nombre, id) compartido entre paginas
 ├── lib/
 │   ├── auth.config.ts          ← Edge-compatible
 │   ├── auth.ts                 ← Server-side NextAuth
@@ -260,12 +261,14 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - Notificaciones navegador: Browser Notification API, polling 60s, preferencias en perfil
 - Sincronizacion calendario iCal: HMAC tokens, feed .ics, URL copiable en perfil
 - Seguridad: IDOR zona+responsable, CSP (sin unsafe-eval), HSTS 1 año, brute-force login, whitelist PATCH
+- Seguridad: JWT revocacion con cache 5 min (desactivar usuario = pierde acceso en <5 min) + sync de rol
 - Sentry error tracking (client/server/edge + global-error boundary + instrumentation)
 - Playwright E2E: 18 tests + auth setup + mobile viewport
 - Dark mode completo: 20+ paginas, hover states, RadioPills/CheckPills CSS
 - Lighthouse: Performance 100, Accessibility 100, Best Practices 96, SEO 100
 - PWA: manifest + SW (network-first) + IndexedDB
 - BD optimizada: connection pooling max:20, 15 indices en FKs frecuentes
+- Frontend perf: SWR usePerfil() compartido (10 paginas), polling reducido 60% (heartbeat 15s, data 10s)
 
 **CRM / Pipeline comercial: DESACTIVADO.**
 
@@ -273,7 +276,7 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 **Pendiente: Ver AGENTS.md seccion 9 (roadmap corporativo fases 3-9 + backlog).**
 
-**Roadmap corporativo (auditoria junio 2026) — ~6-8 dias restantes:**
+**Roadmap corporativo (auditoria junio 2026) — ~3-4 dias restantes:**
 - ~~F1 Seguridad critica — COMPLETADA~~
 - ~~F2 BD optimizacion — COMPLETADA~~
 - ~~F3 Redis (Upstash) para rate-limit + presence — COMPLETADA~~ (env: UPSTASH_REDIS_REST_URL/TOKEN)
@@ -281,5 +284,5 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 - F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
 - F6 Validacion (2d): Zod + rate limit global 70 rutas — PROGRESIVO
 - F7 Code splitting (1d): proyectos/[id] 4900 lineas → tabs dinamicos — PROGRESIVO
-- F8 Frontend perf (1-2d): SWR, useReducer visita, polling SSE — PROGRESIVO
-- F9 JWT revocacion (2h): check usuario.activo en callback jwt — PROGRESIVO
+- ~~F8 Frontend perf — COMPLETADA~~ (SWR usePerfil 10 paginas + polling reducido 60%)
+- ~~F9 JWT revocacion — COMPLETADA~~ (check activo cada 5 min + sync rol)

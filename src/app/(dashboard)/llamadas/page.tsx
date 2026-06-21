@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton"
 import { useToast } from "@/components/Toast"
+import { usePerfil } from "@/hooks/usePerfil"
 import { IconPhone, IconSearch, IconX, IconPlus, IconChevronDown } from "@/components/ui/Icons"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -271,7 +272,7 @@ export default function LlamadasPage() {
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [hospitalesLoading, setHospitalesLoading] = useState(true)
   const [contactos, setContactos] = useState<Contacto[]>([])
-  const [userRol, setUserRol] = useState("")
+  const { rol: userRol } = usePerfil()
 
   // Filters
   const [filtroFecha, setFiltroFecha] = useState("mes")
@@ -330,10 +331,6 @@ export default function LlamadasPage() {
       .catch(() => {})
       .finally(() => setHospitalesLoading(false))
 
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.rol) setUserRol(d.rol) })
-      .catch(() => {})
   }, [])
 
   // Load contactos when hospital changes

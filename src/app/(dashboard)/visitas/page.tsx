@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 import { TagPills } from "@/components/TagSelector"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -128,8 +129,7 @@ export default function VisitasPage() {
   const [proyectos, setProyectos] = useState<ProyectoMini[]>([])
   const [proyectoId, setProyectoId] = useState("")
   const [creando, setCreando] = useState(false)
-  const [userRol, setUserRol] = useState("PROYECTOS")
-  const [userName, setUserName] = useState("")
+  const { rol: userRol, nombre: userName } = usePerfil()
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string; descripcion: string | null; datos: Record<string, unknown> }[]>([])
   const [plantillaId, setPlantillaId] = useState("")
   const [tipoModal, setTipoModal] = useState<"PROYECTOS" | "VENTAS">("PROYECTOS")
@@ -143,7 +143,6 @@ export default function VisitasPage() {
   const autoAbierto = useRef(false)
 
   useEffect(() => {
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setUserRol(d.rol); if (d?.nombre) setUserName(d.nombre) }).catch(() => {})
     fetch("/api/tags?tipo=VISITA").then(r => r.ok ? r.json() : []).then(d => {
       if (Array.isArray(d)) setTagsDisponibles(d.filter((t: { activo: boolean }) => t.activo))
     }).catch(() => {})

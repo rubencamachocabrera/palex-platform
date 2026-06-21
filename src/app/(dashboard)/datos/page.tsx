@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 import type { Hospital, PeriodoKey, TabKey } from "./_lib/types"
 import { PERIODOS } from "./_lib/types"
 import { TabDashboard }    from "./_components/TabDashboard"
@@ -33,28 +34,25 @@ export default function DatosPage() {
   const [hospitalId, setHospitalId] = useState("")
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [periodo, setPeriodo]   = useState<PeriodoKey>("12m")
-  const [userRol, setUserRol]   = useState("")
+  const { rol: userRol, isLoading: perfilLoading } = usePerfil()
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/hospitales").then(r => r.ok ? r.json() : []),
-      fetch("/api/perfil").then(r => r.ok ? r.json() : null),
-    ]).then(([hosp, perfil]) => {
-      if (Array.isArray(hosp) && hosp.length > 0) {
-        const sorted = hosp.sort((a: Hospital, b: Hospital) => a.nombre.localeCompare(b.nombre))
-        setHospitales(sorted)
-        setHospitalId(sorted[0].id)
-      }
-      if (perfil?.rol) setUserRol(perfil.rol)
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    fetch("/api/hospitales").then(r => r.ok ? r.json() : [])
+      .then(hosp => {
+        if (Array.isArray(hosp) && hosp.length > 0) {
+          const sorted = hosp.sort((a: Hospital, b: Hospital) => a.nombre.localeCompare(b.nombre))
+          setHospitales(sorted)
+          setHospitalId(sorted[0].id)
+        }
+        setLoading(false)
+      }).catch(() => setLoading(false))
   }, [])
 
   const activeTab = TABS.find(t => t.key === tab)!
 
   // Control de acceso
-  if (!loading && userRol && userRol !== "ADMIN" && userRol !== "VENTAS") {
+  if (!loading && !perfilLoading && userRol && userRol !== "ADMIN" && userRol !== "VENTAS") {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">

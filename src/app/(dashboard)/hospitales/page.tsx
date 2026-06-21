@@ -5,6 +5,7 @@ import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { useFavoritos } from "@/hooks/useFavoritos"
+import { usePerfil } from "@/hooks/usePerfil"
 import { IconHospital, IconBuilding, IconMicroscope, IconActivity, IconGraduation } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -111,11 +112,12 @@ export default function HospitalesPage() {
   const [busqueda, setBusqueda] = useState("")
   const [filtroZona, setFiltroZona] = useState("TODAS")
   const [vista, setVista] = useState<Vista>("lista")
-  const [esAdmin, setEsAdmin] = useState(false)
   const [eliminando, setEliminando] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("HOSPITAL")
+  const { rol } = usePerfil()
+  const esAdmin = rol === "ADMIN"
 
   const PAGE_SIZE = 200
 
@@ -124,10 +126,6 @@ export default function HospitalesPage() {
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); setTotalCount(parseInt(r.headers.get("X-Total-Count") ?? "0")); return r.json() })
       .then(data => { setHospitales(Array.isArray(data) ? data : []); setLoading(false) })
       .catch(e => { console.error("Error cargando hospitales:", e); setFetchError(true); setLoading(false) })
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.rol === "ADMIN") setEsAdmin(true) })
-      .catch(() => {})
   }, [])
 
   async function cargarMas() {

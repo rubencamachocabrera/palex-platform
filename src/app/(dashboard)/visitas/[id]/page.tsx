@@ -10,6 +10,7 @@ import { TodoChecklist } from "@/components/visitas/TodoChecklist"
 import type { TodoItem } from "@/components/visitas/TodoChecklist"
 import type { AudioNota } from "@/components/visitas/VoiceNotes"
 import { useOfflineSync } from "@/hooks/useOfflineSync"
+import { usePerfil } from "@/hooks/usePerfil"
 import { AnalisisPanel } from "@/components/visitas/AnalisisPanel"
 import { calcularScore } from "@/lib/visita-analysis"
 
@@ -913,9 +914,9 @@ export default function VisitaPage() {
   const [vinculandoPP, setVinculandoPP] = useState(false)
   const [contactos, setContactos] = useState<ContactoItem[]>([])
   const [vinculandoContacto, setVinculandoContacto] = useState(false)
-  const [userRol, setUserRol] = useState("")
-  const [userId, setUserId] = useState("")
-  const [userName, setUserName] = useState("")
+  const { rol: userRol, perfil } = usePerfil()
+  const userId = perfil?.id ?? ""
+  const userName = perfil?.nombre ?? ""
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState("")
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
@@ -963,10 +964,6 @@ export default function VisitaPage() {
             .then(r => r.ok ? r.json() : [])
             .then(cs => { if (Array.isArray(cs)) setContactos(cs.map((c: { id: string; nombre: string; cargo: string | null }) => ({ id: c.id, nombre: c.nombre, cargo: c.cargo }))) })
             .catch(() => {})
-          fetch("/api/perfil")
-            .then(r => r.ok ? r.json() : null)
-            .then(d => { if (d?.rol) setUserRol(d.rol); if (d?.id) setUserId(d.id); if (d?.nombre) setUserName(d.nombre) })
-            .catch(() => {})
         }
         setLoading(false)
       })
@@ -1001,7 +998,7 @@ export default function VisitaPage() {
       } catch { /* skip */ }
     }
     sendHeartbeat()
-    const heartbeatInterval = setInterval(sendHeartbeat, 8000)
+    const heartbeatInterval = setInterval(sendHeartbeat, 15000)
     return () => {
       clearInterval(heartbeatInterval)
       fetch("/api/presence", {
@@ -1032,7 +1029,7 @@ export default function VisitaPage() {
           lastEditadoRef.current = remoteEditado
         }
       } catch { /* timeout or network error — skip */ }
-    }, 4000)
+    }, 10000)
     return () => clearInterval(pollInterval)
   }, [visita?.id, online, saving, pendiente, id, userName]) // eslint-disable-line react-hooks/exhaustive-deps
 

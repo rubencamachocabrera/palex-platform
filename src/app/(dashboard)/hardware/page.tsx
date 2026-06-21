@@ -5,6 +5,7 @@ import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { exportarCSV } from "@/lib/csv"
 import { useToast } from "@/components/Toast"
+import { usePerfil } from "@/hooks/usePerfil"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -2539,15 +2540,11 @@ const TABS = [
 
 export default function HardwarePage() {
   const [tab, setTab] = useState("resumen")
-  const [rol, setRol] = useState("")
+  const { rol } = usePerfil()
   const [unidades, setUnidades] = useState<HardwareUnidad[]>([])
   const [catalogo, setCatalogo] = useState<HardwareCatalogo[]>([])
   const [tipos, setTipos] = useState<HardwareTipo[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setRol(d.rol) }).catch(() => {})
-  }, [])
 
   const cargar = useCallback(async () => {
     setLoading(true)

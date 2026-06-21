@@ -185,6 +185,7 @@ src/
     useKeyboardShortcuts.ts             Cmd+K, G+H/V/P/D, Escape
     useOfflineSync.ts                   useOfflineSync(), useOnlineStatus(), SaveStatus
     useFavoritos.ts                     DB-backed favoritos hook (optimistic updates, rollback)
+    usePerfil.ts                        SWR hook — cache perfil (rol, nombre, id) compartido entre paginas
   lib/
     auth.config.ts                      Edge-compatible
     auth.ts                             Server-side NextAuth
@@ -420,6 +421,17 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - 15 indices DB en FKs frecuentes: Hospital[zonaId], Contacto[hospitalId], Visita[hospitalId,usuarioId,fecha], Proyecto[hospitalId,responsableId], FaseProyecto, Tarea, Hito, EntradaTimeline, SolicitudMaterial, Adjunto, Comentario[visitaId,proyectoId], HardwareUnidad[hospitalId,catalogoId]
 - checkRateLimitByKey(): rate limiter standalone reutilizable sin dependencia de NextRequest
 
+### Rendimiento frontend (F8)
+- SWR: hook usePerfil() con cache deduplicado (dedupingInterval 60s, revalidateOnFocus false)
+- 10 paginas migradas de fetch("/api/perfil") manual a usePerfil() (hospitales, visitas, llamadas, hardware, datos, transporte, ventas, proyectos/[id], hospitales/[id], admin/carga-trabajo)
+- Polling colaborativo reducido: heartbeat 8s→15s, data poll 4s→10s (60% menos peticiones)
+
+### Revocacion JWT (F9)
+- auth.ts: jwt callback con check usuario.activo cada 5 min (cache in-memory activeCache)
+- Si usuario desactivado: token.sub = undefined → session vacia → redirect a login
+- Sync de rol automatico: cambio de rol por admin efectivo en <5 min sin re-login
+- Graceful: si DB falla en el check, se mantiene token existente (no bloquea)
+
 ### Heatmap carga de trabajo (ADMIN)
 - Pagina /admin/carga-trabajo: grid GitHub-style, filas=usuarios, columnas=dias del mes
 - API /api/admin/carga-trabajo: visitas por usuario/dia con raw SQL groupBy
@@ -447,6 +459,7 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - Seguimiento con fecha, toggle inline
 - Sidebar link para TODOS los roles (Llamadas con icono Phone)
 - Tab "Llamadas" en ficha hospital con ultimas 10
+- Modal llamada hospital unificado con /llamadas: resultado (6 opciones), contacto (select), notas, seguimiento toggle, dark mode
 - Llamadas de hoy en dashboard Mi Dia
 - Middleware: /llamadas protegido
 
@@ -647,19 +660,21 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [ ] Extraer 10 tabs de proyectos/[id]/page.tsx (4900+ lineas) a componentes con next/dynamic
 - [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad
 
-#### Fase 8 — Rendimiento frontend (1-2 dias) — PROGRESIVO
-- [ ] SWR o React Query para cache de datos compartidos (hospitales, zonas, perfil)
-- [ ] Formulario visita: useReducer o estado por seccion + React.memo (evitar re-render 13 secciones)
-- [ ] Reducir polling colaborativo: heartbeat 8s→15s, data poll 4s→10s (o SSE)
+#### Fase 8 — Rendimiento frontend (1-2 dias) — COMPLETADA
+- [x] SWR para cache de datos compartidos: hook usePerfil() reemplaza fetch("/api/perfil") en 10 paginas
+- [x] Reducir polling colaborativo: heartbeat 8s→15s, data poll 4s→10s
+- [ ] Formulario visita: useReducer o estado por seccion + React.memo (pendiente — bajo impacto actual)
 
-#### Fase 9 — Revocacion JWT y sesiones (2 horas) — PROGRESIVO
-- [ ] Check usuario.activo en callback jwt de NextAuth (revocacion inmediata al desactivar usuario)
-- [ ] Considerar database sessions si se necesita revocacion instantanea
+#### Fase 9 — Revocacion JWT y sesiones (2 horas) — COMPLETADA
+- [x] Check usuario.activo en callback jwt de NextAuth (cache in-memory 5 min, revocacion en <5 min)
+- [x] Sync de rol: si admin cambia rol de usuario, se actualiza en <5 min sin re-login
+- [x] Callbacks jwt+session overridden en auth.ts (server-side, con Prisma)
 
-#### Estimacion total restante: ~6-8 dias de desarrollo
+#### Estimacion total restante: ~3-4 dias de desarrollo
 - Fases 1-4: COMPLETADAS (seguridad + BD + Redis + paginacion)
 - Fase 5: necesaria antes de superar 20 usuarios concurrentes (~2-3 dias)
-- Fases 6-9: mejora progresiva sprint a sprint (~4-5 dias)
+- Fases 6-7: mejora progresiva sprint a sprint (~1-2 dias)
+- Fases 8-9: COMPLETADAS (SWR + polling + JWT revocacion)
 
 ### Backlog — features futuras (no priorizado)
 - [ ] Notificaciones por email (asignaciones, tareas nuevas) — Resend o similar

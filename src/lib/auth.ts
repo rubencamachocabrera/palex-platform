@@ -6,8 +6,55 @@ import { db } from "@/lib/db"
 import { authConfig } from "@/lib/auth.config"
 import { checkRateLimitByKey } from "@/lib/rate-limit"
 
+// Cache de usuario activo — evita query DB en cada request (TTL 5 min)
+const ACTIVE_CHECK_MS = 5 * 60 * 1000
+const activeCache = new Map<string, { rol: string; checkedAt: number }>()
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as { role: string }).role
+        if (user.id) activeCache.set(user.id, { rol: (user as { role: string }).role, checkedAt: Date.now() })
+        return token
+      }
+
+      if (token.sub) {
+        const now = Date.now()
+        const cached = activeCache.get(token.sub)
+        if (!cached || now - cached.checkedAt > ACTIVE_CHECK_MS) {
+          try {
+            const usuario = await db.usuario.findUnique({
+              where: { id: token.sub },
+              select: { activo: true, rol: true },
+            })
+            if (!usuario || !usuario.activo) {
+              activeCache.delete(token.sub)
+              token.sub = undefined
+              token.role = undefined
+              return token
+            }
+            token.role = usuario.rol
+            activeCache.set(token.sub, { rol: usuario.rol, checkedAt: now })
+          } catch {
+            // DB error — don't block, use existing token
+          }
+        } else {
+          token.role = cached.rol
+        }
+      }
+
+      return token
+    },
+    async session({ session, token }) {
+      if (token?.sub && session.user) {
+        session.user.id = token.sub
+        ;(session.user as { role: string }).role = token.role as string
+      }
+      return session
+    },
+  },
   providers: [
     Credentials({
       credentials: {

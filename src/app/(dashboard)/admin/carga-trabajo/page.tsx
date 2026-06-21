@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { TEAL, TEAL_DARK } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ function heatColorLabel(level: number): string {
 
 export default function CargaTrabajoPage() {
   const router = useRouter()
-  const [rol, setRol] = useState<string | null>(null)
+  const { rol } = usePerfil()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<CargaData | null>(null)
 
@@ -84,17 +85,8 @@ export default function CargaTrabajoPage() {
 
   // ── Auth check ──────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d?.rol !== "ADMIN") {
-          router.replace("/dashboard")
-        } else {
-          setRol(d.rol)
-        }
-      })
-      .catch(() => router.replace("/dashboard"))
-  }, [router])
+    if (rol && rol !== "ADMIN") router.replace("/dashboard")
+  }, [rol, router])
 
   // ── Fetch data ──────────────────────────────────────────────────────────
   useEffect(() => {

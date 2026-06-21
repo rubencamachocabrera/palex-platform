@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 import type { TabKeyTransporte } from "./_lib/types"
 import { TabDashboard }   from "./_components/TabDashboard"
 import { TabMapa }        from "./_components/TabMapa"
@@ -21,15 +22,7 @@ const TABS: { key: TabKeyTransporte; label: string; labelShort: string; color: s
 
 export default function TransportePage() {
   const [tab, setTab] = useState<TabKeyTransporte>("dashboard")
-  const [userRol, setUserRol] = useState("")
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch("/api/perfil")
-      .then(r => r.ok ? r.json() : null)
-      .then(perfil => { if (perfil?.rol) setUserRol(perfil.rol); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+  const { rol: userRol, isLoading: loading } = usePerfil()
 
   const activeTab = TABS.find(t => t.key === tab)!
 

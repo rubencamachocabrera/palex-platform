@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from "@dnd-kit/core"
 import { TEAL } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 import { IconX, IconCheck, IconPlus, IconSearch, IconTrendingUp } from "@/components/ui/Icons"
 import { exportarCSV } from "@/lib/csv"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -201,7 +202,7 @@ function DroppableColumn({ etapa, ops, onCardClick, panelId }: {
 // ─── Componente principal ─────────────────────────────────
 
 export default function PipelinePage() {
-  const [rol, setRol] = useState("")
+  const { rol } = usePerfil()
   const esAdmin = rol === "ADMIN"
 
   const [ops, setOps] = useState<Oportunidad[]>([])
@@ -232,7 +233,6 @@ export default function PipelinePage() {
 
   useEffect(() => {
     cargar()
-    fetch("/api/perfil").then(r => r.ok ? r.json() : null).then(d => { if (d?.rol) setRol(d.rol) }).catch(() => {})
     fetch("/api/hospitales").then(r => r.json()).then(d => setHospitales(Array.isArray(d) ? d : []))
   }, [cargar])
 

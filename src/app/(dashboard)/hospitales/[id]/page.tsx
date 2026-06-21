@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { usePerfil } from "@/hooks/usePerfil"
 import {
   IconArrowLeft, IconMail, IconPhone, IconPlus, IconX,
 } from "@/components/ui/Icons"
@@ -136,7 +137,7 @@ export default function HospitalDetailPage() {
   const fromProyecto = searchParams.get("from") === "proyecto" ? searchParams.get("pid") : null
 
   const [hospital, setHospital] = useState<Hospital | null>(null)
-  const [userRol, setUserRol] = useState<string>("")
+  const { rol: userRol } = usePerfil()
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"actividad" | "timeline" | "informacion" | "proyectos" | "llamadas">("actividad")
   const [timeline, setTimeline] = useState<TimelineEvento[]>([])
@@ -192,12 +193,8 @@ export default function HospitalDetailPage() {
 
   async function cargar() {
     try {
-      const [rH, rP] = await Promise.all([
-        fetch(`/api/hospitales/${id}`),
-        fetch("/api/perfil"),
-      ])
+      const rH = await fetch(`/api/hospitales/${id}`)
       if (rH.ok) setHospital(await rH.json())
-      if (rP.ok) { const p = await rP.json(); setUserRol(p.rol ?? "") }
     } catch (e) { console.error("[cargar hospital]", e) }
     finally { setLoading(false) }
   }
