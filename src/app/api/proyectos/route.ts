@@ -26,6 +26,9 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")
   const prioridad = searchParams.get("prioridad")
   const responsableId = searchParams.get("responsableId")
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "100"), 500)
+  const page = Math.max(parseInt(searchParams.get("page") ?? "1"), 1)
+  const skip = (page - 1) * limit
   const rol    = session.user.role
   const userId = session.user.id
   try {
@@ -50,23 +53,30 @@ export async function GET(req: Request) {
         ],
       })
     }
-    const items = await db.proyecto.findMany({
-      where: conditions.length > 0 ? { AND: conditions } : {},
-      include: {
-        hospital: { select: { id: true, nombre: true, ciudad: true } },
-        responsable: { select: { id: true, nombre: true } },
-        fases: { select: { id: true, tipo: true, estado: true, orden: true } },
-        visitas: { select: { id: true } },
-        solicitudes: { select: { id: true } },
-        hardwareUnidades: { select: { id: true } },
-        modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
-        tags: { include: { tag: true } },
-      },
-      orderBy: { creadoEn: "desc" },
-    })
-    return NextResponse.json(items, {
-      headers: { "Cache-Control": "private, max-age=0, no-store" },
-    })
+    const where = conditions.length > 0 ? { AND: conditions } : {}
+    const [items, total] = await Promise.all([
+      db.proyecto.findMany({
+        where,
+        include: {
+          hospital: { select: { id: true, nombre: true, ciudad: true } },
+          responsable: { select: { id: true, nombre: true } },
+          fases: { select: { id: true, tipo: true, estado: true, orden: true } },
+          visitas: { select: { id: true } },
+          solicitudes: { select: { id: true } },
+          hardwareUnidades: { select: { id: true } },
+          modulos: { include: { modulo: { select: { id: true, nombre: true } } } },
+          tags: { include: { tag: true } },
+        },
+        orderBy: { creadoEn: "desc" },
+        take: limit,
+        skip,
+      }),
+      db.proyecto.count({ where }),
+    ])
+    const res = NextResponse.json(items)
+    res.headers.set("Cache-Control", "private, max-age=0, no-store")
+    res.headers.set("X-Total-Count", String(total))
+    return res
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

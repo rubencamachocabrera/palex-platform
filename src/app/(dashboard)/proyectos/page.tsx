@@ -344,7 +344,11 @@ export default function ProyectosPage() {
   const [vista, setVista] = useState<"lista" | "kanban">("lista")
   const [mostrarModal, setMostrarModal] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [totalCount, setTotalCount] = useState(0)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
+  const PAGE_SIZE = 100
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   useEffect(() => {
@@ -355,17 +359,43 @@ export default function ProyectosPage() {
 
   const cargar = useCallback(async () => {
     setLoading(true)
+    setCurrentPage(1)
     const params = new URLSearchParams()
+    params.set("limit", String(PAGE_SIZE))
+    params.set("page", "1")
     if (q) params.set("q", q)
     if (filtroEstado && vista === "lista") params.set("estado", filtroEstado)
     if (filtroPrioridad && vista === "lista") params.set("prioridad", filtroPrioridad)
     if (filtroResponsable && vista === "lista") params.set("responsableId", filtroResponsable)
     const r = await fetch(`/api/proyectos?${params}`)
-    if (r.ok) setItems(await r.json())
+    if (r.ok) {
+      setTotalCount(parseInt(r.headers.get("X-Total-Count") ?? "0"))
+      setItems(await r.json())
+    }
     setLoading(false)
   }, [q, filtroEstado, filtroPrioridad, filtroResponsable, vista])
 
   useEffect(() => { cargar() }, [cargar])
+
+  async function cargarMasProyectos() {
+    const nextPage = currentPage + 1
+    setLoadingMore(true)
+    const params = new URLSearchParams()
+    params.set("limit", String(PAGE_SIZE))
+    params.set("page", String(nextPage))
+    if (q) params.set("q", q)
+    if (filtroEstado && vista === "lista") params.set("estado", filtroEstado)
+    if (filtroPrioridad && vista === "lista") params.set("prioridad", filtroPrioridad)
+    if (filtroResponsable && vista === "lista") params.set("responsableId", filtroResponsable)
+    try {
+      const r = await fetch(`/api/proyectos?${params}`)
+      if (r.ok) {
+        const data = await r.json()
+        if (Array.isArray(data)) { setItems(prev => [...prev, ...data]); setCurrentPage(nextPage) }
+      }
+    } catch { /* silently fail */ }
+    setLoadingMore(false)
+  }
 
   function onDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string)
@@ -673,6 +703,16 @@ export default function ProyectosPage() {
             )}
           </DragOverlay>
         </DndContext>
+      )}
+
+      {items.length < totalCount && vista === "lista" && (
+        <div className="flex justify-center pt-4">
+          <button onClick={cargarMasProyectos} disabled={loadingMore}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-opacity disabled:opacity-50"
+            style={{ backgroundColor: TEAL }}>
+            {loadingMore ? "Cargando..." : `Cargar más (${items.length} de ${totalCount})`}
+          </button>
+        </div>
       )}
 
       {mostrarModal && (

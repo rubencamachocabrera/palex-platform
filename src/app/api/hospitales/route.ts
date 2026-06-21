@@ -15,19 +15,30 @@ export async function GET(req: NextRequest) {
     const rol = session.user.role
     const userId = session.user.id
 
-    const hospitales = await db.hospital.findMany({
-      where: rol === "ADMIN" ? {} : {
-        activo: true,
-        zona: { usuarios: { some: { usuarioId: userId } } },
-      },
-      include: {
-        zona: { select: { id: true, nombre: true } },
-        grupo: { select: { id: true, nombre: true } },
-        centros: { select: { id: true, nombre: true, ciudad: true, tipo: true }, where: { activo: true } },
-        _count: { select: { visitas: true, contactos: true } },
-      },
-      orderBy: { nombre: "asc" },
-    })
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "200"), 500)
+    const page = Math.max(parseInt(req.nextUrl.searchParams.get("page") ?? "1"), 1)
+    const skip = (page - 1) * limit
+
+    const where = rol === "ADMIN" ? {} : {
+      activo: true,
+      zona: { usuarios: { some: { usuarioId: userId } } },
+    }
+
+    const [hospitales, total] = await Promise.all([
+      db.hospital.findMany({
+        where,
+        include: {
+          zona: { select: { id: true, nombre: true } },
+          grupo: { select: { id: true, nombre: true } },
+          centros: { select: { id: true, nombre: true, ciudad: true, tipo: true }, where: { activo: true } },
+          _count: { select: { visitas: true, contactos: true } },
+        },
+        orderBy: { nombre: "asc" },
+        take: limit,
+        skip,
+      }),
+      db.hospital.count({ where }),
+    ])
 
     const [oppGroups, ppGroups, lastVisits] = await Promise.all([
       db.oportunidad.groupBy({
@@ -69,6 +80,7 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.json(result)
     res.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60")
+    res.headers.set("X-Total-Count", String(total))
     return res
   } catch (err) {
     console.error("[GET /api/hospitales]", err)

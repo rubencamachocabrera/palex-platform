@@ -618,15 +618,19 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [x] Connection pooling: max:20 en PrismaPg adapter (src/lib/db.ts)
 - [x] Indices: 15 @@index añadidos — Hospital[zonaId], Contacto[hospitalId], Visita[hospitalId,usuarioId,fecha], Proyecto[hospitalId,responsableId], FaseProyecto[proyectoId], Tarea[proyectoId], Hito[proyectoId], EntradaTimeline[proyectoId], SolicitudMaterial[proyectoId], Adjunto[proyectoId], Comentario[visitaId,proyectoId], HardwareUnidad[hospitalId,catalogoId]
 
-#### Fase 3 — Redis para estado compartido (1 dia) — PRE-SCALING
-- [ ] Migrar rate-limit.ts de Map a Redis (Upstash serverless o Railway Redis)
-- [ ] Migrar presence.ts de Map a Redis (presencia colaborativa cross-instance)
-- [ ] Cache servidor: agregaciones costosas (scores hospital, busqueda) en Redis con TTL
+#### Fase 3 — Redis para estado compartido (1 dia) — COMPLETADA
+- [x] src/lib/redis.ts: cliente Upstash Redis con fallback graceful (sin Redis = in-memory)
+- [x] rate-limit.ts: redisIncrement() con fallback a memIncrement(), nueva checkRateLimitByKeyAsync()
+- [x] presence.ts: heartbeat/getActiveUsers/leave ahora async con Redis hset/hgetall/hdel + TTL auto
+- [x] api/presence/route.ts: await en todas las llamadas a presence
+- [ ] Cache servidor: agregaciones costosas en Redis con TTL (pendiente, bajo impacto)
+- Env vars necesarias: UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (sin ellas = fallback in-memory)
 
-#### Fase 4 — Paginacion APIs (4 horas) — PRE-SCALING
-- [ ] GET /api/hospitales: añadir ?limit=50&page=N (actualmente sin take, carga todos)
-- [ ] GET /api/proyectos: añadir ?limit=50&page=N (actualmente sin take, carga todos)
-- [ ] Frontend hospitales/page.tsx y proyectos/page.tsx: patron "cargar mas" (como ya tiene visitas)
+#### Fase 4 — Paginacion APIs (4 horas) — COMPLETADA
+- [x] GET /api/hospitales: ?limit=200&page=N, take/skip, X-Total-Count header, count paralelo
+- [x] GET /api/proyectos: ?limit=100&page=N, take/skip, X-Total-Count header, count paralelo
+- [x] hospitales/page.tsx: estado totalCount + loadingMore, boton "Cargar mas" con conteo
+- [x] proyectos/page.tsx: estado totalCount + loadingMore + currentPage, boton "Cargar mas" (solo vista lista)
 
 #### Fase 5 — Object storage para archivos (2-3 dias) — PRE-SCALING
 - [ ] Migrar Adjunto.contenido (base64 en DB) a Cloudflare R2 o AWS S3
@@ -652,9 +656,9 @@ RegistroLlamada  (hospitalId, contactoId?, usuarioId, fecha, duracion, asunto, n
 - [ ] Check usuario.activo en callback jwt de NextAuth (revocacion inmediata al desactivar usuario)
 - [ ] Considerar database sessions si se necesita revocacion instantanea
 
-#### Estimacion total restante: ~8-10 dias de desarrollo
-- Fases 1-2: COMPLETADAS (seguridad critica + BD optimizada)
-- Fases 3-5: necesarias antes de superar 20 usuarios concurrentes (~4-5 dias)
+#### Estimacion total restante: ~6-8 dias de desarrollo
+- Fases 1-4: COMPLETADAS (seguridad + BD + Redis + paginacion)
+- Fase 5: necesaria antes de superar 20 usuarios concurrentes (~2-3 dias)
 - Fases 6-9: mejora progresiva sprint a sprint (~4-5 dias)
 
 ### Backlog — features futuras (no priorizado)

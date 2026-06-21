@@ -113,11 +113,15 @@ export default function HospitalesPage() {
   const [vista, setVista] = useState<Vista>("lista")
   const [esAdmin, setEsAdmin] = useState(false)
   const [eliminando, setEliminando] = useState<string | null>(null)
+  const [totalCount, setTotalCount] = useState(0)
+  const [loadingMore, setLoadingMore] = useState(false)
   const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("HOSPITAL")
 
+  const PAGE_SIZE = 200
+
   useEffect(() => {
-    fetch("/api/hospitales")
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+    fetch(`/api/hospitales?limit=${PAGE_SIZE}&page=1`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); setTotalCount(parseInt(r.headers.get("X-Total-Count") ?? "0")); return r.json() })
       .then(data => { setHospitales(Array.isArray(data) ? data : []); setLoading(false) })
       .catch(e => { console.error("Error cargando hospitales:", e); setFetchError(true); setLoading(false) })
     fetch("/api/perfil")
@@ -125,6 +129,19 @@ export default function HospitalesPage() {
       .then(d => { if (d?.rol === "ADMIN") setEsAdmin(true) })
       .catch(() => {})
   }, [])
+
+  async function cargarMas() {
+    const nextPage = Math.floor(hospitales.length / PAGE_SIZE) + 1
+    setLoadingMore(true)
+    try {
+      const r = await fetch(`/api/hospitales?limit=${PAGE_SIZE}&page=${nextPage}`)
+      if (r.ok) {
+        const data = await r.json()
+        if (Array.isArray(data)) setHospitales(prev => [...prev, ...data])
+      }
+    } catch { /* silently fail */ }
+    setLoadingMore(false)
+  }
 
   async function eliminarHospital(e: React.MouseEvent, h: Hospital) {
     e.preventDefault()
@@ -253,7 +270,7 @@ export default function HospitalesPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          <span>No se pudo cargar la lista de hospitales. <button onClick={() => { setFetchError(false); setLoading(true); fetch("/api/hospitales").then(r => r.ok ? r.json() : []).then(d => { setHospitales(Array.isArray(d) ? d : []); setLoading(false) }).catch(() => { setFetchError(true); setLoading(false) }) }} className="font-semibold underline ml-1">Reintentar</button></span>
+          <span>No se pudo cargar la lista de hospitales. <button onClick={() => { setFetchError(false); setLoading(true); fetch(`/api/hospitales?limit=${PAGE_SIZE}&page=1`).then(r => r.ok ? r.json() : []).then(d => { setHospitales(Array.isArray(d) ? d : []); setLoading(false) }).catch(() => { setFetchError(true); setLoading(false) }) }} className="font-semibold underline ml-1">Reintentar</button></span>
         </div>
       ) : loading ? (
         <div className="space-y-6 animate-in fade-in duration-200">
@@ -500,6 +517,16 @@ export default function HospitalesPage() {
             </div>
           ))}
         </div>
+          )}
+
+          {hospitales.length < totalCount && (
+            <div className="flex justify-center pt-4">
+              <button onClick={cargarMas} disabled={loadingMore}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                style={{ backgroundColor: TEAL }}>
+                {loadingMore ? "Cargando..." : `Cargar más (${hospitales.length} de ${totalCount})`}
+              </button>
+            </div>
           )}
         </div>
       )}

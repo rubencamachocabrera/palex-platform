@@ -273,11 +273,11 @@ import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE, ORANGE_LIGHT, ORANGE_DARK } from "
 
 **Pendiente: Ver AGENTS.md seccion 9 (roadmap corporativo fases 3-9 + backlog).**
 
-**Roadmap corporativo (auditoria junio 2026) — ~8-10 dias restantes:**
+**Roadmap corporativo (auditoria junio 2026) — ~6-8 dias restantes:**
 - ~~F1 Seguridad critica — COMPLETADA~~
 - ~~F2 BD optimizacion — COMPLETADA~~
-- F3 Redis (1d): rate-limit + presence + cache servidor — PRE-SCALING
-- F4 Paginacion (4h): hospitales + proyectos APIs — PRE-SCALING
+- ~~F3 Redis (Upstash) para rate-limit + presence — COMPLETADA~~ (env: UPSTASH_REDIS_REST_URL/TOKEN)
+- ~~F4 Paginacion hospitales + proyectos — COMPLETADA~~ (limit/page/X-Total-Count + cargar mas)
 - F5 Object storage (2-3d): fotos/adjuntos de base64-en-DB a R2/S3 — PRE-SCALING
 - F6 Validacion (2d): Zod + rate limit global 70 rutas — PROGRESIVO
 - F7 Code splitting (1d): proyectos/[id] 4900 lineas → tabs dinamicos — PROGRESIVO
