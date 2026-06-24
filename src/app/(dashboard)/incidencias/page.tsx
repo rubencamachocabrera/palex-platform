@@ -10,6 +10,10 @@ import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
 import { IconSearch, IconPlus, IconX, IconChevronDown, IconFileExport } from "@/components/ui/Icons"
 
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
 interface Incidencia {
   id: string
   codigo: string
@@ -208,7 +212,7 @@ export default function IncidenciasPage() {
     fetch(`/api/incidencias?${params}&limit=500`).then(r => r.ok ? r.json() : []).then((data: Incidencia[]) => {
       if (!Array.isArray(data) || data.length === 0) { toastError("No hay incidencias con esos filtros"); return }
 
-      const hospitalName = exportHospitalId ? hospitales.find(h => h.id === exportHospitalId)?.nombre ?? "" : "Todos"
+      const hospitalName = esc(exportHospitalId ? hospitales.find(h => h.id === exportHospitalId)?.nombre ?? "" : "Todos")
       const rangoStr = [exportDesde, exportHasta].filter(Boolean).join(" — ") || "Todas las fechas"
 
       const kpiAbiertas = data.filter(i => i.estado === "ABIERTA").length
@@ -222,15 +226,15 @@ export default function IncidenciasPage() {
         const est = getEstadoStyle(i.estado)
         const sla = slaStatus(i.creadoEn, i.slaHoras, i.estado)
         return `<tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-family:monospace;color:#64748b">${i.codigo}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.titulo}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.hospital.nombre}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-family:monospace;color:#64748b">${esc(i.codigo)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.titulo)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.hospital.nombre)}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${est.color};background:${est.bg};padding:2px 8px;border-radius:10px">${est.label}</span></td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.tipo === "HARDWARE" ? "HW" : "SW"} · ${CATEGORIAS[i.categoria] ?? i.categoria}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${EQUIPOS[i.equipoResponsable] ?? i.equipoResponsable}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center"><span style="color:${sla.color};font-weight:600">${sla.label}</span></td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.tipo === "HARDWARE" ? "HW" : "SW"} · ${esc(CATEGORIAS[i.categoria] ?? i.categoria)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(EQUIPOS[i.equipoResponsable] ?? i.equipoResponsable)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center"><span style="color:${sla.color};font-weight:600">${esc(sla.label)}</span></td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${new Date(i.creadoEn).toLocaleDateString("es-ES")}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.asignadoA?.nombre ?? "—"}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.asignadoA?.nombre ?? "—")}</td>
         </tr>`
       }).join("")
 
@@ -309,15 +313,20 @@ export default function IncidenciasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Abiertas", value: abiertas, color: "#ef4444", bg: "#fef2f2" },
-          { label: "En progreso", value: enProgreso, color: "#f59e0b", bg: "#fffbeb" },
-          { label: "Pendientes", value: pendientes, color: "#8b5cf6", bg: "#f5f3ff" },
-          { label: "Resueltas", value: resueltas, color: "#10b981", bg: "#ecfdf5" },
+          { label: "Abiertas", value: abiertas, color: "#ef4444", bg: "#fef2f2", darkBg: "dark:bg-red-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+          { label: "En progreso", value: enProgreso, color: "#f59e0b", bg: "#fffbeb", darkBg: "dark:bg-amber-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+          { label: "Pendientes", value: pendientes, color: "#8b5cf6", bg: "#f5f3ff", darkBg: "dark:bg-violet-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> },
+          { label: "Resueltas", value: resueltas, color: "#10b981", bg: "#ecfdf5", darkBg: "dark:bg-emerald-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-500 mb-1">{kpi.label}</p>
+          <button key={kpi.label} onClick={() => setFiltroEstado(filtroEstado === kpi.label.toUpperCase().replace(/ /g, "_") ? "" : kpi.label === "Abiertas" ? "ABIERTA" : kpi.label === "En progreso" ? "EN_PROGRESO" : kpi.label === "Pendientes" ? "" : kpi.label === "Resueltas" ? "RESUELTA" : "")}
+            className={`bg-white ${kpi.darkBg} dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm text-left transition-all hover:shadow-md hover:border-gray-200 dark:hover:border-gray-700`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{kpi.label}</p>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}>{kpi.icon}</div>
+            </div>
             <p className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
-          </div>
+            {items.length > 0 && <div className="mt-2 w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.max(2, (kpi.value / items.length) * 100)}%`, backgroundColor: kpi.color }} /></div>}
+          </button>
         ))}
       </div>
 
@@ -354,6 +363,33 @@ export default function IncidenciasPage() {
           <option value="SOFTWARE">Software</option>
         </select>
       </div>
+
+      {/* Active filter chips */}
+      {(filtroEstado || filtroPrioridad || filtroTipo) && (
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <span className="text-xs text-gray-400">Filtros:</span>
+          {filtroEstado && (
+            <button onClick={() => setFiltroEstado("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+              style={{ borderColor: getEstadoStyle(filtroEstado).color, color: getEstadoStyle(filtroEstado).color }}>
+              {getEstadoStyle(filtroEstado).label} <IconX size={11} />
+            </button>
+          )}
+          {filtroPrioridad && (
+            <button onClick={() => setFiltroPrioridad("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+              style={{ borderColor: getPrioridadStyle(filtroPrioridad).color, color: getPrioridadStyle(filtroPrioridad).color }}>
+              {getPrioridadStyle(filtroPrioridad).label} <IconX size={11} />
+            </button>
+          )}
+          {filtroTipo && (
+            <button onClick={() => setFiltroTipo("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+              {filtroTipo === "HARDWARE" ? "Hardware" : "Software"} <IconX size={11} />
+            </button>
+          )}
+          <button onClick={() => { setFiltroEstado(""); setFiltroPrioridad(""); setFiltroTipo("") }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline ml-1">
+            Limpiar todos
+          </button>
+        </div>
+      )}
 
       {/* List */}
       {loading ? (

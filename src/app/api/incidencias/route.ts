@@ -7,10 +7,15 @@ import { parseBody, IncidenciaCreate } from "@/lib/schemas"
 
 async function generarCodigo(): Promise<string> {
   const year = new Date().getFullYear()
-  const count = await db.incidencia.count({
-    where: { creadoEn: { gte: new Date(`${year}-01-01`) } },
-  })
-  return `INC-${year}-${String(count + 1).padStart(4, "0")}`
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const count = await db.incidencia.count({
+      where: { creadoEn: { gte: new Date(`${year}-01-01`) } },
+    })
+    const code = `INC-${year}-${String(count + 1 + attempt).padStart(4, "0")}`
+    const exists = await db.incidencia.findUnique({ where: { codigo: code }, select: { id: true } })
+    if (!exists) return code
+  }
+  return `INC-${year}-${String(Date.now()).slice(-6)}`
 }
 
 export async function GET(req: NextRequest) {
@@ -58,6 +63,9 @@ export async function GET(req: NextRequest) {
       where.hospital = { zona: { usuarios: { some: { usuarioId: session.user.id } } } }
     }
 
+    const limitParam = searchParams.get("limit")
+    const take = Math.min(Math.max(1, parseInt(limitParam ?? "200") || 200), 500)
+
     const [incidencias, total] = await Promise.all([
       db.incidencia.findMany({
         where,
@@ -72,8 +80,8 @@ export async function GET(req: NextRequest) {
           hardwareUnidad: { select: { id: true, numSerie: true, catalogo: { select: { marca: true, modelo: true } } } },
           _count: { select: { eventos: true } },
         },
-        orderBy: [{ estado: "asc" }, { prioridad: "desc" }, { creadoEn: "desc" }],
-        take: 200,
+        orderBy: { creadoEn: "desc" },
+        take,
       }),
       db.incidencia.count({ where }),
     ])

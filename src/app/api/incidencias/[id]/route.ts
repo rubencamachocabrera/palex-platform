@@ -46,6 +46,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!incidencia) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
 
+    if (session.user.role !== "ADMIN") {
+      incidencia.eventos = incidencia.eventos.filter(e => !e.privado || e.autor.id === session.user.id)
+    }
+
     return NextResponse.json(incidencia)
   } catch (err) {
     console.error("[GET /api/incidencias/[id]]", err)

@@ -108,6 +108,10 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
 }
 
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
 function dateGroupLabel(iso: string): string {
   const d = new Date(iso)
   const now = new Date()
@@ -255,20 +259,20 @@ export default function IncidenciaDetallePage() {
       const info = getEventoInfo(ev.tipo)
       return `<tr>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${formatDate(ev.creadoEn)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${info.color};background:${info.color}15;padding:2px 8px;border-radius:10px">${info.label}</span></td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155">${ev.descripcion}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${ev.autor.nombre}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${info.color};background:${info.color}15;padding:2px 8px;border-radius:10px">${esc(info.label)}</span></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155">${esc(ev.descripcion)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${esc(ev.autor.nombre)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;text-align:center">${ev.duracion ? ev.duracion + " min" : "—"}</td>
       </tr>`
     }).join("")
 
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${inc.codigo} — ${inc.titulo}</title>
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${esc(inc.codigo)} — ${esc(inc.titulo)}</title>
     <style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head>
     <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;color:#1e293b;padding:0 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${TEAL};padding-bottom:16px;margin-bottom:24px">
         <div>
-          <h1 style="margin:0;font-size:22px;color:#0f172a">${inc.titulo}</h1>
-          <p style="margin:4px 0 0;font-size:13px;color:#64748b;font-family:monospace">${inc.codigo} · ${inc.hospital.nombre} · ${inc.hospital.ciudad}</p>
+          <h1 style="margin:0;font-size:22px;color:#0f172a">${esc(inc.titulo)}</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:#64748b;font-family:monospace">${esc(inc.codigo)} · ${esc(inc.hospital.nombre)} · ${esc(inc.hospital.ciudad)}</p>
         </div>
         <div style="text-align:right">
           <span style="font-size:12px;font-weight:700;color:${est.color};background:${est.bg};padding:4px 12px;border-radius:12px">${est.label}</span>
@@ -280,17 +284,17 @@ export default function IncidenciaDetallePage() {
           ["Tipo", inc.tipo === "HARDWARE" ? "Hardware" : "Software"],
           ["Categoría", CATEGORIAS[inc.categoria] ?? inc.categoria],
           ["Equipo", EQUIPOS[inc.equipoResponsable]],
-          ["Reportada por", inc.reportadoPor.nombre],
-          ["Asignada a", inc.asignadoA?.nombre ?? "Sin asignar"],
+          ["Reportada por", esc(inc.reportadoPor.nombre)],
+          ["Asignada a", esc(inc.asignadoA?.nombre ?? "Sin asignar")],
           ["Creada", formatDate(inc.creadoEn)],
           ["SLA", `${inc.slaHoras ?? 0}h — ${sla.label}`],
           ...(inc.fechaResolucion ? [["Resuelta", formatDate(inc.fechaResolucion)]] : []),
-          ...(inc.contacto ? [["Contacto", inc.contacto.nombre + (inc.contacto.cargo ? ` (${inc.contacto.cargo})` : "")]] : []),
-          ...(inc.hardwareUnidad ? [["Hardware", `${inc.hardwareUnidad.catalogo.marca} ${inc.hardwareUnidad.catalogo.modelo}${inc.hardwareUnidad.numSerie ? ` — SN: ${inc.hardwareUnidad.numSerie}` : ""}`]] : []),
+          ...(inc.contacto ? [["Contacto", esc(inc.contacto.nombre) + (inc.contacto.cargo ? ` (${esc(inc.contacto.cargo)})` : "")]] : []),
+          ...(inc.hardwareUnidad ? [["Hardware", `${esc(inc.hardwareUnidad.catalogo.marca)} ${esc(inc.hardwareUnidad.catalogo.modelo)}${inc.hardwareUnidad.numSerie ? ` — SN: ${esc(inc.hardwareUnidad.numSerie)}` : ""}`]] : []),
         ].map(([k, v]) => `<div style="background:#f8fafc;padding:10px 14px;border-radius:8px"><span style="font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:700">${k}</span><p style="margin:4px 0 0;font-size:13px;font-weight:500">${v}</p></div>`).join("")}
       </div>
-      <p style="font-size:14px;white-space:pre-wrap;color:#475569;margin-bottom:24px;line-height:1.6">${inc.descripcion}</p>
-      ${inc.resolucion ? `<div style="background:#ecfdf5;border-left:3px solid #10b981;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:24px"><p style="font-size:11px;text-transform:uppercase;color:#059669;font-weight:700;margin:0 0 4px">Resolución</p><p style="font-size:13px;color:#065f46;margin:0;white-space:pre-wrap">${inc.resolucion}</p></div>` : ""}
+      <p style="font-size:14px;white-space:pre-wrap;color:#475569;margin-bottom:24px;line-height:1.6">${esc(inc.descripcion)}</p>
+      ${inc.resolucion ? `<div style="background:#ecfdf5;border-left:3px solid #10b981;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:24px"><p style="font-size:11px;text-transform:uppercase;color:#059669;font-weight:700;margin:0 0 4px">Resolución</p><p style="font-size:13px;color:#065f46;margin:0;white-space:pre-wrap">${esc(inc.resolucion)}</p></div>` : ""}
       <h2 style="font-size:14px;text-transform:uppercase;color:#94a3b8;letter-spacing:1px;margin-bottom:12px">Historial de eventos (${inc.eventos.length})</h2>
       <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
         <thead><tr style="background:#f8fafc">
@@ -310,10 +314,22 @@ export default function IncidenciaDetallePage() {
   }
 
   if (loading) return (
-    <div className="p-6 max-w-5xl mx-auto space-y-4">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-48 w-full" />
-      <Skeleton className="h-96 w-full" />
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
+      <div className="flex items-center gap-3 mb-4">
+        <Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-32" /><Skeleton className="h-6 w-20 rounded-full" />
+      </div>
+      <Skeleton className="h-7 w-80 mb-2" /><Skeleton className="h-4 w-full mb-6" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-24 w-full rounded-2xl" />
+        </div>
+        <div className="lg:col-span-2 space-y-4">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-72 w-full rounded-2xl" />
+        </div>
+      </div>
     </div>
   )
   if (!inc) return null
@@ -483,8 +499,8 @@ export default function IncidenciaDetallePage() {
                 </div>
               </div>
             ) : inc.resolucion ? (
-              <div className="rounded-xl p-3" style={{ backgroundColor: "#ecfdf5" }}>
-                <p className="text-sm text-green-800 dark:text-green-200 whitespace-pre-wrap">{inc.resolucion}</p>
+              <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+                <p className="text-sm text-emerald-800 dark:text-emerald-200 whitespace-pre-wrap">{inc.resolucion}</p>
               </div>
             ) : (
               <p className="text-sm text-gray-400 italic">Sin resolución registrada</p>
