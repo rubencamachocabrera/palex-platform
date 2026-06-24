@@ -184,6 +184,38 @@ export const LlamadaPatch = z.object({
   fechaSeguimiento: dateStrOpt,
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
+export const IncidenciaCreate = z.object({
+  titulo: str,
+  descripcion: z.string().min(1).max(5000),
+  tipo: z.enum(["HARDWARE", "SOFTWARE"]),
+  categoria: z.enum(["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "INLAB", "OTRO"]),
+  prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).default("MEDIA"),
+  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "AMBOS"]).default("SERVICIO_TECNICO"),
+  hospitalId: id,
+  contactoId: id.optional().nullable(),
+  hardwareUnidadId: id.optional().nullable(),
+  asignadoAId: id.optional().nullable(),
+  slaHoras: z.coerce.number().int().min(1).max(9999).optional().nullable(),
+})
+
+export const IncidenciaPatch = z.object({
+  titulo: str.optional(),
+  descripcion: z.string().min(1).max(5000).optional(),
+  prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).optional(),
+  estado: z.enum(["ABIERTA", "EN_PROGRESO", "PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR", "RESUELTA", "CERRADA"]).optional(),
+  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "AMBOS"]).optional(),
+  asignadoAId: id.optional().nullable(),
+  resolucion: z.string().max(5000).optional().nullable(),
+  slaHoras: z.coerce.number().int().min(1).max(9999).optional().nullable(),
+}).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
+
+export const EventoIncidenciaCreate = z.object({
+  tipo: z.enum(["NOTA", "LLAMADA_ENTRANTE", "LLAMADA_SALIENTE", "EMAIL_ENVIADO", "EMAIL_RECIBIDO", "CAMBIO_ESTADO", "CAMBIO_ASIGNACION", "ESCALADO", "RESPUESTA_TECNICA", "RESPUESTA_APLICACIONES", "COMUNICACION_CLIENTE"]),
+  descripcion: z.string().min(1).max(5000),
+  duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
+  privado: z.boolean().default(false),
+})
+
 export function parseBody<T>(schema: z.ZodType<T>, data: unknown):
   { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data)

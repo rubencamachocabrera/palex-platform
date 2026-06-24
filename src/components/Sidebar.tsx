@@ -179,11 +179,17 @@ const Icons: Record<string, () => React.ReactElement> = {
       <line x1="6" y1="20" x2="6" y2="14"/>
     </svg>
   ),
+  Incidencias: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
 interface NavItem  { href: string; label: string; icon: keyof typeof Icons }
-interface NavGroup { label?: string; items: NavItem[]; crmOnly?: boolean }
+interface NavGroup { label?: string; items: NavItem[]; crmOnly?: boolean; incidenciasOnly?: boolean }
 
 const NAV_GROUPS_ADMIN: NavGroup[] = [
   { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
@@ -212,6 +218,11 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Proyectos",
     items: [{ href: "/proyectos", label: "Proyectos", icon: "Proyectos" }],
+  },
+  {
+    label: "Soporte",
+    incidenciasOnly: true,
+    items: [{ href: "/incidencias", label: "Incidencias", icon: "Incidencias" }],
   },
   {
     label: "Analítica",
@@ -269,6 +280,11 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/proyectos", label: "Proyectos", icon: "Proyectos" },
       { href: "/hardware",      label: "Hardware",  icon: "Hardware" },
     ],
+  },
+  {
+    label: "Soporte",
+    incidenciasOnly: true,
+    items: [{ href: "/incidencias", label: "Incidencias", icon: "Incidencias" }],
   },
   {
     label: "Analítica",
@@ -364,11 +380,15 @@ function SidebarInner({
 
   const [pipelineBadge,    setPipelineBadge]    = useState(0)
   const [proyectosBadge, setProyectosBadge] = useState(0)
-  // Inicializa desde localStorage para evitar el flash del CRM en cada navegación
   const [crmActivo, setCrmActivo] = useState<boolean>(() => {
     if (typeof window === "undefined") return false
     try { return localStorage.getItem("palex_crm_activo") === "true" }
     catch { return false }
+  })
+  const [incidenciasActivo, setIncidenciasActivo] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true
+    try { return localStorage.getItem("palex_incidencias_activo") !== "false" }
+    catch { return true }
   })
 
   useEffect(() => {
@@ -377,12 +397,14 @@ function SidebarInner({
       .then(d => {
         if (d != null) {
           setCrmActivo(d.crmActivo)
-          try { localStorage.setItem("palex_crm_activo", String(d.crmActivo)) } catch { /* */ }
+          setIncidenciasActivo(d.incidenciasActivo ?? true)
+          try {
+            localStorage.setItem("palex_crm_activo", String(d.crmActivo))
+            localStorage.setItem("palex_incidencias_activo", String(d.incidenciasActivo ?? true))
+          } catch { /* */ }
         }
       })
       .catch(() => {})
-  // Re-fetch cuando cambia la ruta — así al volver de /admin/configuracion
-  // el sidebar refleja el nuevo valor de crmActivo sin necesidad de reload
   }, [pathname])
 
   useEffect(() => {
@@ -463,7 +485,7 @@ function SidebarInner({
         className="flex-1 space-y-4"
         style={{ padding: collapsed ? "10px 6px" : "10px 8px", overflowY: "auto", overflowX: "hidden" }}
       >
-        {groups.filter(g => !g.crmOnly || crmActivo).map((group, gi) => (
+        {groups.filter(g => (!g.crmOnly || crmActivo) && (!g.incidenciasOnly || incidenciasActivo)).map((group, gi) => (
           <div key={gi}>
             {/* Label de grupo — siempre en DOM, opacidad */}
             {group.label && (

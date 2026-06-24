@@ -125,6 +125,108 @@
 
 ---
 
+## Ideas de features — Sesion junio 2026
+
+### 1. Plantillas de proyecto inteligentes (PRIORIDAD ALTA — esfuerzo bajo)
+Al crear proyecto, elegir plantilla (ej: "Instalacion BC Robo estandar") que auto-crea:
+- 11 fases con duraciones estimadas
+- Tareas predefinidas por fase
+- Hitos clave con fechas calculadas desde fecha inicio
+- Hardware necesario pre-asignado del catalogo
+- Checklist de materiales tipicos
+ADMIN gestiona plantillas. Reutiliza modelos existentes (FaseProyecto, Tarea, Hito).
+
+### 2. Panel de notas del equipo (PRIORIDAD ALTA — esfuerzo bajo)
+Feed lateral en sidebar para comunicacion interna:
+- Notas con @menciones (reutiliza MentionInput/MentionText existentes)
+- Contexto automatico: si escribes desde /hospitales/5 se adjunta "desde Hospital X"
+- Notas ancladas (pinned) por ADMIN
+- Reacciones rapidas (check = "visto") para evitar "ok" spam
+- Hilos para respuestas sin ensuciar feed
+- Boton "Crear recordatorio" o "Crear tarea" desde una nota
+- Email automatico al mencionado (Resend)
+Modelo: NotaEquipo (id, texto, autorId, mencionIds JSON, contexto JSON, fijada, parentId, creadoEn)
+API: /api/notas con CRUD + filtros
+
+### 3. Timeline global de actividad (PRIORIDAD ALTA — esfuerzo bajo)
+Feed tipo GitHub con TODA la actividad de la organizacion:
+- "Carlos completo fase INSTALACION en Hospital Virgen del Rocio"
+- "Ana creo 3 tareas en proyecto Clinic Barcelona"
+Filtrable por zona, usuario, tipo, fecha.
+LogActividad ya existe en DB — solo falta frontend con iconos, avatares, filtros.
+
+### 4. Scoring de hospitales (PRIORIDAD ALTA — esfuerzo bajo)
+Indicador de salud 0-100 por hospital, auto-calculado:
+- Frecuencia visitas (25%): visitas ultimos 90d vs media
+- Estado proyectos (25%): % fases completadas, retrasos
+- Hardware operativo (20%): % equipos OK vs mantenimiento/baja
+- Seguimiento comercial (15%): llamadas recientes
+- Documentacion (15%): contactos completos, datos actualizados
+Semaforo en lista hospitales + score en ficha + ranking por zona en dashboard ADMIN.
+
+### 5. Briefing matutino automatico (PRIORIDAD ALTA — esfuerzo medio)
+Email diario 8:00 + tarjeta resumen al abrir dashboard:
+- Visitas planificadas hoy (direccion + contacto principal)
+- Tareas vencidas o que vencen hoy
+- Recordatorios pendientes
+- Proyectos en riesgo en su zona
+- Menciones sin leer
+Necesita: Resend para email, cron job o Railway scheduled task.
+
+### 6. Modo presentacion proyecto (PRIORIDAD ALTA — esfuerzo medio)
+Boton "Presentar" en detalle proyecto → slides ejecutivas pantalla completa:
+- Slide 1: Titulo + hospital + estado + progress ring grande
+- Slide 2: Gantt visual con fases y fechas
+- Slide 3: KPIs (presupuesto, tareas, hardware instalado)
+- Slide 4: Proximos hitos y riesgos
+- Slide 5: Equipo y contactos
+Navegable con flechas. Para reuniones con el hospital sin PowerPoint.
+
+### 7. Quick Actions flotantes por contexto (esfuerzo bajo)
+Boton flotante (+) que cambia segun pagina actual:
+- En /hospitales/5: "Nueva visita aqui", "Llamar", "Nueva tarea"
+- En /proyectos/3: "Anadir tarea", "Registrar hito", "Subir adjunto"
+- En movil: speed dial tipo FAB Material Design.
+
+### 8. Comparador de periodos (esfuerzo bajo)
+Selector "Comparar con: mes/trimestre/ano anterior" en dashboard y listas:
+- Deltas con flechas verdes/rojas: "Visitas: 23 (+15% vs mes anterior)"
+- Mini sparklines de tendencia.
+
+### 9. Pasaporte hardware (esfuerzo medio)
+Pagina publica por unidad (via QR fisico pegado al equipo):
+- Modelo, serie, compra, garantia con countdown
+- Hospital actual, proyecto asociado
+- Historico de estados, visitas donde se menciono
+- Documentacion tecnica del catalogo
+- Log de incidencias
+
+### 10. Resumen semanal ADMIN (esfuerzo medio)
+Email cada lunes + vista en app:
+- Visitas realizadas vs planificadas por usuario
+- Proyectos que cambiaron de estado
+- Hardware movido (asignaciones, bajas)
+- Alertas activas
+- Top performer de la semana
+- Comparativa con semana anterior
+
+### 11. Ruta optimizada mapa (esfuerzo alto)
+Con 3-4 visitas planificadas, mapa muestra ruta optima:
+- Ordena visitas por proximidad geografica
+- Distancia y tiempo estimado entre paradas
+- Reorganizar arrastrando
+- Boton "Abrir en Google Maps" con ruta completa
+
+### 12. Check-in/Check-out hospitales (esfuerzo medio)
+Registro de presencia en hospital:
+- Check-in al llegar (manual o geolocalizacion)
+- Check-out al salir, registra duracion
+- En ficha hospital: "Tiempo total: 47h este trimestre"
+- En perfil tecnico: "Horas en campo esta semana: 32h"
+Modelo: RegistroPresencia (usuarioId, hospitalId, checkIn, checkOut, duracion)
+
+---
+
 ## Auditoria exhaustiva (junio 2026)
 - Dead links corregidos: /visitas/nueva → /visitas?abrir=1, /ventas/hospitales → /hospitales
 - Bug fecha calendario: abrirModal(fechaInicial?) preserva fecha seleccionada

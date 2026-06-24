@@ -58,7 +58,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ### URL routing
 - Route group `(dashboard)` NO aparece en la URL
-- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/incidencias`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`
 - NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
 - NO existe `/pre-proyectos` — todo unificado en `/proyectos`
 
@@ -77,6 +77,10 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ### Plantillas de visita
 Existe sistema de plantillas para pre-rellenar visitas. NO implementar "duplicar visita".
+
+### Incidencias / Helpdesk
+Activable/desactivable desde admin/configuracion (ConfigApp.incidenciasActivo).
+Sidebar lo muestra/oculta automaticamente. Los datos persisten al desactivar.
 
 ---
 
@@ -107,6 +111,8 @@ src/
       admin/log/page.tsx                Log de actividad (solo ADMIN)
       admin/equipo/page.tsx             Panel equipo — workload por usuario (solo ADMIN)
       admin/carga-trabajo/page.tsx      Heatmap mensual visitas (solo ADMIN)
+      incidencias/page.tsx              Helpdesk: lista + filtros + KPIs + crear modal
+      incidencias/[id]/page.tsx         Detalle incidencia + timeline eventos + SLA
       llamadas/page.tsx                 Registro de llamadas — CRUD, KPIs, filtros
       perfil/page.tsx                   Nombre + contrasena + notificaciones + sync calendario
     api/                                ~50 rutas con rate limiting + Zod validation
@@ -115,6 +121,7 @@ src/
       visitas/                          CRUD + comentarios. GET sin `datos`, ?desde=&hasta=
       proyectos/                        CRUD + fases + tareas + hitos + entradas + solicitudes + contactos + adjuntos + comentarios + modulos + share + excel
       hardware/                         CRUD + tipos + unidades
+      incidencias/                      CRUD + eventos. Helpdesk HW/SW, SLA, timeline
       llamadas/                         CRUD con IDOR zona
       tags/, recordatorios/, favoritos/, calendario/ical/, onboarding/, presence/, notificaciones/
       perfil/                           { rol, onboardingCompletado, calendarToken }
@@ -168,11 +175,13 @@ Tag              (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio     (titulo, descripcion?, fecha, completado, usuario)
 Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique)
 RegistroLlamada  (hospital, contacto?, usuario, duracion, asunto, resultado, seguimiento)
-LogActividad, ConfigApp, PlantillaVisita, ModuloInlab
+Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad)
+EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, incidencia, autor)
+LogActividad, ConfigApp (crmActivo, incidenciasActivo), PlantillaVisita, ModuloInlab
 Oportunidad      (DESACTIVADO)
 ```
 
-**Enums clave:** EstadoProyecto (5), EstadoModulo (5), TipoFase (11), TipoFavorito (2)
+**Enums clave:** EstadoProyecto (5), EstadoModulo (5), TipoFase (11), TipoFavorito (2), TipoIncidencia (2), CategoriaIncidencia (10), PrioridadIncidencia (4), EstadoIncidencia (6), TipoEventoIncidencia (11)
 
 ---
 
@@ -213,6 +222,7 @@ Oportunidad      (DESACTIVADO)
 **Notificaciones:** Browser Notification API, polling 60s, preferencias perfil.
 **Calendario:** iCal feed con HMAC tokens, sync Google/Outlook/Apple.
 **Busqueda:** Global debounced, CommandPalette (Cmd+K), filtros avanzados.
+**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA, timeline eventos, 11 tipos evento, toggle activacion.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence.
@@ -236,7 +246,21 @@ Oportunidad      (DESACTIVADO)
 - [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad (bajo impacto)
 - [ ] Cache servidor en Redis con TTL (bajo impacto)
 
-### Backlog (no priorizado)
+### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
+- [ ] Plantillas de proyecto inteligentes (auto-crear fases/tareas/hitos desde template)
+- [ ] Panel de notas del equipo (feed sidebar con @menciones, hilos, contexto auto)
+- [ ] Timeline global de actividad (feed tipo GitHub con LogActividad existente)
+- [ ] Scoring de hospitales (salud 0-100: visitas, proyectos, hardware, seguimiento)
+- [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia")
+- [ ] Modo presentacion proyecto (slides ejecutivas a pantalla completa)
+- [ ] Quick Actions flotantes por contexto (FAB adaptativo segun pagina)
+- [ ] Comparador de periodos (deltas + sparklines vs mes/trimestre anterior)
+- [ ] Pasaporte hardware (pagina publica QR con historial completo por unidad)
+- [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer)
+- [ ] Ruta optimizada mapa (ordenar visitas del dia por proximidad geografica)
+- [ ] Check-in/Check-out hospitales (registro tiempo en campo por hospital)
+
+### Backlog — Infraestructura (no priorizado)
 - [ ] Notificaciones por email (Resend o similar)
 - [ ] Notificaciones push movil (VAPID + FCM/OneSignal)
 - [ ] Offline completo: crear registros sin conexion

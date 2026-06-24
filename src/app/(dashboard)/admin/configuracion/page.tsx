@@ -10,7 +10,7 @@ import {
 
 // ---- tipos ----
 
-interface Config { id: number; crmActivo: boolean; scoringConfig?: ScoringConfig | null }
+interface Config { id: number; crmActivo: boolean; incidenciasActivo: boolean; scoringConfig?: ScoringConfig | null }
 interface ModuloItem { id: string; nombre: string; activo: boolean; _count?: { proyectos: number } }
 
 const NIVEL_LABEL: Record<string, string> = { alto: "Alto", medio: "Medio", info: "Info" }
@@ -857,18 +857,19 @@ export default function ConfiguracionPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function toggleCRM(valor: boolean) {
+  async function toggleModule(key: "crmActivo" | "incidenciasActivo", valor: boolean) {
     if (!config) return
     setSaving(true)
     try {
       const r = await fetch("/api/config", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crmActivo: valor }),
+        body: JSON.stringify({ [key]: valor }),
       })
       if (!r.ok) throw new Error()
-      setConfig(prev => prev ? { ...prev, crmActivo: valor } : prev)
-      success(valor ? "CRM activado correctamente" : "CRM desactivado correctamente")
+      setConfig(prev => prev ? { ...prev, [key]: valor } : prev)
+      const label = key === "crmActivo" ? "CRM" : "Incidencias"
+      success(valor ? `${label} activado correctamente` : `${label} desactivado correctamente`)
     } catch {
       toastError("Error al guardar la configuración")
     } finally {
@@ -894,7 +895,7 @@ export default function ConfiguracionPage() {
               title="Módulo CRM — Pipeline de Ventas"
               description="Pipeline Kanban, oportunidades comerciales y mapa de cobertura. Visible para roles ADMIN y VENTAS."
               activo={config?.crmActivo ?? true}
-              onToggle={toggleCRM}
+              onToggle={(v) => toggleModule("crmActivo", v)}
               saving={saving}
               icon={
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -902,6 +903,19 @@ export default function ConfiguracionPage() {
                   <line x1="8" y1="18" x2="21" y2="18"/>
                   <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
                   <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              }
+            />
+            <ModuleCard
+              title="Módulo Incidencias — Helpdesk"
+              description="Gestión de incidencias de hardware y software. Registro de eventos, llamadas y comunicaciones con clientes."
+              activo={config?.incidenciasActivo ?? true}
+              onToggle={(v) => toggleModule("incidenciasActivo", v)}
+              saving={saving}
+              icon={
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               }
             />

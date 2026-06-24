@@ -131,12 +131,61 @@ enum TipoFavorito {
   PROYECTO
 }
 
+enum TipoIncidencia {
+  HARDWARE
+  SOFTWARE
+}
+
+enum CategoriaIncidencia {
+  BC_ROBO
+  ZEBRA_MC
+  ZEBRA_IMPRESORA
+  READER_RFID
+  GATEWAY_BT
+  MINI_PC
+  NEVERA
+  PANTALLA
+  INLAB
+  OTRO
+}
+
+enum PrioridadIncidencia {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum EstadoIncidencia {
+  ABIERTA
+  EN_PROGRESO
+  PENDIENTE_CLIENTE
+  PENDIENTE_PROVEEDOR
+  RESUELTA
+  CERRADA
+}
+
+enum TipoEventoIncidencia {
+  NOTA
+  LLAMADA_ENTRANTE
+  LLAMADA_SALIENTE
+  EMAIL_ENVIADO
+  EMAIL_RECIBIDO
+  CAMBIO_ESTADO
+  CAMBIO_ASIGNACION
+  ESCALADO
+  RESPUESTA_TECNICA
+  RESPUESTA_APLICACIONES
+  COMUNICACION_CLIENTE
+}
+
 // --- CONFIG ----------------------------------------------------------
 
 model ConfigApp {
-  id            Int     @id @default(1)
-  crmActivo     Boolean @default(true)
-  scoringConfig Json?
+  id                 Int     @id @default(1)
+  crmActivo          Boolean @default(true)
+  incidenciasActivo  Boolean @default(true) @map("incidencias_activo")
+  scoringConfig      Json?
 
   @@map("config_app")
 }
@@ -163,7 +212,10 @@ model Usuario {
   recordatorios     Recordatorio[]
   favoritos         Favorito[]
   llamadas          RegistroLlamada[]
-  tareasAsignadas   Tarea[]          @relation("TareasAsignadas")
+  tareasAsignadas       Tarea[]          @relation("TareasAsignadas")
+  incidenciasReportadas Incidencia[]     @relation("IncidenciasReportadas")
+  incidenciasAsignadas  Incidencia[]     @relation("IncidenciasAsignadas")
+  eventosIncidencia     EventoIncidencia[] @relation("EventosIncidencia")
 
   @@map("usuarios")
 }
@@ -222,6 +274,7 @@ model Hospital {
   proyectos     Proyecto[]
   hardwareUnidades HardwareUnidad[]
   llamadas         RegistroLlamada[]
+  incidencias      Incidencia[]
 
   @@index([zonaId])
   @@map("hospitales")
@@ -241,6 +294,7 @@ model Contacto {
   proyectos     ProyectoContacto[]
   visitasPrincipal Visita[]              @relation("VisitaContactoPrincipal")
   llamadas         RegistroLlamada[]
+  incidencias      Incidencia[]
 
   @@index([hospitalId])
   @@map("contactos")
@@ -557,6 +611,7 @@ model HardwareUnidad {
   catalogo    HardwareCatalogo @relation(fields: [catalogoId], references: [id])
   hospital    Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
   proyecto Proyecto?     @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
+  incidencias Incidencia[]
 
   @@index([hospitalId])
   @@index([catalogoId])
@@ -746,4 +801,66 @@ model RegistroLlamada {
   @@index([usuarioId, fecha])
   @@index([hospitalId])
   @@map("registros_llamadas")
+}
+
+// --- INCIDENCIAS / HELPDESK ------------------------------------------
+
+model Incidencia {
+  id                  String               @id @default(cuid())
+  codigo              String               @unique
+  titulo              String
+  descripcion         String               @db.Text
+  tipo                TipoIncidencia
+  categoria           CategoriaIncidencia
+  prioridad           PrioridadIncidencia  @default(MEDIA)
+  estado              EstadoIncidencia     @default(ABIERTA)
+  equipoResponsable   String               @default("SERVICIO_TECNICO") @map("equipo_responsable")
+  slaHoras            Int?                 @default(48) @map("sla_horas")
+  resolucion          String?              @db.Text
+
+  hospitalId          String               @map("hospital_id")
+  contactoId          String?              @map("contacto_id")
+  hardwareUnidadId    String?              @map("hardware_unidad_id")
+  reportadoPorId      String               @map("reportado_por_id")
+  asignadoAId         String?              @map("asignado_a_id")
+
+  hospital            Hospital             @relation(fields: [hospitalId], references: [id])
+  contacto            Contacto?            @relation(fields: [contactoId], references: [id], onDelete: SetNull)
+  hardwareUnidad      HardwareUnidad?      @relation(fields: [hardwareUnidadId], references: [id], onDelete: SetNull)
+  reportadoPor        Usuario              @relation("IncidenciasReportadas", fields: [reportadoPorId], references: [id])
+  asignadoA           Usuario?             @relation("IncidenciasAsignadas", fields: [asignadoAId], references: [id], onDelete: SetNull)
+
+  eventos             EventoIncidencia[]
+
+  creadoEn            DateTime             @default(now()) @map("creado_en")
+  actualizadoEn       DateTime             @updatedAt @map("actualizado_en")
+  fechaResolucion     DateTime?            @map("fecha_resolucion")
+  fechaCierre         DateTime?            @map("fecha_cierre")
+
+  @@index([hospitalId])
+  @@index([estado])
+  @@index([asignadoAId])
+  @@index([reportadoPorId])
+  @@index([creadoEn])
+  @@map("incidencias")
+}
+
+model EventoIncidencia {
+  id                  String                @id @default(cuid())
+  tipo                TipoEventoIncidencia
+  descripcion         String                @db.Text
+  duracion            Int?
+  privado             Boolean               @default(false)
+  metadatos           Json?
+
+  incidenciaId        String                @map("incidencia_id")
+  autorId             String                @map("autor_id")
+
+  incidencia          Incidencia            @relation(fields: [incidenciaId], references: [id], onDelete: Cascade)
+  autor               Usuario               @relation("EventosIncidencia", fields: [autorId], references: [id])
+
+  creadoEn            DateTime              @default(now()) @map("creado_en")
+
+  @@index([incidenciaId])
+  @@map("eventos_incidencia")
 }

@@ -35,6 +35,7 @@ export async function PATCH(req: NextRequest) {
     await getOrCreateConfig()
     const data: Record<string, unknown> = {}
     if ("crmActivo" in body) data.crmActivo = Boolean(body.crmActivo)
+    if ("incidenciasActivo" in body) data.incidenciasActivo = Boolean(body.incidenciasActivo)
     if ("scoringConfig" in body && body.scoringConfig !== null && typeof body.scoringConfig === "object") {
       data.scoringConfig = body.scoringConfig
     }
