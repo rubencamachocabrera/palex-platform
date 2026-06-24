@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-24.
+> Ultima actualizacion: 2026-06-25.
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -43,6 +43,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 - `--accept-data-loss` solo cubre DROP columnas, NO anadir NOT NULL sin default
 - NUNCA nombrar relacion igual que columna DB → usar `@map("nombre_diferente")`
 - `orderBy` sobre relacion: `{ tipo: { nombre: "asc" } }` NO `{ tipo: "asc" }`
+- `orderBy` sobre campo enum: Prisma ordena ALFABETICAMENTE, no por orden semantico — NO usar para prioridad/estado
 - `npx prisma generate` despues de cualquier cambio en schema.prisma
 - Modelo `Proyecto` usa `@@map("pre_proyectos")` — tabla DB sigue siendo `pre_proyectos`
 - FK `proyectoId` usa `@map("preProyectoId")` en modelos relacionados
@@ -201,6 +202,9 @@ Oportunidad      (DESACTIVADO)
 - Validacion: Zod schemas centralizados en `schemas.ts`, usar `parseBody()`.
 - Comentarios POST aceptan `mencionIds` array.
 - `/api/perfil`: devuelve `{ rol, onboardingCompletado, calendarToken }` — usar `d?.rol`.
+- GET `/api/incidencias`: acepta `?limit=N` (max 500), `?q=`, `?estado=`, `?prioridad=`, `?tipo=`, `?hospitalId=`, `?asignadoAId=`, `?desde=&hasta=`. orderBy `creadoEn desc` (NO por enum — Prisma ordena enums alfabeticamente).
+- GET `/api/incidencias/[id]`: filtra eventos privados para no-ADMIN (solo ve los suyos).
+- POST `/api/incidencias`: generarCodigo() con retry loop anti-race-condition.
 
 ---
 
@@ -222,7 +226,7 @@ Oportunidad      (DESACTIVADO)
 **Notificaciones:** Browser Notification API, polling 60s, preferencias perfil.
 **Calendario:** iCal feed con HMAC tokens, sync Google/Outlook/Apple.
 **Busqueda:** Global debounced, CommandPalette (Cmd+K), filtros avanzados.
-**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA, timeline eventos, 11 tipos evento, toggle activacion.
+**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA, timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, exportacion informes PDF, filtros activos con chips, KPIs interactivos, toggle activacion.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence.
@@ -279,6 +283,8 @@ Oportunidad      (DESACTIVADO)
 - Iconos: SIEMPRE SVG de `components/ui/Icons.tsx` (NO emojis)
 - EmptyState en todas las listas vacias + Skeleton shimmer en todas las cargas
 - Prisma: `db.proyecto` (no `db.preProyecto`) — modelo renombrado con @@map
+- Exportaciones HTML (document.write/print): SIEMPRE escapar datos usuario con `esc()` (XSS prevention)
+- Mapa hospitales: tile estatico OSM (img-src permitido), NO iframe (frame-src bloqueado por CSP)
 
 ---
 
