@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState"
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
-import { IconSearch, IconPlus, IconX, IconChevronDown } from "@/components/ui/Icons"
+import { IconSearch, IconPlus, IconX, IconChevronDown, IconFileExport } from "@/components/ui/Icons"
 
 interface Incidencia {
   id: string
@@ -117,6 +117,13 @@ export default function IncidenciasPage() {
   const [hwUnidades, setHwUnidades] = useState<{ id: string; numSerie: string | null; catalogo: { marca: string; modelo: string } }[]>([])
   const [creando, setCreando] = useState(false)
 
+  // Export modal
+  const [showExport, setShowExport] = useState(false)
+  const [exportDesde, setExportDesde] = useState("")
+  const [exportHasta, setExportHasta] = useState("")
+  const [exportHospitalId, setExportHospitalId] = useState("")
+  const [exportEstado, setExportEstado] = useState("")
+
   const fetchItems = useCallback(async () => {
     const params = new URLSearchParams()
     if (filtroEstado) params.set("estado", filtroEstado)
@@ -191,6 +198,80 @@ export default function IncidenciasPage() {
     }
   }
 
+  function exportarInforme() {
+    const params = new URLSearchParams()
+    if (exportEstado) params.set("estado", exportEstado)
+    if (exportHospitalId) params.set("hospitalId", exportHospitalId)
+    if (exportDesde) params.set("desde", exportDesde)
+    if (exportHasta) params.set("hasta", exportHasta)
+
+    fetch(`/api/incidencias?${params}&limit=500`).then(r => r.ok ? r.json() : []).then((data: Incidencia[]) => {
+      if (!Array.isArray(data) || data.length === 0) { toastError("No hay incidencias con esos filtros"); return }
+
+      const hospitalName = exportHospitalId ? hospitales.find(h => h.id === exportHospitalId)?.nombre ?? "" : "Todos"
+      const rangoStr = [exportDesde, exportHasta].filter(Boolean).join(" — ") || "Todas las fechas"
+
+      const kpiAbiertas = data.filter(i => i.estado === "ABIERTA").length
+      const kpiProgreso = data.filter(i => i.estado === "EN_PROGRESO").length
+      const kpiPendientes = data.filter(i => i.estado.startsWith("PENDIENTE")).length
+      const kpiResueltas = data.filter(i => ["RESUELTA", "CERRADA"].includes(i.estado)).length
+      const kpiHW = data.filter(i => i.tipo === "HARDWARE").length
+      const kpiSW = data.filter(i => i.tipo === "SOFTWARE").length
+
+      const rows = data.map(i => {
+        const est = getEstadoStyle(i.estado)
+        const sla = slaStatus(i.creadoEn, i.slaHoras, i.estado)
+        return `<tr>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-family:monospace;color:#64748b">${i.codigo}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.titulo}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.hospital.nombre}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${est.color};background:${est.bg};padding:2px 8px;border-radius:10px">${est.label}</span></td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.tipo === "HARDWARE" ? "HW" : "SW"} · ${CATEGORIAS[i.categoria] ?? i.categoria}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${EQUIPOS[i.equipoResponsable] ?? i.equipoResponsable}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center"><span style="color:${sla.color};font-weight:600">${sla.label}</span></td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${new Date(i.creadoEn).toLocaleDateString("es-ES")}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.asignadoA?.nombre ?? "—"}</td>
+        </tr>`
+      }).join("")
+
+      const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Incidencias — Palex</title>
+      <style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:15mm}}</style></head>
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:30px auto;color:#1e293b;padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${TEAL};padding-bottom:14px;margin-bottom:20px">
+          <div>
+            <h1 style="margin:0;font-size:20px;color:#0f172a">Informe de Incidencias</h1>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">Hospital: ${hospitalName} · Periodo: ${rangoStr}</p>
+          </div>
+          <div style="text-align:right">
+            <p style="margin:0;font-size:11px;color:#94a3b8">Generado: ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}</p>
+            <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:${TEAL}">Palex Medical</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px">
+          ${[
+            { l: "Total", v: data.length, c: "#0f172a" },
+            { l: "Abiertas", v: kpiAbiertas, c: "#ef4444" },
+            { l: "En progreso", v: kpiProgreso, c: "#f59e0b" },
+            { l: "Pendientes", v: kpiPendientes, c: "#8b5cf6" },
+            { l: "Resueltas", v: kpiResueltas, c: "#10b981" },
+            { l: "HW / SW", v: kpiHW + " / " + kpiSW, c: "#3b82f6" },
+          ].map(k => `<div style="background:#f8fafc;padding:10px 12px;border-radius:8px;text-align:center"><p style="margin:0;font-size:10px;text-transform:uppercase;color:#94a3b8;font-weight:700">${k.l}</p><p style="margin:4px 0 0;font-size:18px;font-weight:800;color:${k.c}">${k.v}</p></div>`).join("")}
+        </div>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+          <thead><tr style="background:#f8fafc">
+            ${["Código", "Título", "Hospital", "Estado", "Tipo", "Equipo", "SLA", "Fecha", "Asignado"].map(h => `<th style="padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">${h}</th>`).join("")}
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p style="text-align:center;font-size:10px;color:#94a3b8;margin-top:32px">${data.length} incidencias · Informe generado automáticamente — Palex Medical</p>
+      </body></html>`
+
+      const w = window.open("", "_blank")
+      if (w) { w.document.write(html); w.document.close(); w.print() }
+      setShowExport(false)
+    })
+  }
+
   const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA"]
   const swCategorias = ["INLAB", "OTRO"]
 
@@ -205,14 +286,23 @@ export default function IncidenciasPage() {
         title="Incidencias"
         subtitle="Gestión de incidencias de hardware y software"
         actions={
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: TEAL }}
-          >
-            <IconPlus size={16} />
-            <span className="hidden sm:inline">Nueva incidencia</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (hospitales.length === 0) fetch("/api/hospitales?limit=500").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setHospitales(d) }); setShowExport(true) }}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <IconFileExport size={16} />
+              <span className="hidden sm:inline">Informe</span>
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: TEAL }}
+            >
+              <IconPlus size={16} />
+              <span className="hidden sm:inline">Nueva incidencia</span>
+            </button>
+          </div>
         }
       />
 
@@ -474,6 +564,60 @@ export default function IncidenciasPage() {
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-opacity hover:opacity-90"
                   style={{ backgroundColor: TEAL }}>
                   {creando ? "Creando..." : "Crear incidencia"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Export Modal */}
+      {showExport && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowExport(false)} />
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] px-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Exportar informe</h2>
+                <button onClick={() => setShowExport(false)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={18} /></button>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Hospital</label>
+                  <select value={exportHospitalId} onChange={e => setExportHospitalId(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    <option value="">Todos los hospitales</option>
+                    {hospitales.map(h => <option key={h.id} value={h.id}>{h.nombre} — {h.ciudad}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Desde</label>
+                    <input type="date" value={exportDesde} onChange={e => setExportDesde(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Hasta</label>
+                    <input type="date" value={exportHasta} onChange={e => setExportHasta(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Estado</label>
+                  <select value={exportEstado} onChange={e => setExportEstado(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                    <option value="">Todos los estados</option>
+                    {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+                <button onClick={() => setShowExport(false)} className="px-4 py-2.5 text-sm text-gray-600 hover:text-gray-800 transition-colors">Cancelar</button>
+                <button onClick={exportarInforme}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: TEAL }}>
+                  <IconFileExport size={15} />
+                  Generar informe
                 </button>
               </div>
             </div>

@@ -134,7 +134,9 @@ export default function HospitalDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const fromProyecto = searchParams.get("from") === "proyecto" ? searchParams.get("pid") : null
+  const fromParam = searchParams.get("from")
+  const fromProyecto = fromParam === "proyecto" ? searchParams.get("pid") : null
+  const fromIncidencia = fromParam === "incidencia" ? searchParams.get("iid") : null
 
   const [hospital, setHospital] = useState<Hospital | null>(null)
   const { rol: userRol } = usePerfil()
@@ -442,7 +444,6 @@ export default function HospitalDetailPage() {
   const ultimaVisita = hospital.visitas[0]?.fecha ?? null
   const hasCoords = hospital.latitud != null && hospital.longitud != null
   const osmUrl = hasCoords ? `https://www.openstreetmap.org/?mlat=${hospital.latitud}&mlon=${hospital.longitud}#map=16/${hospital.latitud}/${hospital.longitud}` : null
-  const osmEmbed = hasCoords ? `https://www.openstreetmap.org/export/embed.html?bbox=${(hospital.longitud! - 0.012).toFixed(5)},${(hospital.latitud! - 0.008).toFixed(5)},${(hospital.longitud! + 0.012).toFixed(5)},${(hospital.latitud! + 0.008).toFixed(5)}&layer=mapnik&marker=${hospital.latitud},${hospital.longitud}` : null
 
   return (
     <div className="max-w-6xl mx-auto space-y-5">
@@ -471,9 +472,9 @@ export default function HospitalDetailPage() {
         <div className="px-6 py-5">
           {/* Breadcrumb + acciones */}
           <div className="flex items-center justify-between gap-4 mb-4">
-            <button onClick={() => fromProyecto ? router.push(`/proyectos/${fromProyecto}`) : router.back()} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors cursor-pointer group">
+            <button onClick={() => fromProyecto ? router.push(`/proyectos/${fromProyecto}`) : fromIncidencia ? router.push(`/incidencias/${fromIncidencia}`) : router.back()} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors cursor-pointer group">
               <IconArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span className="hidden sm:inline">{fromProyecto ? "Volver al proyecto" : "Hospitales"}</span>
+              <span className="hidden sm:inline">{fromProyecto ? "Volver al proyecto" : fromIncidencia ? "Volver a incidencia" : "Hospitales"}</span>
             </button>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowLlamada(true)}
@@ -959,26 +960,33 @@ export default function HospitalDetailPage() {
         {/* ── SIDEBAR (1/3) ── */}
         <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
 
-          {/* Mapa */}
-          {osmEmbed && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-              <iframe
-                src={osmEmbed}
-                width="100%" height="180"
-                className="border-0 w-full"
-                title={`Mapa de ${hospital.nombre}`}
-                loading="lazy"
-              />
+          {/* Mapa estático con tiles OSM */}
+          {hasCoords && osmUrl && (
+            <a href={osmUrl} target="_blank" rel="noopener noreferrer"
+              className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group">
+              <div className="relative w-full h-[180px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                <img
+                  src={`https://a.tile.openstreetmap.org/15/${Math.floor(((hospital.longitud! + 180) / 360) * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(hospital.latitud! * Math.PI / 180) + 1 / Math.cos(hospital.latitud! * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png`}
+                  alt={`Mapa de ${hospital.nombre}`}
+                  className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-6 h-6 relative">
+                    <div className="absolute inset-0 rounded-full bg-red-500 opacity-25 animate-ping" />
+                    <div className="absolute inset-1 rounded-full bg-red-500 border-2 border-white shadow-lg" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
               <div className="px-4 py-2.5 flex items-center justify-between">
-                <span className="text-[10px] text-gray-400">© OpenStreetMap contributors</span>
-                <a href={osmUrl!} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs font-semibold cursor-pointer transition-colors"
-                  style={{ color: TEAL }}>
+                <span className="text-[10px] text-gray-400">© OpenStreetMap</span>
+                <span className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: TEAL }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                   Abrir en mapa
-                </a>
+                </span>
               </div>
-            </div>
+            </a>
           )}
 
           {/* Info rápida */}
