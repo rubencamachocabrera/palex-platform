@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documento Tecnico — Plataforma de Gestion de Proyectos Hospitalarios</title>
+<style>
+  :root {
+    --teal: #00A99D;
+    --teal-light: #E6F7F6;
+    --teal-dark: #007F75;
+    --orange: #F7941D;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--gray-800);
+    line-height: 1.7;
+    background: #fff;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  /* Cover */
+  .cover {
+    text-align: center;
+    padding: 80px 0 60px;
+    border-bottom: 3px solid var(--teal);
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 64px; height: 64px;
+    background: var(--teal);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .cover-logo svg { width: 36px; height: 36px; fill: #fff; }
+  .cover h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    color: var(--gray-500);
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: inline-flex;
+    gap: 32px;
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+  .cover-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* TOC */
+  .toc {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .toc h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 13px;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+    padding: 0;
+  }
+  .toc li {
+    counter-increment: toc;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 15px;
+  }
+  .toc li:last-child { border-bottom: none; }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero) ".";
+    color: var(--teal);
+    font-weight: 700;
+    margin-right: 12px;
+    font-size: 14px;
+  }
+  .toc a { color: var(--gray-700); text-decoration: none; }
+  .toc a:hover { color: var(--teal); }
+
+  /* Sections */
+  h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-top: 56px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--teal);
+    page-break-after: avoid;
+  }
+  h2 .num {
+    color: var(--teal);
+    margin-right: 8px;
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-top: 28px;
+    margin-bottom: 10px;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    margin-top: 20px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  p { margin-bottom: 12px; font-size: 14.5px; color: var(--gray-700); }
+  ul, ol { margin-bottom: 12px; padding-left: 20px; font-size: 14.5px; color: var(--gray-700); }
+  li { margin-bottom: 4px; }
+  strong { color: var(--gray-900); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    page-break-inside: avoid;
+  }
+  th {
+    background: var(--teal);
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  th:first-child { border-radius: 6px 0 0 0; }
+  th:last-child { border-radius: 0 6px 0 0; }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--gray-50); }
+  tr:hover td { background: var(--teal-light); }
+
+  /* Code */
+  code {
+    background: var(--gray-100);
+    color: var(--teal-dark);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  pre {
+    background: var(--gray-900);
+    color: #e5e7eb;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    page-break-inside: avoid;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-alta { background: #fef2f2; color: #dc2626; }
+  .badge-media { background: #fffbeb; color: #d97706; }
+  .badge-baja { background: var(--teal-light); color: var(--teal-dark); }
+
+  /* Diagram */
+  .diagram {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0 24px;
+    overflow-x: auto;
+  }
+  .diagram pre {
+    background: transparent;
+    color: var(--gray-700);
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Info box */
+  .info-box {
+    background: var(--teal-light);
+    border-left: 4px solid var(--teal);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  /* Stats row */
+  .stats {
+    display: flex;
+    gap: 16px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .stat {
+    flex: 1;
+    min-width: 140px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--teal);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Print */
+  @media print {
+    body { padding: 20px; max-width: 100%; font-size: 12px; }
+    .cover { padding: 40px 0 30px; }
+    .cover h1 { font-size: 26px; }
+    h2 { font-size: 20px; margin-top: 32px; }
+    h3 { font-size: 15px; }
+    table { font-size: 11px; }
+    pre { font-size: 10px; padding: 10px 14px; }
+    .stats { gap: 8px; }
+    .stat { padding: 10px; }
+    .stat-value { font-size: 22px; }
+    .no-print { display: none !important; }
+    a { color: var(--gray-700) !important; }
+  }
+
+  /* Download button */
+  .download-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--gray-900);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+  }
+  .download-bar span { color: #fff; font-size: 13px; font-weight: 500; }
+  .download-btn {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .download-btn:hover { opacity: 0.9; }
+  body { padding-top: 60px; }
+  @media print { .download-bar { display: none; } body { padding-top: 20px; } }
+
+  /* Separator */
+  hr { border: none; border-top: 1px solid var(--gray-200); margin: 32px 0; }
+
+  /* Footer */
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 2px solid var(--gray-200);
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+</style>
+</head>
+<body>
+
+<!-- Download bar -->
+<div class="download-bar no-print">
+  <span>Documento Tecnico — Plataforma de Gestion de Proyectos Hospitalarios</span>
+  <button class="download-btn" onclick="window.print()">Descargar PDF</button>
+</div>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="cover-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  </div>
+  <h1>Documento Tecnico</h1>
+  <p class="subtitle">Plataforma de Gestion de Proyectos Hospitalarios</p>
+  <div class="cover-meta">
+    <span>Version 0.2.0</span>
+    <span>Junio 2026</span>
+    <span>Uso interno</span>
+  </div>
+</div>
+
+<!-- Key stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-value">27</div><div class="stat-label">Tablas DB</div></div>
+  <div class="stat"><div class="stat-value">~50</div><div class="stat-label">APIs REST</div></div>
+  <div class="stat"><div class="stat-value">15</div><div class="stat-label">Enums</div></div>
+  <div class="stat"><div class="stat-value">1.229</div><div class="stat-label">Nodos Grafo</div></div>
+  <div class="stat"><div class="stat-value">18</div><div class="stat-label">Tests E2E</div></div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Indice</h2>
+  <ol>
+    <li><a href="#s1">Vision general</a></li>
+    <li><a href="#s2">Stack tecnico</a></li>
+    <li><a href="#s3">Arquitectura</a></li>
+    <li><a href="#s4">Modelo de datos</a></li>
+    <li><a href="#s5">Sistema de autenticacion y roles</a></li>
+    <li><a href="#s6">API REST</a></li>
+    <li><a href="#s7">Funcionalidades por modulo</a></li>
+    <li><a href="#s8">Frontend — Componentes y patrones</a></li>
+    <li><a href="#s9">Infraestructura</a></li>
+    <li><a href="#s10">Seguridad</a></li>
+    <li><a href="#s11">Testing y calidad</a></li>
+    <li><a href="#s12">Rendimiento</a></li>
+    <li><a href="#s13">Estado actual y deuda tecnica</a></li>
+    <li><a href="#s14">Comandos de desarrollo</a></li>
+  </ol>
+</div>
+
+<!-- 1. Vision general -->
+<h2 id="s1"><span class="num">01</span>Vision general</h2>
+
+<h3>Que es</h3>
+<p>Plataforma web interna para la planificacion y gestion de proyectos hospitalarios. Permite a los equipos tecnicos coordinar visitas a hospitales, hacer seguimiento de proyectos de instalacion de equipamiento medico, gestionar inventario de hardware y mantener toda la informacion de centros hospitalarios centralizada.</p>
+
+<h3>Para quien</h3>
+<ul>
+  <li><strong>Tecnicos de campo:</strong> registran visitas tecnicas, documentan instalaciones, firman digitalmente y trabajan offline.</li>
+  <li><strong>Jefes de proyecto:</strong> gestionan fases, tareas, hitos, materiales y equipos en proyectos hospitalarios.</li>
+  <li><strong>Administradores:</strong> supervisan al equipo, gestionan usuarios/zonas, controlan hardware y monitorizan la actividad.</li>
+  <li><strong>Comerciales</strong> (rol VENTAS): acceso basico a hospitales y dashboard (modulo CRM desactivado actualmente).</li>
+</ul>
+
+<div class="info-box">
+  Acceso restringido por credenciales y roles. No es un producto SaaS — es una herramienta interna con deploy propio.<br>
+  <strong>URL de produccion:</strong> <code>https://palex-platform-production.up.railway.app</code>
+</div>
+
+<!-- 2. Stack tecnico -->
+<h2 id="s2"><span class="num">02</span>Stack tecnico</h2>
+
+<h3>Tecnologias principales</h3>
+<table>
+  <tr><th>Capa</th><th>Tecnologia</th><th>Version</th><th>Proposito</th></tr>
+  <tr><td>Framework</td><td>Next.js (App Router)</td><td>16.2.6</td><td>SSR/SSG, routing, API routes, middleware</td></tr>
+  <tr><td>Lenguaje</td><td>TypeScript</td><td>5.x</td><td>Tipado estricto en todo el proyecto</td></tr>
+  <tr><td>UI</td><td>Tailwind CSS</td><td>v4</td><td>Estilos utility-first, dark mode via clase <code>.dark</code></td></tr>
+  <tr><td>Base de datos</td><td>PostgreSQL</td><td>—</td><td>Alojado en Railway, datos persistentes</td></tr>
+  <tr><td>ORM</td><td>Prisma</td><td>7.8.0</td><td>Schema declarativo, adapter-pg</td></tr>
+  <tr><td>Auth</td><td>NextAuth.js</td><td>v5 beta.31</td><td>Autenticacion, sesiones JWT, roles</td></tr>
+  <tr><td>Cache/Estado</td><td>Upstash Redis</td><td>1.38.0</td><td>Rate limiting, presencia colaborativa</td></tr>
+  <tr><td>Error tracking</td><td>Sentry</td><td>10.59.0</td><td>Client/server/edge, global-error boundary</td></tr>
+  <tr><td>Offline</td><td>IndexedDB + SW</td><td>—</td><td>PWA, auto-save borradores visitas</td></tr>
+  <tr><td>Frontend</td><td>React</td><td>19.2.4</td><td>UI, hooks, SWR para cache</td></tr>
+  <tr><td>Deploy</td><td>Railway</td><td>nixpacks</td><td>Auto-deploy desde <code>git push origin main</code></td></tr>
+</table>
+
+<h3>Dependencias clave</h3>
+<table>
+  <tr><th>Libreria</th><th>Uso</th></tr>
+  <tr><td><code>swr</code> 2.4.1</td><td>Cache y revalidacion de datos (hook <code>usePerfil()</code>)</td></tr>
+  <tr><td><code>zod</code> 4.4.3</td><td>Validacion de schemas en APIs (centralizados en <code>schemas.ts</code>)</td></tr>
+  <tr><td><code>bcryptjs</code> 3.0.3</td><td>Hash de contrasenas</td></tr>
+  <tr><td><code>pg</code> 8.20.0</td><td>Driver PostgreSQL nativo para Prisma adapter</td></tr>
+  <tr><td><code>qrcode</code> 1.5.4</td><td>Generacion de codigos QR por hospital</td></tr>
+  <tr><td><code>xlsx</code> 0.18.5</td><td>Export de proyectos a Excel (6 hojas)</td></tr>
+  <tr><td><code>@dnd-kit/*</code></td><td>Drag &amp; drop para Kanban de proyectos</td></tr>
+  <tr><td><code>@upstash/redis</code> 1.38.0</td><td>Redis serverless con fallback in-memory</td></tr>
+  <tr><td><code>@playwright/test</code> 1.61.0</td><td>Tests E2E (18 tests + auth setup)</td></tr>
+</table>
+
+<!-- 3. Arquitectura -->
+<h2 id="s3"><span class="num">03</span>Arquitectura</h2>
+
+<h3>Patron general</h3>
+<p>Next.js App Router con separacion clara:</p>
+<ul>
+  <li><strong>Route groups:</strong> <code>(auth)</code> para login, <code>(dashboard)</code> para app principal (NO aparece en URL)</li>
+  <li><strong>API Routes:</strong> ~50 endpoints REST en <code>src/app/api/</code></li>
+  <li><strong>Server Components:</strong> pages que hacen fetch en servidor</li>
+  <li><strong>Client Components:</strong> formularios, interacciones, hooks (<code>"use client"</code> como primera linea)</li>
+  <li><strong>Edge Middleware:</strong> proteccion de rutas sin Prisma (edge-compatible)</li>
+</ul>
+
+<h3>Flujo de una peticion</h3>
+<pre><code>Browser &rarr; Middleware (Edge)
+  &#9500;&#9472; Ruta protegida sin auth &rarr; redirect /login
+  &#9500;&#9472; /login con auth &rarr; redirect /dashboard
+  &#9492;&#9472; OK &rarr; Next.js App Router
+       &#9500;&#9472; Page (Server Component) &rarr; renderizado en servidor
+       &#9492;&#9472; API Route &rarr; auth() + rate limit + Zod validation + Prisma query &rarr; JSON</code></pre>
+
+<h3>Estructura de directorios</h3>
+<pre><code>src/
+&#9500;&#9472;&#9472; app/                    # Pages y API routes (App Router)
+&#9474;   &#9500;&#9472;&#9472; (auth)/             # Login (split-screen animado)
+&#9474;   &#9500;&#9472;&#9472; (dashboard)/        # Toda la app (NO anade nada a la URL)
+&#9474;   &#9474;   &#9500;&#9472;&#9472; layout.tsx      # Sidebar + TopBar + OnboardingWizard + BottomNav
+&#9474;   &#9474;   &#9500;&#9472;&#9472; dashboard/      # Panel principal por rol
+&#9474;   &#9474;   &#9500;&#9472;&#9472; hospitales/     # Lista + detalle con tabs
+&#9474;   &#9474;   &#9500;&#9472;&#9472; visitas/        # Lista + calendario + formulario 13 secciones
+&#9474;   &#9474;   &#9500;&#9472;&#9472; proyectos/      # Lista + detalle con 10 tabs (code-split)
+&#9474;   &#9474;   &#9500;&#9472;&#9472; hardware/       # Inventario, catalogo, alertas
+&#9474;   &#9474;   &#9500;&#9472;&#9472; llamadas/       # Registro de llamadas
+&#9474;   &#9474;   &#9500;&#9472;&#9472; recordatorios/  # Recordatorios personales
+&#9474;   &#9474;   &#9500;&#9472;&#9472; admin/          # CRUD usuarios, zonas, hardware, tags, log
+&#9474;   &#9474;   &#9500;&#9472;&#9472; mapa/           # Leaflet con hospitales geolocalizados
+&#9474;   &#9474;   &#9492;&#9472;&#9472; perfil/         # Configuracion personal
+&#9474;   &#9492;&#9472;&#9472; api/                # ~50 endpoints REST
+&#9500;&#9472;&#9472; components/             # Componentes React reutilizables
+&#9500;&#9472;&#9472; hooks/                  # Custom hooks (usePerfil, useFavoritos, useOfflineSync)
+&#9500;&#9472;&#9472; lib/                    # Utilidades (db, auth, rate-limit, schemas, brand, redis)
+&#9492;&#9472;&#9472; middleware.ts           # Proteccion de rutas (Edge)</code></pre>
+
+<h3>Grafo de dependencias (Graphify)</h3>
+<div class="stats">
+  <div class="stat"><div class="stat-value">1.229</div><div class="stat-label">Nodos</div></div>
+  <div class="stat"><div class="stat-value">1.607</div><div class="stat-label">Aristas</div></div>
+  <div class="stat"><div class="stat-value">115</div><div class="stat-label">Comunidades</div></div>
+  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Ciclos import</div></div>
+</div>
+<p><strong>God nodes</strong> (nodos mas conectados — abstracciones centrales):</p>
+<ol>
+  <li><code>useToast()</code> — 42 conexiones (sistema de notificaciones global)</li>
+  <li><code>checkRateLimit()</code> — 22 conexiones (rate limiting en todas las APIs)</li>
+  <li><code>openDB()</code> — 10 conexiones (IndexedDB para offline)</li>
+</ol>
+
+<!-- 4. Modelo de datos -->
+<h2 id="s4"><span class="num">04</span>Modelo de datos</h2>
+
+<h3>Diagrama de relaciones</h3>
+<div class="diagram">
+<pre><code>                                 &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+                                 &#9474;  Usuario   &#9474;
+                                 &#9474; (Rol enum) &#9474;
+                                 &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                                        &#9474;
+                 &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+                 &#9474;                  &#9474;                  &#9474;
+           UsuarioZona        &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;      &#9484;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9488;
+           (pivot M:N)        &#9474;  Visita   &#9474;      &#9474;Proyecto &#9474;
+                 &#9474;            &#9474; (13 secs) &#9474;      &#9474;(10 tabs)&#9474;
+                 &#9660;            &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;      &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9496;
+           &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;           &#9474;                  &#9474;
+           &#9474;  Zona  &#9474;      &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;      &#9484;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+           &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9496;      &#9474;     &#9474;     &#9474;      &#9474;    &#9474;        &#9474;
+                &#9474;         Comen- &#9474;  VisitaTag  Fase   Tarea
+                &#9660;         tario  &#9474;  (pivot)  Proyecto (subtareas)
+           &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;         &#9474;              &#9474;
+           &#9474; Hospital &#9474;&#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;         &#9484;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9488;
+           &#9474; (grupos) &#9474;                    &#9474;    &#9474;    &#9474;
+           &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;                 Hito  &#9474;  Solicitud
+                &#9474;                              &#9474;  Material
+           &#9484;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;         Entrada
+           &#9474;    &#9474;          &#9474;         Timeline
+       Contacto &#9474;   Hardware
+           &#9474;    &#9474;    Unidad        &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+           &#9474;    &#9474;          &#9474;        &#9474;Proyecto     &#9474;
+           &#9474;    &#9474;   Hardware        &#9474;Modulo       &#9474;
+           &#9474;    &#9474;   Catalogo        &#9474;(pivot)      &#9474;
+           &#9474;    &#9474;          &#9474;        &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+           &#9474;    &#9474;   Hardware              &#9474;
+           &#9474;    &#9474;     Tipo           ModuloInlab
+           &#9474;    &#9474;
+           &#9474;  Registro
+           &#9474;  Llamada
+           &#9474;
+      Proyecto
+      Contacto (pivot M:N)</code></pre>
+</div>
+
+<h4>Entidades de negocio</h4>
+<table>
+  <tr><th>Modelo</th><th>Tabla DB</th><th>Descripcion</th><th>Campos clave</th></tr>
+  <tr><td><strong>Usuario</strong></td><td><code>usuarios</code></td><td>Usuarios del sistema</td><td>nombre, email, password (bcrypt), rol (enum), activo</td></tr>
+  <tr><td><strong>Zona</strong></td><td><code>zonas</code></td><td>Agrupacion geografica</td><td>nombre (unique), descripcion, activo</td></tr>
+  <tr><td><strong>Hospital</strong></td><td><code>hospitales</code></td><td>Centro hospitalario</td><td>nombre, ciudad, provincia, tipo (7 enum), camas, zonaId, grupoId (auto-ref)</td></tr>
+  <tr><td><strong>Contacto</strong></td><td><code>contactos</code></td><td>Persona de contacto</td><td>nombre, cargo, email, telefono, principal</td></tr>
+  <tr><td><strong>Visita</strong></td><td><code>visitas</code></td><td>Visita tecnica</td><td>titulo, tipo, estado (3), fecha, datos (JSON 13 secs), fotos (JSON), score</td></tr>
+  <tr><td><strong>Proyecto</strong></td><td><code>pre_proyectos</code></td><td>Proyecto de instalacion</td><td>titulo, estado (5), prioridad, presupuesto, refContrato, shareToken</td></tr>
+  <tr><td><strong>RegistroLlamada</strong></td><td><code>registros_llamadas</code></td><td>Llamada telefonica</td><td>asunto, duracion, resultado (6 tipos), seguimiento</td></tr>
+</table>
+
+<h4>Entidades de proyecto</h4>
+<table>
+  <tr><th>Modelo</th><th>Tabla DB</th><th>Descripcion</th></tr>
+  <tr><td><strong>FaseProyecto</strong></td><td><code>fases_pre_proyectos</code></td><td>11 tipos de fase (FIRMA_CONTRATO &rarr; SOPORTE_POST), estado, responsable</td></tr>
+  <tr><td><strong>Tarea</strong></td><td><code>tareas</code></td><td>Tareas con subtareas (auto-referencial), prioridad (4), asignadoAId FK</td></tr>
+  <tr><td><strong>Hito</strong></td><td><code>hitos</code></td><td>Hitos con fecha plan/real, completado</td></tr>
+  <tr><td><strong>EntradaTimeline</strong></td><td><code>entradas_timeline</code></td><td>EVENTO, COMENTARIO, CITA (persona, lugar, importancia)</td></tr>
+  <tr><td><strong>SolicitudMaterial</strong></td><td><code>solicitudes_material</code></td><td>Solicitudes con estado (6 enum) + lineas de material</td></tr>
+  <tr><td><strong>Adjunto</strong></td><td><code>adjuntos</code></td><td>Archivos base64 en DB (pendiente migracion a object storage)</td></tr>
+  <tr><td><strong>ProyectoModulo</strong></td><td><code>pre_proyectos_modulos</code></td><td>Pivot proyecto-modulo con estado (PENDIENTE &rarr; VALIDADO)</td></tr>
+</table>
+
+<h4>Hardware</h4>
+<table>
+  <tr><th>Modelo</th><th>Tabla DB</th><th>Descripcion</th></tr>
+  <tr><td><strong>HardwareTipo</strong></td><td><code>hardware_tipos</code></td><td>Tipos dinamicos con color hex</td></tr>
+  <tr><td><strong>HardwareCatalogo</strong></td><td><code>hardware_catalogo</code></td><td>Marca, modelo, referenciaPalex, proveedor, precio, garantiaMeses</td></tr>
+  <tr><td><strong>HardwareUnidad</strong></td><td><code>hardware_unidades</code></td><td>Unidades: numSerie, estado (5 enum), hospital, fechaGarantia</td></tr>
+</table>
+
+<h4>Tablas auxiliares</h4>
+<table>
+  <tr><th>Modelo</th><th>Descripcion</th></tr>
+  <tr><td><strong>Comentario</strong></td><td>Texto + fotos + mencionIds (JSON), vinculado a visita O proyecto</td></tr>
+  <tr><td><strong>Tag / VisitaTag / ProyectoTag</strong></td><td>Etiquetas con color, tipo (VISITA/PROYECTO), pivots M:N</td></tr>
+  <tr><td><strong>Recordatorio</strong></td><td>Recordatorios personales con fecha, completado, ownership</td></tr>
+  <tr><td><strong>Favorito</strong></td><td>Favoritos DB-backed (HOSPITAL/PROYECTO), unique constraint</td></tr>
+  <tr><td><strong>LogActividad</strong></td><td>Auditoria: accion, entidad, detalle, usuario, fecha</td></tr>
+  <tr><td><strong>PlantillaVisita / ConfigApp / ModuloInlab</strong></td><td>Plantillas, configuracion, catalogo modulos</td></tr>
+</table>
+
+<h3>Enums (15 totales)</h3>
+<table>
+  <tr><th>Enum</th><th>Valores</th><th>Uso</th></tr>
+  <tr><td><code>Rol</code></td><td>ADMIN, VENTAS, PROYECTOS, TECNICO</td><td>Permisos de usuario</td></tr>
+  <tr><td><code>TipoHospital</code></td><td>7 tipos</td><td>Clasificacion de centros</td></tr>
+  <tr><td><code>EstadoVisita</code></td><td>BORRADOR, COMPLETADA, ARCHIVADA</td><td>Ciclo de vida visita</td></tr>
+  <tr><td><code>EstadoProyecto</code></td><td>NUEVO, EN_CURSO, PAUSADO, COMPLETADO, CANCELADO</td><td>Estado del proyecto</td></tr>
+  <tr><td><code>TipoFase</code></td><td>11 fases</td><td>FIRMA_CONTRATO &rarr; SOPORTE_POST</td></tr>
+  <tr><td><code>EstadoFase</code></td><td>PENDIENTE, EN_PROGRESO, COMPLETADO, BLOQUEADO</td><td>Estado de fase</td></tr>
+  <tr><td><code>EstadoModulo</code></td><td>PENDIENTE &rarr; VALIDADO (5)</td><td>Ciclo del modulo</td></tr>
+  <tr><td><code>EstadoHardware</code></td><td>DISPONIBLE &rarr; BAJA (5)</td><td>Estado unidad HW</td></tr>
+  <tr><td><code>EstadoTarea</code></td><td>PENDIENTE &rarr; CANCELADA (4)</td><td>Estado de tarea</td></tr>
+  <tr><td><code>PrioridadTarea</code></td><td>BAJA, MEDIA, ALTA, CRITICA</td><td>Prioridad</td></tr>
+</table>
+
+<!-- 5. Auth -->
+<h2 id="s5"><span class="num">05</span>Autenticacion y roles</h2>
+
+<h3>NextAuth v5 — Arquitectura split</h3>
+<ul>
+  <li><code>auth.config.ts</code> — Edge-compatible (sin Prisma), usada por el middleware</li>
+  <li><code>auth.ts</code> — Server-side con Prisma, callbacks JWT+session, revocacion</li>
+</ul>
+
+<h3>Flujo de login</h3>
+<ol>
+  <li>Usuario envia email + password en <code>/login</code></li>
+  <li>NextAuth <code>authorize()</code> busca usuario en DB, compara hash bcrypt</li>
+  <li>Brute-force protection: <code>checkRateLimitByKey()</code> — 5 intentos/min por IP</li>
+  <li>Si OK: genera JWT con <code>{ id, rol, nombre }</code>, maxAge 7 dias</li>
+  <li>Middleware Edge verifica JWT en cada request protegido</li>
+</ol>
+
+<div class="info-box">
+  <strong>Revocacion de sesion:</strong> Callback <code>jwt</code> verifica <code>usuario.activo</code> cada 5 min (cache in-memory). Si admin desactiva usuario &rarr; pierde acceso en &lt;5 min. Si cambia rol &rarr; efectivo sin re-login.
+</div>
+
+<h3>Permisos por rol</h3>
+<table>
+  <tr><th>Rol</th><th>Dashboard</th><th>Hospitales</th><th>Visitas</th><th>Proyectos</th><th>Hardware</th><th>Admin</th></tr>
+  <tr><td><strong>ADMIN</strong></td><td>KPIs globales</td><td>Todos</td><td>Todas</td><td>Todos</td><td>Si + alertas</td><td>Completo</td></tr>
+  <tr><td><strong>PROYECTOS</strong></td><td>Mi dia</td><td>Su zona</td><td>Su zona</td><td>Responsable/zona</td><td>Lectura</td><td>No</td></tr>
+  <tr><td><strong>TECNICO</strong></td><td>Mi dia</td><td>Su zona</td><td>Su zona</td><td>Responsable/zona</td><td>Lectura</td><td>No</td></tr>
+  <tr><td><strong>VENTAS</strong></td><td>Mi dia</td><td>Su zona</td><td>Su zona</td><td>No</td><td>No</td><td>No</td></tr>
+</table>
+
+<!-- 6. API -->
+<h2 id="s6"><span class="num">06</span>API REST</h2>
+
+<h3>Hospitales</h3>
+<table>
+  <tr><th>Metodo</th><th>Ruta</th><th>Descripcion</th><th>Cache</th></tr>
+  <tr><td>GET</td><td><code>/api/hospitales</code></td><td>Lista paginada (?limit=200&amp;page=N)</td><td>30s</td></tr>
+  <tr><td>POST</td><td><code>/api/hospitales</code></td><td>Crear hospital</td><td>—</td></tr>
+  <tr><td>GET</td><td><code>/api/hospitales/[id]</code></td><td>Detalle (verifica zona)</td><td>—</td></tr>
+  <tr><td>PATCH</td><td><code>/api/hospitales/[id]</code></td><td>Editar (whitelist)</td><td>—</td></tr>
+  <tr><td>DELETE</td><td><code>/api/hospitales/[id]</code></td><td>Eliminar</td><td>—</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/hospitales/[id]/contactos</code></td><td>CRUD contactos</td><td>—</td></tr>
+  <tr><td>GET</td><td><code>/api/hospitales/[id]/timeline</code></td><td>Timeline actividad</td><td>—</td></tr>
+</table>
+
+<h3>Visitas</h3>
+<table>
+  <tr><th>Metodo</th><th>Ruta</th><th>Descripcion</th><th>Cache</th></tr>
+  <tr><td>GET</td><td><code>/api/visitas</code></td><td>Lista SIN campo <code>datos</code>, ?desde=&amp;hasta=</td><td>15s</td></tr>
+  <tr><td>POST</td><td><code>/api/visitas</code></td><td>Crear visita</td><td>—</td></tr>
+  <tr><td>GET</td><td><code>/api/visitas/[id]</code></td><td>Detalle CON datos completo</td><td>—</td></tr>
+  <tr><td>PATCH</td><td><code>/api/visitas/[id]</code></td><td>Editar (titulo, datos, estado, tagIds)</td><td>—</td></tr>
+  <tr><td>DELETE</td><td><code>/api/visitas/[id]</code></td><td>Eliminar</td><td>—</td></tr>
+</table>
+
+<h3>Proyectos (9 sub-rutas)</h3>
+<table>
+  <tr><th>Metodo</th><th>Ruta</th><th>Descripcion</th></tr>
+  <tr><td>GET/POST</td><td><code>/api/proyectos</code></td><td>Lista paginada + crear (moduloIds, refConcurso)</td></tr>
+  <tr><td>GET/PATCH/DELETE</td><td><code>/api/proyectos/[id]</code></td><td>Detalle con modulos + tags</td></tr>
+  <tr><td>PATCH</td><td><code>.../fases/[faseId]</code></td><td>Actualizar fase (auto-actualiza estado proyecto)</td></tr>
+  <tr><td>CRUD</td><td><code>.../tareas</code></td><td>Tareas con subtareas</td></tr>
+  <tr><td>CRUD</td><td><code>.../hitos</code></td><td>Hitos</td></tr>
+  <tr><td>CRUD</td><td><code>.../entradas</code></td><td>Timeline (eventos, comentarios, citas)</td></tr>
+  <tr><td>CRUD</td><td><code>.../solicitudes</code></td><td>Solicitudes de material + lineas</td></tr>
+  <tr><td>CRUD</td><td><code>.../contactos, adjuntos, comentarios</code></td><td>Pivots y archivos</td></tr>
+  <tr><td>GET/POST</td><td><code>.../modulos</code></td><td>Modulos InLab (POST reemplaza todos)</td></tr>
+  <tr><td>GET</td><td><code>.../excel</code></td><td>Export Excel 6 hojas</td></tr>
+  <tr><td>POST/DELETE</td><td><code>.../share</code></td><td>Token publico (sin PII)</td></tr>
+</table>
+
+<h3>Otras APIs</h3>
+<table>
+  <tr><th>Ruta</th><th>Descripcion</th></tr>
+  <tr><td><code>/api/search</code></td><td>Busqueda unificada (Cache 30s)</td></tr>
+  <tr><td><code>/api/tags</code></td><td>CRUD tags (POST/PATCH/DELETE solo ADMIN)</td></tr>
+  <tr><td><code>/api/llamadas</code></td><td>Registro llamadas (filtro zona)</td></tr>
+  <tr><td><code>/api/recordatorios</code></td><td>CRUD recordatorios (ownership check)</td></tr>
+  <tr><td><code>/api/favoritos</code></td><td>Toggle favorito (GET ?tipo, POST create/delete)</td></tr>
+  <tr><td><code>/api/calendario/ical</code></td><td>Feed .ics con HMAC token auth</td></tr>
+  <tr><td><code>/api/presence</code></td><td>Heartbeat presencia colaborativa</td></tr>
+  <tr><td><code>/api/perfil</code></td><td>Perfil (rol, onboardingCompletado, calendarToken)</td></tr>
+  <tr><td><code>/api/admin/carga-trabajo</code></td><td>Heatmap visitas/usuario/dia (solo ADMIN)</td></tr>
+  <tr><td><code>/api/health</code></td><td>Healthcheck Railway</td></tr>
+</table>
+
+<h3>Seguridad de APIs</h3>
+<ul>
+  <li><strong>Rate limiting:</strong> <code>checkRateLimit()</code> en todas las rutas. GET 60/min, POST/PATCH/DELETE 30/min</li>
+  <li><strong>Validacion:</strong> Zod v4 schemas centralizados con <code>parseBody()</code></li>
+  <li><strong>IDOR:</strong> verificacion zona + propietario/responsable en cada ruta</li>
+  <li><strong>Mass assignment:</strong> whitelist explicita en cada PATCH</li>
+  <li><strong>Cache-Control HTTP:</strong> 15s visitas, 30s hospitales, 60s hardware</li>
+</ul>
+
+<!-- 7. Funcionalidades -->
+<h2 id="s7"><span class="num">07</span>Funcionalidades por modulo</h2>
+
+<h3>7.1 Hospitales</h3>
+<ul>
+  <li>Lista con filtro por zona, busqueda, toggle grid/lista</li>
+  <li>Detalle con KPIs, tabs: Contactos, Visitas, Timeline, Llamadas</li>
+  <li>QR por hospital: generacion dinamica + descarga PNG</li>
+  <li>Favoritos DB-backed con optimistic updates (cross-device)</li>
+  <li>Grupos hospitalarios: FK auto-referencial, hospital cabecera con N centros</li>
+  <li>Paginacion con boton "Cargar mas" (200/pag)</li>
+</ul>
+
+<h3>7.2 Visitas tecnicas</h3>
+<ul>
+  <li>Formulario de 13 secciones con auto-save IndexedDB (offline)</li>
+  <li>Titulo editable en cabecera (guarda onBlur)</li>
+  <li>Fotos por seccion (compresion Canvas API)</li>
+  <li>Score de complejidad 0-100 con 14 reglas de riesgos</li>
+  <li>Firma digital (cliente + tecnico) via SignaturePad canvas</li>
+  <li>PDF profesional con branding</li>
+  <li>Quick-create modal (desde /visitas, hospital o proyecto)</li>
+  <li>Calendario mensual con dots por estado</li>
+  <li>Edicion colaborativa: presencia en tiempo real (heartbeat 15s)</li>
+  <li>Tags, plantillas, vinculacion visita &rarr; proyecto</li>
+</ul>
+
+<h3>7.3 Proyectos</h3>
+<ul>
+  <li>10 tabs code-split con <code>next/dynamic</code>: Cockpit, Info, Tareas, Timeline, Materiales, Contactos, Visitas, Modulos, Adjuntos, Resumen</li>
+  <li>Fases con 11 tipos y auto-actualizacion de estado proyecto</li>
+  <li>Vista Kanban drag-drop, export Excel 6 hojas</li>
+  <li>Link compartir publico con token criptografico</li>
+  <li>Tags de color, paginacion 100/pag</li>
+</ul>
+
+<h3>7.4 Hardware</h3>
+<ul>
+  <li>HardwareTipo dinamico con color hex desde admin</li>
+  <li>Catalogo: marca, modelo, referenciaPalex, proveedor, precio, garantia</li>
+  <li>Unidades: numSerie, estado, hospital asignado</li>
+  <li>Tabs: Resumen, Inventario, Instalaciones, Catalogo, Alertas</li>
+  <li>Alertas automaticas: garantias + mantenimientos vencidos (ADMIN)</li>
+</ul>
+
+<h3>7.5 Llamadas</h3>
+<ul>
+  <li>Registro rapido: hospital, contacto, duracion, asunto, notas</li>
+  <li>6 tipos resultado con colores, seguimiento con fecha</li>
+  <li>KPIs, filtros, cards expandibles con edicion inline</li>
+  <li>Tab en ficha hospital, integrado en dashboard "Mi Dia"</li>
+</ul>
+
+<h3>7.6 Dashboard</h3>
+<ul>
+  <li>KPIs por rol, widget "Mi Dia" (visitas+tareas+recordatorios+llamadas)</li>
+  <li>Accesos rapidos, seccion Favoritos</li>
+  <li>Acciones rapidas movil, ADMIN: banner alertas hardware</li>
+</ul>
+
+<h3>7.7 Admin (solo ADMIN)</h3>
+<ul>
+  <li>CRUD: usuarios, zonas, hospitales, hardware, tags</li>
+  <li>Log de actividad, panel equipo, heatmap carga de trabajo, export CSV</li>
+</ul>
+
+<h3>7.8-7.14 Otros modulos</h3>
+<ul>
+  <li><strong>Comentarios:</strong> @Menciones con dropdown, pills teal, notificaciones TopBar</li>
+  <li><strong>Recordatorios:</strong> CRUD inline, grupos temporales (vencidos/hoy/proximos/completados)</li>
+  <li><strong>Busqueda:</strong> Global debounced, CommandPalette (Cmd+K), atajos teclado</li>
+  <li><strong>Movil:</strong> BottomNav 5 tabs (glass effect, safe area, 44px touch targets)</li>
+  <li><strong>Onboarding:</strong> 8 pasos generales + 3 extra ADMIN, SVG, slide animations</li>
+  <li><strong>Notificaciones:</strong> Browser Notification API, polling 60s, preferencias perfil</li>
+  <li><strong>Calendario iCal:</strong> Feed .ics con HMAC tokens, sync Google/Outlook/Apple</li>
+</ul>
+
+<!-- 8. Frontend -->
+<h2 id="s8"><span class="num">08</span>Frontend — Componentes y patrones</h2>
+
+<h3>Componentes clave</h3>
+<table>
+  <tr><th>Componente</th><th>Descripcion</th><th>Importancia</th></tr>
+  <tr><td><code>Toast.tsx</code></td><td>Provider global de notificaciones</td><td><strong>God node</strong> (42 conexiones)</td></tr>
+  <tr><td><code>Sidebar.tsx</code></td><td>Nav lateral colapsable, dark, nav por rol</td><td>Layout principal</td></tr>
+  <tr><td><code>TopBar.tsx</code></td><td>Busqueda global, dark/light, notificaciones</td><td>Layout principal</td></tr>
+  <tr><td><code>CommandPalette.tsx</code></td><td>Busqueda rapida Cmd+K</td><td>Productividad</td></tr>
+  <tr><td><code>OnboardingWizard.tsx</code></td><td>Tour 8+3 pasos (role-aware)</td><td>Primera experiencia</td></tr>
+  <tr><td><code>TagSelector.tsx</code></td><td>Selector/pills tags con colores</td><td>Reutilizable</td></tr>
+  <tr><td><code>MentionInput.tsx</code></td><td>Textarea con @menciones</td><td>Reutilizable</td></tr>
+  <tr><td><code>BottomNav.tsx</code></td><td>Nav movil 5 tabs (glass, safe area)</td><td>Experiencia movil</td></tr>
+</table>
+
+<h3>Hooks custom</h3>
+<table>
+  <tr><th>Hook</th><th>Descripcion</th></tr>
+  <tr><td><code>usePerfil()</code></td><td>SWR cache compartido (rol, nombre, id). Usado en 10+ paginas. Dedup 60s.</td></tr>
+  <tr><td><code>useFavoritos()</code></td><td>Favoritos DB-backed con optimistic updates y rollback</td></tr>
+  <tr><td><code>useOfflineSync()</code></td><td>Auto-save IndexedDB, deteccion online/offline</td></tr>
+  <tr><td><code>useKeyboardShortcuts()</code></td><td>Cmd+K, G+H/V/P/D, Escape</td></tr>
+</table>
+
+<h3>Patrones de UI</h3>
+<ul>
+  <li><strong>Brand tokens:</strong> <code>brand.ts</code> (TEAL=#00A99D, ORANGE=#F7941D). NUNCA hardcodear hex.</li>
+  <li><strong>Iconos:</strong> SIEMPRE SVG desde <code>Icons.tsx</code>. NUNCA emojis.</li>
+  <li><strong>Listas vacias:</strong> <code>EmptyState()</code>. <strong>Carga:</strong> <code>Skeleton</code> shimmer.</li>
+  <li><strong>Formularios:</strong> RadioPills/CheckPills (no radio/checkbox nativos).</li>
+  <li><strong>Dark mode:</strong> clase <code>.dark</code> en <code>&lt;html&gt;</code>, variables CSS, globals.css.</li>
+</ul>
+
+<!-- 9. Infraestructura -->
+<h2 id="s9"><span class="num">09</span>Infraestructura</h2>
+
+<h3>Deploy (Railway)</h3>
+<pre><code>Build:   npx prisma generate &amp;&amp; next build
+Start:   npx prisma db push --accept-data-loss &amp;&amp; npm start
+Health:  /api/health (timeout 120s)
+Restart: on_failure (max 3 retries)</code></pre>
+
+<h3>Variables de entorno</h3>
+<table>
+  <tr><th>Variable</th><th>Proposito</th></tr>
+  <tr><td><code>DATABASE_URL</code></td><td>Connection string PostgreSQL</td></tr>
+  <tr><td><code>AUTH_SECRET</code></td><td>Secreto para JWT NextAuth</td></tr>
+  <tr><td><code>AUTH_URL</code></td><td>URL base de la app</td></tr>
+  <tr><td><code>UPSTASH_REDIS_REST_URL</code></td><td>Redis serverless (opcional)</td></tr>
+  <tr><td><code>UPSTASH_REDIS_REST_TOKEN</code></td><td>Token Upstash Redis (opcional)</td></tr>
+  <tr><td><code>SENTRY_DSN</code></td><td>Error tracking</td></tr>
+</table>
+
+<h3>Base de datos</h3>
+<ul>
+  <li>PostgreSQL en Railway, connection pool max 20 (PrismaPg adapter)</li>
+  <li>15 indices en FKs frecuentes</li>
+  <li><code>prisma db push</code> directo (sin migraciones en produccion)</li>
+</ul>
+
+<h3>Redis (Upstash)</h3>
+<ul>
+  <li>Rate limiting distribuido + presencia colaborativa (Redis hash + TTL)</li>
+  <li>Graceful fallback: sin env vars Redis &rarr; funciona in-memory</li>
+</ul>
+
+<h3>PWA</h3>
+<ul>
+  <li><code>manifest.json</code> + Service Worker (network-first)</li>
+  <li>IndexedDB: <code>openDB()</code>, <code>saveDraft()</code>, <code>getDraft()</code>, <code>enqueueSync()</code></li>
+</ul>
+
+<!-- 10. Seguridad -->
+<h2 id="s10"><span class="num">10</span>Seguridad</h2>
+
+<h3>Headers HTTP</h3>
+<table>
+  <tr><th>Header</th><th>Valor</th><th>Proposito</th></tr>
+  <tr><td>CSP</td><td><code>default-src 'self'; script-src 'self' 'unsafe-inline' ...</code></td><td>XSS prevention (sin unsafe-eval)</td></tr>
+  <tr><td>HSTS</td><td><code>max-age=31536000; includeSubDomains</code></td><td>HTTPS forzado 1 ano</td></tr>
+  <tr><td>X-Frame-Options</td><td><code>DENY</code></td><td>Clickjacking prevention</td></tr>
+  <tr><td>X-Content-Type-Options</td><td><code>nosniff</code></td><td>MIME sniffing prevention</td></tr>
+  <tr><td>Referrer-Policy</td><td><code>strict-origin-when-cross-origin</code></td><td>Control referrer</td></tr>
+</table>
+
+<h3>Protecciones</h3>
+<table>
+  <tr><th>Amenaza</th><th>Mitigacion</th></tr>
+  <tr><td>Brute-force login</td><td>5 intentos/min por IP</td></tr>
+  <tr><td>IDOR</td><td>Verificacion zona + propietario en cada API</td></tr>
+  <tr><td>Mass assignment</td><td>Whitelist explicita en todos los PATCH</td></tr>
+  <tr><td>XSS iframe</td><td>Sandbox sin allow-same-origin</td></tr>
+  <tr><td>Session hijacking</td><td>JWT maxAge 7 dias, revocacion &lt;5 min</td></tr>
+  <tr><td>Rate limiting</td><td>Redis distribuido en ~50 rutas API</td></tr>
+  <tr><td>Validation</td><td>Zod v4 schemas en POST/PATCH</td></tr>
+</table>
+
+<h3>Sentry</h3>
+<p>Configuracion client/server/edge. Error boundaries en 15 rutas + <code>global-error.tsx</code>. <code>instrumentation.ts</code> con onRequestError hook.</p>
+
+<!-- 11. Testing -->
+<h2 id="s11"><span class="num">11</span>Testing y calidad</h2>
+
+<h3>Lighthouse</h3>
+<div class="stats">
+  <div class="stat"><div class="stat-value">100</div><div class="stat-label">Performance</div></div>
+  <div class="stat"><div class="stat-value">100</div><div class="stat-label">Accessibility</div></div>
+  <div class="stat"><div class="stat-value">96</div><div class="stat-label">Best Practices</div></div>
+  <div class="stat"><div class="stat-value">100</div><div class="stat-label">SEO</div></div>
+</div>
+
+<h3>Playwright E2E — 18 tests</h3>
+<table>
+  <tr><th>Suite</th><th>Tests</th><th>Cubre</th></tr>
+  <tr><td><code>visitas.spec.ts</code></td><td>5</td><td>Lista, busqueda, modal, detalle, calendario</td></tr>
+  <tr><td><code>proyectos.spec.ts</code></td><td>4</td><td>Lista, kanban, detalle tabs, navegacion</td></tr>
+  <tr><td><code>navegacion.spec.ts</code></td><td>9</td><td>Dashboard, sidebar, Cmd+K, dark mode, mobile</td></tr>
+</table>
+
+<h3>Accesibilidad</h3>
+<ul>
+  <li>WCAG AA contraste, touch targets 44x44px, skip-link, sin maximumScale:1</li>
+  <li><code>aria-hidden</code> en iconos decorativos, <code>role="dialog"</code> en modales</li>
+</ul>
+
+<!-- 12. Rendimiento -->
+<h2 id="s12"><span class="num">12</span>Rendimiento</h2>
+
+<table>
+  <tr><th>Area</th><th>Optimizacion</th><th>Impacto</th></tr>
+  <tr><td>SWR</td><td><code>usePerfil()</code> compartido 10+ paginas (dedup 60s)</td><td>Elimina fetches duplicados</td></tr>
+  <tr><td>Code splitting</td><td>10 tabs proyecto con <code>next/dynamic</code> (4902&rarr;300 lineas)</td><td>Bundle mas pequeno</td></tr>
+  <tr><td>Connection pool</td><td>PrismaPg max:20 conexiones</td><td>Evita agotamiento pool</td></tr>
+  <tr><td>Indices DB</td><td>15 indices en FKs frecuentes</td><td>Evita full table scans</td></tr>
+  <tr><td>Paginacion</td><td>hospitales 200/pag, proyectos 100/pag</td><td>Evita cargar miles</td></tr>
+  <tr><td>Polling</td><td>Heartbeat 15s, data poll 10s (reducido 60%)</td><td>Menos peticiones</td></tr>
+  <tr><td>useReducer</td><td>Formulario visita: 8 useState &rarr; 1 reducer</td><td>Menos re-renders</td></tr>
+  <tr><td>Compresion</td><td><code>compress: true</code> + avif/webp</td><td>Transferencia optimizada</td></tr>
+  <tr><td>Cache HTTP</td><td>Cache-Control en APIs lectura</td><td>Reduce carga servidor</td></tr>
+</table>
+
+<!-- 13. Deuda tecnica -->
+<h2 id="s13"><span class="num">13</span>Estado actual y deuda tecnica</h2>
+
+<h3>Deuda tecnica activa</h3>
+<table>
+  <tr><th>Prioridad</th><th>Issue</th><th>Detalle</th></tr>
+  <tr><td><span class="badge badge-alta">ALTA</span></td><td><code>/datos</code> es mockup</td><td>No hay APIs reales (Sprint 14 aplazado)</td></tr>
+  <tr><td><span class="badge badge-media">MEDIA</span></td><td>Object storage (F5)</td><td>Fotos/adjuntos como base64 en DB. Migrar a R2/S3 antes de 20 usuarios (~2-3 dias)</td></tr>
+  <tr><td><span class="badge badge-baja">BAJA</span></td><td>bodyParser size limits</td><td>next.config.ts sin limite de body</td></tr>
+  <tr><td><span class="badge badge-baja">BAJA</span></td><td>Dynamic imports</td><td>DnD, QR, ComentariosPanel, SignaturePad sin lazy loading</td></tr>
+  <tr><td><span class="badge badge-baja">BAJA</span></td><td>Cache Redis servidor</td><td>Agregaciones costosas sin cache Redis con TTL</td></tr>
+</table>
+
+<h3>Backlog (no priorizado)</h3>
+<ul>
+  <li>Notificaciones por email (Resend o similar)</li>
+  <li>Notificaciones push movil (VAPID + FCM/OneSignal)</li>
+  <li>Offline completo: crear registros sin conexion</li>
+  <li>Conectar /datos a APIs reales</li>
+</ul>
+
+<!-- 14. Comandos -->
+<h2 id="s14"><span class="num">14</span>Comandos de desarrollo</h2>
+
+<pre><code># Desarrollo
+npm run dev                    # Next.js dev server
+npx prisma studio             # GUI base de datos
+
+# Base de datos
+npx prisma generate           # Generar cliente tras cambiar schema
+npx prisma db push            # Aplicar cambios a DB
+
+# Testing
+npm run test:e2e              # Playwright headless
+npm run test:e2e:ui           # Playwright con UI
+
+# Deploy
+npx tsc --noEmit              # Type check (cero errores requerido)
+npx next build                # Build local (recomendado antes de push)
+git push origin main          # Railway auto-despliega</code></pre>
+
+<!-- Footer -->
+<div class="footer">
+  <p>Plataforma de Gestion de Proyectos Hospitalarios &mdash; Documento Tecnico v0.2.0 &mdash; Junio 2026</p>
+  <p>Generado automaticamente. Uso interno exclusivo.</p>
+</div>
+
+</body>
+</html>

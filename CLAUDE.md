@@ -1,5 +1,4 @@
 @AGENTS.md
-@CONTEXT.md
 
 ## graphify
 
