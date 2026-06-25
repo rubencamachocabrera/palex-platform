@@ -1,17 +1,19 @@
 "use client"
 
-import { useEffect, useState, useCallback, type ReactNode } from "react"
+import { useEffect, useState, useCallback, useRef, type ReactNode } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { TEAL, TEAL_LIGHT, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { comprimirImagen } from "@/lib/img-compress"
 import {
   IconArrowLeft, IconClipboardList, IconPhoneIncoming, IconPhoneOutgoing,
   IconSend, IconInbox, IconZap, IconWrench, IconTerminal,
   IconMessageCircle, IconRefreshCw, IconUserCheck, IconClock,
   IconEyeOff, IconFileExport, IconAlertTriangle, IconPhone, IconMail,
+  IconCamera, IconEdit, IconX, IconChevronDown,
 } from "@/components/ui/Icons"
 
 interface Evento {
@@ -21,8 +23,15 @@ interface Evento {
   duracion: number | null
   privado: boolean
   metadatos: unknown
+  fotos: string[] | null
+  editadoPor: string | null
+  editadoEn: string | null
   creadoEn: string
   autor: { id: string; nombre: string }
+}
+
+interface RespuestaRapida {
+  id: string; texto: string; categoria: string | null
 }
 
 interface Incidencia {
@@ -30,6 +39,7 @@ interface Incidencia {
   tipo: "HARDWARE" | "SOFTWARE"; categoria: string
   prioridad: string; estado: string; equipoResponsable: string
   slaHoras: number | null; resolucion: string | null
+  slaPausadoEn: string | null; slaPausadoMs: number
   creadoEn: string; actualizadoEn: string
   fechaResolucion: string | null; fechaCierre: string | null
   hospital: { id: string; nombre: string; ciudad: string; provincia: string | null }
@@ -124,15 +134,24 @@ function dateGroupLabel(iso: string): string {
   return d.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
 }
 
-function slaInfo(creadoEn: string, slaHoras: number | null, estado: string) {
-  if (["RESUELTA", "CERRADA"].includes(estado)) return { label: "Cumplido", color: "#10b981", pct: 0 }
-  if (!slaHoras) return { label: "Sin SLA", color: "#9ca3af", pct: 0 }
-  const elapsed = (Date.now() - new Date(creadoEn).getTime()) / 3600000
+function slaInfo(inc: Incidencia) {
+  const { creadoEn, slaHoras, estado, slaPausadoEn, slaPausadoMs, fechaResolucion } = inc
+  if (!slaHoras) return { label: "Sin SLA", color: "#9ca3af", pct: 0, paused: false }
+  const endTime = fechaResolucion ? new Date(fechaResolucion).getTime() : Date.now()
+  let totalPausedMs = slaPausadoMs || 0
+  if (slaPausadoEn) totalPausedMs += endTime - new Date(slaPausadoEn).getTime()
+  const effectiveMs = endTime - new Date(creadoEn).getTime() - totalPausedMs
+  const elapsed = effectiveMs / 3600000
   const remaining = Math.max(0, slaHoras - elapsed)
   const pct = Math.min(100, (elapsed / slaHoras) * 100)
-  if (remaining <= 0) return { label: `Vencido hace ${Math.round(elapsed - slaHoras)}h`, color: "#ef4444", pct: 100 }
-  if (pct > 75) return { label: `${Math.round(remaining)}h restantes`, color: "#f59e0b", pct }
-  return { label: `${Math.round(remaining)}h restantes`, color: "#10b981", pct }
+  const paused = !!slaPausadoEn && !["RESUELTA", "CERRADA"].includes(estado)
+  if (["RESUELTA", "CERRADA"].includes(estado)) {
+    const ok = elapsed <= slaHoras
+    return { label: ok ? `Cumplido (${Math.round(elapsed)}h)` : `Excedido (${Math.round(elapsed)}h)`, color: ok ? "#10b981" : "#ef4444", pct: ok ? pct : 100, paused: false }
+  }
+  if (remaining <= 0) return { label: `Vencido hace ${Math.round(elapsed - slaHoras)}h`, color: "#ef4444", pct: 100, paused }
+  if (pct > 75) return { label: `${Math.round(remaining)}h restantes`, color: "#f59e0b", pct, paused }
+  return { label: `${Math.round(remaining)}h restantes`, color: "#10b981", pct, paused }
 }
 
 function groupEventsByDate(eventos: Evento[]): { label: string; events: Evento[] }[] {
@@ -166,6 +185,14 @@ export default function IncidenciaDetallePage() {
   const [eventoFecha, setEventoFecha] = useState(() => new Date().toISOString().slice(0, 10))
   const [enviandoEvento, setEnviandoEvento] = useState(false)
 
+  const [eventoFotos, setEventoFotos] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [respuestasRapidas, setRespuestasRapidas] = useState<RespuestaRapida[]>([])
+  const [showRespuestas, setShowRespuestas] = useState(false)
+  const [editandoEventoId, setEditandoEventoId] = useState<string | null>(null)
+  const [editandoEventoDesc, setEditandoEventoDesc] = useState("")
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null)
+
   const [editandoResolucion, setEditandoResolucion] = useState(false)
   const [resolucionText, setResolucionText] = useState("")
   const [saving, setSaving] = useState(false)
@@ -184,6 +211,12 @@ export default function IncidenciaDetallePage() {
   }, [id, router, toastError])
 
   useEffect(() => { fetchInc() }, [fetchInc])
+
+  useEffect(() => {
+    fetch("/api/incidencias/respuestas-rapidas").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setRespuestasRapidas(d)
+    }).catch(() => {})
+  }, [])
 
   async function cambiarEstado(nuevoEstado: string) {
     setSaving(true)
@@ -233,6 +266,7 @@ export default function IncidenciaDetallePage() {
     if (eventoDuracion) body.duracion = parseInt(eventoDuracion)
     const hoy = new Date().toISOString().slice(0, 10)
     if (eventoFecha && eventoFecha !== hoy) body.fecha = new Date(eventoFecha + "T12:00:00")
+    if (eventoFotos.length > 0) body.fotos = eventoFotos
 
     const r = await fetch(`/api/incidencias/${id}/eventos`, {
       method: "POST",
@@ -245,6 +279,7 @@ export default function IncidenciaDetallePage() {
       setEventoTipo("NOTA")
       setEventoPrivado(false)
       setEventoFecha(new Date().toISOString().slice(0, 10))
+      setEventoFotos([])
       success("Evento registrado")
       fetchInc()
     } else {
@@ -253,11 +288,39 @@ export default function IncidenciaDetallePage() {
     setEnviandoEvento(false)
   }
 
+  async function handleFotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files) return
+    const max = 5 - eventoFotos.length
+    const arr = Array.from(files).slice(0, max)
+    for (const file of arr) {
+      const compressed = await comprimirImagen(file)
+      setEventoFotos(prev => [...prev, compressed])
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  async function guardarEdicionEvento(eventoId: string) {
+    if (!editandoEventoDesc.trim()) return
+    const r = await fetch(`/api/incidencias/${id}/eventos/${eventoId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ descripcion: editandoEventoDesc.trim() }),
+    })
+    if (r.ok) {
+      setEditandoEventoId(null)
+      success("Evento actualizado")
+      fetchInc()
+    } else {
+      toastError("Error al actualizar")
+    }
+  }
+
   function exportarPDF() {
     if (!inc) return
     const est = getEstadoStyle(inc.estado)
     const pri = PRIORIDADES[inc.prioridad] ?? { label: inc.prioridad, color: "#6b7280" }
-    const sla = slaInfo(inc.creadoEn, inc.slaHoras, inc.estado)
+    const sla = slaInfo(inc)
 
     const eventosHTML = inc.eventos.map(ev => {
       const info = getEventoInfo(ev.tipo)
@@ -340,7 +403,7 @@ export default function IncidenciaDetallePage() {
 
   const est = getEstadoStyle(inc.estado)
   const pri = PRIORIDADES[inc.prioridad] ?? { label: inc.prioridad, color: "#6b7280", bg: "#f3f4f6" }
-  const sla = slaInfo(inc.creadoEn, inc.slaHoras, inc.estado)
+  const sla = slaInfo(inc)
   const isOpen = !["RESUELTA", "CERRADA"].includes(inc.estado)
   const eventGroups = groupEventsByDate(inc.eventos)
 
@@ -453,14 +516,26 @@ export default function IncidenciaDetallePage() {
 
           {/* SLA */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">SLA</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">SLA</h3>
+              {sla.paused && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 animate-pulse">
+                  PAUSADO
+                </span>
+              )}
+            </div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold" style={{ color: sla.color }}>{sla.label}</span>
               <span className="text-xs text-gray-400">{inc.slaHoras ?? 0}h objetivo</span>
             </div>
             <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, sla.pct)}%`, backgroundColor: sla.color }} />
+              <div className={`h-full rounded-full transition-all duration-500 ${sla.paused ? "opacity-50" : ""}`} style={{ width: `${Math.min(100, sla.pct)}%`, backgroundColor: sla.color }} />
             </div>
+            {sla.paused && (
+              <p className="text-[11px] text-purple-500 dark:text-purple-400 mt-2">
+                El reloj SLA se detiene mientras la incidencia está pendiente de terceros
+              </p>
+            )}
           </div>
 
           {/* State actions */}
@@ -548,9 +623,46 @@ export default function IncidenciaDetallePage() {
                 })}
               </div>
 
-              <textarea value={eventoDesc} onChange={e => setEventoDesc(e.target.value)}
-                rows={2} placeholder="Describe lo ocurrido..."
-                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+              {/* Textarea + respuestas rápidas */}
+              <div className="relative">
+                <textarea value={eventoDesc} onChange={e => setEventoDesc(e.target.value)}
+                  rows={2} placeholder="Describe lo ocurrido..."
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none pr-10" />
+                {respuestasRapidas.length > 0 && (
+                  <div className="absolute right-2 top-2">
+                    <button onClick={() => setShowRespuestas(p => !p)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Respuestas rápidas">
+                      <IconChevronDown size={14} />
+                    </button>
+                    {showRespuestas && (
+                      <div className="absolute right-0 top-8 w-72 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-20">
+                        {respuestasRapidas.map(rr => (
+                          <button key={rr.id} onClick={() => { setEventoDesc(rr.texto); setShowRespuestas(false) }}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors">
+                            {rr.categoria && <span className="text-[10px] font-bold text-gray-400 uppercase">{rr.categoria} · </span>}
+                            {rr.texto.length > 80 ? rr.texto.slice(0, 80) + "…" : rr.texto}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Fotos preview + upload */}
+              {eventoFotos.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {eventoFotos.map((foto, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 group">
+                      <img src={foto} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => setEventoFotos(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <IconX size={14} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Fecha */}
@@ -571,6 +683,15 @@ export default function IncidenciaDetallePage() {
                     <span className="text-xs text-gray-400">min</span>
                   </div>
                 )}
+
+                {/* Fotos */}
+                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFotos} className="hidden" />
+                <button onClick={() => fileInputRef.current?.click()} disabled={eventoFotos.length >= 5}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all disabled:opacity-40"
+                  style={{ borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                  <IconCamera size={13} />
+                  {eventoFotos.length > 0 ? `${eventoFotos.length}/5` : "Fotos"}
+                </button>
 
                 {/* Privado toggle */}
                 <button onClick={() => setEventoPrivado(p => !p)}
@@ -623,10 +744,13 @@ export default function IncidenciaDetallePage() {
                       <div className="absolute left-[13px] top-3 bottom-3 w-[2px] bg-gradient-to-b from-gray-200 via-gray-200 to-transparent dark:from-gray-700 dark:via-gray-700" />
 
                       <div className="space-y-3">
-                        {group.events.map((ev, ei) => {
+                        {group.events.map((ev) => {
                           const info = getEventoInfo(ev.tipo)
                           const Icon = info.icon
                           const isAuto = ["CAMBIO_ESTADO", "CAMBIO_ASIGNACION"].includes(ev.tipo)
+                          const canEdit = !isAuto && (ev.autor.id === perfil?.id || rol === "ADMIN")
+                          const isEditing = editandoEventoId === ev.id
+                          const fotos = Array.isArray(ev.fotos) ? ev.fotos as string[] : []
 
                           return (
                             <div key={ev.id} className="relative pl-10 group/ev">
@@ -656,11 +780,46 @@ export default function IncidenciaDetallePage() {
                                       <IconClock size={10} /> {ev.duracion} min
                                     </span>
                                   )}
+                                  {ev.editadoEn && (
+                                    <span className="text-[10px] text-gray-400 italic" title={`Editado por ${ev.editadoPor} el ${formatDate(ev.editadoEn)}`}>
+                                      (editado)
+                                    </span>
+                                  )}
                                   <span className="text-[11px] text-gray-400 ml-auto">{formatTime(ev.creadoEn)}</span>
+                                  {canEdit && !isEditing && (
+                                    <button onClick={() => { setEditandoEventoId(ev.id); setEditandoEventoDesc(ev.descripcion) }}
+                                      className="opacity-0 group-hover/ev:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                      title="Editar evento">
+                                      <IconEdit size={12} className="text-gray-400" />
+                                    </button>
+                                  )}
                                 </div>
-                                <p className={`text-sm whitespace-pre-wrap ${isAuto ? "text-gray-500 dark:text-gray-400 italic" : "text-gray-800 dark:text-gray-200"}`}>
-                                  {ev.descripcion}
-                                </p>
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <textarea value={editandoEventoDesc} onChange={e => setEditandoEventoDesc(e.target.value)}
+                                      rows={2} className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+                                    <div className="flex gap-2 justify-end">
+                                      <button onClick={() => setEditandoEventoId(null)} className="text-xs text-gray-500 px-3 py-1">Cancelar</button>
+                                      <button onClick={() => guardarEdicionEvento(ev.id)}
+                                        className="text-xs font-semibold px-3 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>
+                                        Guardar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className={`text-sm whitespace-pre-wrap ${isAuto ? "text-gray-500 dark:text-gray-400 italic" : "text-gray-800 dark:text-gray-200"}`}>
+                                    {ev.descripcion}
+                                  </p>
+                                )}
+                                {fotos.length > 0 && (
+                                  <div className="flex gap-2 mt-2 flex-wrap">
+                                    {fotos.map((foto, fi) => (
+                                      <button key={fi} onClick={() => setLightboxImg(foto)} className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-teal-400 transition-all">
+                                        <img src={foto} alt="" className="w-full h-full object-cover" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                                 <p className="text-[11px] text-gray-400 mt-1.5">{ev.autor.nombre}</p>
                               </div>
                             </div>
@@ -675,6 +834,16 @@ export default function IncidenciaDetallePage() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxImg && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
+          <button onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+            <IconX size={24} />
+          </button>
+          <img src={lightboxImg} alt="" className="max-w-full max-h-[90vh] rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   )
 }

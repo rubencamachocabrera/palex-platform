@@ -36,7 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         eventos: {
           select: {
             id: true, tipo: true, descripcion: true, duracion: true,
-            privado: true, metadatos: true, creadoEn: true,
+            privado: true, metadatos: true, fotos: true, creadoEn: true,
+            editadoPor: true, editadoEn: true,
             autor: { select: { id: true, nombre: true } },
           },
           orderBy: { creadoEn: "desc" },
@@ -75,7 +76,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where.hospital = { zona: { usuarios: { some: { usuarioId: session.user.id } } } }
     }
 
-    const existing = await db.incidencia.findFirst({ where, select: { id: true, estado: true, asignadoAId: true, codigo: true, titulo: true } })
+    const existing = await db.incidencia.findFirst({
+      where,
+      select: { id: true, estado: true, asignadoAId: true, codigo: true, titulo: true, slaPausadoEn: true, slaPausadoMs: true },
+    })
     if (!existing) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
 
     const data: Record<string, unknown> = { ...parsed.data }
@@ -86,6 +90,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (parsed.data.estado === "CERRADA" && existing.estado !== "CERRADA") {
       data.fechaCierre = new Date()
       if (!data.fechaResolucion) data.fechaResolucion = new Date()
+    }
+
+    const ESTADOS_PAUSA = ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"]
+    if (parsed.data.estado && parsed.data.estado !== existing.estado) {
+      const entraPausa = ESTADOS_PAUSA.includes(parsed.data.estado) && !ESTADOS_PAUSA.includes(existing.estado)
+      const salePausa = !ESTADOS_PAUSA.includes(parsed.data.estado) && ESTADOS_PAUSA.includes(existing.estado)
+      if (entraPausa) {
+        data.slaPausadoEn = new Date()
+      } else if (salePausa && existing.slaPausadoEn) {
+        const pausadoMs = Date.now() - new Date(existing.slaPausadoEn).getTime()
+        data.slaPausadoMs = (existing.slaPausadoMs || 0) + pausadoMs
+        data.slaPausadoEn = null
+      }
     }
 
     const updated = await db.incidencia.update({

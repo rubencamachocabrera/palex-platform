@@ -832,6 +832,9 @@ model Incidencia {
 
   eventos             EventoIncidencia[]
 
+  slaPausadoEn        DateTime?            @map("sla_pausado_en")
+  slaPausadoMs        Int                  @default(0) @map("sla_pausado_ms")
+
   creadoEn            DateTime             @default(now()) @map("creado_en")
   actualizadoEn       DateTime             @updatedAt @map("actualizado_en")
   fechaResolucion     DateTime?            @map("fecha_resolucion")
@@ -859,8 +862,22 @@ model EventoIncidencia {
   incidencia          Incidencia            @relation(fields: [incidenciaId], references: [id], onDelete: Cascade)
   autor               Usuario               @relation("EventosIncidencia", fields: [autorId], references: [id])
 
+  fotos               Json?
+  editadoPor          String?               @map("editado_por")
+  editadoEn           DateTime?             @map("editado_en")
+
   creadoEn            DateTime              @default(now()) @map("creado_en")
 
   @@index([incidenciaId])
   @@map("eventos_incidencia")
+}
+
+model RespuestaRapidaIncidencia {
+  id        String  @id @default(cuid())
+  texto     String  @db.Text
+  categoria String?
+  orden     Int     @default(0)
+  activo    Boolean @default(true)
+
+  @@map("respuestas_rapidas_incidencia")
 }

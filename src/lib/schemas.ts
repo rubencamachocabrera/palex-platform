@@ -215,7 +215,14 @@ export const EventoIncidenciaCreate = z.object({
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().default(false),
   fecha: z.coerce.date().optional(),
+  fotos: z.array(z.string()).max(5).optional(),
 })
+
+export const EventoIncidenciaPatch = z.object({
+  descripcion: z.string().min(1).max(5000).optional(),
+  privado: z.boolean().optional(),
+  fotos: z.array(z.string()).max(5).optional(),
+}).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
 export function parseBody<T>(schema: z.ZodType<T>, data: unknown):
   { success: true; data: T } | { success: false; error: string } {
