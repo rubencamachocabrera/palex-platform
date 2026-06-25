@@ -832,6 +832,7 @@ model Incidencia {
 
   eventos             EventoIncidencia[]
 
+  coasignadosIds      Json?                @default("[]") @map("coasignados_ids")
   slaPausadoEn        DateTime?            @map("sla_pausado_en")
   slaPausadoMs        Int                  @default(0) @map("sla_pausado_ms")
 

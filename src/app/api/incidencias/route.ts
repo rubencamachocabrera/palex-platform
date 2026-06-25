@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     const parsed = parseBody(IncidenciaCreate, body)
     if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    const { hospitalId, contactoId, hardwareUnidadId, asignadoAId, ...rest } = parsed.data
+    const { hospitalId, contactoId, hardwareUnidadId, asignadoAId, coasignadosIds, ...rest } = parsed.data
 
     const hospitalWhere: Record<string, unknown> = { id: hospitalId }
     if (session.user.role !== "ADMIN") {
@@ -129,6 +129,12 @@ export async function POST(req: NextRequest) {
 
     const codigo = await generarCodigo()
 
+    let coasignadosData: { id: string; nombre: string }[] = []
+    if (coasignadosIds && coasignadosIds.length > 0) {
+      const users = await db.usuario.findMany({ where: { id: { in: coasignadosIds } }, select: { id: true, nombre: true } })
+      coasignadosData = coasignadosIds.map(uid => users.find(u => u.id === uid)).filter(Boolean) as { id: string; nombre: string }[]
+    }
+
     const incidencia = await db.incidencia.create({
       data: {
         ...rest,
@@ -137,6 +143,7 @@ export async function POST(req: NextRequest) {
         contactoId: contactoId || null,
         hardwareUnidadId: hardwareUnidadId || null,
         asignadoAId: asignadoAId || null,
+        coasignadosIds: coasignadosData,
         reportadoPorId: session.user.id,
       },
       include: {

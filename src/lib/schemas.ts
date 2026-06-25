@@ -190,11 +190,12 @@ export const IncidenciaCreate = z.object({
   tipo: z.enum(["HARDWARE", "SOFTWARE"]),
   categoria: z.enum(["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "INLAB", "OTRO"]),
   prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).default("MEDIA"),
-  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "AMBOS"]).default("SERVICIO_TECNICO"),
+  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "AMBOS", "COMERCIAL"]).default("SERVICIO_TECNICO"),
   hospitalId: id,
   contactoId: id.optional().nullable(),
   hardwareUnidadId: id.optional().nullable(),
   asignadoAId: id.optional().nullable(),
+  coasignadosIds: z.array(id).max(10).optional(),
   slaHoras: z.coerce.number().int().min(1).max(9999).optional().nullable(),
 })
 

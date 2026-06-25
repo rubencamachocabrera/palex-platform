@@ -24,6 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       where,
       include: {
         hospital: { select: { id: true, nombre: true, ciudad: true, provincia: true } },
+        // coasignadosIds is a JSON field, returned automatically
         contacto: { select: { id: true, nombre: true, cargo: true, email: true, telefono: true } },
         reportadoPor: { select: { id: true, nombre: true } },
         asignadoA: { select: { id: true, nombre: true } },

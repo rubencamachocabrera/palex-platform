@@ -44,6 +44,7 @@ interface Incidencia {
   fechaResolucion: string | null; fechaCierre: string | null
   hospital: { id: string; nombre: string; ciudad: string; provincia: string | null }
   contacto: { id: string; nombre: string; cargo: string | null; email: string | null; telefono: string | null } | null
+  coasignadosIds: { id: string; nombre: string }[] | null
   reportadoPor: { id: string; nombre: string }
   asignadoA: { id: string; nombre: string } | null
   hardwareUnidad: { id: string; numSerie: string | null; estado: string; catalogo: { id: string; marca: string; modelo: string; referenciaPalex: string | null } } | null
@@ -73,7 +74,8 @@ const CATEGORIAS: Record<string, string> = {
 }
 
 const EQUIPOS: Record<string, string> = {
-  SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones", AMBOS: "Ambos",
+  SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones",
+  COMERCIAL: "Comercial", AMBOS: "Ambos",
 }
 
 interface TipoEventoDef {
@@ -352,7 +354,7 @@ export default function IncidenciaDetallePage() {
           ["Categoría", CATEGORIAS[inc.categoria] ?? inc.categoria],
           ["Equipo", EQUIPOS[inc.equipoResponsable]],
           ["Reportada por", esc(inc.reportadoPor.nombre)],
-          ["Asignada a", esc(inc.asignadoA?.nombre ?? "Sin asignar")],
+          ["Asignada a", esc([inc.asignadoA?.nombre, ...(Array.isArray(inc.coasignadosIds) ? inc.coasignadosIds.map(c => c.nombre) : [])].filter(Boolean).join(", ") || "Sin asignar")],
           ["Creada", formatDate(inc.creadoEn)],
           ["SLA", `${inc.slaHoras ?? 0}h — ${sla.label}`],
           ...(inc.fechaResolucion ? [["Resuelta", formatDate(inc.fechaResolucion)]] : []),
@@ -455,9 +457,20 @@ export default function IncidenciaDetallePage() {
               <span className="text-gray-500">Reportada por</span>
               <span className="font-medium text-gray-900 dark:text-white">{inc.reportadoPor.nombre}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Asignada a</span>
-              <span className="font-medium text-gray-900 dark:text-white">{inc.asignadoA?.nombre ?? "Sin asignar"}</span>
+            <div className="flex justify-between text-sm gap-3">
+              <span className="text-gray-500 shrink-0">Asignada a</span>
+              <div className="flex flex-wrap gap-1 justify-end">
+                {inc.asignadoA ? (
+                  <>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${TEAL}12`, color: TEAL }}>{inc.asignadoA.nombre}</span>
+                    {Array.isArray(inc.coasignadosIds) && inc.coasignadosIds.map(c => (
+                      <span key={c.id} className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">{c.nombre}</span>
+                    ))}
+                  </>
+                ) : (
+                  <span className="font-medium text-gray-400 italic">Sin asignar</span>
+                )}
+              </div>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Creada</span>

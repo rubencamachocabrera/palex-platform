@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { TEAL, TEAL_LIGHT, TEAL_DARK, ORANGE } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -61,8 +61,16 @@ const CATEGORIAS: Record<string, string> = {
   NEVERA: "Nevera", PANTALLA: "Pantalla", INLAB: "InLab", OTRO: "Otro",
 }
 
-const EQUIPOS: Record<string, string> = {
-  SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones", AMBOS: "Ambos",
+const EQUIPOS = [
+  { value: "SERVICIO_TECNICO", label: "Servicio Técnico", color: TEAL },
+  { value: "APLICACIONES", label: "Aplicaciones", color: "#8b5cf6" },
+  { value: "COMERCIAL", label: "Comercial", color: ORANGE },
+  { value: "AMBOS", label: "Ambos", color: "#6b7280" },
+] as const
+
+const EQUIPOS_MAP: Record<string, string> = {
+  SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones",
+  COMERCIAL: "Comercial", AMBOS: "Ambos",
 }
 
 function getEstadoStyle(estado: string) {
@@ -114,9 +122,23 @@ export default function IncidenciasPage() {
   const [form, setForm] = useState({
     titulo: "", descripcion: "", tipo: "HARDWARE" as "HARDWARE" | "SOFTWARE",
     categoria: "BC_ROBO", prioridad: "MEDIA", equipoResponsable: "SERVICIO_TECNICO",
-    hospitalId: "", contactoId: "", asignadoAId: "", slaHoras: "48",
-    hardwareUnidadId: "",
+    hospitalId: "", contactoId: "", slaHoras: "48", hardwareUnidadId: "",
   })
+  const [asignadosIds, setAsignadosIds] = useState<string[]>([])
+  const [hospitalSearch, setHospitalSearch] = useState("")
+  const [hospitalSearchOpen, setHospitalSearchOpen] = useState(false)
+  const hospitalSearchRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!hospitalSearchOpen) return
+    const handler = (e: MouseEvent) => {
+      if (hospitalSearchRef.current && !hospitalSearchRef.current.contains(e.target as Node)) {
+        setHospitalSearchOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [hospitalSearchOpen])
   const [contactos, setContactos] = useState<{ id: string; nombre: string; cargo: string | null }[]>([])
   const [hwUnidades, setHwUnidades] = useState<{ id: string; numSerie: string | null; catalogo: { marca: string; modelo: string } }[]>([])
   const [creando, setCreando] = useState(false)
@@ -182,8 +204,11 @@ export default function IncidenciasPage() {
         slaHoras: parseInt(form.slaHoras) || 48,
       }
       if (form.contactoId) body.contactoId = form.contactoId
-      if (form.asignadoAId) body.asignadoAId = form.asignadoAId
       if (form.hardwareUnidadId) body.hardwareUnidadId = form.hardwareUnidadId
+      if (asignadosIds.length > 0) {
+        body.asignadoAId = asignadosIds[0]
+        if (asignadosIds.length > 1) body.coasignadosIds = asignadosIds.slice(1)
+      }
 
       const r = await fetch("/api/incidencias", {
         method: "POST",
@@ -192,7 +217,9 @@ export default function IncidenciasPage() {
       })
       if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? "Error") }
       setShowModal(false)
-      setForm({ titulo: "", descripcion: "", tipo: "HARDWARE", categoria: "BC_ROBO", prioridad: "MEDIA", equipoResponsable: "SERVICIO_TECNICO", hospitalId: "", contactoId: "", asignadoAId: "", slaHoras: "48", hardwareUnidadId: "" })
+      setForm({ titulo: "", descripcion: "", tipo: "HARDWARE", categoria: "BC_ROBO", prioridad: "MEDIA", equipoResponsable: "SERVICIO_TECNICO", hospitalId: "", contactoId: "", slaHoras: "48", hardwareUnidadId: "" })
+      setAsignadosIds([])
+      setHospitalSearch("")
       success("Incidencia creada correctamente")
       fetchItems()
     } catch (e: unknown) {
@@ -231,7 +258,7 @@ export default function IncidenciasPage() {
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.hospital.nombre)}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${est.color};background:${est.bg};padding:2px 8px;border-radius:10px">${est.label}</span></td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${i.tipo === "HARDWARE" ? "HW" : "SW"} · ${esc(CATEGORIAS[i.categoria] ?? i.categoria)}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(EQUIPOS[i.equipoResponsable] ?? i.equipoResponsable)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(EQUIPOS_MAP[i.equipoResponsable] ?? i.equipoResponsable)}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center"><span style="color:${sla.color};font-weight:600">${esc(sla.label)}</span></td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${new Date(i.creadoEn).toLocaleDateString("es-ES")}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.asignadoA?.nombre ?? "—")}</td>
@@ -444,7 +471,7 @@ export default function IncidenciasPage() {
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                       <span>{inc.hospital.nombre}</span>
                       <span>·</span>
-                      <span>{EQUIPOS[inc.equipoResponsable] ?? inc.equipoResponsable}</span>
+                      <span>{EQUIPOS_MAP[inc.equipoResponsable] ?? inc.equipoResponsable}</span>
                       {inc.asignadoA && <><span>·</span><span>Asignada a {inc.asignadoA.nombre}</span></>}
                       {inc.hardwareUnidad && (
                         <><span>·</span><span>{inc.hardwareUnidad.catalogo.marca} {inc.hardwareUnidad.catalogo.modelo}{inc.hardwareUnidad.numSerie ? ` (${inc.hardwareUnidad.numSerie})` : ""}</span></>
@@ -472,14 +499,42 @@ export default function IncidenciasPage() {
               </div>
 
               <div className="px-6 py-4 space-y-4">
-                {/* Hospital */}
+                {/* Hospital — combobox buscable */}
                 <div>
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Hospital *</label>
-                  <select value={form.hospitalId} onChange={e => setForm(f => ({ ...f, hospitalId: e.target.value, contactoId: "", hardwareUnidadId: "" }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-                    <option value="">Seleccionar hospital...</option>
-                    {hospitales.map(h => <option key={h.id} value={h.id}>{h.nombre} — {h.ciudad}</option>)}
-                  </select>
+                  {form.hospitalId ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 border border-teal-300 dark:border-teal-700 rounded-xl bg-teal-50 dark:bg-teal-950/30">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white flex-1">
+                        {hospitales.find(h => h.id === form.hospitalId)?.nombre} — {hospitales.find(h => h.id === form.hospitalId)?.ciudad}
+                      </span>
+                      <button onClick={() => { setForm(f => ({ ...f, hospitalId: "", contactoId: "", hardwareUnidadId: "" })); setHospitalSearch("") }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"><IconX size={14} /></button>
+                    </div>
+                  ) : (
+                    <div className="relative" ref={hospitalSearchRef}>
+                      <input value={hospitalSearch} onChange={e => { setHospitalSearch(e.target.value); setHospitalSearchOpen(true) }}
+                        onFocus={() => setHospitalSearchOpen(true)}
+                        placeholder="Buscar hospital..."
+                        className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                      {hospitalSearchOpen && (
+                        <div className="absolute z-30 w-full mt-1 max-h-52 overflow-y-auto bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+                          {hospitales
+                            .filter(h => !hospitalSearch || h.nombre.toLowerCase().includes(hospitalSearch.toLowerCase()) || h.ciudad.toLowerCase().includes(hospitalSearch.toLowerCase()))
+                            .slice(0, 20)
+                            .map(h => (
+                              <button key={h.id} onClick={() => { setForm(f => ({ ...f, hospitalId: h.id, contactoId: "", hardwareUnidadId: "" })); setHospitalSearch(""); setHospitalSearchOpen(false) }}
+                                className="w-full text-left px-3 py-2.5 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors">
+                                <span className="font-medium">{h.nombre}</span>
+                                <span className="text-gray-400 ml-2 text-xs">{h.ciudad}</span>
+                              </button>
+                            ))}
+                          {hospitales.filter(h => !hospitalSearch || h.nombre.toLowerCase().includes(hospitalSearch.toLowerCase()) || h.ciudad.toLowerCase().includes(hospitalSearch.toLowerCase())).length === 0 && (
+                            <p className="px-3 py-3 text-sm text-gray-400 text-center">Sin resultados</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Title */}
@@ -514,28 +569,33 @@ export default function IncidenciasPage() {
                   </div>
                 </div>
 
-                {/* Priority + Team */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Prioridad</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {PRIORIDADES.map(p => (
-                        <button key={p.value} onClick={() => setForm(f => ({ ...f, prioridad: p.value }))}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
-                          style={form.prioridad === p.value ? { backgroundColor: p.bg, color: p.color, borderColor: p.color } : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
+                {/* Priority */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Prioridad</label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {PRIORIDADES.map(p => (
+                      <button key={p.value} onClick={() => setForm(f => ({ ...f, prioridad: p.value }))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+                        style={form.prioridad === p.value ? { backgroundColor: p.bg, color: p.color, borderColor: p.color } : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Equipo</label>
-                    <select value={form.equipoResponsable} onChange={e => setForm(f => ({ ...f, equipoResponsable: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
-                      <option value="SERVICIO_TECNICO">Servicio Técnico</option>
-                      <option value="APLICACIONES">Aplicaciones</option>
-                      <option value="AMBOS">Ambos</option>
-                    </select>
+                </div>
+
+                {/* Equipo */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Equipo responsable</label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {EQUIPOS.map(e => (
+                      <button key={e.value} onClick={() => setForm(f => ({ ...f, equipoResponsable: e.value }))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+                        style={form.equipoResponsable === e.value
+                          ? { backgroundColor: `${e.color}15`, color: e.color, borderColor: e.color }
+                          : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                        {e.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -547,25 +607,42 @@ export default function IncidenciasPage() {
                     className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
                 </div>
 
-                {/* Optional fields */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Contacto hospital</label>
-                    <select value={form.contactoId} onChange={e => setForm(f => ({ ...f, contactoId: e.target.value }))}
-                      disabled={!form.hospitalId}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none disabled:opacity-50">
-                      <option value="">Sin contacto</option>
-                      {contactos.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Asignar a</label>
-                    <select value={form.asignadoAId} onChange={e => setForm(f => ({ ...f, asignadoAId: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
-                      <option value="">Sin asignar</option>
-                      {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
-                    </select>
-                  </div>
+                {/* Contacto hospital */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Contacto hospital</label>
+                  <select value={form.contactoId} onChange={e => setForm(f => ({ ...f, contactoId: e.target.value }))}
+                    disabled={!form.hospitalId}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none disabled:opacity-50">
+                    <option value="">Sin contacto</option>
+                    {contactos.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>)}
+                  </select>
+                </div>
+
+                {/* Asignar a — multi-select con pills */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 block">Asignar a</label>
+                  {asignadosIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {asignadosIds.map((uid, idx) => {
+                        const u = usuarios.find(u => u.id === uid)
+                        return (
+                          <span key={uid} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border"
+                            style={idx === 0 ? { backgroundColor: `${TEAL}12`, color: TEAL, borderColor: `${TEAL}40` } : { backgroundColor: "#f1f5f9", color: "#64748b", borderColor: "#e2e8f0" }}>
+                            {idx === 0 && <span className="text-[9px] font-bold opacity-60">PRINCIPAL</span>}
+                            {u?.nombre ?? uid}
+                            <button onClick={() => setAsignadosIds(prev => prev.filter(id => id !== uid))} className="hover:text-red-500 transition-colors">
+                              <IconX size={10} />
+                            </button>
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <select value="" onChange={e => { if (e.target.value && !asignadosIds.includes(e.target.value)) setAsignadosIds(prev => [...prev, e.target.value]) }}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    <option value="">{asignadosIds.length === 0 ? "Seleccionar persona..." : "Añadir otra persona..."}</option>
+                    {usuarios.filter(u => !asignadosIds.includes(u.id)).map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                  </select>
                 </div>
 
                 {/* Hardware unit */}
