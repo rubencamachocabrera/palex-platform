@@ -38,7 +38,11 @@ export async function GET(req: NextRequest) {
 
     const where: Record<string, unknown> = {}
 
-    if (estado) where.estado = estado
+    if (estado === "PENDIENTE") {
+      where.estado = { in: ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"] }
+    } else if (estado) {
+      where.estado = estado
+    }
     if (prioridad) where.prioridad = prioridad
     if (tipo) where.tipo = tipo
     if (hospitalId) where.hospitalId = hospitalId

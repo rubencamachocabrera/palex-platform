@@ -111,6 +111,7 @@ export default function IncidenciasPage() {
 
   const [items, setItems] = useState<Incidencia[]>([])
   const [loading, setLoading] = useState(true)
+  const [totales, setTotales] = useState({ abiertas: 0, enProgreso: 0, pendientes: 0, resueltas: 0, total: 0 })
   const [filtroEstado, setFiltroEstado] = useState("")
   const [filtroPrioridad, setFiltroPrioridad] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("")
@@ -151,6 +152,22 @@ export default function IncidenciasPage() {
   const [exportHospitalId, setExportHospitalId] = useState("")
   const [exportEstado, setExportEstado] = useState("")
 
+  const fetchTotales = useCallback(async () => {
+    const r = await fetch("/api/incidencias?limit=500")
+    if (r.ok) {
+      const data: Incidencia[] = await r.json()
+      if (Array.isArray(data)) {
+        setTotales({
+          abiertas: data.filter(i => i.estado === "ABIERTA").length,
+          enProgreso: data.filter(i => i.estado === "EN_PROGRESO").length,
+          pendientes: data.filter(i => i.estado.startsWith("PENDIENTE")).length,
+          resueltas: data.filter(i => ["RESUELTA", "CERRADA"].includes(i.estado)).length,
+          total: data.length,
+        })
+      }
+    }
+  }, [])
+
   const fetchItems = useCallback(async () => {
     const params = new URLSearchParams()
     if (filtroEstado) params.set("estado", filtroEstado)
@@ -165,6 +182,7 @@ export default function IncidenciasPage() {
     setLoading(false)
   }, [filtroEstado, filtroPrioridad, filtroTipo, busqueda])
 
+  useEffect(() => { fetchTotales() }, [fetchTotales])
   useEffect(() => { fetchItems() }, [fetchItems])
 
   useEffect(() => {
@@ -223,6 +241,7 @@ export default function IncidenciasPage() {
       setHospitalSearch("")
       success("Incidencia creada correctamente")
       fetchItems()
+      fetchTotales()
     } catch (e: unknown) {
       toastError(e instanceof Error ? e.message : "Error al crear")
     } finally {
@@ -307,10 +326,12 @@ export default function IncidenciasPage() {
   const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA"]
   const swCategorias = ["INLAB", "OTRO"]
 
-  const abiertas = items.filter(i => i.estado === "ABIERTA").length
-  const enProgreso = items.filter(i => i.estado === "EN_PROGRESO").length
-  const pendientes = items.filter(i => i.estado.startsWith("PENDIENTE")).length
-  const resueltas = items.filter(i => ["RESUELTA", "CERRADA"].includes(i.estado)).length
+  const KPI_FILTRO: Record<string, string> = {
+    "Abiertas": "ABIERTA",
+    "En progreso": "EN_PROGRESO",
+    "Pendientes": "PENDIENTE",
+    "Resueltas": "RESUELTA",
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -341,21 +362,27 @@ export default function IncidenciasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Abiertas", value: abiertas, color: "#ef4444", bg: "#fef2f2", darkBg: "dark:bg-red-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
-          { label: "En progreso", value: enProgreso, color: "#f59e0b", bg: "#fffbeb", darkBg: "dark:bg-amber-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-          { label: "Pendientes", value: pendientes, color: "#8b5cf6", bg: "#f5f3ff", darkBg: "dark:bg-violet-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> },
-          { label: "Resueltas", value: resueltas, color: "#10b981", bg: "#ecfdf5", darkBg: "dark:bg-emerald-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
-        ].map(kpi => (
-          <button key={kpi.label} onClick={() => setFiltroEstado(filtroEstado === kpi.label.toUpperCase().replace(/ /g, "_") ? "" : kpi.label === "Abiertas" ? "ABIERTA" : kpi.label === "En progreso" ? "EN_PROGRESO" : kpi.label === "Pendientes" ? "" : kpi.label === "Resueltas" ? "RESUELTA" : "")}
-            className={`bg-white ${kpi.darkBg} dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm text-left transition-all hover:shadow-md hover:border-gray-200 dark:hover:border-gray-700`}>
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{kpi.label}</p>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}>{kpi.icon}</div>
-            </div>
-            <p className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
-            {items.length > 0 && <div className="mt-2 w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.max(2, (kpi.value / items.length) * 100)}%`, backgroundColor: kpi.color }} /></div>}
-          </button>
-        ))}
+          { label: "Abiertas", value: totales.abiertas, color: "#ef4444", bg: "#fef2f2", darkBg: "dark:bg-red-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+          { label: "En progreso", value: totales.enProgreso, color: "#f59e0b", bg: "#fffbeb", darkBg: "dark:bg-amber-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+          { label: "Pendientes", value: totales.pendientes, color: "#8b5cf6", bg: "#f5f3ff", darkBg: "dark:bg-violet-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> },
+          { label: "Resueltas", value: totales.resueltas, color: "#10b981", bg: "#ecfdf5", darkBg: "dark:bg-emerald-950/20", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
+        ].map(kpi => {
+          const filtroValor = KPI_FILTRO[kpi.label]
+          const activo = filtroEstado === filtroValor
+          return (
+            <button key={kpi.label}
+              onClick={() => setFiltroEstado(activo ? "" : filtroValor)}
+              className={`rounded-2xl p-4 shadow-sm text-left transition-all hover:shadow-md border-2 ${activo ? "" : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700"} ${kpi.darkBg}`}
+              style={activo ? { backgroundColor: kpi.bg, borderColor: kpi.color } : { borderColor: "transparent" }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${activo ? "" : "text-gray-500 dark:text-gray-400"}`} style={activo ? { color: kpi.color } : {}}>{kpi.label}</p>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}>{kpi.icon}</div>
+              </div>
+              <p className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
+              {totales.total > 0 && <div className="mt-2 w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(2, (kpi.value / totales.total) * 100)}%`, backgroundColor: kpi.color }} /></div>}
+            </button>
+          )
+        })}
       </div>
 
       {/* Filtros */}
@@ -377,7 +404,13 @@ export default function IncidenciasPage() {
         <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none">
           <option value="">Todos los estados</option>
-          {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+          <option value="ABIERTA">Abierta</option>
+          <option value="EN_PROGRESO">En progreso</option>
+          <option value="PENDIENTE">Pendientes (cliente/proveedor)</option>
+          <option value="PENDIENTE_CLIENTE">Pend. cliente</option>
+          <option value="PENDIENTE_PROVEEDOR">Pend. proveedor</option>
+          <option value="RESUELTA">Resuelta</option>
+          <option value="CERRADA">Cerrada</option>
         </select>
         <select value={filtroPrioridad} onChange={e => setFiltroPrioridad(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none">

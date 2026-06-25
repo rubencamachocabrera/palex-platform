@@ -204,7 +204,7 @@ export const IncidenciaPatch = z.object({
   descripcion: z.string().min(1).max(5000).optional(),
   prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).optional(),
   estado: z.enum(["ABIERTA", "EN_PROGRESO", "PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR", "RESUELTA", "CERRADA"]).optional(),
-  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "AMBOS"]).optional(),
+  equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "COMERCIAL", "MARKETING", "PROYECTOS"]).optional(),
   asignadoAId: id.optional().nullable(),
   resolucion: z.string().max(5000).optional().nullable(),
   slaHoras: z.coerce.number().int().min(1).max(9999).optional().nullable(),
