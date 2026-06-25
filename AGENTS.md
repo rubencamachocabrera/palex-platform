@@ -176,8 +176,9 @@ Tag              (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio     (titulo, descripcion?, fecha, completado, usuario)
 Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique)
 RegistroLlamada  (hospital, contacto?, usuario, duracion, asunto, resultado, seguimiento)
-Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad)
-EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, incidencia, autor)
+Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad, coasignadosIds JSON [{id,nombre}], slaPausadoEn DateTime?, slaPausadoMs Int)
+EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, fotos JSON?, editadoPor?, editadoEn?, incidencia, autor)
+RespuestaRapidaIncidencia (texto, categoria?, orden, activo) @@map("respuestas_rapidas_incidencia")
 LogActividad, ConfigApp (crmActivo, incidenciasActivo), PlantillaVisita, ModuloInlab
 Oportunidad      (DESACTIVADO)
 ```
@@ -202,9 +203,15 @@ Oportunidad      (DESACTIVADO)
 - Validacion: Zod schemas centralizados en `schemas.ts`, usar `parseBody()`.
 - Comentarios POST aceptan `mencionIds` array.
 - `/api/perfil`: devuelve `{ rol, onboardingCompletado, calendarToken }` — usar `d?.rol`.
-- GET `/api/incidencias`: acepta `?limit=N` (max 500), `?q=`, `?estado=`, `?prioridad=`, `?tipo=`, `?hospitalId=`, `?asignadoAId=`, `?desde=&hasta=`. orderBy `creadoEn desc` (NO por enum — Prisma ordena enums alfabeticamente).
+- GET `/api/incidencias`: acepta `?limit=N` (max 500), `?q=`, `?estado=`, `?prioridad=`, `?tipo=`, `?hospitalId=`, `?asignadoAId=`, `?desde=&hasta=`. orderBy `creadoEn desc` (NO por enum — Prisma ordena enums alfabeticamente). Estado especial `PENDIENTE` se expande a `{ in: ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"] }`.
 - GET `/api/incidencias/[id]`: filtra eventos privados para no-ADMIN (solo ve los suyos).
-- POST `/api/incidencias`: generarCodigo() con retry loop anti-race-condition.
+- POST `/api/incidencias`: generarCodigo() con retry loop anti-race-condition. Acepta `coasignadosIds` (array IDs), resuelve nombres en DB y guarda como JSON `[{id, nombre}]`.
+- PATCH `/api/incidencias/[id]`: gestiona pausa SLA automática al entrar/salir de PENDIENTE_CLIENTE/PROVEEDOR (slaPausadoEn + slaPausadoMs).
+- POST `/api/incidencias/[id]/eventos`: acepta `fecha` (usa como creadoEn), `fotos` (array base64 max 5).
+- PATCH `/api/incidencias/[id]/eventos/[eventoId]`: edicion solo autor o ADMIN, guarda editadoPor+editadoEn.
+- GET/POST/DELETE `/api/incidencias/respuestas-rapidas`: plantillas de respuesta. ADMIN para POST/DELETE.
+- equipoResponsable enum: SERVICIO_TECNICO | APLICACIONES | COMERCIAL | MARKETING | PROYECTOS (5 equipos, NO "AMBOS")
+- KPIs lista: usar `totales` (fetch sin filtros) para contadores globales; `items` solo para la lista filtrada.
 
 ---
 
@@ -226,7 +233,7 @@ Oportunidad      (DESACTIVADO)
 **Notificaciones:** Browser Notification API, polling 60s, preferencias perfil.
 **Calendario:** iCal feed con HMAC tokens, sync Google/Outlook/Apple.
 **Busqueda:** Global debounced, CommandPalette (Cmd+K), filtros avanzados.
-**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, exportacion informes PDF, filtros activos con chips, KPIs interactivos, toggle activacion.
+**Incidencias:** Helpdesk HW/SW, 10 categorias, 5 equipos (Servicio Tecnico/Aplicaciones/Comercial/Marketing/Proyectos), SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR — slaPausadoEn+slaPausadoMs), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, hospital con buscador combobox, asignacion multiple (principal+coasignados JSON), exportacion informes PDF, filtros activos con chips, KPIs interactivos (totales independientes del filtro), toggle activacion.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence.
