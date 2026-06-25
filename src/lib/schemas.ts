@@ -214,6 +214,7 @@ export const EventoIncidenciaCreate = z.object({
   descripcion: z.string().min(1).max(5000),
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().default(false),
+  fecha: z.coerce.date().optional(),
 })
 
 export function parseBody<T>(schema: z.ZodType<T>, data: unknown):

@@ -25,11 +25,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const incidencia = await db.incidencia.findFirst({ where, select: { id: true } })
     if (!incidencia) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
 
+    const { fecha, ...eventoData } = parsed.data
     const evento = await db.eventoIncidencia.create({
       data: {
-        ...parsed.data,
+        ...eventoData,
         incidenciaId: id,
         autorId: session.user.id,
+        ...(fecha && { creadoEn: fecha }),
       },
       include: {
         autor: { select: { id: true, nombre: true } },

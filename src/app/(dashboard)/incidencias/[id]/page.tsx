@@ -163,6 +163,7 @@ export default function IncidenciaDetallePage() {
   const [eventoDesc, setEventoDesc] = useState("")
   const [eventoDuracion, setEventoDuracion] = useState("")
   const [eventoPrivado, setEventoPrivado] = useState(false)
+  const [eventoFecha, setEventoFecha] = useState(() => new Date().toISOString().slice(0, 10))
   const [enviandoEvento, setEnviandoEvento] = useState(false)
 
   const [editandoResolucion, setEditandoResolucion] = useState(false)
@@ -230,6 +231,8 @@ export default function IncidenciaDetallePage() {
       privado: eventoPrivado,
     }
     if (eventoDuracion) body.duracion = parseInt(eventoDuracion)
+    const hoy = new Date().toISOString().slice(0, 10)
+    if (eventoFecha && eventoFecha !== hoy) body.fecha = new Date(eventoFecha + "T12:00:00")
 
     const r = await fetch(`/api/incidencias/${id}/eventos`, {
       method: "POST",
@@ -241,6 +244,7 @@ export default function IncidenciaDetallePage() {
       setEventoDuracion("")
       setEventoTipo("NOTA")
       setEventoPrivado(false)
+      setEventoFecha(new Date().toISOString().slice(0, 10))
       success("Evento registrado")
       fetchInc()
     } else {
@@ -549,10 +553,18 @@ export default function IncidenciaDetallePage() {
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
 
               <div className="flex items-center gap-3 flex-wrap">
+                {/* Fecha */}
+                <div className="flex items-center gap-2">
+                  <IconClock size={14} className="text-gray-400" />
+                  <input type="date" value={eventoFecha} onChange={e => setEventoFecha(e.target.value)}
+                    max={new Date().toISOString().slice(0, 10)}
+                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                </div>
+
                 {/* Duration for calls */}
                 {["LLAMADA_ENTRANTE", "LLAMADA_SALIENTE"].includes(eventoTipo) && (
                   <div className="flex items-center gap-2">
-                    <IconClock size={14} className="text-gray-400" />
+                    <span className="text-xs text-gray-400">Duración</span>
                     <input type="number" value={eventoDuracion} onChange={e => setEventoDuracion(e.target.value)}
                       min="0" max="999" placeholder="min"
                       className="w-16 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
