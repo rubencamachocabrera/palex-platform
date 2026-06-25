@@ -226,7 +226,7 @@ Oportunidad      (DESACTIVADO)
 **Notificaciones:** Browser Notification API, polling 60s, preferencias perfil.
 **Calendario:** iCal feed con HMAC tokens, sync Google/Outlook/Apple.
 **Busqueda:** Global debounced, CommandPalette (Cmd+K), filtros avanzados.
-**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA, timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, exportacion informes PDF, filtros activos con chips, KPIs interactivos, toggle activacion.
+**Incidencias:** Helpdesk HW/SW, 10 categorias, SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, exportacion informes PDF, filtros activos con chips, KPIs interactivos, toggle activacion.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence.
@@ -263,6 +263,13 @@ Oportunidad      (DESACTIVADO)
 - [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer)
 - [ ] Ruta optimizada mapa (ordenar visitas del dia por proximidad geografica)
 - [ ] Check-in/Check-out hospitales (registro tiempo en campo por hospital)
+
+### Backlog — Incidencias (modulo aparte, no priorizado)
+- [ ] Vinculacion entre incidencias (DUPLICADA, RELACIONADA, CAUSA_RAIZ) — modelo IncidenciaRelacion
+- [ ] Metricas rendimiento por tecnico (tiempo medio resolucion, cumplimiento SLA %)
+- [ ] Notificacion automatica al cambiar estado (al reportador y al asignado)
+- [ ] Recurrencia / reapertura automatica (detectar patron hospital+equipo+categoria)
+- [ ] Escalado con reglas automaticas (CRITICA >4h sin asignar → auto-escalar + notificar ADMIN)
 
 ### Backlog — Infraestructura (no priorizado)
 - [ ] Notificaciones por email (Resend o similar)
