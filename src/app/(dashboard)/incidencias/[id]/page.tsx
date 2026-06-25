@@ -75,7 +75,7 @@ const CATEGORIAS: Record<string, string> = {
 
 const EQUIPOS: Record<string, string> = {
   SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones",
-  COMERCIAL: "Comercial", AMBOS: "Ambos",
+  COMERCIAL: "Comercial", MARKETING: "Marketing", PROYECTOS: "Proyectos",
 }
 
 interface TipoEventoDef {

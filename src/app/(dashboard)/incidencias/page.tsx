@@ -65,12 +65,13 @@ const EQUIPOS = [
   { value: "SERVICIO_TECNICO", label: "Servicio Técnico", color: TEAL },
   { value: "APLICACIONES", label: "Aplicaciones", color: "#8b5cf6" },
   { value: "COMERCIAL", label: "Comercial", color: ORANGE },
-  { value: "AMBOS", label: "Ambos", color: "#6b7280" },
+  { value: "MARKETING", label: "Marketing", color: "#ec4899" },
+  { value: "PROYECTOS", label: "Proyectos", color: "#3b82f6" },
 ] as const
 
 const EQUIPOS_MAP: Record<string, string> = {
   SERVICIO_TECNICO: "Servicio Técnico", APLICACIONES: "Aplicaciones",
-  COMERCIAL: "Comercial", AMBOS: "Ambos",
+  COMERCIAL: "Comercial", MARKETING: "Marketing", PROYECTOS: "Proyectos",
 }
 
 function getEstadoStyle(estado: string) {
