@@ -177,6 +177,7 @@ enum TipoEventoIncidencia {
   RESPUESTA_TECNICA
   RESPUESTA_APLICACIONES
   COMUNICACION_CLIENTE
+  SOPORTE_REMOTO
 }
 
 // --- CONFIG ----------------------------------------------------------

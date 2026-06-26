@@ -13,7 +13,7 @@ import {
   IconSend, IconInbox, IconZap, IconWrench, IconTerminal,
   IconMessageCircle, IconRefreshCw, IconUserCheck, IconClock,
   IconEyeOff, IconFileExport, IconAlertTriangle, IconPhone, IconMail,
-  IconCamera, IconEdit, IconX, IconChevronDown,
+  IconCamera, IconEdit, IconX, IconChevronDown, IconMonitorShare,
 } from "@/components/ui/Icons"
 
 interface Evento {
@@ -89,6 +89,7 @@ const TIPOS_EVENTO: TipoEventoDef[] = [
   { value: "NOTA", label: "Nota interna", icon: IconClipboardList, color: "#6b7280" },
   { value: "LLAMADA_ENTRANTE", label: "Llamada entrante", icon: IconPhoneIncoming, color: "#10b981" },
   { value: "LLAMADA_SALIENTE", label: "Llamada saliente", icon: IconPhoneOutgoing, color: "#3b82f6" },
+  { value: "SOPORTE_REMOTO", label: "Soporte remoto", icon: IconMonitorShare, color: "#7c3aed" },
   { value: "EMAIL_ENVIADO", label: "Email enviado", icon: IconSend, color: "#8b5cf6" },
   { value: "EMAIL_RECIBIDO", label: "Email recibido", icon: IconInbox, color: "#6366f1" },
   { value: "ESCALADO", label: "Escalado", icon: IconZap, color: "#ef4444" },
@@ -331,7 +332,7 @@ export default function IncidenciaDetallePage() {
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${info.color};background:${info.color}15;padding:2px 8px;border-radius:10px">${esc(info.label)}</span></td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155">${esc(ev.descripcion)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${esc(ev.autor.nombre)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;text-align:center">${ev.duracion ? ev.duracion + " min" : "—"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;text-align:center">${ev.duracion && ev.duracion > 0 ? (ev.duracion >= 60 ? `${Math.floor(ev.duracion / 60)}h${ev.duracion % 60 > 0 ? ` ${ev.duracion % 60}min` : ""}` : `${ev.duracion} min`) : "—"}</td>
       </tr>`
     }).join("")
 
@@ -686,16 +687,14 @@ export default function IncidenciaDetallePage() {
                     className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
                 </div>
 
-                {/* Duration for calls */}
-                {["LLAMADA_ENTRANTE", "LLAMADA_SALIENTE"].includes(eventoTipo) && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Duración</span>
-                    <input type="number" value={eventoDuracion} onChange={e => setEventoDuracion(e.target.value)}
-                      min="0" max="999" placeholder="min"
-                      className="w-16 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
-                    <span className="text-xs text-gray-400">min</span>
-                  </div>
-                )}
+                {/* Duración — visible para todos los tipos manuales */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">Tiempo</span>
+                  <input type="number" value={eventoDuracion} onChange={e => setEventoDuracion(e.target.value)}
+                    min="0" max="9999" placeholder="—"
+                    className="w-16 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                  <span className="text-xs text-gray-400">min</span>
+                </div>
 
                 {/* Fotos */}
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFotos} className="hidden" />
@@ -789,8 +788,11 @@ export default function IncidenciaDetallePage() {
                                     </span>
                                   )}
                                   {ev.duracion != null && ev.duracion > 0 && (
-                                    <span className="flex items-center gap-1 text-[10px] text-gray-400">
-                                      <IconClock size={10} /> {ev.duracion} min
+                                    <span className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                                      <IconClock size={9} />
+                                      {ev.duracion >= 60
+                                        ? `${Math.floor(ev.duracion / 60)}h${ev.duracion % 60 > 0 ? ` ${ev.duracion % 60}min` : ""}`
+                                        : `${ev.duracion} min`}
                                     </span>
                                   )}
                                   {ev.editadoEn && (

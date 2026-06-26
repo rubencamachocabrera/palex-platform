@@ -211,7 +211,7 @@ export const IncidenciaPatch = z.object({
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
 export const EventoIncidenciaCreate = z.object({
-  tipo: z.enum(["NOTA", "LLAMADA_ENTRANTE", "LLAMADA_SALIENTE", "EMAIL_ENVIADO", "EMAIL_RECIBIDO", "CAMBIO_ESTADO", "CAMBIO_ASIGNACION", "ESCALADO", "RESPUESTA_TECNICA", "RESPUESTA_APLICACIONES", "COMUNICACION_CLIENTE"]),
+  tipo: z.enum(["NOTA", "LLAMADA_ENTRANTE", "LLAMADA_SALIENTE", "EMAIL_ENVIADO", "EMAIL_RECIBIDO", "CAMBIO_ESTADO", "CAMBIO_ASIGNACION", "ESCALADO", "RESPUESTA_TECNICA", "RESPUESTA_APLICACIONES", "COMUNICACION_CLIENTE", "SOPORTE_REMOTO"]),
   descripcion: z.string().min(1).max(5000),
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().default(false),
