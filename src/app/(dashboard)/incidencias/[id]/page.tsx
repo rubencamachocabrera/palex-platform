@@ -14,6 +14,7 @@ import {
   IconMessageCircle, IconRefreshCw, IconUserCheck, IconClock,
   IconEyeOff, IconFileExport, IconAlertTriangle, IconPhone, IconMail,
   IconCamera, IconEdit, IconX, IconChevronDown, IconMonitorShare,
+  IconUsers, IconBuilding,
 } from "@/components/ui/Icons"
 
 interface Evento {
@@ -24,7 +25,7 @@ interface Evento {
   privado: boolean
   metadatos: unknown
   fotos: string[] | null
-  realizadoPorNombre: string | null
+  realizadoPorNombres: string[] | null
   editadoPor: string | null
   editadoEn: string | null
   creadoEn: string
@@ -73,7 +74,7 @@ const PRIORIDADES: Record<string, { label: string; color: string; bg: string }> 
 const CATEGORIAS: Record<string, string> = {
   BC_ROBO: "BC Robo", ZEBRA_MC: "Zebra MC", ZEBRA_IMPRESORA: "Zebra Impresora",
   READER_RFID: "Reader RFID", GATEWAY_BT: "Gateway BT", MINI_PC: "Mini-PC",
-  NEVERA: "Nevera", PANTALLA: "Pantalla", INLAB: "InLab", OTRO: "Otro",
+  NEVERA: "Nevera", PANTALLA: "Pantalla", TOTEM: "Tótem", INLAB: "InLab", OTRO: "Otro",
 }
 
 const EQUIPOS: Record<string, string> = {
@@ -95,6 +96,8 @@ const TIPOS_EVENTO: TipoEventoDef[] = [
   { value: "SOPORTE_REMOTO", label: "Soporte remoto", icon: IconMonitorShare, color: "#7c3aed" },
   { value: "EMAIL_ENVIADO", label: "Email enviado", icon: IconSend, color: "#8b5cf6" },
   { value: "EMAIL_RECIBIDO", label: "Email recibido", icon: IconInbox, color: "#6366f1" },
+  { value: "REUNION_INTERNA", label: "Reunión interna", icon: IconUsers, color: "#0284c7" },
+  { value: "REUNION_CLIENTE", label: "Reunión cliente", icon: IconBuilding, color: "#d97706" },
   { value: "ESCALADO", label: "Escalado", icon: IconZap, color: "#ef4444" },
   { value: "RESPUESTA_TECNICA", label: "Resp. técnica", icon: IconWrench, color: TEAL },
   { value: "RESPUESTA_APLICACIONES", label: "Resp. aplicaciones", icon: IconTerminal, color: "#0ea5e9" },
@@ -200,15 +203,20 @@ export default function IncidenciaDetallePage() {
   const [respuestasRapidas, setRespuestasRapidas] = useState<RespuestaRapida[]>([])
   const [showRespuestas, setShowRespuestas] = useState(false)
   const [editandoEventoId, setEditandoEventoId] = useState<string | null>(null)
-  const [editandoEventoDesc, setEditandoEventoDesc] = useState("")
   const [lightboxImg, setLightboxImg] = useState<string | null>(null)
 
-  const [realizadoPorNombre, setRealizadoPorNombre] = useState("")
+  const [realizadoPorNombres, setRealizadoPorNombres] = useState<string[]>([])
   const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [editandoPrioridad, setEditandoPrioridad] = useState(false)
   const [editandoEquipo, setEditandoEquipo] = useState(false)
+
+  // Estado del formulario de edición completo de evento
+  const [editEvento, setEditEvento] = useState({
+    tipo: "NOTA", descripcion: "", duracion: "", fecha: "", hora: "", privado: false,
+    realizadoPorNombres: [] as string[],
+  })
 
   const [editandoResolucion, setEditandoResolucion] = useState(false)
   const [resolucionText, setResolucionText] = useState("")
@@ -288,7 +296,7 @@ export default function IncidenciaDetallePage() {
     const fechaHoraStr = `${eventoFecha}T${eventoHora}:00`
     body.fecha = new Date(fechaHoraStr).toISOString()
     if (eventoFotos.length > 0) body.fotos = eventoFotos
-    if (realizadoPorNombre.trim()) body.realizadoPorNombre = realizadoPorNombre.trim()
+    if (realizadoPorNombres.length > 0) body.realizadoPorNombres = realizadoPorNombres
 
     const r = await fetch(`/api/incidencias/${id}/eventos`, {
       method: "POST",
@@ -304,7 +312,7 @@ export default function IncidenciaDetallePage() {
       setEventoFecha(now.toISOString().slice(0, 10))
       setEventoHora(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`)
       setEventoFotos([])
-      setRealizadoPorNombre("")
+      setRealizadoPorNombres([])
       success("Evento registrado")
       fetchInc()
     } else {
@@ -363,12 +371,36 @@ export default function IncidenciaDetallePage() {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  function iniciarEdicionEvento(ev: Evento) {
+    const d = new Date(ev.creadoEn)
+    setEditandoEventoId(ev.id)
+    setEditEvento({
+      tipo: ev.tipo,
+      descripcion: ev.descripcion,
+      duracion: ev.duracion != null ? String(ev.duracion) : "",
+      fecha: d.toISOString().slice(0, 10),
+      hora: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+      privado: ev.privado,
+      realizadoPorNombres: Array.isArray(ev.realizadoPorNombres) ? ev.realizadoPorNombres : [],
+    })
+  }
+
   async function guardarEdicionEvento(eventoId: string) {
-    if (!editandoEventoDesc.trim()) return
+    if (!editEvento.descripcion.trim()) { toastError("La descripción es obligatoria"); return }
+    const body: Record<string, unknown> = {
+      tipo: editEvento.tipo,
+      descripcion: editEvento.descripcion.trim(),
+      privado: editEvento.privado,
+      realizadoPorNombres: editEvento.realizadoPorNombres,
+    }
+    if (editEvento.duracion !== "") body.duracion = parseInt(editEvento.duracion) || 0
+    if (editEvento.fecha && editEvento.hora) {
+      body.fecha = new Date(`${editEvento.fecha}T${editEvento.hora}:00`).toISOString()
+    }
     const r = await fetch(`/api/incidencias/${id}/eventos/${eventoId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ descripcion: editandoEventoDesc.trim() }),
+      body: JSON.stringify(body),
     })
     if (r.ok) {
       setEditandoEventoId(null)
@@ -794,14 +826,28 @@ export default function IncidenciaDetallePage() {
                 </div>
               )}
 
-              {/* Realizado por */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 shrink-0">Realizado por</span>
-                <select value={realizadoPorNombre} onChange={e => setRealizadoPorNombre(e.target.value)}
-                  className="flex-1 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-teal-400">
-                  <option value="">— (yo mismo)</option>
-                  {usuarios.map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
-                </select>
+              {/* Realizado por — multi-selección con pills */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 shrink-0">Realizado por</span>
+                  <select value="" onChange={e => { if (e.target.value && !realizadoPorNombres.includes(e.target.value)) setRealizadoPorNombres(p => [...p, e.target.value]) }}
+                    className="flex-1 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-teal-400">
+                    <option value="">{realizadoPorNombres.length === 0 ? "— añadir persona..." : "Añadir otra persona..."}</option>
+                    {usuarios.filter(u => !realizadoPorNombres.includes(u.nombre)).map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+                  </select>
+                </div>
+                {realizadoPorNombres.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pl-[88px]">
+                    {realizadoPorNombres.map(nombre => (
+                      <span key={nombre} className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
+                        {nombre}
+                        <button onClick={() => setRealizadoPorNombres(p => p.filter(n => n !== nombre))} className="hover:text-red-500 transition-colors">
+                          <IconX size={9} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
@@ -930,22 +976,90 @@ export default function IncidenciaDetallePage() {
                                   )}
                                   <span className="text-[11px] text-gray-400 ml-auto">{formatTime(ev.creadoEn)}</span>
                                   {canEdit && !isEditing && (
-                                    <button onClick={() => { setEditandoEventoId(ev.id); setEditandoEventoDesc(ev.descripcion) }}
+                                    <button onClick={() => iniciarEdicionEvento(ev)}
                                       className="opacity-0 group-hover/ev:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                                       title="Editar evento">
                                       <IconEdit size={12} className="text-gray-400" />
                                     </button>
                                   )}
                                 </div>
+
                                 {isEditing ? (
-                                  <div className="space-y-2">
-                                    <textarea value={editandoEventoDesc} onChange={e => setEditandoEventoDesc(e.target.value)}
-                                      rows={2} className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+                                  /* Formulario de edición completo */
+                                  <div className="space-y-3 pt-1">
+                                    {/* Tipo */}
+                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+                                      {TIPOS_EVENTO.map(t => {
+                                        const TIcon = t.icon
+                                        const active = editEvento.tipo === t.value
+                                        return (
+                                          <button key={t.value} onClick={() => setEditEvento(p => ({ ...p, tipo: t.value }))}
+                                            className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-[10px] font-medium border transition-all"
+                                            style={active
+                                              ? { borderColor: t.color, color: t.color, backgroundColor: `${t.color}10` }
+                                              : { borderColor: "transparent", color: "#9ca3af" }}>
+                                            <div className="w-5 h-5 rounded flex items-center justify-center"
+                                              style={active ? { backgroundColor: `${t.color}18` } : { backgroundColor: "#f1f5f9" }}>
+                                              <TIcon size={11} />
+                                            </div>
+                                            <span className="text-center leading-tight">{t.label}</span>
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                    {/* Descripción */}
+                                    <textarea value={editEvento.descripcion} onChange={e => setEditEvento(p => ({ ...p, descripcion: e.target.value }))}
+                                      rows={2} placeholder="Descripción..."
+                                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+                                    {/* Realizado por (multi) */}
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[11px] text-gray-400 shrink-0">Realizado por</span>
+                                        <select value="" onChange={e => { if (e.target.value && !editEvento.realizadoPorNombres.includes(e.target.value)) setEditEvento(p => ({ ...p, realizadoPorNombres: [...p.realizadoPorNombres, e.target.value] })) }}
+                                          className="flex-1 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                                          <option value="">Añadir persona...</option>
+                                          {usuarios.filter(u => !editEvento.realizadoPorNombres.includes(u.nombre)).map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+                                        </select>
+                                      </div>
+                                      {editEvento.realizadoPorNombres.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {editEvento.realizadoPorNombres.map(n => (
+                                            <span key={n} className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
+                                              {n}
+                                              <button onClick={() => setEditEvento(p => ({ ...p, realizadoPorNombres: p.realizadoPorNombres.filter(x => x !== n) }))} className="hover:text-red-500"><IconX size={9} /></button>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {/* Fecha + Hora + Duración + Privado */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="flex items-center gap-1">
+                                        <IconClock size={12} className="text-gray-400" />
+                                        <input type="date" value={editEvento.fecha} onChange={e => setEditEvento(p => ({ ...p, fecha: e.target.value }))}
+                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                                        <input type="time" value={editEvento.hora} onChange={e => setEditEvento(p => ({ ...p, hora: e.target.value }))}
+                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none w-[72px]" />
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <input type="number" value={editEvento.duracion} onChange={e => setEditEvento(p => ({ ...p, duracion: e.target.value }))}
+                                          min="0" max="9999" placeholder="—"
+                                          className="w-14 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                                        <span className="text-[11px] text-gray-400">min</span>
+                                      </div>
+                                      <button onClick={() => setEditEvento(p => ({ ...p, privado: !p.privado }))}
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border transition-all"
+                                        style={editEvento.privado
+                                          ? { borderColor: ORANGE, color: ORANGE, backgroundColor: `${ORANGE}10` }
+                                          : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                                        <IconEyeOff size={11} /> Privado
+                                      </button>
+                                    </div>
                                     <div className="flex gap-2 justify-end">
-                                      <button onClick={() => setEditandoEventoId(null)} className="text-xs text-gray-500 px-3 py-1">Cancelar</button>
+                                      <button onClick={() => setEditandoEventoId(null)} className="text-xs text-gray-500 px-3 py-1.5">Cancelar</button>
                                       <button onClick={() => guardarEdicionEvento(ev.id)}
-                                        className="text-xs font-semibold px-3 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>
-                                        Guardar
+                                        className="text-xs font-semibold px-4 py-1.5 rounded-lg text-white" style={{ backgroundColor: TEAL }}>
+                                        Guardar cambios
                                       </button>
                                     </div>
                                   </div>
@@ -954,7 +1068,7 @@ export default function IncidenciaDetallePage() {
                                     {ev.descripcion}
                                   </p>
                                 )}
-                                {fotos.length > 0 && (
+                                {!isEditing && fotos.length > 0 && (
                                   <div className="flex gap-2 mt-2 flex-wrap">
                                     {fotos.map((foto, fi) => (
                                       <button key={fi} onClick={() => setLightboxImg(foto)} className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-teal-400 transition-all">
@@ -963,14 +1077,20 @@ export default function IncidenciaDetallePage() {
                                     ))}
                                   </div>
                                 )}
-                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                  <p className="text-[11px] text-gray-400">Registrado por {ev.autor.nombre}</p>
-                                  {ev.realizadoPorNombre && (
-                                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-400">
-                                      Realizado por {ev.realizadoPorNombre}
-                                    </span>
-                                  )}
-                                </div>
+                                {!isEditing && (
+                                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    <p className="text-[11px] text-gray-400">Registrado por {ev.autor.nombre}</p>
+                                    {Array.isArray(ev.realizadoPorNombres) && ev.realizadoPorNombres.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {ev.realizadoPorNombres.map(n => (
+                                          <span key={n} className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-400">
+                                            {n}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )

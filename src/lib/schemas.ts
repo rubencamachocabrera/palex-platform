@@ -188,7 +188,7 @@ export const IncidenciaCreate = z.object({
   titulo: str,
   descripcion: z.string().min(1).max(5000),
   tipo: z.enum(["HARDWARE", "SOFTWARE"]),
-  categoria: z.enum(["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "INLAB", "OTRO"]),
+  categoria: z.enum(["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "TOTEM", "INLAB", "OTRO"]),
   prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).default("MEDIA"),
   equipoResponsable: z.enum(["SERVICIO_TECNICO", "APLICACIONES", "COMERCIAL", "MARKETING", "PROYECTOS"]).default("SERVICIO_TECNICO"),
   hospitalId: id,
@@ -210,20 +210,26 @@ export const IncidenciaPatch = z.object({
   slaHoras: z.coerce.number().int().min(1).max(9999).optional().nullable(),
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
+const TIPOS_EVENTO_ENUM = ["NOTA", "LLAMADA_ENTRANTE", "LLAMADA_SALIENTE", "EMAIL_ENVIADO", "EMAIL_RECIBIDO", "CAMBIO_ESTADO", "CAMBIO_ASIGNACION", "ESCALADO", "RESPUESTA_TECNICA", "RESPUESTA_APLICACIONES", "COMUNICACION_CLIENTE", "SOPORTE_REMOTO", "REUNION_INTERNA", "REUNION_CLIENTE"] as const
+
 export const EventoIncidenciaCreate = z.object({
-  tipo: z.enum(["NOTA", "LLAMADA_ENTRANTE", "LLAMADA_SALIENTE", "EMAIL_ENVIADO", "EMAIL_RECIBIDO", "CAMBIO_ESTADO", "CAMBIO_ASIGNACION", "ESCALADO", "RESPUESTA_TECNICA", "RESPUESTA_APLICACIONES", "COMUNICACION_CLIENTE", "SOPORTE_REMOTO"]),
+  tipo: z.enum(TIPOS_EVENTO_ENUM),
   descripcion: z.string().min(1).max(5000),
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().default(false),
   fecha: z.coerce.date().optional(),
   fotos: z.array(z.string()).max(5).optional(),
-  realizadoPorNombre: z.string().max(200).optional().nullable(),
+  realizadoPorNombres: z.array(z.string().max(200)).max(20).optional(),
 })
 
 export const EventoIncidenciaPatch = z.object({
+  tipo: z.enum(TIPOS_EVENTO_ENUM).optional(),
   descripcion: z.string().min(1).max(5000).optional(),
+  duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().optional(),
   fotos: z.array(z.string()).max(5).optional(),
+  realizadoPorNombres: z.array(z.string().max(200)).max(20).optional(),
+  fecha: z.coerce.date().optional(),
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
 export function parseBody<T>(schema: z.ZodType<T>, data: unknown):

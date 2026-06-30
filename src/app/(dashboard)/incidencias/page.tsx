@@ -58,7 +58,7 @@ const PRIORIDADES = [
 const CATEGORIAS: Record<string, string> = {
   BC_ROBO: "BC Robo", ZEBRA_MC: "Zebra MC", ZEBRA_IMPRESORA: "Zebra Impresora",
   READER_RFID: "Reader RFID", GATEWAY_BT: "Gateway BT", MINI_PC: "Mini-PC",
-  NEVERA: "Nevera", PANTALLA: "Pantalla", INLAB: "InLab", OTRO: "Otro",
+  NEVERA: "Nevera", PANTALLA: "Pantalla", TOTEM: "Tótem", INLAB: "InLab", OTRO: "Otro",
 }
 
 const EQUIPOS = [
@@ -325,7 +325,7 @@ export default function IncidenciasPage() {
     })
   }
 
-  const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA"]
+  const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "TOTEM"]
   const swCategorias = ["INLAB", "OTRO"]
 
   const KPI_FILTRO: Record<string, string> = {

@@ -30,13 +30,17 @@ export async function PATCH(
       return NextResponse.json({ error: "Solo puedes editar tus propios eventos" }, { status: 403 })
     }
 
+    const { fecha, ...rest } = parsed.data
+    const updateData: Record<string, unknown> = {
+      ...rest,
+      editadoPor: session.user.name ?? session.user.id,
+      editadoEn: new Date(),
+    }
+    if (fecha) updateData.creadoEn = fecha
+
     const updated = await db.eventoIncidencia.update({
       where: { id: eventoId },
-      data: {
-        ...parsed.data,
-        editadoPor: session.user.name ?? session.user.id,
-        editadoEn: new Date(),
-      },
+      data: updateData as Parameters<typeof db.eventoIncidencia.update>[0]["data"],
       include: { autor: { select: { id: true, nombre: true } } },
     })
 

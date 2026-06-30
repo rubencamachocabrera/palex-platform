@@ -145,6 +145,7 @@ enum CategoriaIncidencia {
   MINI_PC
   NEVERA
   PANTALLA
+  TOTEM
   INLAB
   OTRO
 }
@@ -178,6 +179,8 @@ enum TipoEventoIncidencia {
   RESPUESTA_APLICACIONES
   COMUNICACION_CLIENTE
   SOPORTE_REMOTO
+  REUNION_INTERNA
+  REUNION_CLIENTE
 }
 
 // --- CONFIG ----------------------------------------------------------
@@ -865,7 +868,7 @@ model EventoIncidencia {
   autor               Usuario               @relation("EventosIncidencia", fields: [autorId], references: [id])
 
   fotos               Json?
-  realizadoPorNombre  String?               @map("realizado_por_nombre")
+  realizadoPorNombres Json?                 @map("realizado_por_nombres")
   editadoPor          String?               @map("editado_por")
   editadoEn           DateTime?             @map("editado_en")
 
