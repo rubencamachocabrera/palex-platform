@@ -198,17 +198,8 @@ export default function IncidenciasPage() {
     return () => clearInterval(t)
   }, [])
 
-  // Escape key
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (inlineDropdown) { setInlineDropdown(null); return }
-        if (drawerIncId) setDrawerIncId(null)
-      }
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  }, [inlineDropdown, drawerIncId])
+  // Ref to always access current sortedItems in keyboard handler without stale closure
+  const sortedItemsRef = useRef<Incidencia[]>([])
 
   // Click-outside closes inline dropdowns
   useEffect(() => {
@@ -274,6 +265,39 @@ export default function IncidenciasPage() {
 
   useEffect(() => { fetchTotales() }, [fetchTotales])
   useEffect(() => { fetchItems() }, [fetchItems])
+
+  // Keyboard shortcuts: N=nueva, R=refresh, ↑↓=navegar drawer, Esc=cerrar
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName
+      const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(tag) || (e.target as HTMLElement).isContentEditable
+      if (e.key === "Escape") {
+        if (inlineDropdown) { setInlineDropdown(null); return }
+        if (showModal) { setShowModal(false); return }
+        if (showExport) { setShowExport(false); return }
+        if (drawerIncId) { setDrawerIncId(null); return }
+        return
+      }
+      if (isTyping) return
+      if (e.key === "n" || e.key === "N") {
+        if (!showModal && !drawerIncId) { setShowModal(true); e.preventDefault() }
+        return
+      }
+      if (e.key === "r" || e.key === "R") {
+        fetchItems(); fetchTotales(); e.preventDefault()
+        return
+      }
+      if ((e.key === "ArrowDown" || e.key === "ArrowUp") && drawerIncId) {
+        const list = sortedItemsRef.current
+        const idx = list.findIndex(i => i.id === drawerIncId)
+        if (e.key === "ArrowDown" && idx < list.length - 1) setDrawerIncId(list[idx + 1].id)
+        if (e.key === "ArrowUp" && idx > 0) setDrawerIncId(list[idx - 1].id)
+        e.preventDefault()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [inlineDropdown, drawerIncId, showModal, showExport, fetchItems, fetchTotales])
 
   // Fetch users eagerly — needed for quick-assign in list
   useEffect(() => {
@@ -438,6 +462,7 @@ export default function IncidenciasPage() {
     }
     return sortDir === "asc" ? cmp : -cmp
   })
+  sortedItemsRef.current = sortedItems
 
   const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "TOTEM"]
   const swCategorias = ["INLAB", "OTRO"]
@@ -652,6 +677,21 @@ export default function IncidenciasPage() {
           <option value="hospital_desc">↓ Hospital Z–A</option>
           <option value="titulo_asc">↑ Título A–Z</option>
         </select>
+      </div>
+
+      {/* Keyboard shortcuts hint — desktop only */}
+      <div className="hidden lg:flex items-center gap-4 mb-3 text-[11px] text-gray-400">
+        {([
+          { key: "N", label: "Nueva" },
+          { key: "R", label: "Actualizar" },
+          { key: "↑↓", label: "Navegar" },
+          { key: "Esc", label: "Cerrar" },
+        ] as { key: string; label: string }[]).map(s => (
+          <span key={s.key} className="flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 font-mono text-[10px] font-semibold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 leading-none">{s.key}</kbd>
+            <span>{s.label}</span>
+          </span>
+        ))}
       </div>
 
       {/* Active filter chips */}
