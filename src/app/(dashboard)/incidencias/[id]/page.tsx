@@ -24,11 +24,14 @@ interface Evento {
   privado: boolean
   metadatos: unknown
   fotos: string[] | null
+  realizadoPorNombre: string | null
   editadoPor: string | null
   editadoEn: string | null
   creadoEn: string
   autor: { id: string; nombre: string }
 }
+
+interface UsuarioBasico { id: string; nombre: string }
 
 interface RespuestaRapida {
   id: string; texto: string; categoria: string | null
@@ -186,6 +189,10 @@ export default function IncidenciaDetallePage() {
   const [eventoDuracion, setEventoDuracion] = useState("")
   const [eventoPrivado, setEventoPrivado] = useState(false)
   const [eventoFecha, setEventoFecha] = useState(() => new Date().toISOString().slice(0, 10))
+  const [eventoHora, setEventoHora] = useState(() => {
+    const now = new Date()
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+  })
   const [enviandoEvento, setEnviandoEvento] = useState(false)
 
   const [eventoFotos, setEventoFotos] = useState<string[]>([])
@@ -195,6 +202,13 @@ export default function IncidenciaDetallePage() {
   const [editandoEventoId, setEditandoEventoId] = useState<string | null>(null)
   const [editandoEventoDesc, setEditandoEventoDesc] = useState("")
   const [lightboxImg, setLightboxImg] = useState<string | null>(null)
+
+  const [realizadoPorNombre, setRealizadoPorNombre] = useState("")
+  const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([])
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [editandoPrioridad, setEditandoPrioridad] = useState(false)
+  const [editandoEquipo, setEditandoEquipo] = useState(false)
 
   const [editandoResolucion, setEditandoResolucion] = useState(false)
   const [resolucionText, setResolucionText] = useState("")
@@ -218,6 +232,9 @@ export default function IncidenciaDetallePage() {
   useEffect(() => {
     fetch("/api/incidencias/respuestas-rapidas").then(r => r.ok ? r.json() : []).then(d => {
       if (Array.isArray(d)) setRespuestasRapidas(d)
+    }).catch(() => {})
+    fetch("/api/usuarios").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setUsuarios(d)
     }).catch(() => {})
   }, [])
 
@@ -267,9 +284,11 @@ export default function IncidenciaDetallePage() {
       privado: eventoPrivado,
     }
     if (eventoDuracion) body.duracion = parseInt(eventoDuracion)
-    const hoy = new Date().toISOString().slice(0, 10)
-    if (eventoFecha && eventoFecha !== hoy) body.fecha = new Date(eventoFecha + "T12:00:00")
+    // Siempre enviar fecha+hora exacta para registro retroactivo preciso
+    const fechaHoraStr = `${eventoFecha}T${eventoHora}:00`
+    body.fecha = new Date(fechaHoraStr).toISOString()
     if (eventoFotos.length > 0) body.fotos = eventoFotos
+    if (realizadoPorNombre.trim()) body.realizadoPorNombre = realizadoPorNombre.trim()
 
     const r = await fetch(`/api/incidencias/${id}/eventos`, {
       method: "POST",
@@ -277,18 +296,59 @@ export default function IncidenciaDetallePage() {
       body: JSON.stringify(body),
     })
     if (r.ok) {
+      const now = new Date()
       setEventoDesc("")
       setEventoDuracion("")
       setEventoTipo("NOTA")
       setEventoPrivado(false)
-      setEventoFecha(new Date().toISOString().slice(0, 10))
+      setEventoFecha(now.toISOString().slice(0, 10))
+      setEventoHora(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`)
       setEventoFotos([])
+      setRealizadoPorNombre("")
       success("Evento registrado")
       fetchInc()
     } else {
       toastError("Error al registrar evento")
     }
     setEnviandoEvento(false)
+  }
+
+  async function eliminarIncidencia() {
+    setDeleting(true)
+    const r = await fetch(`/api/incidencias/${id}`, { method: "DELETE" })
+    if (r.ok) {
+      success("Incidencia eliminada")
+      router.push("/incidencias")
+    } else {
+      const d = await r.json().catch(() => ({}))
+      toastError(d.error ?? "Error al eliminar")
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  async function cambiarPrioridad(nuevaPrioridad: string) {
+    setSaving(true)
+    const r = await fetch(`/api/incidencias/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prioridad: nuevaPrioridad }),
+    })
+    if (r.ok) { success("Prioridad actualizada"); fetchInc() } else { toastError("Error al actualizar") }
+    setSaving(false)
+    setEditandoPrioridad(false)
+  }
+
+  async function cambiarEquipo(nuevoEquipo: string) {
+    setSaving(true)
+    const r = await fetch(`/api/incidencias/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ equipoResponsable: nuevoEquipo }),
+    })
+    if (r.ok) { success("Equipo actualizado"); fetchInc() } else { toastError("Error al actualizar") }
+    setSaving(false)
+    setEditandoEquipo(false)
   }
 
   async function handleFotos(e: React.ChangeEvent<HTMLInputElement>) {
@@ -422,10 +482,18 @@ export default function IncidenciaDetallePage() {
         <span className="text-sm font-mono font-bold text-gray-400">{inc.codigo}</span>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: est.bg, color: est.color }}>{est.label}</span>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: pri.bg, color: pri.color }}>{pri.label}</span>
-        <button onClick={exportarPDF} className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Exportar informe">
-          <IconFileExport size={14} />
-          <span className="hidden sm:inline">Exportar</span>
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button onClick={exportarPDF} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Exportar informe">
+            <IconFileExport size={14} />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
+          {rol === "ADMIN" && (
+            <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Eliminar incidencia">
+              <IconX size={14} />
+              <span className="hidden sm:inline">Eliminar</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{inc.titulo}</h1>
@@ -450,9 +518,57 @@ export default function IncidenciaDetallePage() {
               <span className="text-gray-500">Categoría</span>
               <span className="font-medium text-gray-900 dark:text-white">{CATEGORIAS[inc.categoria] ?? inc.categoria}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Equipo</span>
-              <span className="font-medium text-gray-900 dark:text-white">{EQUIPOS[inc.equipoResponsable]}</span>
+            {/* Prioridad editable inline */}
+            <div className="flex items-start justify-between text-sm gap-2">
+              <span className="text-gray-500 shrink-0">Prioridad</span>
+              {editandoPrioridad ? (
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {Object.entries(PRIORIDADES).map(([k, p]) => (
+                    <button key={k} onClick={() => cambiarPrioridad(k)} disabled={saving}
+                      className="px-2 py-0.5 rounded-full text-[11px] font-semibold border transition-all disabled:opacity-50"
+                      style={inc.prioridad === k
+                        ? { backgroundColor: p.bg, color: p.color, borderColor: p.color }
+                        : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                      {p.label}
+                    </button>
+                  ))}
+                  <button onClick={() => setEditandoPrioridad(false)} className="text-[11px] text-gray-400 hover:text-gray-600 px-1">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setEditandoPrioridad(true)} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: pri.bg, color: pri.color }}>{pri.label}</span>
+                </button>
+              )}
+            </div>
+            {/* Equipo editable inline */}
+            <div className="flex items-start justify-between text-sm gap-2">
+              <span className="text-gray-500 shrink-0">Equipo</span>
+              {editandoEquipo ? (
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {Object.entries(EQUIPOS).map(([k, label]) => {
+                    const eq = [
+                      { value: "SERVICIO_TECNICO", color: TEAL },
+                      { value: "APLICACIONES", color: "#8b5cf6" },
+                      { value: "COMERCIAL", color: ORANGE },
+                      { value: "MARKETING", color: "#ec4899" },
+                      { value: "PROYECTOS", color: "#3b82f6" },
+                    ].find(e => e.value === k)
+                    const color = eq?.color ?? "#6b7280"
+                    return (
+                      <button key={k} onClick={() => cambiarEquipo(k)} disabled={saving}
+                        className="px-2 py-0.5 rounded-full text-[11px] font-semibold border transition-all disabled:opacity-50"
+                        style={inc.equipoResponsable === k
+                          ? { backgroundColor: `${color}15`, color, borderColor: color }
+                          : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                        {label}
+                      </button>
+                    )
+                  })}
+                  <button onClick={() => setEditandoEquipo(false)} className="text-[11px] text-gray-400 hover:text-gray-600 px-1">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setEditandoEquipo(true)} className="font-medium text-gray-900 dark:text-white hover:underline text-right">{EQUIPOS[inc.equipoResponsable]}</button>
+              )}
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Reportada por</span>
@@ -678,16 +794,28 @@ export default function IncidenciaDetallePage() {
                 </div>
               )}
 
+              {/* Realizado por */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 shrink-0">Realizado por</span>
+                <select value={realizadoPorNombre} onChange={e => setRealizadoPorNombre(e.target.value)}
+                  className="flex-1 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-teal-400">
+                  <option value="">— (yo mismo)</option>
+                  {usuarios.map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+                </select>
+              </div>
+
               <div className="flex items-center gap-3 flex-wrap">
-                {/* Fecha */}
-                <div className="flex items-center gap-2">
+                {/* Fecha + Hora */}
+                <div className="flex items-center gap-1.5">
                   <IconClock size={14} className="text-gray-400" />
                   <input type="date" value={eventoFecha} onChange={e => setEventoFecha(e.target.value)}
                     max={new Date().toISOString().slice(0, 10)}
                     className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                  <input type="time" value={eventoHora} onChange={e => setEventoHora(e.target.value)}
+                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none w-20" />
                 </div>
 
-                {/* Duración — visible para todos los tipos manuales */}
+                {/* Duración */}
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-gray-400">Tiempo</span>
                   <input type="number" value={eventoDuracion} onChange={e => setEventoDuracion(e.target.value)}
@@ -835,7 +963,14 @@ export default function IncidenciaDetallePage() {
                                     ))}
                                   </div>
                                 )}
-                                <p className="text-[11px] text-gray-400 mt-1.5">{ev.autor.nombre}</p>
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                  <p className="text-[11px] text-gray-400">Registrado por {ev.autor.nombre}</p>
+                                  {ev.realizadoPorNombre && (
+                                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-400">
+                                      Realizado por {ev.realizadoPorNombre}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )
@@ -858,6 +993,34 @@ export default function IncidenciaDetallePage() {
           </button>
           <img src={lightboxImg} alt="" className="max-w-full max-h-[90vh] rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
         </div>
+      )}
+
+      {/* Modal confirmar eliminación */}
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center bg-red-100 dark:bg-red-950/40">
+                <IconAlertTriangle size={22} className="text-red-500" />
+              </div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white text-center mb-1">¿Eliminar incidencia?</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-1">
+                <span className="font-mono font-semibold">{inc.codigo}</span> — {inc.titulo}
+              </p>
+              <p className="text-xs text-gray-400 text-center mb-6">Esta acción es irreversible y eliminará todos sus eventos.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={eliminarIncidencia} disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 transition-colors">
+                  {deleting ? "Eliminando..." : "Sí, eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

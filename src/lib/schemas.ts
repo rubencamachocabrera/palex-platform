@@ -217,6 +217,7 @@ export const EventoIncidenciaCreate = z.object({
   privado: z.boolean().default(false),
   fecha: z.coerce.date().optional(),
   fotos: z.array(z.string()).max(5).optional(),
+  realizadoPorNombre: z.string().max(200).optional().nullable(),
 })
 
 export const EventoIncidenciaPatch = z.object({

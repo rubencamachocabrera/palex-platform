@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     const estado = searchParams.get("estado")
     const prioridad = searchParams.get("prioridad")
     const tipo = searchParams.get("tipo")
+    const equipo = searchParams.get("equipo")
     const hospitalId = searchParams.get("hospitalId")
     const asignadoAId = searchParams.get("asignadoAId")
     const desde = searchParams.get("desde")
@@ -40,11 +41,14 @@ export async function GET(req: NextRequest) {
 
     if (estado === "PENDIENTE") {
       where.estado = { in: ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"] }
+    } else if (estado === "RESUELTA_CERRADA") {
+      where.estado = { in: ["RESUELTA", "CERRADA"] }
     } else if (estado) {
       where.estado = estado
     }
     if (prioridad) where.prioridad = prioridad
     if (tipo) where.tipo = tipo
+    if (equipo) where.equipoResponsable = equipo
     if (hospitalId) where.hospitalId = hospitalId
     if (asignadoAId) where.asignadoAId = asignadoAId
 

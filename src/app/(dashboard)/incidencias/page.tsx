@@ -115,6 +115,7 @@ export default function IncidenciasPage() {
   const [filtroEstado, setFiltroEstado] = useState("")
   const [filtroPrioridad, setFiltroPrioridad] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("")
+  const [filtroEquipo, setFiltroEquipo] = useState("")
   const [busqueda, setBusqueda] = useState("")
   const [showModal, setShowModal] = useState(false)
 
@@ -173,6 +174,7 @@ export default function IncidenciasPage() {
     if (filtroEstado) params.set("estado", filtroEstado)
     if (filtroPrioridad) params.set("prioridad", filtroPrioridad)
     if (filtroTipo) params.set("tipo", filtroTipo)
+    if (filtroEquipo) params.set("equipo", filtroEquipo)
     if (busqueda.trim()) params.set("q", busqueda.trim())
     const r = await fetch(`/api/incidencias?${params}`)
     if (r.ok) {
@@ -180,7 +182,7 @@ export default function IncidenciasPage() {
       setItems(Array.isArray(data) ? data : [])
     }
     setLoading(false)
-  }, [filtroEstado, filtroPrioridad, filtroTipo, busqueda])
+  }, [filtroEstado, filtroPrioridad, filtroTipo, filtroEquipo, busqueda])
 
   useEffect(() => { fetchTotales() }, [fetchTotales])
   useEffect(() => { fetchItems() }, [fetchItems])
@@ -330,7 +332,7 @@ export default function IncidenciasPage() {
     "Abiertas": "ABIERTA",
     "En progreso": "EN_PROGRESO",
     "Pendientes": "PENDIENTE",
-    "Resueltas": "RESUELTA",
+    "Resueltas": "RESUELTA_CERRADA",
   }
 
   return (
@@ -385,14 +387,14 @@ export default function IncidenciasPage() {
         })}
       </div>
 
-      {/* Filtros */}
+      {/* Filtros — el estado se gestiona desde las tarjetas KPI de arriba */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por código, título..."
+            placeholder="Buscar por código, título, descripción..."
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-gray-900 dark:text-white"
           />
           {busqueda && (
@@ -401,17 +403,6 @@ export default function IncidenciasPage() {
             </button>
           )}
         </div>
-        <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none">
-          <option value="">Todos los estados</option>
-          <option value="ABIERTA">Abierta</option>
-          <option value="EN_PROGRESO">En progreso</option>
-          <option value="PENDIENTE">Pendientes (cliente/proveedor)</option>
-          <option value="PENDIENTE_CLIENTE">Pend. cliente</option>
-          <option value="PENDIENTE_PROVEEDOR">Pend. proveedor</option>
-          <option value="RESUELTA">Resuelta</option>
-          <option value="CERRADA">Cerrada</option>
-        </select>
         <select value={filtroPrioridad} onChange={e => setFiltroPrioridad(e.target.value)}
           className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none">
           <option value="">Todas las prioridades</option>
@@ -423,18 +414,30 @@ export default function IncidenciasPage() {
           <option value="HARDWARE">Hardware</option>
           <option value="SOFTWARE">Software</option>
         </select>
+        <select value={filtroEquipo} onChange={e => setFiltroEquipo(e.target.value)}
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none">
+          <option value="">Todos los equipos</option>
+          {EQUIPOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+        </select>
       </div>
 
       {/* Active filter chips */}
-      {(filtroEstado || filtroPrioridad || filtroTipo) && (
+      {(filtroEstado || filtroPrioridad || filtroTipo || filtroEquipo) && (
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs text-gray-400">Filtros:</span>
-          {filtroEstado && (
-            <button onClick={() => setFiltroEstado("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-              style={{ borderColor: getEstadoStyle(filtroEstado).color, color: getEstadoStyle(filtroEstado).color }}>
-              {getEstadoStyle(filtroEstado).label} <IconX size={11} />
-            </button>
-          )}
+          <span className="text-xs text-gray-400">Filtros activos:</span>
+          {filtroEstado && (() => {
+            const CHIP_ESTADO: Record<string, { label: string; color: string }> = {
+              PENDIENTE: { label: "Pendientes", color: "#8b5cf6" },
+              RESUELTA_CERRADA: { label: "Resueltas y cerradas", color: "#10b981" },
+            }
+            const chip = CHIP_ESTADO[filtroEstado] ?? { label: getEstadoStyle(filtroEstado).label, color: getEstadoStyle(filtroEstado).color }
+            return (
+              <button onClick={() => setFiltroEstado("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                style={{ borderColor: chip.color, color: chip.color }}>
+                {chip.label} <IconX size={11} />
+              </button>
+            )
+          })()}
           {filtroPrioridad && (
             <button onClick={() => setFiltroPrioridad("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               style={{ borderColor: getPrioridadStyle(filtroPrioridad).color, color: getPrioridadStyle(filtroPrioridad).color }}>
@@ -446,7 +449,16 @@ export default function IncidenciasPage() {
               {filtroTipo === "HARDWARE" ? "Hardware" : "Software"} <IconX size={11} />
             </button>
           )}
-          <button onClick={() => { setFiltroEstado(""); setFiltroPrioridad(""); setFiltroTipo("") }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline ml-1">
+          {filtroEquipo && (() => {
+            const eq = EQUIPOS.find(e => e.value === filtroEquipo)
+            return eq ? (
+              <button onClick={() => setFiltroEquipo("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                style={{ borderColor: eq.color, color: eq.color }}>
+                {eq.label} <IconX size={11} />
+              </button>
+            ) : null
+          })()}
+          <button onClick={() => { setFiltroEstado(""); setFiltroPrioridad(""); setFiltroTipo(""); setFiltroEquipo("") }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline ml-1">
             Limpiar todos
           </button>
         </div>

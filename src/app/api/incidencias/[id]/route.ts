@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           select: {
             id: true, tipo: true, descripcion: true, duracion: true,
             privado: true, metadatos: true, fotos: true, creadoEn: true,
-            editadoPor: true, editadoEn: true,
+            editadoPor: true, editadoEn: true, realizadoPorNombre: true,
             autor: { select: { id: true, nombre: true } },
           },
           orderBy: { creadoEn: "desc" },

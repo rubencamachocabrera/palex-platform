@@ -865,6 +865,7 @@ model EventoIncidencia {
   autor               Usuario               @relation("EventosIncidencia", fields: [autorId], references: [id])
 
   fotos               Json?
+  realizadoPorNombre  String?               @map("realizado_por_nombre")
   editadoPor          String?               @map("editado_por")
   editadoEn           DateTime?             @map("editado_en")
 
