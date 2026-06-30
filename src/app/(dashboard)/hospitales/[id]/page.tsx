@@ -194,6 +194,11 @@ export default function HospitalDetailPage() {
   // Health score
   const [healthScore, setHealthScore] = useState<{ total: number; label: string; color: string; breakdown: { visitas: { score: number; count: number; max: number }; proyectos: { score: number; enCurso: number; total: number; max: number }; hardware: { score: number; count: number; max: number }; seguimiento: { score: number; count: number; max: number }; penalizacion: number } } | null>(null)
 
+  // Check-in / Check-out
+  const [checkinActivo, setCheckinActivo] = useState<{ id: string; entradaEn: string; notas?: string | null } | null>(null)
+  const [checkinLoading, setCheckinLoading] = useState(false)
+  const [checkinMinutos, setCheckinMinutos] = useState(0)
+
   const isAdmin = userRol === "ADMIN"
 
   async function cargar() {
@@ -202,11 +207,46 @@ export default function HospitalDetailPage() {
       if (rH.ok) {
         setHospital(await rH.json())
         fetch(`/api/hospitales/${id}/score`).then(r => r.ok ? r.json() : null).then(s => { if (s) setHealthScore(s) }).catch(() => {})
+        fetch(`/api/checkin?hospitalId=${id}&activo=true`).then(r => r.ok ? r.json() : []).then((list: { id: string; entradaEn: string; notas?: string | null }[]) => {
+          if (Array.isArray(list) && list.length > 0) setCheckinActivo(list[0])
+        }).catch(() => {})
       }
     } catch (e) { console.error("[cargar hospital]", e) }
     finally { setLoading(false) }
   }
   useEffect(() => { cargar() }, [id])
+
+  // Actualizar contador de tiempo cada minuto cuando hay check-in activo
+  useEffect(() => {
+    if (!checkinActivo) return
+    const update = () => setCheckinMinutos(Math.floor((Date.now() - new Date(checkinActivo.entradaEn).getTime()) / 60000))
+    update()
+    const t = setInterval(update, 60000)
+    return () => clearInterval(t)
+  }, [checkinActivo])
+
+  async function hacerCheckin() {
+    setCheckinLoading(true)
+    try {
+      const r = await fetch("/api/checkin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospitalId: id }) })
+      if (r.ok) { const d = await r.json(); setCheckinActivo(d) }
+    } finally { setCheckinLoading(false) }
+  }
+
+  async function hacerCheckout() {
+    if (!checkinActivo) return
+    setCheckinLoading(true)
+    try {
+      const r = await fetch(`/api/checkin/${checkinActivo.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
+      if (r.ok) setCheckinActivo(null)
+    } finally { setCheckinLoading(false) }
+  }
+
+  function fmtDuracion(min: number) {
+    if (min < 60) return `${min}min`
+    const h = Math.floor(min / 60), m = min % 60
+    return `${h}h${m > 0 ? ` ${m}min` : ""}`
+  }
 
   function abrirNuevaVisita() {
     const hoy = new Date().toISOString().split("T")[0]
@@ -459,6 +499,32 @@ export default function HospitalDetailPage() {
         {/* Franja de color del tipo */}
         <div className="h-1.5 w-full" style={{ backgroundColor: tipoCol.dot }} />
 
+        {/* Banner: check-in activo */}
+        {checkinActivo && (
+          <div className="px-5 py-3 flex items-center justify-between gap-3 border-b border-green-100"
+            style={{ backgroundColor: "#f0fdf4" }}>
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+              </span>
+              <p className="text-sm font-semibold text-green-800">
+                En campo · {fmtDuracion(checkinMinutos)}
+              </p>
+              <p className="text-xs text-green-600 hidden sm:block">
+                Entrada: {new Date(checkinActivo.entradaEn).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+            <button onClick={hacerCheckout} disabled={checkinLoading}
+              className="flex items-center gap-1.5 text-xs font-semibold text-green-700 px-3 py-1.5 rounded-lg bg-green-100 hover:bg-green-200 transition-colors cursor-pointer disabled:opacity-60">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Check-out
+            </button>
+          </div>
+        )}
+
         {/* Banner: pertenece a un grupo */}
         {hospital.grupo && (
           <div className="px-5 py-2.5 flex items-center gap-2.5 border-b border-teal-100 dark:border-teal-900"
@@ -483,6 +549,15 @@ export default function HospitalDetailPage() {
               <span className="hidden sm:inline">{fromProyecto ? "Volver al proyecto" : fromIncidencia ? "Volver a incidencia" : "Hospitales"}</span>
             </button>
             <div className="flex items-center gap-2">
+              {!checkinActivo && (
+                <button onClick={hacerCheckin} disabled={checkinLoading}
+                  className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-60">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span className="hidden sm:inline">Check-in</span>
+                </button>
+              )}
               <button onClick={() => setShowLlamada(true)}
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

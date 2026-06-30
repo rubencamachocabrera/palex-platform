@@ -23,6 +23,8 @@ const PROTECTED_PREFIXES = [
   "/notas",
   "/actividad",
   "/incidencias",
+  "/comparador",
+  "/checkin",
 ]
 
 export default auth((req) => {

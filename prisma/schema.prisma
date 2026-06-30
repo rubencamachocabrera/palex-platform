@@ -221,6 +221,7 @@ model Usuario {
   incidenciasAsignadas  Incidencia[]     @relation("IncidenciasAsignadas")
   eventosIncidencia     EventoIncidencia[] @relation("EventosIncidencia")
   notasEquipo           NotaEquipo[]       @relation("NotasEquipo")
+  checkins              CheckinHospital[]  @relation("CheckinsUsuario")
 
   @@map("usuarios")
 }
@@ -280,6 +281,7 @@ model Hospital {
   hardwareUnidades HardwareUnidad[]
   llamadas         RegistroLlamada[]
   incidencias      Incidencia[]
+  checkins         CheckinHospital[] @relation("CheckinsHospital")
 
   @@index([zonaId])
   @@map("hospitales")
@@ -763,6 +765,27 @@ model NotaEquipo {
 
   @@index([creadoEn])
   @@map("notas_equipo")
+}
+
+// --- CHECK-IN / CHECK-OUT HOSPITALES ---------------------------------
+
+model CheckinHospital {
+  id         String    @id @default(cuid())
+  usuarioId  String    @map("usuario_id")
+  hospitalId String    @map("hospital_id")
+  entradaEn  DateTime  @default(now()) @map("entrada_en")
+  salidaEn   DateTime? @map("salida_en")
+  duracion   Int?      // minutos totales en campo
+  notas      String?   @db.Text
+  creadoEn   DateTime  @default(now()) @map("creado_en")
+
+  usuario  Usuario  @relation("CheckinsUsuario",  fields: [usuarioId],  references: [id])
+  hospital Hospital @relation("CheckinsHospital", fields: [hospitalId], references: [id])
+
+  @@index([hospitalId])
+  @@index([usuarioId])
+  @@index([entradaEn])
+  @@map("checkins_hospital")
 }
 
 // --- RECORDATORIOS ---------------------------------------------------

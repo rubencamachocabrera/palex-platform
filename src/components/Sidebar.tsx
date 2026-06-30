@@ -190,6 +190,12 @@ const Icons: Record<string, () => React.ReactElement> = {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   ),
+  Comparador: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+      <polyline points="16 7 22 7 22 13"/>
+    </svg>
+  ),
   Timeline: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="2" x2="12" y2="22"/>
@@ -249,8 +255,9 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Analítica",
     items: [
-      { href: "/datos",      label: "Explotación de datos",  icon: "Datos" },
-      { href: "/transporte", label: "Transporte de muestras", icon: "Transporte" },
+      { href: "/datos",       label: "Explotación de datos",  icon: "Datos" },
+      { href: "/comparador",  label: "Comparador",             icon: "Comparador" },
+      { href: "/transporte",  label: "Transporte de muestras", icon: "Transporte" },
     ],
   },
 ]
@@ -286,7 +293,10 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
   },
   {
     label: "Analítica",
-    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
+    items: [
+      { href: "/datos",      label: "Explotación de datos", icon: "Datos" },
+      { href: "/comparador", label: "Comparador",            icon: "Comparador" },
+    ],
   },
 ]
 
@@ -324,7 +334,10 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
   },
   {
     label: "Analítica",
-    items: [{ href: "/datos", label: "Explotación de datos", icon: "Datos" }],
+    items: [
+      { href: "/datos",      label: "Explotación de datos", icon: "Datos" },
+      { href: "/comparador", label: "Comparador",            icon: "Comparador" },
+    ],
   },
 ]
 
