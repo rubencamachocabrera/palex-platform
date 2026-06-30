@@ -691,13 +691,24 @@ export default function IncidenciasPage() {
                     {!collapsed && group.map(inc => {
                       const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
                       const pri = getPrioridadStyle(inc.prioridad)
+                      const recentActivity = (now - new Date(inc.actualizadoEn).getTime()) < 7200000
                       return (
                         <tr key={inc.id} onClick={() => setDrawerIncId(inc.id)}
                           className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group border-b border-gray-50 dark:border-gray-800">
                           <td className="p-0 w-1.5">
                             <div className="w-1.5 min-h-[52px] rounded-r-sm" style={{ backgroundColor: pri.color }} />
                           </td>
-                          <td className="px-3 py-3.5 font-mono text-xs text-gray-400 font-bold whitespace-nowrap">{inc.codigo}</td>
+                          <td className="px-3 py-3.5 font-mono text-xs text-gray-400 font-bold whitespace-nowrap">
+                            <span className="flex items-center gap-1.5">
+                              {recentActivity && (
+                                <span className="relative flex h-2 w-2 shrink-0" title="Actividad reciente (últimas 2h)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                                </span>
+                              )}
+                              {inc.codigo}
+                            </span>
+                          </td>
                           <td className="px-3 py-3.5 max-w-[260px]">
                             <span className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{inc.titulo}</span>
                             <span className="block text-xs text-gray-400 mt-0.5">
@@ -757,9 +768,16 @@ export default function IncidenciasPage() {
                       const est = getEstadoStyle(inc.estado)
                       const pri = getPrioridadStyle(inc.prioridad)
                       const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
+                      const recentActivity = (now - new Date(inc.actualizadoEn).getTime()) < 7200000
                       return (
                         <div key={inc.id} onClick={() => setDrawerIncId(inc.id)}
-                          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group">
+                          className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group">
+                          {recentActivity && (
+                            <span className="absolute top-3.5 right-3.5 flex h-2.5 w-2.5" title="Actividad reciente (últimas 2h)">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                            </span>
+                          )}
                           <div className="flex items-start gap-3">
                             <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: pri.color }} />
                             <div className="flex-1 min-w-0">
