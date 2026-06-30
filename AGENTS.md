@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-06-30.
+> Ultima actualizacion: 2026-07-01.
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -180,6 +180,7 @@ Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA,
 EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, fotos JSON?, editadoPor?, editadoEn?, incidencia, autor)
 RespuestaRapidaIncidencia (texto, categoria?, orden, activo) @@map("respuestas_rapidas_incidencia")
 LogActividad, ConfigApp (crmActivo, incidenciasActivo), PlantillaVisita, ModuloInlab
+NotaEquipo (texto, autorId, mencionIds JSON, fijada, creadoEn) @@map("notas_equipo") — notas del equipo accesibles a todos los roles
 Oportunidad      (DESACTIVADO)
 ```
 
@@ -234,6 +235,9 @@ Oportunidad      (DESACTIVADO)
 **Notificaciones:** Browser Notification API, polling 60s, preferencias perfil.
 **Calendario:** iCal feed con HMAC tokens, sync Google/Outlook/Apple.
 **Busqueda:** Global debounced, CommandPalette (Cmd+K), filtros avanzados.
+**Plantillas de proyecto:** 4 plantillas hardcoded (Implantacion completa, Instalacion basica, Mantenimiento preventivo, Auditoria hardware). Modal de seleccion en proyecto con preview fases/tareas/hitos. Boton "Aplicar plantilla" visible cuando el proyecto no tiene fases aun. API POST /api/proyectos/[id]/aplicar-plantilla crea fases+tareas+hitos en bloque.
+**Notas del equipo:** modelo NotaEquipo (notas_equipo), CRUD /api/notas + /api/notas/[id], pagina /notas con composer @menciones (MentionInput+extractMentionIds), feed paginado, fijar notas, editar (modal), eliminar con confirmacion. Accesible a todos los roles. Sidebar: nuevo grupo "Equipo" en todos los nav groups.
+**Timeline global de actividad:** pagina /actividad con feed estilo GitHub, agrupado por fecha, filtros por entidad (pill chips), links directos a entidades, dot de color en timeline spine por tipo de accion. API log-actividad abierta a todos los usuarios autenticados (+ filtros usuarioId y entidad). /admin/log sigue disponible para ADMIN.
 **Incidencias:** Helpdesk HW/SW, 10 categorias, 5 equipos (Servicio Tecnico/Aplicaciones/Comercial/Marketing/Proyectos), SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR — slaPausadoEn+slaPausadoMs), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, hospital con buscador combobox, asignacion multiple (principal+coasignados JSON), exportacion informes PDF, filtros activos con chips, KPIs interactivos (totales independientes del filtro), toggle activacion. **UX Pro Max (Sprint 15):** slide-over drawer, vista tabla, SLA countdown live (60s), inline edit estado/prioridad/asignado, banner criticas, agrupacion collapsible por prioridad, timeline eventos auto compactos + tiempo-dia + badge lapiz editado, sticky header glassmorphism en detalle, ordenacion clickable (fecha/SLA/hospital/titulo), indicador actividad reciente pulsante (2h), QuickAssign desde lista, highlighting busqueda, atajos teclado (N/R/↑↓/Esc). tiempoTotalMinutos por incidencia en lista/detalle/PDF/export.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
@@ -259,9 +263,9 @@ Oportunidad      (DESACTIVADO)
 - [ ] Cache servidor en Redis con TTL (bajo impacto)
 
 ### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
-- [ ] Plantillas de proyecto inteligentes (auto-crear fases/tareas/hitos desde template)
-- [ ] Panel de notas del equipo (feed sidebar con @menciones, hilos, contexto auto)
-- [ ] Timeline global de actividad (feed tipo GitHub con LogActividad existente)
+- [x] Plantillas de proyecto inteligentes — IMPLEMENTADO (Sprint 16)
+- [x] Panel de notas del equipo — IMPLEMENTADO (Sprint 16)
+- [x] Timeline global de actividad — IMPLEMENTADO (Sprint 16)
 - [ ] Scoring de hospitales (salud 0-100: visitas, proyectos, hardware, seguimiento)
 - [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia")
 - [ ] Modo presentacion proyecto (slides ejecutivas a pantalla completa)
