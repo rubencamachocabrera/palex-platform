@@ -938,12 +938,20 @@ export default function IncidenciaDetallePage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {eventGroups.map((group, gi) => (
+                {eventGroups.map((group, gi) => {
+                  const dayMinutes = group.events.reduce((sum, e) => sum + (e.duracion ?? 0), 0)
+                  return (
                   <div key={gi}>
                     {/* Date group header */}
                     <div className="flex items-center gap-3 mb-4">
                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">{group.label}</span>
                       <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                      {dayMinutes > 0 && (
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                          <IconClock size={9} />
+                          {dayMinutes >= 60 ? `${Math.floor(dayMinutes / 60)}h${dayMinutes % 60 > 0 ? ` ${dayMinutes % 60}m` : ""}` : `${dayMinutes}min`}
+                        </span>
+                      )}
                       <span className="text-[11px] text-gray-300 dark:text-gray-600">{group.events.length}</span>
                     </div>
 
@@ -952,7 +960,7 @@ export default function IncidenciaDetallePage() {
                       {/* Vertical line */}
                       <div className="absolute left-[13px] top-3 bottom-3 w-[2px] bg-gradient-to-b from-gray-200 via-gray-200 to-transparent dark:from-gray-700 dark:via-gray-700" />
 
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {group.events.map((ev) => {
                           const info = getEventoInfo(ev.tipo)
                           const Icon = info.icon
@@ -961,18 +969,26 @@ export default function IncidenciaDetallePage() {
                           const isEditing = editandoEventoId === ev.id
                           const fotos = Array.isArray(ev.fotos) ? ev.fotos as string[] : []
 
+                          if (isAuto) return (
+                            <div key={ev.id} className="relative pl-10 py-0.5 flex items-center gap-2">
+                              <div className="absolute left-0 w-7 h-7 rounded-full flex items-center justify-center z-10 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                <span style={{ color: "#9ca3af" }}><Icon size={11} /></span>
+                              </div>
+                              <p className="text-xs text-gray-400 italic flex-1 leading-relaxed">{ev.descripcion}</p>
+                              <span className="text-[10px] text-gray-300 dark:text-gray-600 shrink-0">{formatTime(ev.creadoEn)}</span>
+                            </div>
+                          )
+
                           return (
                             <div key={ev.id} className="relative pl-10 group/ev">
                               {/* Icon node */}
                               <div className="absolute left-0 top-2.5 w-7 h-7 rounded-lg flex items-center justify-center z-10 shadow-sm transition-transform group-hover/ev:scale-110"
-                                style={{ backgroundColor: isAuto ? "#f1f5f9" : `${info.color}15`, border: `2px solid ${isAuto ? "#e2e8f0" : info.color}30` }}>
-                                <span style={{ color: isAuto ? "#9ca3af" : info.color }}><Icon size={13} /></span>
+                                style={{ backgroundColor: `${info.color}15`, border: `2px solid ${info.color}30` }}>
+                                <span style={{ color: info.color }}><Icon size={13} /></span>
                               </div>
 
                               {/* Event card */}
-                              <div className={`rounded-xl border p-3.5 transition-all group-hover/ev:shadow-sm ${isAuto
-                                ? "border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
-                                : "border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700"}`}>
+                              <div className="rounded-xl border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 p-3.5 transition-all group-hover/ev:shadow-sm">
                                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                                     style={{ backgroundColor: `${info.color}12`, color: info.color }}>
@@ -993,8 +1009,8 @@ export default function IncidenciaDetallePage() {
                                     </span>
                                   )}
                                   {ev.editadoEn && (
-                                    <span className="text-[10px] text-gray-400 italic" title={`Editado por ${ev.editadoPor} el ${formatDate(ev.editadoEn)}`}>
-                                      (editado)
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800" title={`Editado por ${ev.editadoPor} el ${formatDate(ev.editadoEn)}`}>
+                                      <IconEdit size={8} /> editado
                                     </span>
                                   )}
                                   <span className="text-[11px] text-gray-400 ml-auto">{formatTime(ev.creadoEn)}</span>
@@ -1121,7 +1137,8 @@ export default function IncidenciaDetallePage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
