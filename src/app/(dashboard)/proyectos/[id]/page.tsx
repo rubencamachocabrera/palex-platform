@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { TEAL } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { TagSelector } from "@/components/TagSelector"
+import { PLANTILLAS_PROYECTO } from "@/lib/project-templates"
 import {
   type Proyecto, type Tab,
   TABS, ESTADO_LABEL, ESTADO_COLOR, PRIORIDAD, fmtFecha,
@@ -48,6 +49,10 @@ export default function ProyectoDetalle() {
   const [plantillasVisita, setPlantillasVisita] = useState<{ id: string; nombre: string }[]>([])
   const [plantillaVisitaId, setPlantillaVisitaId] = useState("")
 
+  const [showPlantillaModal, setShowPlantillaModal] = useState(false)
+  const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<string | null>(null)
+  const [aplicandoPlantilla, setAplicandoPlantilla] = useState(false)
+
   function abrirNuevaVisitaModal() {
     if (!pp) return
     const hoy = new Date().toISOString().split("T")[0]
@@ -86,6 +91,27 @@ export default function ProyectoDetalle() {
   }, [params.id])
 
   useEffect(() => { cargar() }, [cargar])
+
+  async function aplicarPlantilla() {
+    if (!plantillaSeleccionada || !pp) return
+    setAplicandoPlantilla(true)
+    try {
+      const r = await fetch(`/api/proyectos/${pp.id}/aplicar-plantilla`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plantillaId: plantillaSeleccionada }),
+      })
+      if (!r.ok) throw new Error()
+      const { fases, tareas, hitos } = await r.json()
+      success(`Plantilla aplicada: ${fases} fases, ${tareas} tareas y ${hitos} hitos creados`)
+      setShowPlantillaModal(false)
+      setPlantillaSeleccionada(null)
+      await cargar()
+    } catch {
+      toastError("Error al aplicar la plantilla")
+    } finally {
+      setAplicandoPlantilla(false)
+    }
+  }
 
   if (loading) return (
     <div className="p-6 max-w-5xl mx-auto space-y-4">
@@ -204,6 +230,18 @@ export default function ProyectoDetalle() {
           >
             Ver hospital →
           </Link>
+          {pp.fases.length === 0 && (
+            <button
+              onClick={() => { setShowPlantillaModal(true); setPlantillaSeleccionada(null) }}
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border-2 border-dashed hover:opacity-80 transition-opacity ml-auto"
+              style={{ borderColor: TEAL, color: TEAL }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+              </svg>
+              Aplicar plantilla
+            </button>
+          )}
         </div>
       </div>
 
@@ -290,6 +328,74 @@ export default function ProyectoDetalle() {
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 cursor-pointer hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: TEAL }}>
                 {creandoV ? "Creando…" : "Crear visita"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Aplicar plantilla ── */}
+      {showPlantillaModal && pp && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+          onClick={e => { if (e.target === e.currentTarget) setShowPlantillaModal(false) }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Plantillas de proyecto</p>
+                <p className="text-xs text-gray-400 mt-0.5">Selecciona una plantilla para auto-crear fases, tareas e hitos</p>
+              </div>
+              <button onClick={() => setShowPlantillaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 grid sm:grid-cols-2 gap-3">
+              {PLANTILLAS_PROYECTO.map(pl => (
+                <button
+                  key={pl.id}
+                  onClick={() => setPlantillaSeleccionada(pl.id)}
+                  className="text-left p-4 rounded-xl border-2 transition-all cursor-pointer"
+                  style={{
+                    borderColor: plantillaSeleccionada === pl.id ? TEAL : "#e5e7eb",
+                    backgroundColor: plantillaSeleccionada === pl.id ? `${TEAL}08` : "transparent",
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{pl.nombre}</span>
+                    {plantillaSeleccionada === pl.id && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">{pl.descripcion}</p>
+                  <div className="flex items-center gap-3 text-[11px] font-medium">
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      {pl.fases.length} fases
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      {pl.tareas.length} tareas
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      {pl.hitos.length} hito{pl.hitos.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {pp.fases.length > 0 && (
+              <div className="mx-6 mb-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Este proyecto ya tiene {pp.fases.length} fases. La plantilla añadirá nuevas fases, tareas e hitos sin eliminar los existentes.
+              </div>
+            )}
+            <div className="flex gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+              <button onClick={() => setShowPlantillaModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">Cancelar</button>
+              <button onClick={aplicarPlantilla} disabled={!plantillaSeleccionada || aplicandoPlantilla}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: TEAL }}>
+                {aplicandoPlantilla ? "Aplicando…" : "Aplicar plantilla"}
               </button>
             </div>
           </div>
