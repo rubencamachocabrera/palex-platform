@@ -48,28 +48,24 @@ export async function GET(req: NextRequest) {
       db.checkinHospital.aggregate({ where: { entradaEn: { gte: desdeAnt, lt: hastaAnt }, salidaEn: { not: null } }, _sum: { duracion: true } }),
     ])
 
-    // Sparklines: agrupado por día (últimos `dias` días)
-    const visitasDiarias = await db.visita.groupBy({
-      by: ["fecha"],
-      where: { fecha: { gte: desde } },
-      _count: { _all: true },
-    })
-    const incidenciasDiarias = await db.incidencia.groupBy({
-      by: ["creadoEn"],
-      where: { creadoEn: { gte: desde } },
-      _count: { _all: true },
-    })
+    // Sparklines: siempre 30 puntos (últimos 30 días), independiente del periodo elegido
+    const SPARK_DAYS = 30
+    const sparkDesde = new Date(Date.now() - SPARK_DAYS * 86_400_000)
 
-    // Build daily arrays
-    function buildSparkline(items: { fecha?: Date; creadoEn?: Date; _count: { _all: number } }[], dias: number) {
-      const buckets: number[] = Array(dias).fill(0)
+    const [visitasSparkRaw, incidenciasSparkRaw] = await Promise.all([
+      db.visita.findMany({ where: { fecha: { gte: sparkDesde } }, select: { fecha: true } }),
+      db.incidencia.findMany({ where: { creadoEn: { gte: sparkDesde } }, select: { creadoEn: true } }),
+    ])
+
+    function buildSparkline(items: { fecha?: Date | null; creadoEn?: Date | null }[]) {
+      const buckets: number[] = Array(SPARK_DAYS).fill(0)
       const now = Date.now()
       for (const item of items) {
         const d = item.fecha ?? item.creadoEn
         if (!d) continue
         const daysAgo = Math.floor((now - new Date(d).getTime()) / 86_400_000)
-        const idx = dias - 1 - daysAgo
-        if (idx >= 0 && idx < dias) buckets[idx]++
+        const idx = SPARK_DAYS - 1 - daysAgo
+        if (idx >= 0 && idx < SPARK_DAYS) buckets[idx]++
       }
       return buckets
     }
@@ -82,8 +78,8 @@ export async function GET(req: NextRequest) {
       actual:   { visitas: visitasAct, proyectos: proyectosAct, incidencias: incidenciasAct, llamadas: llamadasAct, checkins: checkinsAct, horas: horasAct },
       anterior: { visitas: visitasAnt, proyectos: proyectosAnt, incidencias: incidenciasAnt, llamadas: llamadasAnt, checkins: checkinsAnt, horas: horasAnt },
       sparklines: {
-        visitas: buildSparkline(visitasDiarias as never, dias > 30 ? 30 : dias),
-        incidencias: buildSparkline(incidenciasDiarias as never, dias > 30 ? 30 : dias),
+        visitas:     buildSparkline(visitasSparkRaw),
+        incidencias: buildSparkline(incidenciasSparkRaw),
       },
     }, { headers: { "Cache-Control": "private, max-age=300" } })
   } catch (err) {

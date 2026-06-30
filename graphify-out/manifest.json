@@ -1,952 +1,1582 @@
 {
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\settings.local.json": {
-    "mtime": 1780435275.1607113,
-    "ast_hash": "afb9b94e71c6868daeb3d59c675acee8",
-    "semantic_hash": ""
+    "mtime": 1782328831.2270968,
+    "ast_hash": "fb55ff3a9976a604a7c3e589c611b6df",
+    "semantic_hash": "fb55ff3a9976a604a7c3e589c611b6df"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\ui-ux-pro-max\\scripts\\core.py": {
     "mtime": 1779403738.427948,
     "ast_hash": "3df4734a785963a8242a56c1b926adfd",
-    "semantic_hash": ""
+    "semantic_hash": "3df4734a785963a8242a56c1b926adfd"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\ui-ux-pro-max\\scripts\\design_system.py": {
     "mtime": 1779403738.432484,
     "ast_hash": "08f84d04608a19049c90fc2b1ef314f9",
-    "semantic_hash": ""
+    "semantic_hash": "08f84d04608a19049c90fc2b1ef314f9"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\ui-ux-pro-max\\scripts\\search.py": {
     "mtime": 1779403738.434482,
     "ast_hash": "8c7e35426fe8f6f3ed91e9dce0ed7af1",
-    "semantic_hash": ""
+    "semantic_hash": "8c7e35426fe8f6f3ed91e9dce0ed7af1"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\hospitales.spec.ts": {
     "mtime": 1779176666.4396577,
     "ast_hash": "c0deca9e66b2e95e01264882eb32de1d",
-    "semantic_hash": ""
+    "semantic_hash": "c0deca9e66b2e95e01264882eb32de1d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\login.spec.ts": {
     "mtime": 1779176088.1581898,
     "ast_hash": "fa175df85fdf828f36466301b1ff8904",
-    "semantic_hash": ""
+    "semantic_hash": "fa175df85fdf828f36466301b1ff8904"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\pipeline.spec.ts": {
     "mtime": 1779176576.4004653,
     "ast_hash": "c7a48d221ea760ecae55345c2a3bfb8e",
-    "semantic_hash": ""
+    "semantic_hash": "c7a48d221ea760ecae55345c2a3bfb8e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\eslint.config.mjs": {
     "mtime": 1778325964.2965372,
     "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
-    "semantic_hash": ""
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\middleware.ts": {
     "mtime": 1778439027.8284087,
     "ast_hash": "cbe29ac2d68cac457287d4a5a62c16d5",
-    "semantic_hash": ""
+    "semantic_hash": "cbe29ac2d68cac457287d4a5a62c16d5"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\next.config.ts": {
-    "mtime": 1778420451.507307,
-    "ast_hash": "3c28951f693e1af63cca9781c129e33f",
-    "semantic_hash": ""
+    "mtime": 1782839966.5836604,
+    "ast_hash": "e1352339f3cd916f4a8c229a753dbbb0",
+    "semantic_hash": "e1352339f3cd916f4a8c229a753dbbb0"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\package.json": {
-    "mtime": 1780253513.9016066,
-    "ast_hash": "0159a340b162b85c87c816ba0d14e6a8",
-    "semantic_hash": ""
+    "mtime": 1782055222.3508167,
+    "ast_hash": "96fba079ad0e3f2055fdd67b86de7523",
+    "semantic_hash": "96fba079ad0e3f2055fdd67b86de7523"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\playwright.config.ts": {
-    "mtime": 1779175557.9177594,
-    "ast_hash": "29d5f786ab22257b589f4f263eb75066",
-    "semantic_hash": ""
+    "mtime": 1781934889.6006026,
+    "ast_hash": "36bcc32f43d03695210d462b1bfa3c19",
+    "semantic_hash": "36bcc32f43d03695210d462b1bfa3c19"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\postcss.config.mjs": {
     "mtime": 1778325964.3505988,
     "ast_hash": "239f3ebf717465dc636818a1a619398d",
-    "semantic_hash": ""
+    "semantic_hash": "239f3ebf717465dc636818a1a619398d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\prisma.config.ts": {
     "mtime": 1778330500.4879575,
     "ast_hash": "776eee257d50f076e1ac3e0fecbbf5e7",
-    "semantic_hash": ""
+    "semantic_hash": "776eee257d50f076e1ac3e0fecbbf5e7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\prisma\\migrations\\20260509124321_init_usuarios\\migration.sql": {
     "mtime": 1778330601.522,
     "ast_hash": "dd0ab9d922c899d1fbd7cd082c92df4a",
-    "semantic_hash": ""
+    "semantic_hash": "dd0ab9d922c899d1fbd7cd082c92df4a"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\prisma\\migrations\\20260510000000_schema_completo\\migration.sql": {
     "mtime": 1778439605.1120255,
     "ast_hash": "5a2d0e9a79a7903c34439a653ea942d0",
-    "semantic_hash": ""
+    "semantic_hash": "5a2d0e9a79a7903c34439a653ea942d0"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\prisma\\seed-modulos.ts": {
     "mtime": 1779138353.371323,
     "ast_hash": "b6a14478952c06ffb61b49fd83f3bd5d",
-    "semantic_hash": ""
+    "semantic_hash": "b6a14478952c06ffb61b49fd83f3bd5d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\prisma\\seed.ts": {
     "mtime": 1778394716.8953004,
     "ast_hash": "65f119b436bf8a570cf2b5cc3fe314b7",
-    "semantic_hash": ""
+    "semantic_hash": "65f119b436bf8a570cf2b5cc3fe314b7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\manifest.json": {
     "mtime": 1779175184.81864,
     "ast_hash": "48feda2d0b2c971b254ea2b0a062ab7c",
-    "semantic_hash": ""
+    "semantic_hash": "48feda2d0b2c971b254ea2b0a062ab7c"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\sw.js": {
-    "mtime": 1778697889.6899178,
-    "ast_hash": "f79c552c53092c4e7ebc103747f44352",
-    "semantic_hash": ""
+    "mtime": 1781948576.437593,
+    "ast_hash": "d18910e00479aaf4e98059670fac57f3",
+    "semantic_hash": "d18910e00479aaf4e98059670fac57f3"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(auth)\\layout.tsx": {
-    "mtime": 1780467778.1748776,
-    "ast_hash": "62ab343c38dcf90bf5de9565b289ada4",
-    "semantic_hash": ""
+    "mtime": 1781941813.409105,
+    "ast_hash": "34536cf38e7568c115aa5d0644d03027",
+    "semantic_hash": "34536cf38e7568c115aa5d0644d03027"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(auth)\\login\\page.tsx": {
-    "mtime": 1780467825.909703,
-    "ast_hash": "9edab2a812edc68e01745c43238b0b6d",
-    "semantic_hash": ""
+    "mtime": 1781942970.1581402,
+    "ast_hash": "c7d90382e114eb6b8ad99bf1a2afe108",
+    "semantic_hash": "c7d90382e114eb6b8ad99bf1a2afe108"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\configuracion\\page.tsx": {
-    "mtime": 1779402661.8419542,
-    "ast_hash": "29d19e82779a512e853dd2de9badf714",
-    "semantic_hash": ""
+    "mtime": 1782328434.7370782,
+    "ast_hash": "7703d9d14f870d95ef4f5ce6437f65ef",
+    "semantic_hash": "7703d9d14f870d95ef4f5ce6437f65ef"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\equipo\\page.tsx": {
-    "mtime": 1780253954.5866816,
-    "ast_hash": "8cfd34072e5f76ddf32ca396e365ad52",
-    "semantic_hash": ""
+    "mtime": 1781976717.6268458,
+    "ast_hash": "d2e13734cc8e55ab6b8981d98e77316d",
+    "semantic_hash": "d2e13734cc8e55ab6b8981d98e77316d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\error.tsx": {
     "mtime": 1778566869.9514482,
     "ast_hash": "3ebe449ba9591db991a6f68e0e6ee346",
-    "semantic_hash": ""
+    "semantic_hash": "3ebe449ba9591db991a6f68e0e6ee346"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\hardware\\page.tsx": {
-    "mtime": 1780084930.81022,
-    "ast_hash": "b13915275eb3d5a5e61dff0ddf0ca87d",
-    "semantic_hash": ""
+    "mtime": 1782052770.0044081,
+    "ast_hash": "fb9e385d961e6ab218a8905e3d127540",
+    "semantic_hash": "fb9e385d961e6ab218a8905e3d127540"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\hospitales\\page.tsx": {
-    "mtime": 1780253855.0839562,
-    "ast_hash": "9e6239d4c0d87dd3f01fa113e195c4d2",
-    "semantic_hash": ""
+    "mtime": 1781949838.6314147,
+    "ast_hash": "865de407e591f0fb46d59c688e2bac92",
+    "semantic_hash": "865de407e591f0fb46d59c688e2bac92"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\layout.tsx": {
     "mtime": 1779166272.171782,
     "ast_hash": "9780a29799e40bb661312d7ff92adbfb",
-    "semantic_hash": ""
+    "semantic_hash": "9780a29799e40bb661312d7ff92adbfb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\loading.tsx": {
-    "mtime": 1778419969.062179,
-    "ast_hash": "0ebc253c2789072d717d5d05567c9cb0",
-    "semantic_hash": ""
+    "mtime": 1781935283.0415459,
+    "ast_hash": "5da6865e5ecf3575b6e18f8708a1f8a0",
+    "semantic_hash": "5da6865e5ecf3575b6e18f8708a1f8a0"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\modulos-inlab\\page.tsx": {
-    "mtime": 1779165388.3598118,
-    "ast_hash": "1b25956ffb5f2068d093bb28bf3cc622",
-    "semantic_hash": ""
+    "mtime": 1781935278.016619,
+    "ast_hash": "b5bbf912923c29d8807e2162d77bfcca",
+    "semantic_hash": "b5bbf912923c29d8807e2162d77bfcca"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\usuarios\\page.tsx": {
-    "mtime": 1779466476.827561,
-    "ast_hash": "381024aa6ca568a795ec156ee29d2aba",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\visitas\\page.tsx": {
-    "mtime": 1779104336.568123,
-    "ast_hash": "120f961f2c828abbeb5939b0d80cb031",
-    "semantic_hash": ""
+    "mtime": 1782052703.1222038,
+    "ast_hash": "ee848c88ac92a714dd68dbdd5ec8c957",
+    "semantic_hash": "ee848c88ac92a714dd68dbdd5ec8c957"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\zonas\\page.tsx": {
-    "mtime": 1779404204.7947686,
-    "ast_hash": "142e0639a7cd01f91e4c591b219da059",
-    "semantic_hash": ""
+    "mtime": 1782052708.7557054,
+    "ast_hash": "836938f020f10bc7e3a4b6b08d560fb8",
+    "semantic_hash": "836938f020f10bc7e3a4b6b08d560fb8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\dashboard\\error.tsx": {
     "mtime": 1779173704.4114017,
     "ast_hash": "54d520aaee2399487db0b5210b676bec",
-    "semantic_hash": ""
+    "semantic_hash": "54d520aaee2399487db0b5210b676bec"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\dashboard\\page.tsx": {
-    "mtime": 1779537119.6570375,
-    "ast_hash": "11ac7e45498b1c9649ef0abb69ca9c31",
-    "semantic_hash": ""
+    "mtime": 1782077776.0043962,
+    "ast_hash": "5e0261fa29df06692318177de989c564",
+    "semantic_hash": "5e0261fa29df06692318177de989c564"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\page.tsx": {
-    "mtime": 1780435087.2726338,
-    "ast_hash": "4507acdf527284df399e9c1f5f4795ac",
-    "semantic_hash": ""
+    "mtime": 1782033551.6146228,
+    "ast_hash": "5944a473367872419053541a51311530",
+    "semantic_hash": "5944a473367872419053541a51311530"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hardware\\error.tsx": {
     "mtime": 1779365466.8386648,
     "ast_hash": "a64342e86412d2bd30f4ac262577d62b",
-    "semantic_hash": ""
+    "semantic_hash": "a64342e86412d2bd30f4ac262577d62b"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hardware\\page.tsx": {
-    "mtime": 1780322382.9323373,
-    "ast_hash": "6d829322df34c48d8e7d3994dcae2c96",
-    "semantic_hash": ""
+    "mtime": 1782052756.755302,
+    "ast_hash": "0a0fea5bc9d023fdd8e0f039e7d89b8b",
+    "semantic_hash": "0a0fea5bc9d023fdd8e0f039e7d89b8b"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\[id]\\error.tsx": {
     "mtime": 1779174567.9782853,
     "ast_hash": "96455ed79c2eea7ff1a9c322283d0fcd",
-    "semantic_hash": ""
+    "semantic_hash": "96455ed79c2eea7ff1a9c322283d0fcd"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\[id]\\loading.tsx": {
-    "mtime": 1778419943.4296007,
-    "ast_hash": "128bb3c27218ccd9a5bbf6a6062076a1",
-    "semantic_hash": ""
+    "mtime": 1781935342.7858477,
+    "ast_hash": "d279721f0a96b7b5a11100a51a8d857d",
+    "semantic_hash": "d279721f0a96b7b5a11100a51a8d857d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\[id]\\page.tsx": {
-    "mtime": 1780314669.3741777,
-    "ast_hash": "ad9baa5d34ab69869c2f2756582f6eea",
-    "semantic_hash": ""
+    "mtime": 1782857898.185851,
+    "ast_hash": "4b0d3d8870133bbf03fdbe405398f8b4",
+    "semantic_hash": "4b0d3d8870133bbf03fdbe405398f8b4"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\error.tsx": {
     "mtime": 1778566869.8988817,
     "ast_hash": "3ebe449ba9591db991a6f68e0e6ee346",
-    "semantic_hash": ""
+    "semantic_hash": "3ebe449ba9591db991a6f68e0e6ee346"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\loading.tsx": {
     "mtime": 1778419936.3415449,
     "ast_hash": "63ea8f88e5ac2869366b27752ff28fe6",
-    "semantic_hash": ""
+    "semantic_hash": "63ea8f88e5ac2869366b27752ff28fe6"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\hospitales\\page.tsx": {
-    "mtime": 1780205374.514624,
-    "ast_hash": "849747537d020f203ecf6f2e57519d55",
-    "semantic_hash": ""
+    "mtime": 1782033309.967741,
+    "ast_hash": "3f9de1588c7105d9eee16df99702b423",
+    "semantic_hash": "3f9de1588c7105d9eee16df99702b423"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\layout.tsx": {
-    "mtime": 1779404184.2823942,
-    "ast_hash": "f387bb7c0374d4d670c4aa98d912c902",
-    "semantic_hash": ""
+    "mtime": 1782854287.8871336,
+    "ast_hash": "14f6de03f530ac653a8fdfcb8884dd23",
+    "semantic_hash": "14f6de03f530ac653a8fdfcb8884dd23"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\loading.tsx": {
-    "mtime": 1778419930.1681764,
-    "ast_hash": "ca7ff4b91014d1a977b1274ded404d5a",
-    "semantic_hash": ""
+    "mtime": 1781935338.2764616,
+    "ast_hash": "4aa39e9af51a618d24a30024d72c048d",
+    "semantic_hash": "4aa39e9af51a618d24a30024d72c048d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\mapa\\MapaWrapper.tsx": {
     "mtime": 1779171285.2054458,
     "ast_hash": "85784000de6a42ec3790398755f6c992",
-    "semantic_hash": ""
+    "semantic_hash": "85784000de6a42ec3790398755f6c992"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\mapa\\error.tsx": {
     "mtime": 1779173709.7103012,
     "ast_hash": "ee0142e2f41cc5328b353e3680c7b2eb",
-    "semantic_hash": ""
+    "semantic_hash": "ee0142e2f41cc5328b353e3680c7b2eb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\mapa\\page.tsx": {
-    "mtime": 1779431325.932988,
-    "ast_hash": "f6ea5a57522ae3269c8deb103ad12d88",
-    "semantic_hash": ""
+    "mtime": 1782078629.7506545,
+    "ast_hash": "011e4476f36cdd3874d19452eef18437",
+    "semantic_hash": "011e4476f36cdd3874d19452eef18437"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\perfil\\error.tsx": {
     "mtime": 1779173723.3097644,
     "ast_hash": "a51b0f3da6c88c3130c03c3122b0e209",
-    "semantic_hash": ""
+    "semantic_hash": "a51b0f3da6c88c3130c03c3122b0e209"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\perfil\\page.tsx": {
-    "mtime": 1779431310.6461537,
-    "ast_hash": "668bf7fb40277f37258c7a671dd045c9",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\pre-proyectos\\[id]\\error.tsx": {
-    "mtime": 1779365306.0220292,
-    "ast_hash": "1022d4da32872c26d6c00034403c7350",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\pre-proyectos\\[id]\\page.tsx": {
-    "mtime": 1780332557.7640615,
-    "ast_hash": "a31662bd6bfceb7228f1d7bb59428d3b",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\pre-proyectos\\error.tsx": {
-    "mtime": 1779365297.7106261,
-    "ast_hash": "114aadc7dd0a87dc6fb3ed8ad777d931",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\pre-proyectos\\page.tsx": {
-    "mtime": 1780253784.433048,
-    "ast_hash": "5c5e2e60d6ba9ca9f6324c7553732b9c",
-    "semantic_hash": ""
+    "mtime": 1781976742.6019952,
+    "ast_hash": "3db296a6bf75ed3042f011c162e11fc7",
+    "semantic_hash": "3db296a6bf75ed3042f011c162e11fc7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\error.tsx": {
-    "mtime": 1779174573.68306,
-    "ast_hash": "563eec6a488e45a7b8f6c9a2bdc92df6",
-    "semantic_hash": ""
+    "mtime": 1781895025.6871495,
+    "ast_hash": "73b581875257496df1c0fa9bc434c8ec",
+    "semantic_hash": "73b581875257496df1c0fa9bc434c8ec"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\page.tsx": {
-    "mtime": 1779364330.6232243,
-    "ast_hash": "3420160628ff5f82b23833749cdcbfd0",
-    "semantic_hash": ""
+    "mtime": 1782839762.121621,
+    "ast_hash": "a50045817f855675c1b3b5280baace59",
+    "semantic_hash": "a50045817f855675c1b3b5280baace59"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\error.tsx": {
-    "mtime": 1779173718.3948436,
-    "ast_hash": "33e31bd5813cdb7ac6f68955a63b4c56",
-    "semantic_hash": ""
+    "mtime": 1781895025.6525662,
+    "ast_hash": "20778623a866a10540b87be17f5a1e4c",
+    "semantic_hash": "20778623a866a10540b87be17f5a1e4c"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\page.tsx": {
-    "mtime": 1779316827.0882206,
-    "ast_hash": "d673f34360bfd0cf03b8fdd336f3db94",
-    "semantic_hash": ""
+    "mtime": 1782839546.3041196,
+    "ast_hash": "6a3a75678cdabf8fafc61797afa5399a",
+    "semantic_hash": "6a3a75678cdabf8fafc61797afa5399a"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\unauthorized\\page.tsx": {
-    "mtime": 1778496573.2005134,
-    "ast_hash": "8c6a7c80ff9de3de797864e56e3ed5f5",
-    "semantic_hash": ""
+    "mtime": 1782077312.3433206,
+    "ast_hash": "7ed36185db5145308dcfc444521794fe",
+    "semantic_hash": "7ed36185db5145308dcfc444521794fe"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\ventas\\error.tsx": {
     "mtime": 1778566869.9344437,
     "ast_hash": "3ebe449ba9591db991a6f68e0e6ee346",
-    "semantic_hash": ""
+    "semantic_hash": "3ebe449ba9591db991a6f68e0e6ee346"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\ventas\\layout.tsx": {
     "mtime": 1779190891.907102,
     "ast_hash": "2080c549e37e0606e23886c7409bb2b2",
-    "semantic_hash": ""
+    "semantic_hash": "2080c549e37e0606e23886c7409bb2b2"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\ventas\\pipeline\\[id]\\page.tsx": {
-    "mtime": 1779364517.7987,
-    "ast_hash": "d2ac9b33f8b4c715bf1a6163f9f5c37c",
-    "semantic_hash": ""
+    "mtime": 1781615203.5571537,
+    "ast_hash": "a08896a79af4a553b50c423cef3ec12d",
+    "semantic_hash": "a08896a79af4a553b50c423cef3ec12d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\ventas\\pipeline\\loading.tsx": {
     "mtime": 1778419960.5498178,
     "ast_hash": "a24bc30760c874e9dc278f654357769f",
-    "semantic_hash": ""
+    "semantic_hash": "a24bc30760c874e9dc278f654357769f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\ventas\\pipeline\\page.tsx": {
-    "mtime": 1779534877.088266,
-    "ast_hash": "f9bf2715ced50498f1f477cfa480fcf2",
-    "semantic_hash": ""
+    "mtime": 1782052778.540471,
+    "ast_hash": "52f89cf040a95b89a299c9c1b80a2e79",
+    "semantic_hash": "52f89cf040a95b89a299c9c1b80a2e79"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\error.tsx": {
     "mtime": 1779174545.0435433,
     "ast_hash": "5f05968b94dfe78498bf55e25c9933d3",
-    "semantic_hash": ""
+    "semantic_hash": "5f05968b94dfe78498bf55e25c9933d3"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\loading.tsx": {
-    "mtime": 1778419953.961422,
-    "ast_hash": "f1e22a5ea8b290416416c270b220e630",
-    "semantic_hash": ""
+    "mtime": 1781935490.9109526,
+    "ast_hash": "72c23bd0b243a45e2216e1692cac74b8",
+    "semantic_hash": "72c23bd0b243a45e2216e1692cac74b8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\page.tsx": {
-    "mtime": 1780337238.0994346,
-    "ast_hash": "92566ce9c1ff5a1e273ed7ad7f0ead75",
-    "semantic_hash": ""
+    "mtime": 1782078895.4419165,
+    "ast_hash": "308de3bcfc424aeaca16cb06a992b73b",
+    "semantic_hash": "308de3bcfc424aeaca16cb06a992b73b"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\calendario\\error.tsx": {
     "mtime": 1779174550.8928733,
     "ast_hash": "94cab774da44f54bf2abe0b27e93b9c0",
-    "semantic_hash": ""
+    "semantic_hash": "94cab774da44f54bf2abe0b27e93b9c0"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\calendario\\page.tsx": {
-    "mtime": 1779534881.2041194,
-    "ast_hash": "c04788fc0812752dd765b52b46e5e080",
-    "semantic_hash": ""
+    "mtime": 1782078027.990307,
+    "ast_hash": "53d92170c4bbe754015f57f8297b7453",
+    "semantic_hash": "53d92170c4bbe754015f57f8297b7453"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\error.tsx": {
     "mtime": 1778566869.92292,
     "ast_hash": "3ebe449ba9591db991a6f68e0e6ee346",
-    "semantic_hash": ""
+    "semantic_hash": "3ebe449ba9591db991a6f68e0e6ee346"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\page.tsx": {
-    "mtime": 1780205148.0513265,
-    "ast_hash": "4a90632c25cf4779615d20ecc7858315",
-    "semantic_hash": ""
+    "mtime": 1782077929.7950325,
+    "ast_hash": "a72abb84d16f8dc9e50a1371a4d729b8",
+    "semantic_hash": "a72abb84d16f8dc9e50a1371a4d729b8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\auth\\[...nextauth]\\route.ts": {
     "mtime": 1778330770.4784296,
     "ast_hash": "eee1ee2e37d2285ee191efc2288b5761",
-    "semantic_hash": ""
+    "semantic_hash": "eee1ee2e37d2285ee191efc2288b5761"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\config\\route.ts": {
-    "mtime": 1779190766.8897276,
-    "ast_hash": "06d6bffc57a47dd690d170be163a989e",
-    "semantic_hash": ""
+    "mtime": 1782328394.5928864,
+    "ast_hash": "8664af0c786845abbe4f7a161f1e7fea",
+    "semantic_hash": "8664af0c786845abbe4f7a161f1e7fea"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\contactos\\[id]\\route.ts": {
-    "mtime": 1778396210.6469843,
-    "ast_hash": "b0e022ea41559996f3a8274e79263ec5",
-    "semantic_hash": ""
+    "mtime": 1782055222.35682,
+    "ast_hash": "608d51588409d750dc14aa2dc16a6c6b",
+    "semantic_hash": "608d51588409d750dc14aa2dc16a6c6b"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\geocode\\route.ts": {
-    "mtime": 1780171538.1884315,
-    "ast_hash": "559d7cbad5d0b31a4f331818f30fb260",
-    "semantic_hash": ""
+    "mtime": 1782055222.3588152,
+    "ast_hash": "0804f04e9162d3df5a10bd7208db34bb",
+    "semantic_hash": "0804f04e9162d3df5a10bd7208db34bb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\[id]\\docs\\route.ts": {
-    "mtime": 1780084743.767038,
-    "ast_hash": "038e9afb14f60e7aa445e3e20d784331",
-    "semantic_hash": ""
+    "mtime": 1782055222.360817,
+    "ast_hash": "3be6424db898b555d44a8cc0cee062a7",
+    "semantic_hash": "3be6424db898b555d44a8cc0cee062a7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\[id]\\route.ts": {
-    "mtime": 1780084776.3928978,
-    "ast_hash": "d77d9e3ccb21eedf37f5dfb6642021d5",
-    "semantic_hash": ""
+    "mtime": 1782055222.3618155,
+    "ast_hash": "f9361ff7604425ad75b3b696e8bc6ca8",
+    "semantic_hash": "f9361ff7604425ad75b3b696e8bc6ca8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\docs\\[docId]\\route.ts": {
-    "mtime": 1780084750.0061245,
-    "ast_hash": "e30e1eb908d9af30a30461872ab721c0",
-    "semantic_hash": ""
+    "mtime": 1782055222.3628163,
+    "ast_hash": "7cad80adb0590dc0e79db99729557ff9",
+    "semantic_hash": "7cad80adb0590dc0e79db99729557ff9"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\route.ts": {
-    "mtime": 1780084768.8894417,
-    "ast_hash": "44f05ed91661c05914c9d24d5bcbbe7a",
-    "semantic_hash": ""
+    "mtime": 1782055222.364815,
+    "ast_hash": "5f6488da3dc8527ca3a4b8127f1d32d8",
+    "semantic_hash": "5f6488da3dc8527ca3a4b8127f1d32d8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\tipos\\[id]\\route.ts": {
-    "mtime": 1780079343.9480996,
-    "ast_hash": "28e9dee489ca7dae50391bb8c6810927",
-    "semantic_hash": ""
+    "mtime": 1782055222.3658137,
+    "ast_hash": "9519e7fc51f2d97dffdaeb8a6c05e9f7",
+    "semantic_hash": "9519e7fc51f2d97dffdaeb8a6c05e9f7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\tipos\\route.ts": {
-    "mtime": 1780171933.6216798,
-    "ast_hash": "ee66af205ad9007187019f5194b2dc3f",
-    "semantic_hash": ""
+    "mtime": 1782055222.367816,
+    "ast_hash": "a5384fd2cb33121c4341775b70db0242",
+    "semantic_hash": "a5384fd2cb33121c4341775b70db0242"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\unidades\\[id]\\route.ts": {
-    "mtime": 1779382309.3072188,
-    "ast_hash": "4c4745211e6825ce2c110c9caa859085",
-    "semantic_hash": ""
+    "mtime": 1782055222.3688262,
+    "ast_hash": "701b685bd151b8c8c578edb0e279087e",
+    "semantic_hash": "701b685bd151b8c8c578edb0e279087e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hardware\\unidades\\route.ts": {
-    "mtime": 1779210501.379079,
-    "ast_hash": "1e1165b3e850a18d1e3c69aa9a4d3657",
-    "semantic_hash": ""
+    "mtime": 1782055222.3713653,
+    "ast_hash": "67a2e0456e1d3f89c26ce6450b393813",
+    "semantic_hash": "67a2e0456e1d3f89c26ce6450b393813"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\health\\route.ts": {
     "mtime": 1778439620.0178013,
     "ast_hash": "394123a6cbf378bdb4f4321fe72e05b7",
-    "semantic_hash": ""
+    "semantic_hash": "394123a6cbf378bdb4f4321fe72e05b7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\contactos\\[contactoId]\\route.ts": {
-    "mtime": 1779526622.9647439,
-    "ast_hash": "778286ecd17c934b52f43e5223cdb8cb",
-    "semantic_hash": ""
+    "mtime": 1782077353.0932539,
+    "ast_hash": "6331f26c772bd07743c219c188dd27be",
+    "semantic_hash": "6331f26c772bd07743c219c188dd27be"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\contactos\\route.ts": {
-    "mtime": 1779274978.090428,
-    "ast_hash": "3371d8856c6464d994b8450091ab358d",
-    "semantic_hash": ""
+    "mtime": 1782055222.3733652,
+    "ast_hash": "515cdbcc830501b306f47f2d7a2088d6",
+    "semantic_hash": "515cdbcc830501b306f47f2d7a2088d6"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\route.ts": {
-    "mtime": 1779523163.2214684,
-    "ast_hash": "0c8e6d33bb4d52848994fe4b2754bbc6",
-    "semantic_hash": ""
+    "mtime": 1782055222.376372,
+    "ast_hash": "036a53ccd138a39dbdbf26eaf79d1996",
+    "semantic_hash": "036a53ccd138a39dbdbf26eaf79d1996"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\timeline\\route.ts": {
-    "mtime": 1779537126.1698687,
-    "ast_hash": "0dc5b1697b9470cbeea52eab5f93c5e8",
-    "semantic_hash": ""
+    "mtime": 1782055222.3783624,
+    "ast_hash": "cd4e4745856e8dc968679f4dd46ff0a1",
+    "semantic_hash": "cd4e4745856e8dc968679f4dd46ff0a1"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\route.ts": {
-    "mtime": 1780171951.6912105,
-    "ast_hash": "798d182e072df9bf9c7e2921fa26bc91",
-    "semantic_hash": ""
+    "mtime": 1782028834.762693,
+    "ast_hash": "473f45ddff3f837da8a6c82e2a259761",
+    "semantic_hash": "473f45ddff3f837da8a6c82e2a259761"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\modulos-inlab\\[id]\\route.ts": {
-    "mtime": 1779165321.1777442,
-    "ast_hash": "35b653db9c7fe5b47b721fd2ebcb616c",
-    "semantic_hash": ""
+    "mtime": 1782055222.3803594,
+    "ast_hash": "5f1ba0cfedabc75c435a3092f489be2d",
+    "semantic_hash": "5f1ba0cfedabc75c435a3092f489be2d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\modulos-inlab\\route.ts": {
-    "mtime": 1779165384.736168,
-    "ast_hash": "85166b43ffc05ed50336f54c21a42c52",
-    "semantic_hash": ""
+    "mtime": 1782055222.382357,
+    "ast_hash": "a3b657cb44ad8f6674cb37d4b273bc6a",
+    "semantic_hash": "a3b657cb44ad8f6674cb37d4b273bc6a"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\notificaciones\\route.ts": {
-    "mtime": 1779289996.5110953,
-    "ast_hash": "99795c60ae698ee3739972fda8908549",
-    "semantic_hash": ""
+    "mtime": 1782055222.3843677,
+    "ast_hash": "47a68f28e62b95798dcf7705d2b8b143",
+    "semantic_hash": "47a68f28e62b95798dcf7705d2b8b143"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\oportunidades\\[id]\\route.ts": {
     "mtime": 1780171711.396387,
     "ast_hash": "62feeaf4cde201dab04450534b61a201",
-    "semantic_hash": ""
+    "semantic_hash": "62feeaf4cde201dab04450534b61a201"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\oportunidades\\route.ts": {
-    "mtime": 1780171704.9215772,
-    "ast_hash": "7762f91b63cf1f4bb4c486d6db2ee7fb",
-    "semantic_hash": ""
+    "mtime": 1781615789.8610325,
+    "ast_hash": "2e082d328b81e0fb9b16afecaf273e32",
+    "semantic_hash": "2e082d328b81e0fb9b16afecaf273e32"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\perfil\\route.ts": {
-    "mtime": 1778396210.53271,
-    "ast_hash": "22a62c0684daa18f0c10c72e83598765",
-    "semantic_hash": ""
+    "mtime": 1782055222.3883858,
+    "ast_hash": "d5065e55abbf276d83463dcd54abf18e",
+    "semantic_hash": "d5065e55abbf276d83463dcd54abf18e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\plantillas\\[id]\\route.ts": {
-    "mtime": 1779193054.1241035,
-    "ast_hash": "7e27cf10a521bc6a988484c750c21e85",
-    "semantic_hash": ""
+    "mtime": 1782055222.3913882,
+    "ast_hash": "5422a33ed06bc5d5e4d2d1c57e0223fc",
+    "semantic_hash": "5422a33ed06bc5d5e4d2d1c57e0223fc"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\plantillas\\route.ts": {
-    "mtime": 1779193219.045076,
-    "ast_hash": "59c3c7bbb240a3cd30bd9dd86d9f8eac",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\adjuntos\\[adjuntoId]\\route.ts": {
-    "mtime": 1779526604.498775,
-    "ast_hash": "b0519335746879944bdc29d4710fbec0",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\adjuntos\\route.ts": {
-    "mtime": 1779526592.6398225,
-    "ast_hash": "0478337878615f4434a445932bb181e9",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\comentarios\\[comentarioId]\\route.ts": {
-    "mtime": 1779536779.0505383,
-    "ast_hash": "1bd1efedba60677a7e6b7e900069443e",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\comentarios\\route.ts": {
-    "mtime": 1779536689.0278714,
-    "ast_hash": "57c0787a3b3db7fd4173131c6eacf9fd",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\contactos\\route.ts": {
-    "mtime": 1779190820.385226,
-    "ast_hash": "bae3f8cc258355ebbdbbe564f164642c",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\entradas\\[entradaId]\\route.ts": {
-    "mtime": 1779526581.4626968,
-    "ast_hash": "abb2782be907a8c42100414487d886ec",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\entradas\\route.ts": {
-    "mtime": 1779526536.914418,
-    "ast_hash": "7087a6648dfa6a4683346084e5f7f497",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\fases\\[faseId]\\route.ts": {
-    "mtime": 1779276815.799581,
-    "ast_hash": "3e65838564ba25cde13fa250e02a5683",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\hitos\\[hitoId]\\route.ts": {
-    "mtime": 1779526566.016096,
-    "ast_hash": "a4f3ee4d85ae25d58374fcae297b2fcc",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\hitos\\route.ts": {
-    "mtime": 1779526524.3191285,
-    "ast_hash": "62488336a1550d7c8f25c0735dc5ce7a",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\route.ts": {
-    "mtime": 1780257832.9736006,
-    "ast_hash": "134647c5d1f730d52131feb841d1b2c7",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\share\\route.ts": {
-    "mtime": 1780171940.078156,
-    "ast_hash": "2b36f0a62793ea9af2c0f4ef5d75db38",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\solicitudes\\[solId]\\route.ts": {
-    "mtime": 1779190815.3359466,
-    "ast_hash": "fbd08ad469804673b427057ebda4a7c2",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\solicitudes\\route.ts": {
-    "mtime": 1779526615.9424894,
-    "ast_hash": "66ad6d0c425dd5faff9981c47ec2603f",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\tareas\\[tareaId]\\route.ts": {
-    "mtime": 1779526553.0621161,
-    "ast_hash": "8f15b72f21a7c8b79537f24b7790b6bf",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\[id]\\tareas\\route.ts": {
-    "mtime": 1779526518.6535692,
-    "ast_hash": "a78ceb5ac5d5f15c81a82570e9678cbf",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\pre-proyectos\\route.ts": {
-    "mtime": 1780171631.1770294,
-    "ast_hash": "ccb1be33ee3329d7253278fa7d68f083",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\mapa\\compartir\\route.ts": {
-    "mtime": 1779139642.325144,
-    "ast_hash": "3b67d8d1eea9133829d04a61ffbfc522",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\mapa\\route.ts": {
-    "mtime": 1779138148.3146386,
-    "ast_hash": "2044bd769e96998bd19be2d365acd37a",
-    "semantic_hash": ""
+    "mtime": 1782055222.3933818,
+    "ast_hash": "8a3716c5ee275258122c7c600edcfdf2",
+    "semantic_hash": "8a3716c5ee275258122c7c600edcfdf2"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\modulos\\[moduloId]\\route.ts": {
-    "mtime": 1779139621.9823349,
-    "ast_hash": "1c6fc3f3f41bb12858ed5ecb04642f05",
-    "semantic_hash": ""
+    "mtime": 1782055222.407942,
+    "ast_hash": "b95454aa16cbbb7cd463382d888ff253",
+    "semantic_hash": "b95454aa16cbbb7cd463382d888ff253"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\route.ts": {
-    "mtime": 1779138785.9504392,
-    "ast_hash": "99ab2a8f10fc9be9d0d54cb06c07cf1b",
-    "semantic_hash": ""
+    "mtime": 1782055222.411943,
+    "ast_hash": "31232077d2c89d66a8b446227d2768fe",
+    "semantic_hash": "31232077d2c89d66a8b446227d2768fe"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\route.ts": {
-    "mtime": 1779138132.931641,
-    "ast_hash": "8aa7c5f5300f7b6ebca90cb4231a1bf3",
-    "semantic_hash": ""
+    "mtime": 1782055222.4204762,
+    "ast_hash": "a4b1b94372a96bac6fb452b07f082d8f",
+    "semantic_hash": "a4b1b94372a96bac6fb452b07f082d8f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\search\\route.ts": {
-    "mtime": 1780171652.2206542,
-    "ast_hash": "1d4fb4247c0ea13833a68fb68afd4068",
-    "semantic_hash": ""
+    "mtime": 1782055222.4234753,
+    "ast_hash": "0c7138643e4ab2d240ed2cd3c19ebea6",
+    "semantic_hash": "0c7138643e4ab2d240ed2cd3c19ebea6"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\share\\[token]\\route.ts": {
-    "mtime": 1779139648.7716217,
-    "ast_hash": "87692842536ce7efde39502a17b1da3b",
-    "semantic_hash": ""
+    "mtime": 1782055222.4254885,
+    "ast_hash": "265cdd656990024133e55a7b4fe63a72",
+    "semantic_hash": "265cdd656990024133e55a7b4fe63a72"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\share\\proyecto\\[token]\\route.ts": {
-    "mtime": 1779224502.8153272,
-    "ast_hash": "5f7d30443c7608fa275c0378d2a2123d",
-    "semantic_hash": ""
+    "mtime": 1782055222.426483,
+    "ast_hash": "624254430d92cb696e2fa79857f6ecfd",
+    "semantic_hash": "624254430d92cb696e2fa79857f6ecfd"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\usuarios\\[id]\\route.ts": {
-    "mtime": 1779364409.3782885,
-    "ast_hash": "231ef048103d67664b739c6cf39443bc",
-    "semantic_hash": ""
+    "mtime": 1782055222.428504,
+    "ast_hash": "760fc4f9a72b9b2cbb5a23dc71355a21",
+    "semantic_hash": "760fc4f9a72b9b2cbb5a23dc71355a21"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\usuarios\\route.ts": {
     "mtime": 1780171926.6888204,
     "ast_hash": "44faedc0fbc9dfebbf0d32a4224cf71c",
-    "semantic_hash": ""
+    "semantic_hash": "44faedc0fbc9dfebbf0d32a4224cf71c"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\visitas\\[id]\\comentarios\\[comentarioId]\\route.ts": {
-    "mtime": 1779536620.543947,
-    "ast_hash": "8a7f4af4700373e377b5a153b26bbc6e",
-    "semantic_hash": ""
+    "mtime": 1782077358.2799969,
+    "ast_hash": "8b6f79c90c79b977047367fcd41ac877",
+    "semantic_hash": "8b6f79c90c79b977047367fcd41ac877"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\visitas\\[id]\\comentarios\\route.ts": {
-    "mtime": 1779536614.146358,
-    "ast_hash": "fa4ec4882e182b38179f929e72cd1b07",
-    "semantic_hash": ""
+    "mtime": 1782055222.4305089,
+    "ast_hash": "fab2e1f7a2b19ba3da89c185c54b1e63",
+    "semantic_hash": "fab2e1f7a2b19ba3da89c185c54b1e63"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\visitas\\[id]\\route.ts": {
-    "mtime": 1780171976.1770303,
-    "ast_hash": "348a034971a4fc809aa4c6cc7800de0d",
-    "semantic_hash": ""
+    "mtime": 1782055222.431511,
+    "ast_hash": "c37eed55be353c314edb0b8cf9e1b47a",
+    "semantic_hash": "c37eed55be353c314edb0b8cf9e1b47a"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\visitas\\route.ts": {
-    "mtime": 1780171962.4859023,
-    "ast_hash": "a0a0052854f7d4dc925f07a2b0526630",
-    "semantic_hash": ""
+    "mtime": 1781949714.7258325,
+    "ast_hash": "02a9c53b71363633ef9fcb250d7ee837",
+    "semantic_hash": "02a9c53b71363633ef9fcb250d7ee837"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\zonas\\[id]\\route.ts": {
-    "mtime": 1778396210.6258872,
-    "ast_hash": "3d142f38c88a014e523e0857da979f5c",
-    "semantic_hash": ""
+    "mtime": 1782055222.4345052,
+    "ast_hash": "4b526b5556b1ac35637c55dbd99ad5df",
+    "semantic_hash": "4b526b5556b1ac35637c55dbd99ad5df"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\zonas\\route.ts": {
     "mtime": 1778567172.328894,
     "ast_hash": "1a6c10335e6d6626b2e795dd28ea94d1",
-    "semantic_hash": ""
+    "semantic_hash": "1a6c10335e6d6626b2e795dd28ea94d1"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\error.tsx": {
-    "mtime": 1778496557.3436067,
-    "ast_hash": "ec82e110400601f5aba5a056706b8ce5",
-    "semantic_hash": ""
+    "mtime": 1781934755.5164108,
+    "ast_hash": "5e546b488e2ae426aeb3da3916601651",
+    "semantic_hash": "5e546b488e2ae426aeb3da3916601651"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\layout.tsx": {
-    "mtime": 1779403910.5554657,
-    "ast_hash": "5ddd62571cdedded0caf9cec24b2778b",
-    "semantic_hash": ""
+    "mtime": 1781941654.3453324,
+    "ast_hash": "de55cd60a7b51bd8669aa02ffeec3043",
+    "semantic_hash": "de55cd60a7b51bd8669aa02ffeec3043"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\not-found.tsx": {
-    "mtime": 1778496544.6916275,
-    "ast_hash": "ad4f457d0136f2af53666b10760f48e5",
-    "semantic_hash": ""
+    "mtime": 1782078647.6955638,
+    "ast_hash": "2265301ca248ebb3d90aeff95c88cf86",
+    "semantic_hash": "2265301ca248ebb3d90aeff95c88cf86"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\page.tsx": {
     "mtime": 1778699591.313136,
     "ast_hash": "229d948372b2ea68788bac331fdef7e4",
-    "semantic_hash": ""
+    "semantic_hash": "229d948372b2ea68788bac331fdef7e4"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\share\\[token]\\page.tsx": {
-    "mtime": 1779402669.7479124,
-    "ast_hash": "ac1f05fb980d8b39e6d60bff1e9e66f0",
-    "semantic_hash": ""
+    "mtime": 1781906588.3515537,
+    "ast_hash": "5de866f1c22d927a953e9a6acae998bd",
+    "semantic_hash": "5de866f1c22d927a953e9a6acae998bd"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\share\\proyecto\\[token]\\page.tsx": {
-    "mtime": 1780340218.5710962,
-    "ast_hash": "4e3e70c168505d0cf7eb93b79af87290",
-    "semantic_hash": ""
+    "mtime": 1781906592.9045756,
+    "ast_hash": "62cbf860207663498c82dcc8f8dac257",
+    "semantic_hash": "62cbf860207663498c82dcc8f8dac257"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\AlertasPanel.tsx": {
     "mtime": 1779353526.726152,
     "ast_hash": "d2ce6b5b137404cace7dcfc75d664b7f",
-    "semantic_hash": ""
+    "semantic_hash": "d2ce6b5b137404cace7dcfc75d664b7f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ComentariosPanel.tsx": {
-    "mtime": 1779536933.3705454,
-    "ast_hash": "11c672edc96a49949f647f6e262ef31a",
-    "semantic_hash": ""
+    "mtime": 1781949665.1565099,
+    "ast_hash": "df807711ad60082c04b3fe1e9cff2f79",
+    "semantic_hash": "df807711ad60082c04b3fe1e9cff2f79"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\CommandPalette.tsx": {
-    "mtime": 1779287424.4649088,
-    "ast_hash": "c7ca9a9165fa6d2fee80098af875a83e",
-    "semantic_hash": ""
+    "mtime": 1782078609.3691957,
+    "ast_hash": "fccd6d94e2da63cdf834fc4633edf4c7",
+    "semantic_hash": "fccd6d94e2da63cdf834fc4633edf4c7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\KeyboardShortcutsProvider.tsx": {
     "mtime": 1778591927.3966575,
     "ast_hash": "c394dc59b47b23e2f97f9192260a8436",
-    "semantic_hash": ""
+    "semantic_hash": "c394dc59b47b23e2f97f9192260a8436"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\MapaLeaflet.tsx": {
     "mtime": 1779270412.3059402,
     "ast_hash": "38590accb9bd633f976566cbf42ca267",
-    "semantic_hash": ""
+    "semantic_hash": "38590accb9bd633f976566cbf42ca267"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\OfflineIndicator.tsx": {
     "mtime": 1778419622.0649104,
     "ast_hash": "28f5fb28103f5e43fe21d92a3abcfdd7",
-    "semantic_hash": ""
+    "semantic_hash": "28f5fb28103f5e43fe21d92a3abcfdd7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\PageTransition.tsx": {
     "mtime": 1779365983.7456167,
     "ast_hash": "1deb318f047c2ca42707d58f92082758",
-    "semantic_hash": ""
+    "semantic_hash": "1deb318f047c2ca42707d58f92082758"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ServiceWorkerRegistrar.tsx": {
-    "mtime": 1778419572.234337,
-    "ast_hash": "b72a51dd089c8397da18f7e2fd4a258b",
-    "semantic_hash": ""
+    "mtime": 1781948588.729948,
+    "ast_hash": "5b1889ddc05e5b36c008bbd5de298849",
+    "semantic_hash": "5b1889ddc05e5b36c008bbd5de298849"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\Sidebar.tsx": {
-    "mtime": 1780334508.552443,
-    "ast_hash": "8a988cbc9d11d3821b426d0797291bb6",
-    "semantic_hash": ""
+    "mtime": 1782854334.2183084,
+    "ast_hash": "03d173509d118e2c7231b62c9ba791bb",
+    "semantic_hash": "03d173509d118e2c7231b62c9ba791bb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ThemeProvider.tsx": {
     "mtime": 1779401473.5628304,
     "ast_hash": "ac938e4e8092d9a7c9185615a7ce1ac8",
-    "semantic_hash": ""
+    "semantic_hash": "ac938e4e8092d9a7c9185615a7ce1ac8"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\Toast.tsx": {
     "mtime": 1778496224.9329858,
     "ast_hash": "c30e4176d12886d2020786bcaaffd964",
-    "semantic_hash": ""
+    "semantic_hash": "c30e4176d12886d2020786bcaaffd964"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\TopBar.tsx": {
-    "mtime": 1779433307.5543761,
-    "ast_hash": "10f879ff964f077e7e28004bd21b3bd2",
-    "semantic_hash": ""
+    "mtime": 1781991112.9541914,
+    "ast_hash": "74d19ce2042c9a73fe0f53608e57c877",
+    "semantic_hash": "74d19ce2042c9a73fe0f53608e57c877"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ui\\EmptyState.tsx": {
-    "mtime": 1778496481.5313323,
-    "ast_hash": "fab0a299a2beaaf0fde4f8fca55ad607",
-    "semantic_hash": ""
+    "mtime": 1781936776.3930955,
+    "ast_hash": "4edfba5939eb2977897766bb71d23376",
+    "semantic_hash": "4edfba5939eb2977897766bb71d23376"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ui\\Icons.tsx": {
-    "mtime": 1780078190.153461,
-    "ast_hash": "201dc8daecc120fa651a9af8560d4a16",
-    "semantic_hash": ""
+    "mtime": 1782462622.965251,
+    "ast_hash": "0fff90588a4098ab728ac7e2d86d5170",
+    "semantic_hash": "0fff90588a4098ab728ac7e2d86d5170"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ui\\PageHeader.tsx": {
-    "mtime": 1778496391.4924934,
-    "ast_hash": "f6c0a47b513bc89f5503e362b95931b1",
-    "semantic_hash": ""
+    "mtime": 1781936425.7783153,
+    "ast_hash": "3801bbc6bb81a7398570bb3e2de7115d",
+    "semantic_hash": "3801bbc6bb81a7398570bb3e2de7115d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\ui\\Skeleton.tsx": {
-    "mtime": 1778436177.2184525,
-    "ast_hash": "eb6eb16aeed251313d7e067f1abc9e67",
-    "semantic_hash": ""
+    "mtime": 1781936420.9327974,
+    "ast_hash": "094bbf03ba002a0e8fb567361f6df09e",
+    "semantic_hash": "094bbf03ba002a0e8fb567361f6df09e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\visitas\\AnalisisPanel.tsx": {
-    "mtime": 1779364377.8478122,
-    "ast_hash": "d61146f5d7571dda3be321aea1c36dfb",
-    "semantic_hash": ""
+    "mtime": 1781793073.3129983,
+    "ast_hash": "9dbad3bf3ba59686286b52cd29faf935",
+    "semantic_hash": "9dbad3bf3ba59686286b52cd29faf935"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\visitas\\PrintView.tsx": {
-    "mtime": 1780078459.0286486,
-    "ast_hash": "722ecf6efcf7ddfd5e1b6bd173bb8b14",
-    "semantic_hash": ""
+    "mtime": 1781991137.6251373,
+    "ast_hash": "1876368bb135e079e701f45811b19efc",
+    "semantic_hash": "1876368bb135e079e701f45811b19efc"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\visitas\\TodoChecklist.tsx": {
-    "mtime": 1778496190.6670895,
-    "ast_hash": "db6da0fa6ac56e12027d80f60ac1bc93",
-    "semantic_hash": ""
+    "mtime": 1782078615.356295,
+    "ast_hash": "4586f8097dc3c7f491d7fb47a7255eeb",
+    "semantic_hash": "4586f8097dc3c7f491d7fb47a7255eeb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\visitas\\VoiceNotes.tsx": {
     "mtime": 1779364388.1407287,
     "ast_hash": "f1ee4a0c04a8eda48f9f818f6ec03cad",
-    "semantic_hash": ""
+    "semantic_hash": "f1ee4a0c04a8eda48f9f818f6ec03cad"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\hooks\\useKeyboardShortcuts.ts": {
     "mtime": 1778567411.8166955,
     "ast_hash": "69084e65628ee0c09d05a2809068720e",
-    "semantic_hash": ""
+    "semantic_hash": "69084e65628ee0c09d05a2809068720e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\hooks\\useOfflineSync.ts": {
     "mtime": 1778696603.1250722,
     "ast_hash": "0ded6b082f358235bf8cb36c377d0ec7",
-    "semantic_hash": ""
+    "semantic_hash": "0ded6b082f358235bf8cb36c377d0ec7"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\actions\\auth.ts": {
     "mtime": 1778357944.1651344,
     "ast_hash": "469e06ed9e9f31446851e0aa9ab38ffc",
-    "semantic_hash": ""
+    "semantic_hash": "469e06ed9e9f31446851e0aa9ab38ffc"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\auth.config.ts": {
-    "mtime": 1778331559.6660278,
-    "ast_hash": "866975b5d74f1639fb2f9312d91fb550",
-    "semantic_hash": ""
+    "mtime": 1781992461.133833,
+    "ast_hash": "3b8d52be5edcc0591308d756493b773d",
+    "semantic_hash": "3b8d52be5edcc0591308d756493b773d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\auth.ts": {
-    "mtime": 1778331567.064152,
-    "ast_hash": "9faf736fb989374b26c2efe3a9813216",
-    "semantic_hash": ""
+    "mtime": 1782033188.350962,
+    "ast_hash": "1865fcefc3dc905b176a1f6dd570e595",
+    "semantic_hash": "1865fcefc3dc905b176a1f6dd570e595"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\brand.ts": {
     "mtime": 1778496114.1545844,
     "ast_hash": "1b21cf911708473472261aaa0d9ea2d2",
-    "semantic_hash": ""
+    "semantic_hash": "1b21cf911708473472261aaa0d9ea2d2"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\csv.ts": {
     "mtime": 1778358528.7142053,
     "ast_hash": "b33dac94b35919e7da383e68615d214d",
-    "semantic_hash": ""
+    "semantic_hash": "b33dac94b35919e7da383e68615d214d"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\db.ts": {
-    "mtime": 1778439027.7540305,
-    "ast_hash": "613f169e88b25b7f45e24e320c8b731e",
-    "semantic_hash": ""
+    "mtime": 1782028065.9071467,
+    "ast_hash": "1334927ab6e8e957fb364c7fc465cff0",
+    "semantic_hash": "1334927ab6e8e957fb364c7fc465cff0"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\excel.ts": {
     "mtime": 1780253797.5458996,
     "ast_hash": "817b51f79a22daed12dc5c08e400cb39",
-    "semantic_hash": ""
+    "semantic_hash": "817b51f79a22daed12dc5c08e400cb39"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\form-schema.ts": {
     "mtime": 1780433225.8376696,
     "ast_hash": "d3a55af4b82b1ab548b7077a4027d9ea",
-    "semantic_hash": ""
+    "semantic_hash": "d3a55af4b82b1ab548b7077a4027d9ea"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\img-compress.ts": {
     "mtime": 1778398767.3890746,
     "ast_hash": "02b7bff4b59bd339693656789bd4bac4",
-    "semantic_hash": ""
+    "semantic_hash": "02b7bff4b59bd339693656789bd4bac4"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\offline-db.ts": {
     "mtime": 1778419593.5286064,
     "ast_hash": "5d39502e068f3bebce1033e551c0d7d2",
-    "semantic_hash": ""
+    "semantic_hash": "5d39502e068f3bebce1033e551c0d7d2"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\rate-limit.ts": {
-    "mtime": 1780171678.94305,
-    "ast_hash": "b7ef2ce4fd18684826e4cc620ccba8a9",
-    "semantic_hash": ""
+    "mtime": 1782028745.708848,
+    "ast_hash": "0156e26e260ad2e2446a50478811a25e",
+    "semantic_hash": "0156e26e260ad2e2446a50478811a25e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\visita-analysis.ts": {
-    "mtime": 1778421188.5403461,
-    "ast_hash": "65563ad276fe55bdf3ff8804f082695f",
-    "semantic_hash": ""
+    "mtime": 1781792268.589525,
+    "ast_hash": "d8e63fb9c6d3212e2e48b2d1a96f0c44",
+    "semantic_hash": "d8e63fb9c6d3212e2e48b2d1a96f0c44"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\middleware.ts": {
-    "mtime": 1779402354.316378,
-    "ast_hash": "d210d11ce10b439a4c3e14c7daaf85ad",
-    "semantic_hash": ""
+    "mtime": 1782854338.171613,
+    "ast_hash": "8438a4753aa0f2697d8ae475e69f57e4",
+    "semantic_hash": "8438a4753aa0f2697d8ae475e69f57e4"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\types\\next-auth.d.ts": {
     "mtime": 1778332733.2533152,
     "ast_hash": "0ddff6aba3309e36fcd21bdb37e8b1f2",
-    "semantic_hash": ""
+    "semantic_hash": "0ddff6aba3309e36fcd21bdb37e8b1f2"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\tsconfig.json": {
     "mtime": 1778441776.5263164,
     "ast_hash": "08a1b19fc353ee77c7fbce41c46ecacb",
-    "semantic_hash": ""
+    "semantic_hash": "08a1b19fc353ee77c7fbce41c46ecacb"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\ui-ux-pro-max\\SKILL.md": {
     "mtime": 1779403743.506263,
     "ast_hash": "e092c3924799d4fc4194f994d8394cc3",
-    "semantic_hash": ""
+    "semantic_hash": "e092c3924799d4fc4194f994d8394cc3"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\AGENTS.md": {
-    "mtime": 1780083434.2739408,
-    "ast_hash": "7efbf283e7bac221b6a41619718c4192",
-    "semantic_hash": ""
+    "mtime": 1782854647.6978295,
+    "ast_hash": "3c1780d338aaf234e4ac5380ad8bb0db",
+    "semantic_hash": "3c1780d338aaf234e4ac5380ad8bb0db"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\CLAUDE.md": {
-    "mtime": 1778326025.6840205,
-    "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
-    "semantic_hash": ""
+    "mtime": 1782284071.7925022,
+    "ast_hash": "b0517ee048d45b5cd5463430230eb52f",
+    "semantic_hash": "b0517ee048d45b5cd5463430230eb52f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\INFORME_EJECUTIVO.html": {
     "mtime": 1780347234.9765878,
     "ast_hash": "ef5b4a3b693a7a71c579a13690d90625",
-    "semantic_hash": ""
+    "semantic_hash": "ef5b4a3b693a7a71c579a13690d90625"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\InLab_Gomez_Ulla_v1.0.html": {
     "mtime": 1779138833.8776677,
     "ast_hash": "843ef080e213581f8f4f6aa0cb31a14b",
-    "semantic_hash": ""
+    "semantic_hash": "843ef080e213581f8f4f6aa0cb31a14b"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\README.md": {
     "mtime": 1778325964.2579048,
     "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
-    "semantic_hash": ""
+    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\design-system\\palex-platform\\MASTER.md": {
     "mtime": 1779403816.0478473,
     "ast_hash": "754f6f7a5a5586f4e34eba9653c3ab86",
-    "semantic_hash": ""
+    "semantic_hash": "754f6f7a5a5586f4e34eba9653c3ab86"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\robots.txt": {
-    "mtime": 1779175179.4520419,
-    "ast_hash": "f71d20196d4caf35b6a670db8c70b03d",
-    "semantic_hash": ""
+    "mtime": 1781941664.1992302,
+    "ast_hash": "f706ce8af86bcd74167975fb7024303f",
+    "semantic_hash": "f706ce8af86bcd74167975fb7024303f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\file.svg": {
     "mtime": 1778325964.3651414,
     "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
-    "semantic_hash": ""
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\globe.svg": {
     "mtime": 1778325964.390911,
     "ast_hash": "2aaafa6a49b6563925fe440891e32717",
-    "semantic_hash": ""
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\icon-192x192.png": {
     "mtime": 1778419509.2090776,
     "ast_hash": "d55a37636349b83945c8dcbd5cce0bc3",
-    "semantic_hash": ""
+    "semantic_hash": "d55a37636349b83945c8dcbd5cce0bc3"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\icon-512x512.png": {
     "mtime": 1778419509.237254,
     "ast_hash": "af0566d390c89a8f9c60367b52655f5f",
-    "semantic_hash": ""
+    "semantic_hash": "af0566d390c89a8f9c60367b52655f5f"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\logo-palex.png": {
     "mtime": 1778331356.8066485,
     "ast_hash": "6c5ec4cfdd645dbaf7485e8c9c4963cd",
-    "semantic_hash": ""
+    "semantic_hash": "6c5ec4cfdd645dbaf7485e8c9c4963cd"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\next.svg": {
     "mtime": 1778325964.4149735,
     "ast_hash": "8e061864f388b47f33a1c3780831193e",
-    "semantic_hash": ""
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\vercel.svg": {
     "mtime": 1778325964.4352481,
     "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
-    "semantic_hash": ""
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
   },
   "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\public\\window.svg": {
     "mtime": 1778325964.455313,
     "ast_hash": "a2760511c65806022ad20adf74370ff3",
-    "semantic_hash": ""
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\hooks\\session_start.py": {
+    "mtime": 1780653729.3728693,
+    "ast_hash": "9e09de9e1ccc77af89deeb2c3cbfbe06",
+    "semantic_hash": "9e09de9e1ccc77af89deeb2c3cbfbe06"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\settings.json": {
+    "mtime": 1780653750.197982,
+    "ast_hash": "446d4f21d1ecc24b0eb4b31a394888ca",
+    "semantic_hash": "446d4f21d1ecc24b0eb4b31a394888ca"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\auth.setup.ts": {
+    "mtime": 1781934882.8542898,
+    "ast_hash": "64ad5b8614b762d01402e934165d0ab5",
+    "semantic_hash": "64ad5b8614b762d01402e934165d0ab5"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\navegacion.spec.ts": {
+    "mtime": 1781934921.815326,
+    "ast_hash": "846393489c43779cc0e606087b656cff",
+    "semantic_hash": "846393489c43779cc0e606087b656cff"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\proyectos.spec.ts": {
+    "mtime": 1781934907.7116823,
+    "ast_hash": "a5e9001aa1e2c64bfbef04dbea505824",
+    "semantic_hash": "a5e9001aa1e2c64bfbef04dbea505824"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\e2e\\visitas.spec.ts": {
+    "mtime": 1781934899.596021,
+    "ast_hash": "7644d9983ab2b49277f3298f322958be",
+    "semantic_hash": "7644d9983ab2b49277f3298f322958be"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-desktop.json": {
+    "mtime": 1781942907.7396348,
+    "ast_hash": "64bd202a95e1baa42caea55ceae3bfff",
+    "semantic_hash": "64bd202a95e1baa42caea55ceae3bfff"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-final.json": {
+    "mtime": 1781942868.8659148,
+    "ast_hash": "7588afd136adce5a4af27d8cb703bc34",
+    "semantic_hash": "7588afd136adce5a4af27d8cb703bc34"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-final2.json": {
+    "mtime": 1781943038.1700292,
+    "ast_hash": "724476adf89455650001fe76c6d76f1f",
+    "semantic_hash": "724476adf89455650001fe76c6d76f1f"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-final3.json": {
+    "mtime": 1781943114.0677452,
+    "ast_hash": "d71fa84b79229a1ef989c6b09131c730",
+    "semantic_hash": "d71fa84b79229a1ef989c6b09131c730"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-report-2.json": {
+    "mtime": 1781941961.97848,
+    "ast_hash": "e764eb642be1b71f10e5f52d6f58593b",
+    "semantic_hash": "e764eb642be1b71f10e5f52d6f58593b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-report-3.json": {
+    "mtime": 1781941993.6972227,
+    "ast_hash": "a32c4121d0aa3b933786fa17ef39dc64",
+    "semantic_hash": "a32c4121d0aa3b933786fa17ef39dc64"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-report-4.json": {
+    "mtime": 1781942022.8870804,
+    "ast_hash": "0004f727c06ce51c25e4caa23b17156b",
+    "semantic_hash": "0004f727c06ce51c25e4caa23b17156b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-report-final.json": {
+    "mtime": 1781942813.782842,
+    "ast_hash": "4aaaaf971b06f12533eeb5f80ac42002",
+    "semantic_hash": "4aaaaf971b06f12533eeb5f80ac42002"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\lighthouse-report.json": {
+    "mtime": 1781941578.6281946,
+    "ast_hash": "2e3aa02033bc422e16f6e538ce0aa44e",
+    "semantic_hash": "2e3aa02033bc422e16f6e538ce0aa44e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\sentry.client.config.ts": {
+    "mtime": 1781934733.036715,
+    "ast_hash": "564b7295b0d5322ea272cdaa2b0dc726",
+    "semantic_hash": "564b7295b0d5322ea272cdaa2b0dc726"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\sentry.edge.config.ts": {
+    "mtime": 1781934735.483557,
+    "ast_hash": "ac09e389803803bf5bdd4ea72b0c67ba",
+    "semantic_hash": "ac09e389803803bf5bdd4ea72b0c67ba"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\sentry.server.config.ts": {
+    "mtime": 1781934734.4332614,
+    "ast_hash": "ac09e389803803bf5bdd4ea72b0c67ba",
+    "semantic_hash": "ac09e389803803bf5bdd4ea72b0c67ba"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\actividad\\page.tsx": {
+    "mtime": 1782837741.7100313,
+    "ast_hash": "e55dbf26f25e4063634092584555754a",
+    "semantic_hash": "e55dbf26f25e4063634092584555754a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\carga-trabajo\\page.tsx": {
+    "mtime": 1782033585.8871655,
+    "ast_hash": "7b2ae8c2461baebed8dabb74292c5c51",
+    "semantic_hash": "7b2ae8c2461baebed8dabb74292c5c51"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\admin\\log\\page.tsx": {
+    "mtime": 1781905693.1260173,
+    "ast_hash": "0a8a1fa596591dde3e580af2f172c7ec",
+    "semantic_hash": "0a8a1fa596591dde3e580af2f172c7ec"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\comparador\\page.tsx": {
+    "mtime": 1782857865.431323,
+    "ast_hash": "930f1ca5e5c5b27e11ce271c421cd658",
+    "semantic_hash": "930f1ca5e5c5b27e11ce271c421cd658"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\dashboard\\loading.tsx": {
+    "mtime": 1782078529.0738738,
+    "ast_hash": "0922c165843404c5e2fe6135dbf549f4",
+    "semantic_hash": "0922c165843404c5e2fe6135dbf549f4"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\Charts.tsx": {
+    "mtime": 1780656362.7400987,
+    "ast_hash": "a591bd32fe59edb9f2be4603e0a0bd8d",
+    "semantic_hash": "a591bd32fe59edb9f2be4603e0a0bd8d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabAlertas.tsx": {
+    "mtime": 1780656851.6899471,
+    "ast_hash": "5e79f3304377b98331634510a16c214a",
+    "semantic_hash": "5e79f3304377b98331634510a16c214a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabAnalitica.tsx": {
+    "mtime": 1780656562.0307777,
+    "ast_hash": "27976be1e7a0ef8e8797b65482c33007",
+    "semantic_hash": "27976be1e7a0ef8e8797b65482c33007"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabCorrelaciones.tsx": {
+    "mtime": 1780656929.9073453,
+    "ast_hash": "dd03e415e0cd0c00a7e15afd539ec049",
+    "semantic_hash": "dd03e415e0cd0c00a7e15afd539ec049"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabDashboard.tsx": {
+    "mtime": 1780656477.714752,
+    "ast_hash": "423916454e6356f6081569fbc0b4d40e",
+    "semantic_hash": "423916454e6356f6081569fbc0b4d40e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabExplorador.tsx": {
+    "mtime": 1780657182.8350275,
+    "ast_hash": "b44df2a03906d7f159ddf5c282970fe7",
+    "semantic_hash": "b44df2a03906d7f159ddf5c282970fe7"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabIA.tsx": {
+    "mtime": 1780656713.4299664,
+    "ast_hash": "01da5800099ad99543a9593807085127",
+    "semantic_hash": "01da5800099ad99543a9593807085127"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabIncidencias.tsx": {
+    "mtime": 1780656635.9371703,
+    "ast_hash": "96ef0aa0eb5212d57726f92738914bd2",
+    "semantic_hash": "96ef0aa0eb5212d57726f92738914bd2"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\TabIndicadores.tsx": {
+    "mtime": 1780657080.4128423,
+    "ast_hash": "e78ae20d73a084d783f57e74cecbc091",
+    "semantic_hash": "e78ae20d73a084d783f57e74cecbc091"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_lib\\data-service.ts": {
+    "mtime": 1780656294.2898607,
+    "ast_hash": "e43e0b8042dfeafab8dc61b680ab24cb",
+    "semantic_hash": "e43e0b8042dfeafab8dc61b680ab24cb"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_lib\\mock-data.ts": {
+    "mtime": 1780656270.8434734,
+    "ast_hash": "f556a9b556ebe86d978929de24fe8a88",
+    "semantic_hash": "f556a9b556ebe86d978929de24fe8a88"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_lib\\types.ts": {
+    "mtime": 1780656184.0126505,
+    "ast_hash": "0a1dded27334996ca9a66b5b789e2dfa",
+    "semantic_hash": "0a1dded27334996ca9a66b5b789e2dfa"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\error.tsx": {
+    "mtime": 1782077374.6629405,
+    "ast_hash": "0cf3778790a1137d2cbc93737881b43e",
+    "semantic_hash": "0cf3778790a1137d2cbc93737881b43e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\incidencias\\[id]\\page.tsx": {
+    "mtime": 1782829441.5229912,
+    "ast_hash": "9e8b8a9b24f21c4eb4ff8fb9b42d0eb5",
+    "semantic_hash": "9e8b8a9b24f21c4eb4ff8fb9b42d0eb5"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\incidencias\\page.tsx": {
+    "mtime": 1782831051.6079817,
+    "ast_hash": "9bb04c31a0a47594d1396bea41518481",
+    "semantic_hash": "9bb04c31a0a47594d1396bea41518481"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\llamadas\\error.tsx": {
+    "mtime": 1782077369.7802901,
+    "ast_hash": "0cf3778790a1137d2cbc93737881b43e",
+    "semantic_hash": "0cf3778790a1137d2cbc93737881b43e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\llamadas\\page.tsx": {
+    "mtime": 1782033373.3459022,
+    "ast_hash": "5d52672eaffca88694d9052e7f80fa13",
+    "semantic_hash": "5d52672eaffca88694d9052e7f80fa13"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\mapa\\loading.tsx": {
+    "mtime": 1782078534.1758356,
+    "ast_hash": "44fe7e2dcda42dc34dae4b1bd694fe73",
+    "semantic_hash": "44fe7e2dcda42dc34dae4b1bd694fe73"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\notas\\page.tsx": {
+    "mtime": 1782837738.3823566,
+    "ast_hash": "ae40cb09fd2045cedf165872a554ecc4",
+    "semantic_hash": "ae40cb09fd2045cedf165872a554ecc4"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\KanbanView.tsx": {
+    "mtime": 1782839486.8910754,
+    "ast_hash": "946f3a45586b7e9ac0cacbd197d6c18c",
+    "semantic_hash": "946f3a45586b7e9ac0cacbd197d6c18c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\presentacion\\page.tsx": {
+    "mtime": 1782839743.1224086,
+    "ast_hash": "8c728bdebc4550b43a16b9671404e7ca",
+    "semantic_hash": "8c728bdebc4550b43a16b9671404e7ca"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabAdjuntos.tsx": {
+    "mtime": 1782052851.8542738,
+    "ast_hash": "160e31d6d420a51f5471966e6f30e94a",
+    "semantic_hash": "160e31d6d420a51f5471966e6f30e94a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabCockpit.tsx": {
+    "mtime": 1782052762.6265204,
+    "ast_hash": "74807c4115859cf6fe22d6c8c87c200e",
+    "semantic_hash": "74807c4115859cf6fe22d6c8c87c200e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabContactos.tsx": {
+    "mtime": 1782052816.3023942,
+    "ast_hash": "2b973cc3eb722b9193950ce696c5e70d",
+    "semantic_hash": "2b973cc3eb722b9193950ce696c5e70d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabInfo.tsx": {
+    "mtime": 1782052789.2302694,
+    "ast_hash": "54c6786951f424578853b45af963a447",
+    "semantic_hash": "54c6786951f424578853b45af963a447"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabMateriales.tsx": {
+    "mtime": 1782052811.3381863,
+    "ast_hash": "75a624158e3e29f61e891ec984ca18d2",
+    "semantic_hash": "75a624158e3e29f61e891ec984ca18d2"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabModulos.tsx": {
+    "mtime": 1782052848.6810875,
+    "ast_hash": "094aadbcc3dbc352fe37537af41ed27e",
+    "semantic_hash": "094aadbcc3dbc352fe37537af41ed27e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabResumen.tsx": {
+    "mtime": 1782052860.8502438,
+    "ast_hash": "ae3a989fa2960a2c0efcdcc05445020a",
+    "semantic_hash": "ae3a989fa2960a2c0efcdcc05445020a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabTareas.tsx": {
+    "mtime": 1782078588.422949,
+    "ast_hash": "04bbdbfecbbe159557b1d1a87835cf38",
+    "semantic_hash": "04bbdbfecbbe159557b1d1a87835cf38"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabTimeline.tsx": {
+    "mtime": 1782078604.1819468,
+    "ast_hash": "bf4b794836e7a03d5363fc16762030a9",
+    "semantic_hash": "bf4b794836e7a03d5363fc16762030a9"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\tabs\\TabVisitas.tsx": {
+    "mtime": 1782052842.745709,
+    "ast_hash": "5bbc19f39f7bbb99a09ece6a112e8413",
+    "semantic_hash": "5bbc19f39f7bbb99a09ece6a112e8413"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\proyectos\\[id]\\types.ts": {
+    "mtime": 1782034536.7863734,
+    "ast_hash": "ba6d505e0d478594a4eed009ab6e01cf",
+    "semantic_hash": "ba6d505e0d478594a4eed009ab6e01cf"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\recordatorios\\error.tsx": {
+    "mtime": 1782077374.5968645,
+    "ast_hash": "0cf3778790a1137d2cbc93737881b43e",
+    "semantic_hash": "0cf3778790a1137d2cbc93737881b43e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\recordatorios\\page.tsx": {
+    "mtime": 1781975420.099445,
+    "ast_hash": "1dfde842bf2518e923538ef5d8429006",
+    "semantic_hash": "1dfde842bf2518e923538ef5d8429006"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\Charts.tsx": {
+    "mtime": 1781535287.216092,
+    "ast_hash": "22b6494948ceb1ed9337929f08e8746a",
+    "semantic_hash": "22b6494948ceb1ed9337929f08e8746a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\MapaLeaflet.tsx": {
+    "mtime": 1781536329.9251635,
+    "ast_hash": "35905e1e60d5d166e3b1604fd6724073",
+    "semantic_hash": "35905e1e60d5d166e3b1604fd6724073"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabAlertas.tsx": {
+    "mtime": 1781536162.0473638,
+    "ast_hash": "558cadbd524c31f3eda3ccd0e9c334b7",
+    "semantic_hash": "558cadbd524c31f3eda3ccd0e9c334b7"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabDashboard.tsx": {
+    "mtime": 1781535444.5777597,
+    "ast_hash": "c872e7ee0b54e89409fa690afaf5289f",
+    "semantic_hash": "c872e7ee0b54e89409fa690afaf5289f"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabFlota.tsx": {
+    "mtime": 1781535868.921158,
+    "ast_hash": "263657eaa8a8fb66aa4ca7c65ba30d86",
+    "semantic_hash": "263657eaa8a8fb66aa4ca7c65ba30d86"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabIncidencias.tsx": {
+    "mtime": 1781536017.0477662,
+    "ast_hash": "f25049507d151ff449fc3c1e558b282d",
+    "semantic_hash": "f25049507d151ff449fc3c1e558b282d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabMapa.tsx": {
+    "mtime": 1781536459.4971988,
+    "ast_hash": "6fa486b3fe2b08b6a52522f902982190",
+    "semantic_hash": "6fa486b3fe2b08b6a52522f902982190"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_components\\TabTendencias.tsx": {
+    "mtime": 1781535725.9346528,
+    "ast_hash": "3562b2dbad2090626057e798179fb4d8",
+    "semantic_hash": "3562b2dbad2090626057e798179fb4d8"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_lib\\data-service.ts": {
+    "mtime": 1781535130.0456417,
+    "ast_hash": "b3fbb810bd27ee3ef09db8e5633efd02",
+    "semantic_hash": "b3fbb810bd27ee3ef09db8e5633efd02"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_lib\\mock-data.ts": {
+    "mtime": 1781534998.8854413,
+    "ast_hash": "36f11b3b6480e33f078f317f19141f3e",
+    "semantic_hash": "36f11b3b6480e33f078f317f19141f3e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\_lib\\types.ts": {
+    "mtime": 1781534855.4602478,
+    "ast_hash": "83d41cab21891d05d5b9519b518be47e",
+    "semantic_hash": "83d41cab21891d05d5b9519b518be47e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\error.tsx": {
+    "mtime": 1782077374.7326493,
+    "ast_hash": "0cf3778790a1137d2cbc93737881b43e",
+    "semantic_hash": "0cf3778790a1137d2cbc93737881b43e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\transporte\\page.tsx": {
+    "mtime": 1782033527.3648973,
+    "ast_hash": "4f6587ba1c3b632d00697ff6018d7859",
+    "semantic_hash": "4f6587ba1c3b632d00697ff6018d7859"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\admin\\carga-trabajo\\route.ts": {
+    "mtime": 1781991019.208205,
+    "ast_hash": "24f39dfd238b291b8cc121933b5b13b7",
+    "semantic_hash": "24f39dfd238b291b8cc121933b5b13b7"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\calendario\\ical\\route.ts": {
+    "mtime": 1782055222.352817,
+    "ast_hash": "72b6655c32a993f184c24dc547b75bb3",
+    "semantic_hash": "72b6655c32a993f184c24dc547b75bb3"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\checkin\\[id]\\route.ts": {
+    "mtime": 1782853933.425022,
+    "ast_hash": "317b5a1aeeb1068289f05590463cd41e",
+    "semantic_hash": "317b5a1aeeb1068289f05590463cd41e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\checkin\\route.ts": {
+    "mtime": 1782853928.1958077,
+    "ast_hash": "dc329558134027ff0addbece3b76bce6",
+    "semantic_hash": "dc329558134027ff0addbece3b76bce6"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\favoritos\\route.ts": {
+    "mtime": 1781976528.0697,
+    "ast_hash": "29eb5450d8fcea8f0f80a3e4ed1b194c",
+    "semantic_hash": "29eb5450d8fcea8f0f80a3e4ed1b194c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\score\\route.ts": {
+    "mtime": 1782839596.6475863,
+    "ast_hash": "7bb57130105eafdc95a4086286254548",
+    "semantic_hash": "7bb57130105eafdc95a4086286254548"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\score\\route.ts": {
+    "mtime": 1782839580.4334128,
+    "ast_hash": "b1bd0df64ffef5cca058bf96992bd848",
+    "semantic_hash": "b1bd0df64ffef5cca058bf96992bd848"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\incidencias\\[id]\\eventos\\[eventoId]\\route.ts": {
+    "mtime": 1782819088.420924,
+    "ast_hash": "2bb0d1ef69fa5c23aed6b4327e78ff44",
+    "semantic_hash": "2bb0d1ef69fa5c23aed6b4327e78ff44"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\incidencias\\[id]\\eventos\\route.ts": {
+    "mtime": 1782385733.9864993,
+    "ast_hash": "da4d79330743127d36de79de29276e34",
+    "semantic_hash": "da4d79330743127d36de79de29276e34"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\incidencias\\[id]\\route.ts": {
+    "mtime": 1782819093.6949525,
+    "ast_hash": "ec5a5a7120adf325ff1b6da445c51a09",
+    "semantic_hash": "ec5a5a7120adf325ff1b6da445c51a09"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\incidencias\\respuestas-rapidas\\route.ts": {
+    "mtime": 1782386659.3324676,
+    "ast_hash": "d35320e0d6d7911bf6925574e80109df",
+    "semantic_hash": "d35320e0d6d7911bf6925574e80109df"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\incidencias\\route.ts": {
+    "mtime": 1782820202.0944793,
+    "ast_hash": "598cedb20bc19e8cc804be909fc10ad5",
+    "semantic_hash": "598cedb20bc19e8cc804be909fc10ad5"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\llamadas\\[id]\\route.ts": {
+    "mtime": 1781991249.3386228,
+    "ast_hash": "c34d29f1fcf1f69a8d74690db5810ce8",
+    "semantic_hash": "c34d29f1fcf1f69a8d74690db5810ce8"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\llamadas\\route.ts": {
+    "mtime": 1781991245.3709743,
+    "ast_hash": "8b17da8f08a735b55d0e08c9fdcff636",
+    "semantic_hash": "8b17da8f08a735b55d0e08c9fdcff636"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\log-actividad\\route.ts": {
+    "mtime": 1782839432.3856006,
+    "ast_hash": "7847cd6b7fb216d37790f8f137749460",
+    "semantic_hash": "7847cd6b7fb216d37790f8f137749460"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\notas\\[id]\\route.ts": {
+    "mtime": 1782836020.5595777,
+    "ast_hash": "6bb603809b790052e12dad26fcf3749f",
+    "semantic_hash": "6bb603809b790052e12dad26fcf3749f"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\notas\\route.ts": {
+    "mtime": 1782836010.5406725,
+    "ast_hash": "ad881bfaac8f60d70759c3af4482f667",
+    "semantic_hash": "ad881bfaac8f60d70759c3af4482f667"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\onboarding\\route.ts": {
+    "mtime": 1782055222.386389,
+    "ast_hash": "7dd25d0c78604b0e9da794be286fe770",
+    "semantic_hash": "7dd25d0c78604b0e9da794be286fe770"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\presence\\route.ts": {
+    "mtime": 1782055222.395388,
+    "ast_hash": "3d8762c59deb684970e19eb9249d761b",
+    "semantic_hash": "3d8762c59deb684970e19eb9249d761b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\adjuntos\\[adjuntoId]\\route.ts": {
+    "mtime": 1782055354.717515,
+    "ast_hash": "ce3d6d985233f7dfe9ceb97ecea77dfb",
+    "semantic_hash": "ce3d6d985233f7dfe9ceb97ecea77dfb"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\adjuntos\\route.ts": {
+    "mtime": 1782055337.9935415,
+    "ast_hash": "45116f2b762dba3f8140746c1f2ba417",
+    "semantic_hash": "45116f2b762dba3f8140746c1f2ba417"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\aplicar-plantilla\\route.ts": {
+    "mtime": 1782835802.737516,
+    "ast_hash": "f9ef7d67813f2e5c1a194cb48baef068",
+    "semantic_hash": "f9ef7d67813f2e5c1a194cb48baef068"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\comentarios\\[comentarioId]\\route.ts": {
+    "mtime": 1782055411.8158362,
+    "ast_hash": "4cbd8d69776d25f246849bb95e119c63",
+    "semantic_hash": "4cbd8d69776d25f246849bb95e119c63"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\comentarios\\route.ts": {
+    "mtime": 1782055381.5131798,
+    "ast_hash": "d98d82ea8dd3556f9727e1bc7ad2af95",
+    "semantic_hash": "d98d82ea8dd3556f9727e1bc7ad2af95"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\contactos\\route.ts": {
+    "mtime": 1782055222.3973935,
+    "ast_hash": "fa674c3a300a054ce26f117fce323bb4",
+    "semantic_hash": "fa674c3a300a054ce26f117fce323bb4"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\entradas\\[entradaId]\\route.ts": {
+    "mtime": 1782055222.3999193,
+    "ast_hash": "b2b09cbd7222c0f74b6f5c610cbc407b",
+    "semantic_hash": "b2b09cbd7222c0f74b6f5c610cbc407b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\entradas\\route.ts": {
+    "mtime": 1782055222.400941,
+    "ast_hash": "03834cf0ba27eed88e7669009d25b056",
+    "semantic_hash": "03834cf0ba27eed88e7669009d25b056"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\excel\\route.ts": {
+    "mtime": 1782055422.036246,
+    "ast_hash": "c106bf111686a697ea1317e5fbb3e5ff",
+    "semantic_hash": "c106bf111686a697ea1317e5fbb3e5ff"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\fases\\[faseId]\\route.ts": {
+    "mtime": 1782055301.7374868,
+    "ast_hash": "88ac73d2e4de00531ff5b3847677cb31",
+    "semantic_hash": "88ac73d2e4de00531ff5b3847677cb31"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\hitos\\[hitoId]\\route.ts": {
+    "mtime": 1782055222.403939,
+    "ast_hash": "9c6569389c39984de5445c4f7f1e648b",
+    "semantic_hash": "9c6569389c39984de5445c4f7f1e648b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\hitos\\route.ts": {
+    "mtime": 1782055222.4049394,
+    "ast_hash": "cce3990a6dbf81dd8de38e5b10f3e299",
+    "semantic_hash": "cce3990a6dbf81dd8de38e5b10f3e299"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\modulos\\route.ts": {
+    "mtime": 1782055222.4099407,
+    "ast_hash": "da906f0f7a3f272f717a26fe278e8f9f",
+    "semantic_hash": "da906f0f7a3f272f717a26fe278e8f9f"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\share\\route.ts": {
+    "mtime": 1781894962.0618541,
+    "ast_hash": "4da0b27708ba3122e337bbc8f650b6d1",
+    "semantic_hash": "4da0b27708ba3122e337bbc8f650b6d1"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\solicitudes\\[solId]\\route.ts": {
+    "mtime": 1782055222.4139383,
+    "ast_hash": "01dd5df08f60e3d47ccd72335941503e",
+    "semantic_hash": "01dd5df08f60e3d47ccd72335941503e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\solicitudes\\route.ts": {
+    "mtime": 1782055222.4164572,
+    "ast_hash": "6776eb639cf10f64857254d5ad358430",
+    "semantic_hash": "6776eb639cf10f64857254d5ad358430"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\tareas\\[tareaId]\\route.ts": {
+    "mtime": 1782055278.389475,
+    "ast_hash": "b6bcd9d41b84ee8428de7cdaac0a9e3d",
+    "semantic_hash": "b6bcd9d41b84ee8428de7cdaac0a9e3d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\proyectos\\[id]\\tareas\\route.ts": {
+    "mtime": 1782055222.4194775,
+    "ast_hash": "a3b9b26063dbbfcdcf9ee4f4938a4628",
+    "semantic_hash": "a3b9b26063dbbfcdcf9ee4f4938a4628"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\recordatorios\\[id]\\route.ts": {
+    "mtime": 1782055222.422473,
+    "ast_hash": "458f1ae92ad5f5aff20bd87294496dcb",
+    "semantic_hash": "458f1ae92ad5f5aff20bd87294496dcb"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\recordatorios\\route.ts": {
+    "mtime": 1781975339.050998,
+    "ast_hash": "5908eed69fca76f6fd18a1cf11552d73",
+    "semantic_hash": "5908eed69fca76f6fd18a1cf11552d73"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\share\\hardware\\[id]\\route.ts": {
+    "mtime": 1782853962.7069633,
+    "ast_hash": "80bb43a808a659a64188bebc41f8d0af",
+    "semantic_hash": "80bb43a808a659a64188bebc41f8d0af"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\stats\\comparador\\route.ts": {
+    "mtime": 1782857859.571295,
+    "ast_hash": "afeae215d44a7760941dcb7dd911923b",
+    "semantic_hash": "afeae215d44a7760941dcb7dd911923b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\tags\\[id]\\route.ts": {
+    "mtime": 1782055222.4275084,
+    "ast_hash": "5ca70c8139651ca6cc1456a0ca09d86c",
+    "semantic_hash": "5ca70c8139651ca6cc1456a0ca09d86c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\tags\\route.ts": {
+    "mtime": 1781949692.8590307,
+    "ast_hash": "b7b21495bbfffc90206ee837bf58dd4d",
+    "semantic_hash": "b7b21495bbfffc90206ee837bf58dd4d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\usuarios\\menciones\\route.ts": {
+    "mtime": 1782839448.9630187,
+    "ast_hash": "cbcaa41b64e3a2f9c87881a293826a04",
+    "semantic_hash": "cbcaa41b64e3a2f9c87881a293826a04"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\api\\visitas\\estadisticas\\route.ts": {
+    "mtime": 1782055222.4325027,
+    "ast_hash": "ea5278ebc82ce9794a3aa9f1b77fb249",
+    "semantic_hash": "ea5278ebc82ce9794a3aa9f1b77fb249"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\global-error.tsx": {
+    "mtime": 1781934762.803955,
+    "ast_hash": "df99d77e840ab9a4ce839703f0ed6003",
+    "semantic_hash": "df99d77e840ab9a4ce839703f0ed6003"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\app\\share\\hardware\\[id]\\page.tsx": {
+    "mtime": 1782857919.4048047,
+    "ast_hash": "285c4f0325d1f4a8a5afbc68a59f8da2",
+    "semantic_hash": "285c4f0325d1f4a8a5afbc68a59f8da2"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\BottomNav.tsx": {
+    "mtime": 1781975395.0966432,
+    "ast_hash": "e9cd96c4aaa3f8cbe474266b8aff0942",
+    "semantic_hash": "e9cd96c4aaa3f8cbe474266b8aff0942"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\MentionInput.tsx": {
+    "mtime": 1781949622.1357117,
+    "ast_hash": "726a3ada153c993aaa758186d6ef6a55",
+    "semantic_hash": "726a3ada153c993aaa758186d6ef6a55"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\MentionText.tsx": {
+    "mtime": 1781949590.3198557,
+    "ast_hash": "979ef50810d6f177b4d3109913b46bbe",
+    "semantic_hash": "979ef50810d6f177b4d3109913b46bbe"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\NotificationManager.tsx": {
+    "mtime": 1781976552.2452617,
+    "ast_hash": "0cdd7934fdd84cfca37f75d404ec6595",
+    "semantic_hash": "0cdd7934fdd84cfca37f75d404ec6595"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\OnboardingWizard.tsx": {
+    "mtime": 1782283826.4559364,
+    "ast_hash": "3e06a813b006e13e9a47d2c650f2d271",
+    "semantic_hash": "3e06a813b006e13e9a47d2c650f2d271"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\QuickActionsFAB.tsx": {
+    "mtime": 1782857904.7237787,
+    "ast_hash": "fa14d745da084456bc1bf3a8c297959d",
+    "semantic_hash": "fa14d745da084456bc1bf3a8c297959d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\TagSelector.tsx": {
+    "mtime": 1781949772.9498153,
+    "ast_hash": "9e07e894fcec863e42276ef36b8912a8",
+    "semantic_hash": "9e07e894fcec863e42276ef36b8912a8"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\components\\visitas\\SignaturePad.tsx": {
+    "mtime": 1781991097.081048,
+    "ast_hash": "49a0be3ba2ca9ab61b9c2565c6f7958b",
+    "semantic_hash": "49a0be3ba2ca9ab61b9c2565c6f7958b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\hooks\\useFavoritos.ts": {
+    "mtime": 1781976517.7665174,
+    "ast_hash": "13cbd69f3e611a6d0d9ec26c0776e5fd",
+    "semantic_hash": "13cbd69f3e611a6d0d9ec26c0776e5fd"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\hooks\\usePerfil.ts": {
+    "mtime": 1782033218.598796,
+    "ast_hash": "b152d1725203caa0ca2e2145180ee65c",
+    "semantic_hash": "b152d1725203caa0ca2e2145180ee65c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\instrumentation.ts": {
+    "mtime": 1781934741.0272472,
+    "ast_hash": "dde31bdd42276ecffa5659d68a826a89",
+    "semantic_hash": "dde31bdd42276ecffa5659d68a826a89"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\hospital-score.ts": {
+    "mtime": 1782839567.4404082,
+    "ast_hash": "62d7a99a100430ae2f8a30bb41ae9d7b",
+    "semantic_hash": "62d7a99a100430ae2f8a30bb41ae9d7b"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\log-actividad.ts": {
+    "mtime": 1781905571.6469388,
+    "ast_hash": "6e553b72904338673fcb520db0ec022a",
+    "semantic_hash": "6e553b72904338673fcb520db0ec022a"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\presence.ts": {
+    "mtime": 1782028763.0808172,
+    "ast_hash": "f875bf1a53e4ac564df319e87ccefed6",
+    "semantic_hash": "f875bf1a53e4ac564df319e87ccefed6"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\project-templates.ts": {
+    "mtime": 1782835783.1351342,
+    "ast_hash": "9838dc9bcbea642c1498b6a28753fa66",
+    "semantic_hash": "9838dc9bcbea642c1498b6a28753fa66"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\redis.ts": {
+    "mtime": 1782028729.9349298,
+    "ast_hash": "de7a6de435112cd4b7bad7107f6d8987",
+    "semantic_hash": "de7a6de435112cd4b7bad7107f6d8987"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\schemas.ts": {
+    "mtime": 1782819329.7335656,
+    "ast_hash": "a85bca01fd1d8f69b5f2d141e9a76b16",
+    "semantic_hash": "a85bca01fd1d8f69b5f2d141e9a76b16"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\src\\lib\\scoring-config.ts": {
+    "mtime": 1781791730.433874,
+    "ast_hash": "206dae799042108c9d35f8f1e14b5611",
+    "semantic_hash": "206dae799042108c9d35f8f1e14b5611"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\CLAUDE.md": {
+    "mtime": 1780653120.0670621,
+    "ast_hash": "817fe671013b35ae0bc9301dfe449a87",
+    "semantic_hash": "817fe671013b35ae0bc9301dfe449a87"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\SKILL.md": {
+    "mtime": 1780653120.0640564,
+    "ast_hash": "c0ac08140ebbce36e6562f1a8d3a97b9",
+    "semantic_hash": "c0ac08140ebbce36e6562f1a8d3a97b9"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\add-watch.md": {
+    "mtime": 1780492515.7404947,
+    "ast_hash": "0df0589623217ca38a12bdcabfb42f4c",
+    "semantic_hash": "0df0589623217ca38a12bdcabfb42f4c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\exports.md": {
+    "mtime": 1780492515.7404947,
+    "ast_hash": "7fb1a81aca17a462db70684a324fcfb0",
+    "semantic_hash": "7fb1a81aca17a462db70684a324fcfb0"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\extraction-spec.md": {
+    "mtime": 1780492515.742496,
+    "ast_hash": "24808b03abfeaf5f6435bb69c0125b2c",
+    "semantic_hash": "24808b03abfeaf5f6435bb69c0125b2c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\github-and-merge.md": {
+    "mtime": 1780492515.7434926,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": "cde13df085e4c492aeb7ba298a996d0d"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\hooks.md": {
+    "mtime": 1780492515.7450097,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": "3f545db6ce646650bb9de588f5512a27"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\query.md": {
+    "mtime": 1780492515.746024,
+    "ast_hash": "c2a8e798674a81b02aa9975f43023819",
+    "semantic_hash": "c2a8e798674a81b02aa9975f43023819"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\transcribe.md": {
+    "mtime": 1780492515.7470286,
+    "ast_hash": "70f6aa30d6211f3a2c7e9fc45479f50c",
+    "semantic_hash": "70f6aa30d6211f3a2c7e9fc45479f50c"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\.claude\\skills\\graphify\\references\\update.md": {
+    "mtime": 1780492515.7470286,
+    "ast_hash": "735932eaa4f0c8fef9566c538ae3e5f8",
+    "semantic_hash": "735932eaa4f0c8fef9566c538ae3e5f8"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\AGENTS-ARCHIVE.md": {
+    "mtime": 1782316136.458001,
+    "ast_hash": "2058c16c2335139ff2853654930a87c3",
+    "semantic_hash": "2058c16c2335139ff2853654930a87c3"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\CONTEXT.md": {
+    "mtime": 1782079354.355467,
+    "ast_hash": "3e4b5852802c24c421b4e5427af5acca",
+    "semantic_hash": "3e4b5852802c24c421b4e5427af5acca"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\ROADMAP-TERMOGRAFIA.md": {
+    "mtime": 1781466201.7426789,
+    "ast_hash": "565a03ed18e8c3a79d5cb9c18a00fd29",
+    "semantic_hash": "565a03ed18e8c3a79d5cb9c18a00fd29"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\TECHNICAL-DOC.html": {
+    "mtime": 1782287743.0097773,
+    "ast_hash": "65872c70fd0d5a0067316b2dbf9e4465",
+    "semantic_hash": "65872c70fd0d5a0067316b2dbf9e4465"
+  },
+  "C:\\Users\\ruben\\Desktop\\PALEXAPP\\palex-platform\\TECHNICAL.md": {
+    "mtime": 1782285007.1134355,
+    "ast_hash": "e4d1ab58215e74f19bd0e06253543d0f",
+    "semantic_hash": "e4d1ab58215e74f19bd0e06253543d0f"
   }
 }

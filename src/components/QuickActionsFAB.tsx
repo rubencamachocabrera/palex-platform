@@ -14,8 +14,6 @@ interface Action {
 }
 
 function useContextActions(pathname: string, router: ReturnType<typeof useRouter>): Action[] {
-  const go = (href: string) => { router.push(href) }
-
   if (pathname.startsWith("/hospitales/") && pathname.split("/").length > 2) {
     const id = pathname.split("/")[2]
     return [

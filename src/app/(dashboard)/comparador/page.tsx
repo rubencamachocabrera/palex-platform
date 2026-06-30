@@ -129,11 +129,14 @@ export default function ComparadorPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const ctrl = new AbortController()
     setLoading(true)
-    fetch(`/api/stats/comparador?periodo=${periodo}`)
+    fetch(`/api/stats/comparador?periodo=${periodo}`, { signal: ctrl.signal })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setData(d) })
+      .catch(e => { if (e.name !== "AbortError") console.error(e) })
       .finally(() => setLoading(false))
+    return () => ctrl.abort()
   }, [periodo])
 
   return (

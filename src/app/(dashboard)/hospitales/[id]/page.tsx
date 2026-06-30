@@ -230,6 +230,7 @@ export default function HospitalDetailPage() {
     try {
       const r = await fetch("/api/checkin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospitalId: id }) })
       if (r.ok) { const d = await r.json(); setCheckinActivo(d) }
+      else console.error("[checkin]", await r.text())
     } finally { setCheckinLoading(false) }
   }
 
@@ -239,6 +240,7 @@ export default function HospitalDetailPage() {
     try {
       const r = await fetch(`/api/checkin/${checkinActivo.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
       if (r.ok) setCheckinActivo(null)
+      else console.error("[checkout]", await r.text())
     } finally { setCheckinLoading(false) }
   }
 
@@ -280,9 +282,8 @@ export default function HospitalDetailPage() {
     setEliminandoVisita(true)
     try {
       const r = await fetch(`/api/visitas/${eliminarVisitaId}`, { method: "DELETE" })
-      if (r.ok && hospital) {
-        hospital.visitas = hospital.visitas.filter(v => v.id !== eliminarVisitaId)
-        setHospital({ ...hospital })
+      if (r.ok) {
+        setHospital(prev => prev ? { ...prev, visitas: prev.visitas.filter(v => v.id !== eliminarVisitaId) } : prev)
         setEliminarVisitaId(null)
       }
     } finally { setEliminandoVisita(false) }
@@ -516,7 +517,7 @@ export default function HospitalDetailPage() {
               </p>
             </div>
             <button onClick={hacerCheckout} disabled={checkinLoading}
-              className="flex items-center gap-1.5 text-xs font-semibold text-green-700 px-3 py-1.5 rounded-lg bg-green-100 hover:bg-green-200 transition-colors cursor-pointer disabled:opacity-60">
+              className="flex items-center gap-1.5 text-xs font-semibold text-green-700 px-3 py-2.5 rounded-lg bg-green-100 hover:bg-green-200 transition-colors cursor-pointer disabled:opacity-60" style={{ minHeight: 44 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
@@ -551,7 +552,7 @@ export default function HospitalDetailPage() {
             <div className="flex items-center gap-2">
               {!checkinActivo && (
                 <button onClick={hacerCheckin} disabled={checkinLoading}
-                  className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-60">
+                  className="flex items-center gap-1.5 text-sm font-medium px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-60" style={{ minHeight: 44 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>

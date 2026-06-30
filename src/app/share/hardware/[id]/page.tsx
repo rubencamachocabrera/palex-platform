@@ -55,9 +55,6 @@ const PRIO_COLOR: Record<string, string> = {
 function fmtFecha(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
 }
-function fmtFechaHora(iso: string) {
-  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
-}
 
 function garantiaStatus(fecha?: string | null) {
   if (!fecha) return null
@@ -74,10 +71,15 @@ export default function HardwarePassportPage() {
   const [data, setData] = useState<Unidad | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [serverError, setServerError] = useState(false)
 
   useEffect(() => {
     fetch(`/api/share/hardware/${id}`)
-      .then(r => { if (!r.ok) { setNotFound(true); return null } return r.json() })
+      .then(r => {
+        if (r.status === 404) { setNotFound(true); return null }
+        if (!r.ok) { setServerError(true); return null }
+        return r.json()
+      })
       .then(d => { if (d) setData(d) })
       .finally(() => setLoading(false))
   }, [id])
@@ -86,6 +88,13 @@ export default function HardwarePassportPage() {
     <div style={{ minHeight: "100svh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
       <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${TEAL}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+
+  if (serverError) return (
+    <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", gap: 16, padding: 24 }}>
+      <p style={{ fontSize: 18, fontWeight: 600, color: "#374151", margin: 0 }}>Error del servidor</p>
+      <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>No se pudo cargar el pasaporte. Inténtalo de nuevo.</p>
     </div>
   )
 
