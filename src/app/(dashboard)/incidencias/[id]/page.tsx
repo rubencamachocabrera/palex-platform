@@ -417,14 +417,24 @@ export default function IncidenciaDetallePage() {
     const pri = PRIORIDADES[inc.prioridad] ?? { label: inc.prioridad, color: "#6b7280" }
     const sla = slaInfo(inc)
 
+    const tiempoTotal = inc.eventos.reduce((acc, ev) => acc + (ev.duracion ?? 0), 0)
+    const fmtMinPdf = (min: number) => {
+      if (!min || min <= 0) return "—"
+      const h = Math.floor(min / 60); const m = min % 60
+      if (h === 0) return `${m}min`; if (m === 0) return `${h}h`; return `${h}h ${m}min`
+    }
+
     const eventosHTML = inc.eventos.map(ev => {
       const info = getEventoInfo(ev.tipo)
+      const realizadoPor = Array.isArray(ev.realizadoPorNombres) && ev.realizadoPorNombres.length > 0
+        ? ev.realizadoPorNombres.map(n => esc(n)).join(", ")
+        : esc(ev.autor.nombre)
       return `<tr>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${formatDate(ev.creadoEn)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="font-size:11px;font-weight:600;color:${info.color};background:${info.color}15;padding:2px 8px;border-radius:10px">${esc(info.label)}</span></td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155">${esc(ev.descripcion)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${esc(ev.autor.nombre)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;text-align:center">${ev.duracion && ev.duracion > 0 ? (ev.duracion >= 60 ? `${Math.floor(ev.duracion / 60)}h${ev.duracion % 60 > 0 ? ` ${ev.duracion % 60}min` : ""}` : `${ev.duracion} min`) : "—"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b">${realizadoPor}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:600;color:#0284c7;text-align:center">${fmtMinPdf(ev.duracion ?? 0)}</td>
       </tr>`
     }).join("")
 
@@ -450,10 +460,11 @@ export default function IncidenciaDetallePage() {
           ["Asignada a", esc([inc.asignadoA?.nombre, ...(Array.isArray(inc.coasignadosIds) ? inc.coasignadosIds.map(c => c.nombre) : [])].filter(Boolean).join(", ") || "Sin asignar")],
           ["Creada", formatDate(inc.creadoEn)],
           ["SLA", `${inc.slaHoras ?? 0}h — ${sla.label}`],
+          ["Tiempo total dedicado", fmtMinPdf(tiempoTotal)],
           ...(inc.fechaResolucion ? [["Resuelta", formatDate(inc.fechaResolucion)]] : []),
           ...(inc.contacto ? [["Contacto", esc(inc.contacto.nombre) + (inc.contacto.cargo ? ` (${esc(inc.contacto.cargo)})` : "")]] : []),
           ...(inc.hardwareUnidad ? [["Hardware", `${esc(inc.hardwareUnidad.catalogo.marca)} ${esc(inc.hardwareUnidad.catalogo.modelo)}${inc.hardwareUnidad.numSerie ? ` — SN: ${esc(inc.hardwareUnidad.numSerie)}` : ""}`]] : []),
-        ].map(([k, v]) => `<div style="background:#f8fafc;padding:10px 14px;border-radius:8px"><span style="font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:700">${k}</span><p style="margin:4px 0 0;font-size:13px;font-weight:500">${v}</p></div>`).join("")}
+        ].map(([k, v]) => `<div style="background:${k === "Tiempo total dedicado" ? "#eff6ff" : "#f8fafc"};padding:10px 14px;border-radius:8px${k === "Tiempo total dedicado" ? ";border:1px solid #bfdbfe" : ""}"><span style="font-size:11px;text-transform:uppercase;color:${k === "Tiempo total dedicado" ? "#1d4ed8" : "#94a3b8"};font-weight:700">${k}</span><p style="margin:4px 0 0;font-size:13px;font-weight:${k === "Tiempo total dedicado" ? "700" : "500"};color:${k === "Tiempo total dedicado" ? "#1e40af" : "inherit"}">${v}</p></div>`).join("")}
       </div>
       <p style="font-size:14px;white-space:pre-wrap;color:#475569;margin-bottom:24px;line-height:1.6">${esc(inc.descripcion)}</p>
       ${inc.resolucion ? `<div style="background:#ecfdf5;border-left:3px solid #10b981;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:24px"><p style="font-size:11px;text-transform:uppercase;color:#059669;font-weight:700;margin:0 0 4px">Resolución</p><p style="font-size:13px;color:#065f46;margin:0;white-space:pre-wrap">${esc(inc.resolucion)}</p></div>` : ""}
@@ -468,7 +479,7 @@ export default function IncidenciaDetallePage() {
         </tr></thead>
         <tbody>${eventosHTML}</tbody>
       </table>
-      <p style="text-align:center;font-size:11px;color:#94a3b8;margin-top:32px">Informe generado el ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} — Palex Medical</p>
+      <p style="text-align:center;font-size:11px;color:#94a3b8;margin-top:32px">${inc.eventos.length} eventos · Tiempo total dedicado: <strong style="color:#1d4ed8">${fmtMinPdf(tiempoTotal)}</strong> · Informe generado el ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} — Palex Medical</p>
     </body></html>`
 
     const w = window.open("", "_blank")
@@ -631,6 +642,18 @@ export default function IncidenciaDetallePage() {
                 <span className="text-gray-700 dark:text-gray-300">{formatDate(inc.fechaResolucion)}</span>
               </div>
             )}
+            {(() => {
+              const total = inc.eventos.reduce((acc, ev) => acc + (ev.duracion ?? 0), 0)
+              if (total <= 0) return null
+              const h = Math.floor(total / 60); const m = total % 60
+              const label = h === 0 ? `${m}min` : m === 0 ? `${h}h` : `${h}h ${m}min`
+              return (
+                <div className="flex justify-between text-sm pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <span className="text-gray-500 flex items-center gap-1.5"><IconClock size={13} /> Tiempo dedicado</span>
+                  <span className="font-bold" style={{ color: "#1d4ed8" }}>{label}</span>
+                </div>
+              )
+            })()}
 
             {/* Contact */}
             {inc.contacto && (

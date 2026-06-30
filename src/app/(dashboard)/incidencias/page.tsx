@@ -34,6 +34,7 @@ interface Incidencia {
   asignadoA: { id: string; nombre: string } | null
   hardwareUnidad: { id: string; numSerie: string | null; catalogo: { marca: string; modelo: string } } | null
   _count: { eventos: number }
+  tiempoTotalMinutos: number
 }
 
 interface Hospital { id: string; nombre: string; ciudad: string }
@@ -103,6 +104,15 @@ function slaStatus(creadoEn: string, slaHoras: number | null, estado: string): {
   if (pct > 1) return { label: "Vencido", color: "#ef4444" }
   if (pct > 0.75) return { label: "En riesgo", color: "#f59e0b" }
   return { label: "En plazo", color: "#10b981" }
+}
+
+function fmtMin(min: number): string {
+  if (!min || min <= 0) return "—"
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  if (h === 0) return `${m}min`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
 }
 
 export default function IncidenciasPage() {
@@ -270,10 +280,12 @@ export default function IncidenciasPage() {
       const kpiResueltas = data.filter(i => ["RESUELTA", "CERRADA"].includes(i.estado)).length
       const kpiHW = data.filter(i => i.tipo === "HARDWARE").length
       const kpiSW = data.filter(i => i.tipo === "SOFTWARE").length
+      const kpiTiempoTotal = data.reduce((acc, i) => acc + (i.tiempoTotalMinutos ?? 0), 0)
 
       const rows = data.map(i => {
         const est = getEstadoStyle(i.estado)
         const sla = slaStatus(i.creadoEn, i.slaHoras, i.estado)
+        const tiempo = fmtMin(i.tiempoTotalMinutos ?? 0)
         return `<tr>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-family:monospace;color:#64748b">${esc(i.codigo)}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.titulo)}</td>
@@ -284,12 +296,13 @@ export default function IncidenciasPage() {
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center"><span style="color:${sla.color};font-weight:600">${esc(sla.label)}</span></td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${new Date(i.creadoEn).toLocaleDateString("es-ES")}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px">${esc(i.asignadoA?.nombre ?? "—")}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:600;color:#0284c7;text-align:right">${esc(tiempo)}</td>
         </tr>`
       }).join("")
 
       const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Incidencias — Palex</title>
       <style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:15mm}}</style></head>
-      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:30px auto;color:#1e293b;padding:0 20px">
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1200px;margin:30px auto;color:#1e293b;padding:0 20px">
         <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${TEAL};padding-bottom:14px;margin-bottom:20px">
           <div>
             <h1 style="margin:0;font-size:20px;color:#0f172a">Informe de Incidencias</h1>
@@ -300,7 +313,7 @@ export default function IncidenciasPage() {
             <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:${TEAL}">Palex Medical</p>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:24px">
           ${[
             { l: "Total", v: data.length, c: "#0f172a" },
             { l: "Abiertas", v: kpiAbiertas, c: "#ef4444" },
@@ -308,15 +321,16 @@ export default function IncidenciasPage() {
             { l: "Pendientes", v: kpiPendientes, c: "#8b5cf6" },
             { l: "Resueltas", v: kpiResueltas, c: "#10b981" },
             { l: "HW / SW", v: kpiHW + " / " + kpiSW, c: "#3b82f6" },
+            { l: "Tiempo total", v: fmtMin(kpiTiempoTotal), c: "#0284c7" },
           ].map(k => `<div style="background:#f8fafc;padding:10px 12px;border-radius:8px;text-align:center"><p style="margin:0;font-size:10px;text-transform:uppercase;color:#94a3b8;font-weight:700">${k.l}</p><p style="margin:4px 0 0;font-size:18px;font-weight:800;color:${k.c}">${k.v}</p></div>`).join("")}
         </div>
         <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
           <thead><tr style="background:#f8fafc">
-            ${["Código", "Título", "Hospital", "Estado", "Tipo", "Equipo", "SLA", "Fecha", "Asignado"].map(h => `<th style="padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">${h}</th>`).join("")}
+            ${["Código", "Título", "Hospital", "Estado", "Tipo", "Equipo", "SLA", "Fecha", "Asignado", "Tiempo"].map(h => `<th style="padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">${h}</th>`).join("")}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <p style="text-align:center;font-size:10px;color:#94a3b8;margin-top:32px">${data.length} incidencias · Informe generado automáticamente — Palex Medical</p>
+        <p style="text-align:center;font-size:10px;color:#94a3b8;margin-top:32px">${data.length} incidencias · Tiempo total dedicado: ${fmtMin(kpiTiempoTotal)} · Informe generado automáticamente — Palex Medical</p>
       </body></html>`
 
       const w = window.open("", "_blank")
@@ -521,6 +535,9 @@ export default function IncidenciasPage() {
                       {inc.asignadoA && <><span>·</span><span>Asignada a {inc.asignadoA.nombre}</span></>}
                       {inc.hardwareUnidad && (
                         <><span>·</span><span>{inc.hardwareUnidad.catalogo.marca} {inc.hardwareUnidad.catalogo.modelo}{inc.hardwareUnidad.numSerie ? ` (${inc.hardwareUnidad.numSerie})` : ""}</span></>
+                      )}
+                      {inc.tiempoTotalMinutos > 0 && (
+                        <span className="font-semibold" style={{ color: "#0284c7" }}>{fmtMin(inc.tiempoTotalMinutos)}</span>
                       )}
                       <span className="ml-auto shrink-0">{timeAgo(inc.creadoEn)}</span>
                       {inc._count.eventos > 1 && <span className="text-gray-400">{inc._count.eventos} eventos</span>}

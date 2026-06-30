@@ -94,7 +94,18 @@ export async function GET(req: NextRequest) {
       db.incidencia.count({ where }),
     ])
 
-    const res = NextResponse.json(incidencias)
+    const ids = incidencias.map(i => i.id)
+    const tiempos = ids.length > 0
+      ? await db.eventoIncidencia.groupBy({
+          by: ["incidenciaId"],
+          where: { incidenciaId: { in: ids }, duracion: { not: null } },
+          _sum: { duracion: true },
+        })
+      : []
+    const tiempoMap = new Map(tiempos.map(t => [t.incidenciaId, t._sum.duracion ?? 0]))
+    const result = incidencias.map(inc => ({ ...inc, tiempoTotalMinutos: tiempoMap.get(inc.id) ?? 0 }))
+
+    const res = NextResponse.json(result)
     res.headers.set("X-Total-Count", String(total))
     res.headers.set("Cache-Control", "private, max-age=10")
     return res
