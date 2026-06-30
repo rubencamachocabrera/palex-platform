@@ -475,6 +475,23 @@ export default function IncidenciasPage() {
     )
   }
 
+  function Highlight({ text, term }: { text: string; term: string }) {
+    if (!term.trim()) return <>{text}</>
+    const escaped = term.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const parts = text.split(new RegExp(`(${escaped})`, "gi"))
+    return (
+      <>
+        {parts.map((part, i) =>
+          i % 2 === 1 ? (
+            <mark key={i} className="bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 rounded-sm not-italic px-0.5">
+              {part}
+            </mark>
+          ) : part
+        )}
+      </>
+    )
+  }
+
   function QuickAssign({ inc }: { inc: Incidencia }) {
     const open = inlineDropdown?.id === inc.id && inlineDropdown.field === "asignado"
     return (
@@ -756,11 +773,11 @@ export default function IncidenciasPage() {
                                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                                 </span>
                               )}
-                              {inc.codigo}
+                              <Highlight text={inc.codigo} term={busqueda} />
                             </span>
                           </td>
                           <td className="px-3 py-3.5 max-w-[260px]">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{inc.titulo}</span>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1"><Highlight text={inc.titulo} term={busqueda} /></span>
                             <span className="block text-xs text-gray-400 mt-0.5">
                               {inc._count.eventos} evento{inc._count.eventos !== 1 ? "s" : ""}
                               {inc.tiempoTotalMinutos > 0 && <span className="text-blue-500 font-semibold ml-1">· {fmtMin(inc.tiempoTotalMinutos)}</span>}
@@ -832,7 +849,7 @@ export default function IncidenciasPage() {
                             <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: pri.color }} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="text-xs font-mono font-bold text-gray-400">{inc.codigo}</span>
+                                <span className="text-xs font-mono font-bold text-gray-400"><Highlight text={inc.codigo} term={busqueda} /></span>
                                 <InlineDropdown inc={inc} field="estado" />
                                 <InlineDropdown inc={inc} field="prioridad" />
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
@@ -849,7 +866,7 @@ export default function IncidenciasPage() {
                                   <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#10b98115", color: "#10b981" }}>SLA cumplido</span>
                                 )}
                               </div>
-                              <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{inc.titulo}</h3>
+                              <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate"><Highlight text={inc.titulo} term={busqueda} /></h3>
                               <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                                 <span>{inc.hospital.nombre}</span>
                                 <span>·</span>
