@@ -221,6 +221,15 @@ export default function IncidenciaDetallePage() {
   const [editandoResolucion, setEditandoResolucion] = useState(false)
   const [resolucionText, setResolucionText] = useState("")
   const [saving, setSaving] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const main = document.getElementById("main-content")
+    if (!main) return
+    const check = () => setScrolled(main.scrollTop > 60)
+    main.addEventListener("scroll", check, { passive: true })
+    return () => main.removeEventListener("scroll", check)
+  }, [])
 
   const fetchInc = useCallback(async () => {
     const r = await fetch(`/api/incidencias/${id}`)
@@ -515,6 +524,24 @@ export default function IncidenciaDetallePage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto">
+
+      {/* Sticky mini-header — glassmorphism, aparece al hacer scroll */}
+      <div className={`sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden transition-all duration-200 ${
+        scrolled ? "max-h-14 border-b border-gray-200/60 dark:border-gray-800/60 shadow-sm" : "max-h-0"
+      }`}>
+        <div className="px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2.5 backdrop-blur-md bg-white/90 dark:bg-[#0f172a]/92">
+          <button onClick={() => router.push("/incidencias")}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+            <IconArrowLeft size={14} />
+          </button>
+          <div className="h-3.5 w-px bg-gray-200 dark:bg-gray-700 shrink-0" />
+          <span className="text-[11px] font-mono font-bold text-gray-400 shrink-0">{inc.codigo}</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate flex-1">{inc.titulo}</span>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: est.bg, color: est.color }}>{est.label}</span>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0 hidden sm:inline-flex" style={{ backgroundColor: pri.bg, color: pri.color }}>{pri.label}</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => router.push("/incidencias")} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors group">
