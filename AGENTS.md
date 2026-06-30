@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-07-01 (Sprint 17).
+> Ultima actualizacion: 2026-07-02 (Sprint 18).
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -251,8 +251,12 @@ Oportunidad      (DESACTIVADO)
 **Incidencias:** Helpdesk HW/SW, 10 categorias, 5 equipos (Servicio Tecnico/Aplicaciones/Comercial/Marketing/Proyectos), SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR — slaPausadoEn+slaPausadoMs), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, hospital con buscador combobox, asignacion multiple (principal+coasignados JSON), exportacion informes PDF, filtros activos con chips, KPIs interactivos (totales independientes del filtro), toggle activacion. **UX Pro Max (Sprint 15):** slide-over drawer, vista tabla, SLA countdown live (60s), inline edit estado/prioridad/asignado, banner criticas, agrupacion collapsible por prioridad, timeline eventos auto compactos + tiempo-dia + badge lapiz editado, sticky header glassmorphism en detalle, ordenacion clickable (fecha/SLA/hospital/titulo), indicador actividad reciente pulsante (2h), QuickAssign desde lista, highlighting busqueda, atajos teclado (N/R/↑↓/Esc). tiempoTotalMinutos por incidencia en lista/detalle/PDF/export.
 **Scoring hospitales:** health score 0-100 calculado dinamicamente (visitas 60d / proyectos activos / HW / llamadas 30d / penalizacion criticas). Badge en detalle hospital con breakdown visual. GET /api/hospitales/[id]/score + batch /api/hospitales/score?ids=.
 **Modo presentacion:** /proyectos/[id]/presentacion — 5 slides dark mode (Portada, Fases, Tareas, Hitos, Resumen KPIs con donut chart). Navegacion teclado flechas, Esc para cerrar. Boton "Presentar" en acciones rapidas del proyecto.
+**Comparador de periodos:** /comparador — seleccion 30/90/365 dias, 6 metricas (visitas/proyectos/incidencias/llamadas/checkins/horas campo), sparklines SVG puros con gradiente, DeltaBadge %, tabla resumen. API GET /api/stats/comparador?periodo=. Cache-Control private max-age 300.
+**Pasaporte hardware:** /share/hardware/[id] — pagina publica sin auth (CSP exento), hero dark-blue, badge estado/garantia, info tecnica, historial incidencias activas/cerradas colapsible. API GET /api/share/hardware/[id].
+**Check-in/Check-out hospitales:** modelo CheckinHospital (checkins_hospital), relaciones nombradas "CheckinsUsuario"/"CheckinsHospital". API POST /api/checkin (idempotente), GET /api/checkin?hospitalId&activo=, PATCH /api/checkin/[id] (checkout, calcula duracion minutos). Banner activo en detalle hospital con pulsante verde + contador en vivo (actualizado cada 60s), boton Check-in en cabecera.
+**QuickActionsFAB:** boton flotante context-aware en dashboard layout. Acciones por ruta (hospitales/[id], hospitales, visitas, proyectos/[id], proyectos, incidencias, llamadas, hardware, recordatorios, notas). 1 accion = FAB directo; N acciones = menu expandible con backdrop blur. Usa CustomEvents para comunicar con paginas.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
-**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias protegidos en middleware Edge.
+**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin protegidos en middleware Edge. /share/ exento (publico por diseno).
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones. @dnd-kit dynamic import (no en bundle inicial /proyectos).
 
 ---
@@ -273,7 +277,7 @@ Oportunidad      (DESACTIVADO)
 - [ ] Object storage: migrar fotos/adjuntos de base64 en DB a R2/S3 (~2-3 dias, bloqueado)
 
 ### Activo (pendiente tecnico menor)
-- [ ] Dynamic imports para QR, ComentariosPanel, SignaturePad (DnD ya hecho)
+- [ ] Dynamic imports para QR, ComentariosPanel, SignaturePad (DnD ya hecho — bajo impacto)
 - [ ] bodyParser size limits — no aplica en Next.js 16.x a nivel config; pendiente revisar alternativa por ruta
 
 ### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
@@ -282,13 +286,13 @@ Oportunidad      (DESACTIVADO)
 - [x] Timeline global de actividad — IMPLEMENTADO (Sprint 16)
 - [x] Scoring de hospitales — IMPLEMENTADO (Sprint 17)
 - [x] Modo presentacion proyecto — IMPLEMENTADO (Sprint 17)
-- [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia")
-- [ ] Quick Actions flotantes por contexto (FAB adaptativo segun pagina)
-- [ ] Comparador de periodos (deltas + sparklines vs mes/trimestre anterior)
-- [ ] Pasaporte hardware (pagina publica QR con historial completo por unidad)
-- [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer)
+- [x] Comparador de periodos — IMPLEMENTADO (Sprint 18)
+- [x] Pasaporte hardware — IMPLEMENTADO (Sprint 18)
+- [x] Check-in/Check-out hospitales — IMPLEMENTADO (Sprint 18)
+- [x] Quick Actions flotantes (FAB) — IMPLEMENTADO (Sprint 18)
+- [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia") — BLOQUEADO (requiere Resend)
+- [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer) — BLOQUEADO (requiere Resend)
 - [ ] Ruta optimizada mapa (ordenar visitas del dia por proximidad geografica)
-- [ ] Check-in/Check-out hospitales (registro tiempo en campo por hospital)
 
 ### Backlog — Incidencias (modulo aparte, no priorizado)
 - [ ] Vinculacion entre incidencias (DUPLICADA, RELACIONADA, CAUSA_RAIZ) — modelo IncidenciaRelacion
