@@ -220,6 +220,7 @@ model Usuario {
   incidenciasReportadas Incidencia[]     @relation("IncidenciasReportadas")
   incidenciasAsignadas  Incidencia[]     @relation("IncidenciasAsignadas")
   eventosIncidencia     EventoIncidencia[] @relation("EventosIncidencia")
+  notasEquipo           NotaEquipo[]       @relation("NotasEquipo")
 
   @@map("usuarios")
 }
@@ -745,6 +746,23 @@ model LogActividad {
   @@index([creadoEn])
   @@index([usuarioId])
   @@map("log_actividad")
+}
+
+// --- NOTAS EQUIPO ----------------------------------------------------
+
+model NotaEquipo {
+  id         String   @id @default(cuid())
+  texto      String   @db.Text
+  autorId    String   @map("autor_id")
+  mencionIds Json     @default("[]")
+  fijada     Boolean  @default(false)
+  creadoEn   DateTime @default(now()) @map("creado_en")
+  editadoEn  DateTime @updatedAt @map("editado_en")
+
+  autor Usuario @relation("NotasEquipo", fields: [autorId], references: [id])
+
+  @@index([creadoEn])
+  @@map("notas_equipo")
 }
 
 // --- RECORDATORIOS ---------------------------------------------------

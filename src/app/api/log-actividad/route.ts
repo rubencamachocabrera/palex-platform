@@ -7,7 +7,6 @@ export async function GET(req: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Solo ADMIN" }, { status: 403 })
 
     const rl = checkRateLimit(req, "log-actividad")
     if (rl) return rl
@@ -15,15 +14,22 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const take = Math.min(parseInt(url.searchParams.get("limit") ?? "50"), 200)
     const skip = parseInt(url.searchParams.get("offset") ?? "0")
+    const usuarioId = url.searchParams.get("usuarioId") || undefined
+    const entidad = url.searchParams.get("entidad") || undefined
+
+    const where: Record<string, unknown> = {}
+    if (usuarioId) where.usuarioId = usuarioId
+    if (entidad) where.entidad = entidad
 
     const [logs, total] = await Promise.all([
       db.logActividad.findMany({
+        where,
         take,
         skip,
         orderBy: { creadoEn: "desc" },
         include: { usuario: { select: { id: true, nombre: true, rol: true } } },
       }),
-      db.logActividad.count(),
+      db.logActividad.count({ where }),
     ])
 
     return NextResponse.json({ logs, total }, {

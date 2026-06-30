@@ -185,6 +185,21 @@ const Icons: Record<string, () => React.ReactElement> = {
       <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
     </svg>
   ),
+  Notas: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+  Timeline: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="2" x2="12" y2="22"/>
+      <circle cx="12" cy="6" r="2" fill="currentColor" stroke="none"/>
+      <line x1="12" y1="8" x2="18" y2="8"/>
+      <circle cx="12" cy="13" r="2" fill="currentColor" stroke="none"/>
+      <line x1="12" y1="15" x2="6" y2="15"/>
+      <circle cx="12" cy="20" r="2" fill="currentColor" stroke="none"/>
+    </svg>
+  ),
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
@@ -208,6 +223,13 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
       { href: "/admin/configuracion", label: "Configuración",     icon: "Configuracion" },
       { href: "/admin/carga-trabajo", label: "Carga de trabajo", icon: "CargaTrabajo" },
       { href: "/admin/log",           label: "Log de actividad", icon: "Actividad" },
+    ],
+  },
+  {
+    label: "Equipo",
+    items: [
+      { href: "/notas",      label: "Notas del equipo",  icon: "Notas" },
+      { href: "/actividad",  label: "Actividad",          icon: "Timeline" },
     ],
   },
   {
@@ -247,6 +269,13 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
     ],
   },
   {
+    label: "Equipo",
+    items: [
+      { href: "/notas",     label: "Notas del equipo", icon: "Notas" },
+      { href: "/actividad", label: "Actividad",         icon: "Timeline" },
+    ],
+  },
+  {
     label: "CRM",
     crmOnly: true,
     items: [{ href: "/ventas/pipeline", label: "Pipeline", icon: "Pipeline" }],
@@ -272,6 +301,13 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
       { href: "/recordatorios",      label: "Recordatorios",  icon: "Recordatorios" },
       { href: "/llamadas",           label: "Llamadas",       icon: "Phone" },
       { href: "/mapa",               label: "Mapa",           icon: "Mapa" },
+    ],
+  },
+  {
+    label: "Equipo",
+    items: [
+      { href: "/notas",     label: "Notas del equipo", icon: "Notas" },
+      { href: "/actividad", label: "Actividad",         icon: "Timeline" },
     ],
   },
   {
