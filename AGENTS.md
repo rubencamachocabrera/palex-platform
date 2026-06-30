@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-07-01.
+> Ultima actualizacion: 2026-07-01 (Sprint 17).
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -59,7 +59,8 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 
 ### URL routing
 - Route group `(dashboard)` NO aparece en la URL
-- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/incidencias`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/incidencias`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`, `/notas`, `/actividad`
+- Ruta especial: `/proyectos/[id]/presentacion` — full-screen, sale de la layout normal
 - NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
 - NO existe `/pre-proyectos` — todo unificado en `/proyectos`
 
@@ -101,10 +102,12 @@ src/
       visitas/calendario/page.tsx       Calendario mensual, dots por estado
       visitas/[id]/page.tsx             Formulario 13 secciones, fotos, PDF, firma, offline
       ventas/pipeline/page.tsx          CRM pipeline (DESACTIVADO)
-      proyectos/page.tsx                Lista proyectos + Kanban
+      proyectos/page.tsx                Lista proyectos + Kanban (KanbanView dynamic import)
+      proyectos/KanbanView.tsx          Kanban DnD aislado — @dnd-kit, useDraggable/useDroppable
       proyectos/[id]/page.tsx           Header + tabs selector (300 lineas, code-split)
       proyectos/[id]/types.ts           Interfaces, constantes, helpers compartidos
       proyectos/[id]/tabs/              10 tabs con next/dynamic
+      proyectos/[id]/presentacion/page.tsx  Modo presentacion full-screen (5 slides dark mode)
       hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
       mapa/page.tsx                     Leaflet, coordenadas por ciudad
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
@@ -119,6 +122,8 @@ src/
     api/                                ~50 rutas con rate limiting + Zod validation
       search/route.ts                   Busqueda unificada. Cache 30s.
       hospitales/                       CRUD + contactos + timeline. Paginado (?limit=200&page=N)
+      hospitales/score/route.ts         GET ?ids=id1,id2 — batch scores hasta 50 hospitales
+      hospitales/[id]/score/route.ts    GET — score completo con breakdown por categoria
       visitas/                          CRUD + comentarios. GET sin `datos`, ?desde=&hasta=
       proyectos/                        CRUD + fases + tareas + hitos + entradas + solicitudes + contactos + adjuntos + comentarios + modulos + share + excel
       hardware/                         CRUD + tipos + unidades
@@ -152,6 +157,7 @@ src/
     redis.ts                            Upstash Redis con fallback graceful
     form-schema.ts, img-compress.ts, offline-db.ts, log-actividad.ts
     calendar-token.ts, csv.ts, visita-analysis.ts
+    hospital-score.ts                   computeHospitalScore(hospitalId) — 0-100, breakdown 4 dims
   middleware.ts                         Protege rutas, edge-compatible
 ```
 
@@ -204,6 +210,10 @@ Oportunidad      (DESACTIVADO)
 - Validacion: Zod schemas centralizados en `schemas.ts`, usar `parseBody()`.
 - Comentarios POST aceptan `mencionIds` array.
 - `/api/perfil`: devuelve `{ rol, onboardingCompletado, calendarToken }` — usar `d?.rol`.
+- GET `/api/hospitales/[id]/score`: devuelve `{ total, label, color, breakdown: { visitas, proyectos, hardware, seguimiento, penalizacion } }`. Cache 120s. Calcula dinámicamente — visitas 60d (30pts), proyectos activos (30pts), HW instalado (20pts), llamadas 30d (20pts), penalización criticas abiertas (-15pts max).
+- GET `/api/hospitales/score?ids=`: batch scores para hasta 50 hospitales, devuelve `{ [id]: { total, color, label } }`.
+- GET `/api/usuarios/menciones`: Redis cache 60s por query (`menciones:${q}`), fallback in-memory.
+- GET `/api/log-actividad`: filtro `?entidad=` es case-insensitive (`mode: "insensitive"`). Acepta `?usuarioId=`.
 - GET `/api/incidencias`: acepta `?limit=N` (max 500), `?q=`, `?estado=`, `?prioridad=`, `?tipo=`, `?hospitalId=`, `?asignadoAId=`, `?desde=&hasta=`. orderBy `creadoEn desc` (NO por enum — Prisma ordena enums alfabeticamente). Estado especial `PENDIENTE` se expande a `{ in: ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"] }`. Devuelve `tiempoTotalMinutos` por incidencia (Prisma groupBy + _sum duracion sobre EventoIncidencia).
 - GET `/api/incidencias/[id]`: filtra eventos privados para no-ADMIN (solo ve los suyos).
 - POST `/api/incidencias`: generarCodigo() con retry loop anti-race-condition. Acepta `coasignadosIds` (array IDs), resuelve nombres en DB y guarda como JSON `[{id, nombre}]`.
@@ -239,9 +249,11 @@ Oportunidad      (DESACTIVADO)
 **Notas del equipo:** modelo NotaEquipo (notas_equipo), CRUD /api/notas + /api/notas/[id], pagina /notas con composer @menciones (MentionInput+extractMentionIds), feed paginado, fijar notas, editar (modal), eliminar con confirmacion. Accesible a todos los roles. Sidebar: nuevo grupo "Equipo" en todos los nav groups.
 **Timeline global de actividad:** pagina /actividad con feed estilo GitHub, agrupado por fecha, filtros por entidad (pill chips), links directos a entidades, dot de color en timeline spine por tipo de accion. API log-actividad abierta a todos los usuarios autenticados (+ filtros usuarioId y entidad). /admin/log sigue disponible para ADMIN.
 **Incidencias:** Helpdesk HW/SW, 10 categorias, 5 equipos (Servicio Tecnico/Aplicaciones/Comercial/Marketing/Proyectos), SLA con pausa (PENDIENTE_CLIENTE/PROVEEDOR — slaPausadoEn+slaPausadoMs), timeline SVG agrupado por fecha, 11 tipos evento, eventos privados, fotos en eventos (hasta 5, lightbox), edicion eventos (autor/ADMIN, badge editado), respuestas rapidas configurables, fecha seleccionable en eventos, hospital con buscador combobox, asignacion multiple (principal+coasignados JSON), exportacion informes PDF, filtros activos con chips, KPIs interactivos (totales independientes del filtro), toggle activacion. **UX Pro Max (Sprint 15):** slide-over drawer, vista tabla, SLA countdown live (60s), inline edit estado/prioridad/asignado, banner criticas, agrupacion collapsible por prioridad, timeline eventos auto compactos + tiempo-dia + badge lapiz editado, sticky header glassmorphism en detalle, ordenacion clickable (fecha/SLA/hospital/titulo), indicador actividad reciente pulsante (2h), QuickAssign desde lista, highlighting busqueda, atajos teclado (N/R/↑↓/Esc). tiempoTotalMinutos por incidencia en lista/detalle/PDF/export.
+**Scoring hospitales:** health score 0-100 calculado dinamicamente (visitas 60d / proyectos activos / HW / llamadas 30d / penalizacion criticas). Badge en detalle hospital con breakdown visual. GET /api/hospitales/[id]/score + batch /api/hospitales/score?ids=.
+**Modo presentacion:** /proyectos/[id]/presentacion — 5 slides dark mode (Portada, Fases, Tareas, Hitos, Resumen KPIs con donut chart). Navegacion teclado flechas, Esc para cerrar. Boton "Presentar" en acciones rapidas del proyecto.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
-**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation.
-**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence.
+**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias protegidos en middleware Edge.
+**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones. @dnd-kit dynamic import (no en bundle inicial /proyectos).
 
 ---
 
@@ -250,25 +262,27 @@ Oportunidad      (DESACTIVADO)
 | Prioridad | Issue | Ubicacion |
 |-----------|-------|-----------|
 | ALTA | `/datos` es 100% mockup — sin APIs reales | datos/page.tsx |
+| ALTA | Object storage: fotos/adjuntos en base64 en DB — necesario antes de 20 usuarios | Bloqueado (requiere R2/S3) |
 
 ---
 
 ## 9. Pendiente
 
-### Activo
-- [ ] `/datos` APIs reales (Sprint 14 aplazado)
-- [ ] Object storage F5: migrar fotos/adjuntos de base64 en DB a R2/S3 (~2-3 dias, necesario antes de 20 usuarios concurrentes)
-- [ ] bodyParser size limits en next.config.ts (bajo impacto)
-- [ ] Dynamic imports para DnD, QR, ComentariosPanel, SignaturePad (bajo impacto)
-- [ ] Cache servidor en Redis con TTL (bajo impacto)
+### Activo (bloqueado por dependencias externas)
+- [ ] `/datos` APIs reales — aplazado, pendiente definir fuente de datos
+- [ ] Object storage: migrar fotos/adjuntos de base64 en DB a R2/S3 (~2-3 dias, bloqueado)
+
+### Activo (pendiente tecnico menor)
+- [ ] Dynamic imports para QR, ComentariosPanel, SignaturePad (DnD ya hecho)
+- [ ] bodyParser size limits — no aplica en Next.js 16.x a nivel config; pendiente revisar alternativa por ruta
 
 ### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
 - [x] Plantillas de proyecto inteligentes — IMPLEMENTADO (Sprint 16)
 - [x] Panel de notas del equipo — IMPLEMENTADO (Sprint 16)
 - [x] Timeline global de actividad — IMPLEMENTADO (Sprint 16)
-- [ ] Scoring de hospitales (salud 0-100: visitas, proyectos, hardware, seguimiento)
+- [x] Scoring de hospitales — IMPLEMENTADO (Sprint 17)
+- [x] Modo presentacion proyecto — IMPLEMENTADO (Sprint 17)
 - [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia")
-- [ ] Modo presentacion proyecto (slides ejecutivas a pantalla completa)
 - [ ] Quick Actions flotantes por contexto (FAB adaptativo segun pagina)
 - [ ] Comparador de periodos (deltas + sparklines vs mes/trimestre anterior)
 - [ ] Pasaporte hardware (pagina publica QR con historial completo por unidad)
