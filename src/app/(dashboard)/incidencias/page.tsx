@@ -158,6 +158,12 @@ export default function IncidenciasPage() {
   // Inline dropdowns
   const [inlineDropdown, setInlineDropdown] = useState<{ id: string; field: "estado" | "prioridad" } | null>(null)
 
+  // Grouped view
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const toggleGroup = (key: string) => setCollapsedGroups(prev => {
+    const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next
+  })
+
   // Create modal
   const [showModal, setShowModal] = useState(false)
   const [hospitales, setHospitales] = useState<Hospital[]>([])
@@ -603,40 +609,59 @@ export default function IncidenciasPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-              {items.map(inc => {
-                const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
-                const pri = getPrioridadStyle(inc.prioridad)
+            <tbody>
+              {PRIORIDADES.map(p => {
+                const group = items.filter(i => i.prioridad === p.value)
+                if (group.length === 0) return null
+                const collapsed = collapsedGroups.has(p.value)
                 return (
-                  <tr key={inc.id} onClick={() => setDrawerIncId(inc.id)}
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
-                    <td className="p-0 w-1.5">
-                      <div className="w-1.5 min-h-[52px] rounded-r-sm" style={{ backgroundColor: pri.color }} />
-                    </td>
-                    <td className="px-3 py-3.5 font-mono text-xs text-gray-400 font-bold whitespace-nowrap">{inc.codigo}</td>
-                    <td className="px-3 py-3.5 max-w-[260px]">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{inc.titulo}</span>
-                      <span className="block text-xs text-gray-400 mt-0.5">
-                        {inc._count.eventos} evento{inc._count.eventos !== 1 ? "s" : ""}
-                        {inc.tiempoTotalMinutos > 0 && <span className="text-blue-500 font-semibold ml-1">· {fmtMin(inc.tiempoTotalMinutos)}</span>}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap max-w-[160px] truncate">{inc.hospital.nombre}</td>
-                    <td className="px-3 py-3.5"><InlineDropdown inc={inc} field="estado" /></td>
-                    <td className="px-3 py-3.5"><InlineDropdown inc={inc} field="prioridad" /></td>
-                    <td className="px-3 py-3.5 min-w-[110px]">
-                      <span className="text-xs font-semibold block" style={{ color: sla.color }}>{sla.label}</span>
-                      {sla.remaining && <span className="text-[10px] text-gray-400 block mt-0.5">{sla.remaining}</span>}
-                    </td>
-                    <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {inc.asignadoA?.nombre ?? <span className="text-gray-300 dark:text-gray-600">—</span>}
-                    </td>
-                    <td className="px-2 py-3.5">
-                      <span className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 group-hover:text-gray-500 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
-                        <IconArrowRight size={14} />
-                      </span>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={`grp-${p.value}`} style={{ backgroundColor: `${p.color}08` }}>
+                      <td colSpan={9} className="px-4 py-2 border-y border-gray-100 dark:border-gray-800">
+                        <button onClick={() => toggleGroup(p.value)} className="flex items-center gap-2 cursor-pointer">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: p.color }}>{p.label}</span>
+                          <span className="text-[11px] text-gray-400">{group.length} incidencia{group.length !== 1 ? "s" : ""}</span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-150 ${collapsed ? "-rotate-90" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                    {!collapsed && group.map(inc => {
+                      const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
+                      const pri = getPrioridadStyle(inc.prioridad)
+                      return (
+                        <tr key={inc.id} onClick={() => setDrawerIncId(inc.id)}
+                          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group border-b border-gray-50 dark:border-gray-800">
+                          <td className="p-0 w-1.5">
+                            <div className="w-1.5 min-h-[52px] rounded-r-sm" style={{ backgroundColor: pri.color }} />
+                          </td>
+                          <td className="px-3 py-3.5 font-mono text-xs text-gray-400 font-bold whitespace-nowrap">{inc.codigo}</td>
+                          <td className="px-3 py-3.5 max-w-[260px]">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{inc.titulo}</span>
+                            <span className="block text-xs text-gray-400 mt-0.5">
+                              {inc._count.eventos} evento{inc._count.eventos !== 1 ? "s" : ""}
+                              {inc.tiempoTotalMinutos > 0 && <span className="text-blue-500 font-semibold ml-1">· {fmtMin(inc.tiempoTotalMinutos)}</span>}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap max-w-[160px] truncate">{inc.hospital.nombre}</td>
+                          <td className="px-3 py-3.5"><InlineDropdown inc={inc} field="estado" /></td>
+                          <td className="px-3 py-3.5"><InlineDropdown inc={inc} field="prioridad" /></td>
+                          <td className="px-3 py-3.5 min-w-[110px]">
+                            <span className="text-xs font-semibold block" style={{ color: sla.color }}>{sla.label}</span>
+                            {sla.remaining && <span className="text-[10px] text-gray-400 block mt-0.5">{sla.remaining}</span>}
+                          </td>
+                          <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            {inc.asignadoA?.nombre ?? <span className="text-gray-300 dark:text-gray-600">—</span>}
+                          </td>
+                          <td className="px-2 py-3.5">
+                            <span className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 group-hover:text-gray-500 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
+                              <IconArrowRight size={14} />
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </>
                 )
               })}
             </tbody>
@@ -644,61 +669,80 @@ export default function IncidenciasPage() {
         </div>
       ) : (
         /* ── CARD VIEW ── */
-        <div className="space-y-2">
-          {items.map(inc => {
-            const est = getEstadoStyle(inc.estado)
-            const pri = getPrioridadStyle(inc.prioridad)
-            const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
+        <div className="space-y-1">
+          {PRIORIDADES.map(p => {
+            const group = items.filter(i => i.prioridad === p.value)
+            if (group.length === 0) return null
+            const collapsed = collapsedGroups.has(p.value)
             return (
-              <div key={inc.id} onClick={() => setDrawerIncId(inc.id)}
-                className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group">
-                <div className="flex items-start gap-3">
-                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: pri.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-mono font-bold text-gray-400">{inc.codigo}</span>
-                      <InlineDropdown inc={inc} field="estado" />
-                      <InlineDropdown inc={inc} field="prioridad" />
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                        {inc.tipo === "HARDWARE" ? "HW" : "SW"} · {CATEGORIAS[inc.categoria] ?? inc.categoria}
-                      </span>
-                      {inc.slaHoras && !["RESUELTA", "CERRADA"].includes(inc.estado) && (
-                        <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: `${sla.color}15`, color: sla.color }}>
-                          <IconClock size={9} />
-                          {sla.remaining ?? sla.label}
-                        </span>
-                      )}
-                      {["RESUELTA", "CERRADA"].includes(inc.estado) && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#10b98115", color: "#10b981" }}>
-                          SLA cumplido
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{inc.titulo}</h3>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
-                      <span>{inc.hospital.nombre}</span>
-                      <span>·</span>
-                      <span>{EQUIPOS_MAP[inc.equipoResponsable] ?? inc.equipoResponsable}</span>
-                      {inc.asignadoA && <><span>·</span><span>→ {inc.asignadoA.nombre}</span></>}
-                      {inc.hardwareUnidad && (
-                        <><span>·</span><span>{inc.hardwareUnidad.catalogo.marca} {inc.hardwareUnidad.catalogo.modelo}{inc.hardwareUnidad.numSerie ? ` (${inc.hardwareUnidad.numSerie})` : ""}</span></>
-                      )}
-                      {inc.tiempoTotalMinutos > 0 && (
-                        <span className="font-semibold" style={{ color: "#0284c7" }}>{fmtMin(inc.tiempoTotalMinutos)}</span>
-                      )}
-                      <span className="ml-auto shrink-0 text-gray-400">{timeAgo(inc.creadoEn)}</span>
-                      {inc._count.eventos > 0 && <span className="text-gray-400">{inc._count.eventos} ev.</span>}
-                    </div>
-                    {/* SLA progress bar */}
-                    {inc.slaHoras && !["RESUELTA", "CERRADA"].includes(inc.estado) && (
-                      <div className="mt-2.5 h-0.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, sla.pct * 100)}%`, backgroundColor: sla.color }} />
-                      </div>
-                    )}
+              <div key={p.value} className="mb-1">
+                {/* Group header */}
+                <button onClick={() => toggleGroup(p.value)}
+                  className="flex items-center gap-2 w-full py-2 px-1 mb-2 cursor-pointer group/hdr">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover/hdr:scale-110" style={{ backgroundColor: p.color }} />
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: p.color }}>{p.label}</span>
+                  <span className="text-xs font-semibold text-gray-400 tabular-nums">{group.length}</span>
+                  <div className="flex-1 h-px ml-1" style={{ backgroundColor: `${p.color}25` }} />
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round"
+                    className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                {/* Group cards */}
+                {!collapsed && (
+                  <div className="space-y-2">
+                    {group.map(inc => {
+                      const est = getEstadoStyle(inc.estado)
+                      const pri = getPrioridadStyle(inc.prioridad)
+                      const sla = slaDetail(inc.creadoEn, inc.slaHoras, inc.estado, now)
+                      return (
+                        <div key={inc.id} onClick={() => setDrawerIncId(inc.id)}
+                          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group">
+                          <div className="flex items-start gap-3">
+                            <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: pri.color }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="text-xs font-mono font-bold text-gray-400">{inc.codigo}</span>
+                                <InlineDropdown inc={inc} field="estado" />
+                                <InlineDropdown inc={inc} field="prioridad" />
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                  {inc.tipo === "HARDWARE" ? "HW" : "SW"} · {CATEGORIAS[inc.categoria] ?? inc.categoria}
+                                </span>
+                                {inc.slaHoras && !["RESUELTA", "CERRADA"].includes(inc.estado) && (
+                                  <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                                    style={{ backgroundColor: `${sla.color}15`, color: sla.color }}>
+                                    <IconClock size={9} />
+                                    {sla.remaining ?? sla.label}
+                                  </span>
+                                )}
+                                {["RESUELTA", "CERRADA"].includes(inc.estado) && (
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#10b98115", color: "#10b981" }}>SLA cumplido</span>
+                                )}
+                              </div>
+                              <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{inc.titulo}</h3>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                                <span>{inc.hospital.nombre}</span>
+                                <span>·</span>
+                                <span>{EQUIPOS_MAP[inc.equipoResponsable] ?? inc.equipoResponsable}</span>
+                                {inc.asignadoA && <><span>·</span><span>→ {inc.asignadoA.nombre}</span></>}
+                                {inc.hardwareUnidad && <><span>·</span><span>{inc.hardwareUnidad.catalogo.marca} {inc.hardwareUnidad.catalogo.modelo}{inc.hardwareUnidad.numSerie ? ` (${inc.hardwareUnidad.numSerie})` : ""}</span></>}
+                                {inc.tiempoTotalMinutos > 0 && <span className="font-semibold" style={{ color: "#0284c7" }}>{fmtMin(inc.tiempoTotalMinutos)}</span>}
+                                <span className="ml-auto shrink-0 text-gray-400">{timeAgo(inc.creadoEn)}</span>
+                                {inc._count.eventos > 0 && <span className="text-gray-400">{inc._count.eventos} ev.</span>}
+                              </div>
+                              {inc.slaHoras && !["RESUELTA", "CERRADA"].includes(inc.estado) && (
+                                <div className="mt-2.5 h-0.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(100, sla.pct * 100)}%`, backgroundColor: sla.color }} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
+                )}
               </div>
             )
           })}
