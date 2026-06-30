@@ -2,12 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
-import {
-  DndContext, DragEndEvent, DragStartEvent, DragOverlay,
-  useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCenter,
-} from "@dnd-kit/core"
+import dynamic from "next/dynamic"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useFavoritos } from "@/hooks/useFavoritos"
+
+const KanbanView = dynamic(() => import("./KanbanView"), { ssr: false })
 
 // ---- tipos ----
 
@@ -86,10 +85,6 @@ function IconList() {
 function IconKanban() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="8" rx="1"/></svg>
 }
-function IconGrip() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
-}
-
 // ---- KpiCard ----
 
 function KpiCard({ label, value, color }: { label: string; value: number; color?: string }) {
@@ -101,91 +96,6 @@ function KpiCard({ label, value, color }: { label: string; value: number; color?
   )
 }
 
-// ---- CardContent (shared between list & kanban overlay) ----
-
-function CardContent({ item }: { item: Proyecto }) {
-  const pct = progreso(item.fases)
-  const ef = estadoEfectivo(item)
-  const estadoStyle = ESTADO_COLOR[ef] ?? { bg: "#f3f4f6", text: "#6b7280" }
-  const prio = PRIORIDAD_LABEL[item.prioridad]
-  const retrasado = item.fechaFinPlan && new Date(item.fechaFinPlan) < new Date()
-    && ef !== "COMPLETADO" && ef !== "CANCELADO"
-  return (
-    <>
-      <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
-          {ESTADO_LABEL[ef]}
-        </span>
-        {item.prioridad > 0 && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50" style={{ color: prio.color }}>{prio.label}</span>
-        )}
-        {retrasado && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">Retrasado</span>}
-      </div>
-      <p className="text-sm font-bold text-gray-900 leading-snug mb-0.5 line-clamp-2">{item.titulo}</p>
-      <p className="text-xs text-gray-500 mb-2 truncate">{item.hospital.nombre}</p>
-      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
-      </div>
-      <div className="flex gap-3 text-[10px] text-gray-400">
-        <span>{item.visitas.length} vis.</span>
-        <span>{item.solicitudes.length} sol.</span>
-        <span>{item.hardwareUnidades.length} HW</span>
-        {item.fechaFinPlan && <span className="ml-auto">{fmtFecha(item.fechaFinPlan)}</span>}
-      </div>
-    </>
-  )
-}
-
-// ---- Kanban ----
-
-function KanbanCard({ item }: { item: Proyecto }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: item.id })
-  const style = transform
-    ? { transform: `translate(${transform.x}px, ${transform.y}px)`, position: "relative" as const, zIndex: 50 }
-    : undefined
-  return (
-    <div ref={setNodeRef} style={style} className={`group ${isDragging ? "opacity-25" : ""}`}>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 card-hover">
-        <div className="flex items-center justify-between mb-2">
-          <div
-            {...listeners} {...attributes}
-            className="cursor-grab active:cursor-grabbing p-1 -m-1 text-gray-300 hover:text-gray-500 transition-colors touch-none"
-            title="Arrastrar"
-          >
-            <IconGrip />
-          </div>
-          <Link
-            href={`/proyectos/${item.id}`}
-            className="text-[10px] font-semibold text-teal-600 hover:text-teal-800 transition-colors"
-          >
-            Abrir →
-          </Link>
-        </div>
-        <CardContent item={item} />
-      </div>
-    </div>
-  )
-}
-
-function KanbanColumn({ estado, items }: { estado: string; items: Proyecto[] }) {
-  const { setNodeRef, isOver } = useDroppable({ id: estado })
-  const col = ESTADO_COLOR[estado] ?? { bg: "#f3f4f6", text: "#6b7280" }
-  return (
-    <div className="flex flex-col w-72 shrink-0">
-      <div className="flex items-center justify-between px-3 py-2.5 rounded-xl mb-2" style={{ backgroundColor: col.bg }}>
-        <span className="text-xs font-bold" style={{ color: col.text }}>{ESTADO_LABEL[estado]}</span>
-        <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/70" style={{ color: col.text }}>{items.length}</span>
-      </div>
-      <div
-        ref={setNodeRef}
-        className="flex-1 space-y-2 min-h-[80px] rounded-xl p-1 transition-colors duration-150"
-        style={{ backgroundColor: isOver ? `${TEAL}0a` : "transparent" }}
-      >
-        {items.map(item => <KanbanCard key={item.id} item={item} />)}
-      </div>
-    </div>
-  )
-}
 
 // ---- modal crear ----
 
@@ -343,13 +253,11 @@ export default function ProyectosPage() {
   const [responsables, setResponsables] = useState<Responsable[]>([])
   const [vista, setVista] = useState<"lista" | "kanban">("lista")
   const [mostrarModal, setMostrarModal] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
   const PAGE_SIZE = 100
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   useEffect(() => {
     fetch("/api/usuarios").then(r => r.json()).then(d => {
@@ -397,29 +305,19 @@ export default function ProyectosPage() {
     setLoadingMore(false)
   }
 
-  function onDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string)
-  }
-
-  async function onDragEnd(event: DragEndEvent) {
-    setActiveId(null)
-    const { active, over } = event
-    if (!over) return
-    const item = items.find(i => i.id === active.id)
-    if (!item || estadoEfectivo(item) === over.id) return
-    const nuevoEstado = over.id as string
-    setItems(prev => prev.map(i => i.id === active.id ? { ...i, estado: nuevoEstado } : i))
-    const r = await fetch(`/api/proyectos/${active.id}`, {
+  async function handleMoveItem(id: string, newEstado: string) {
+    const item = items.find(i => i.id === id)
+    if (!item) return
+    setItems(prev => prev.map(i => i.id === id ? { ...i, estado: newEstado } : i))
+    const r = await fetch(`/api/proyectos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
+      body: JSON.stringify({ estado: newEstado }),
     })
     if (!r.ok) {
-      setItems(prev => prev.map(i => i.id === active.id ? { ...i, estado: item.estado } : i))
+      setItems(prev => prev.map(i => i.id === id ? { ...i, estado: item.estado } : i))
     }
   }
-
-  const activeItem = activeId ? items.find(i => i.id === activeId) ?? null : null
 
   function exportarCSV() {
     const header = ["Título", "Hospital", "Ciudad", "Estado", "Prioridad", "Responsable", "Inicio", "Fin planificado", "Progreso (%)", "Presupuesto (€)"]
@@ -677,32 +575,7 @@ export default function ProyectosPage() {
           </div>
         )
       ) : (
-        /* Kanban */
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-        >
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
-            {ESTADOS.map(estado => (
-              <KanbanColumn
-                key={estado}
-                estado={estado}
-                items={items.filter(i => estadoEfectivo(i) === estado)}
-              />
-            ))}
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {activeItem && (
-              <div className="w-72 rotate-1 shadow-2xl">
-                <div className="bg-white rounded-2xl border-2 p-4" style={{ borderColor: TEAL }}>
-                  <CardContent item={activeItem} />
-                </div>
-              </div>
-            )}
-          </DragOverlay>
-        </DndContext>
+        <KanbanView items={items} onMove={handleMoveItem} />
       )}
 
       {items.length < totalCount && vista === "lista" && (

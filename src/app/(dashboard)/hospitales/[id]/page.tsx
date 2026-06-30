@@ -191,12 +191,18 @@ export default function HospitalDetailPage() {
   const [llamadasLoaded, setLlamadasLoaded] = useState(false)
   const [llamadasLoading, setLlamadasLoading] = useState(false)
 
+  // Health score
+  const [healthScore, setHealthScore] = useState<{ total: number; label: string; color: string; breakdown: { visitas: { score: number; count: number; max: number }; proyectos: { score: number; enCurso: number; total: number; max: number }; hardware: { score: number; count: number; max: number }; seguimiento: { score: number; count: number; max: number }; penalizacion: number } } | null>(null)
+
   const isAdmin = userRol === "ADMIN"
 
   async function cargar() {
     try {
       const rH = await fetch(`/api/hospitales/${id}`)
-      if (rH.ok) setHospital(await rH.json())
+      if (rH.ok) {
+        setHospital(await rH.json())
+        fetch(`/api/hospitales/${id}/score`).then(r => r.ok ? r.json() : null).then(s => { if (s) setHealthScore(s) }).catch(() => {})
+      }
     } catch (e) { console.error("[cargar hospital]", e) }
     finally { setLoading(false) }
   }
@@ -534,7 +540,16 @@ export default function HospitalDetailPage() {
                 </p>
               )}
             </div>
-            {hospital.score !== undefined && hospital.score > 0 && (
+            {healthScore !== null ? (
+              <div className="shrink-0 text-center" title={healthScore.label}>
+                <div className="w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 cursor-default"
+                  style={{ borderColor: healthScore.color, backgroundColor: `${healthScore.color}12` }}>
+                  <span className="text-lg font-black leading-none" style={{ color: healthScore.color }}>{healthScore.total}</span>
+                  <span className="text-[8px] font-semibold opacity-60 mt-0.5" style={{ color: healthScore.color }}>/100</span>
+                </div>
+                <p className="text-[9px] text-gray-400 mt-0.5 max-w-[56px] leading-tight">{healthScore.label}</p>
+              </div>
+            ) : hospital.score !== undefined && hospital.score > 0 ? (
               <div className="shrink-0 text-center">
                 <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2"
                   style={{ borderColor: hospital.score >= 80 ? "#16a34a" : hospital.score >= 50 ? TEAL : "#f59e0b", backgroundColor: hospital.score >= 80 ? "#f0fdf4" : hospital.score >= 50 ? `${TEAL}10` : "#fef3c7" }}>
@@ -542,8 +557,36 @@ export default function HospitalDetailPage() {
                 </div>
                 <p className="text-[9px] text-gray-400 mt-0.5">score</p>
               </div>
-            )}
+            ) : null}
           </div>
+
+          {/* Health Score breakdown */}
+          {healthScore && (
+            <div className="mt-4 p-3.5 rounded-xl border" style={{ borderColor: `${healthScore.color}30`, backgroundColor: `${healthScore.color}08` }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: healthScore.color }}>Salud del cliente · {healthScore.label}</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: "Visitas 60d", score: healthScore.breakdown.visitas.score, max: 30, detail: `${healthScore.breakdown.visitas.count} vis.` },
+                  { label: "Proyectos", score: healthScore.breakdown.proyectos.score, max: 30, detail: `${healthScore.breakdown.proyectos.enCurso} activos` },
+                  { label: "Hardware", score: healthScore.breakdown.hardware.score, max: 20, detail: `${healthScore.breakdown.hardware.count} uds.` },
+                  { label: "Seguimiento", score: healthScore.breakdown.seguimiento.score, max: 20, detail: `${healthScore.breakdown.seguimiento.count} llamadas` },
+                ].map(item => (
+                  <div key={item.label} className="flex-1 min-w-[90px] bg-white dark:bg-gray-900 rounded-lg px-2.5 py-2 text-center border border-gray-100">
+                    <p className="text-xs font-bold text-gray-800">{item.score}<span className="text-[10px] text-gray-400">/{item.max}</span></p>
+                    <p className="text-[9px] text-gray-400 leading-tight">{item.label}</p>
+                    <p className="text-[9px] font-medium" style={{ color: healthScore.color }}>{item.detail}</p>
+                  </div>
+                ))}
+                {healthScore.breakdown.penalizacion > 0 && (
+                  <div className="flex-1 min-w-[90px] bg-red-50 rounded-lg px-2.5 py-2 text-center border border-red-100">
+                    <p className="text-xs font-bold text-red-700">-{healthScore.breakdown.penalizacion}</p>
+                    <p className="text-[9px] text-red-400 leading-tight">Penalización</p>
+                    <p className="text-[9px] font-medium text-red-600">Críticas abiertas</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* KPI row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-gray-50">

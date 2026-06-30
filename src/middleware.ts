@@ -20,6 +20,9 @@ const PROTECTED_PREFIXES = [
   "/transporte",
   "/recordatorios",
   "/llamadas",
+  "/notas",
+  "/actividad",
+  "/incidencias",
 ]
 
 export default auth((req) => {

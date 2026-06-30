@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const where: Record<string, unknown> = {}
     if (usuarioId) where.usuarioId = usuarioId
-    if (entidad) where.entidad = entidad
+    if (entidad) where.entidad = { equals: entidad, mode: "insensitive" }
 
     const [logs, total] = await Promise.all([
       db.logActividad.findMany({
