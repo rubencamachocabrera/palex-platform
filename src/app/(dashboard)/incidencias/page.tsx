@@ -155,8 +155,8 @@ export default function IncidenciasPage() {
   const [drawerInc, setDrawerInc] = useState<IncidenciaDetalle | null>(null)
   const [drawerLoading, setDrawerLoading] = useState(false)
 
-  // Inline dropdowns
-  const [inlineDropdown, setInlineDropdown] = useState<{ id: string; field: "estado" | "prioridad" } | null>(null)
+  // Inline dropdowns (estado, prioridad, asignado)
+  const [inlineDropdown, setInlineDropdown] = useState<{ id: string; field: "estado" | "prioridad" | "asignado" } | null>(null)
 
   // Grouped view
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -275,10 +275,14 @@ export default function IncidenciasPage() {
   useEffect(() => { fetchTotales() }, [fetchTotales])
   useEffect(() => { fetchItems() }, [fetchItems])
 
+  // Fetch users eagerly — needed for quick-assign in list
+  useEffect(() => {
+    fetch("/api/usuarios").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setUsuarios(d) })
+  }, [])
+
   useEffect(() => {
     if (!showModal) return
     fetch("/api/hospitales?limit=500").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setHospitales(d) })
-    fetch("/api/usuarios").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setUsuarios(d) })
   }, [showModal])
 
   useEffect(() => {
@@ -287,8 +291,18 @@ export default function IncidenciasPage() {
     fetch(`/api/hardware/unidades?hospitalId=${form.hospitalId}`).then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setHwUnidades(d) })
   }, [form.hospitalId])
 
-  async function patchInline(id: string, data: { estado?: string; prioridad?: string }) {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, ...data } as Incidencia : i))
+  async function patchInline(id: string, data: { estado?: string; prioridad?: string; asignadoAId?: string | null }) {
+    setItems(prev => prev.map(i => {
+      if (i.id !== id) return i
+      const p = { ...i } as Incidencia
+      if (data.estado) p.estado = data.estado
+      if (data.prioridad) p.prioridad = data.prioridad as Incidencia["prioridad"]
+      if ("asignadoAId" in data) {
+        const u = data.asignadoAId ? usuarios.find(u => u.id === data.asignadoAId) ?? null : null
+        p.asignadoA = u ? { id: u.id, nombre: u.nombre } : null
+      }
+      return p
+    }))
     if (drawerInc?.id === id) setDrawerInc(prev => prev ? { ...prev, ...data } as IncidenciaDetalle : null)
     setInlineDropdown(null)
     const r = await fetch(`/api/incidencias/${id}`, {
@@ -453,6 +467,42 @@ export default function IncidenciasPage() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: o.color }} />
                 <span style={{ color: o.color }} className="font-semibold">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function QuickAssign({ inc }: { inc: Incidencia }) {
+    const open = inlineDropdown?.id === inc.id && inlineDropdown.field === "asignado"
+    return (
+      <div className="relative" onClick={e => e.stopPropagation()}>
+        <button
+          onClick={() => setInlineDropdown(open ? null : { id: inc.id, field: "asignado" })}
+          className="flex items-center gap-1 text-xs font-medium hover:opacity-70 transition-opacity cursor-pointer"
+          style={{ color: inc.asignadoA ? TEAL : "#9ca3af" }}>
+          {inc.asignadoA ? `→ ${inc.asignadoA.nombre}` : "Sin asignar"}
+          <IconChevronDown size={9} />
+        </button>
+        {open && (
+          <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 min-w-[180px] max-h-52 overflow-y-auto py-1">
+            <button onClick={() => patchInline(inc.id, { asignadoAId: null })}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+              Sin asignar
+            </button>
+            <div className="h-px bg-gray-100 dark:bg-gray-800 my-1" />
+            {usuarios.map(u => (
+              <button key={u.id} onClick={() => patchInline(inc.id, { asignadoAId: u.id })}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                  style={{ backgroundColor: TEAL }}>{u.nombre.charAt(0).toUpperCase()}</span>
+                <span className={`truncate ${inc.asignadoA?.id === u.id ? "font-bold" : "text-gray-700 dark:text-gray-300"}`}
+                  style={inc.asignadoA?.id === u.id ? { color: TEAL } : undefined}>{u.nombre}</span>
+                {inc.asignadoA?.id === u.id && (
+                  <svg className="ml-auto shrink-0" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
               </button>
             ))}
           </div>
@@ -723,8 +773,8 @@ export default function IncidenciasPage() {
                             <span className="text-xs font-semibold block" style={{ color: sla.color }}>{sla.label}</span>
                             {sla.remaining && <span className="text-[10px] text-gray-400 block mt-0.5">{sla.remaining}</span>}
                           </td>
-                          <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                            {inc.asignadoA?.nombre ?? <span className="text-gray-300 dark:text-gray-600">—</span>}
+                          <td className="px-3 py-3.5 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                            <QuickAssign inc={inc} />
                           </td>
                           <td className="px-2 py-3.5">
                             <span className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 group-hover:text-gray-500 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
@@ -804,7 +854,7 @@ export default function IncidenciasPage() {
                                 <span>{inc.hospital.nombre}</span>
                                 <span>·</span>
                                 <span>{EQUIPOS_MAP[inc.equipoResponsable] ?? inc.equipoResponsable}</span>
-                                {inc.asignadoA && <><span>·</span><span>→ {inc.asignadoA.nombre}</span></>}
+                                <span>·</span><QuickAssign inc={inc} />
                                 {inc.hardwareUnidad && <><span>·</span><span>{inc.hardwareUnidad.catalogo.marca} {inc.hardwareUnidad.catalogo.modelo}{inc.hardwareUnidad.numSerie ? ` (${inc.hardwareUnidad.numSerie})` : ""}</span></>}
                                 {inc.tiempoTotalMinutos > 0 && <span className="font-semibold" style={{ color: "#0284c7" }}>{fmtMin(inc.tiempoTotalMinutos)}</span>}
                                 <span className="ml-auto shrink-0 text-gray-400">{timeAgo(inc.creadoEn)}</span>
