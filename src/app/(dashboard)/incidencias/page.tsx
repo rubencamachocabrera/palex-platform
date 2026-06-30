@@ -164,6 +164,10 @@ export default function IncidenciasPage() {
     const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next
   })
 
+  // Sort
+  const [sortBy, setSortBy] = useState<"fecha" | "sla" | "hospital" | "titulo">("fecha")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+
   // Create modal
   const [showModal, setShowModal] = useState(false)
   const [hospitales, setHospitales] = useState<Hospital[]>([])
@@ -400,6 +404,27 @@ export default function IncidenciasPage() {
     })
   }
 
+  function toggleSort(field: "fecha" | "sla" | "hospital" | "titulo") {
+    if (sortBy === field) setSortDir(d => d === "asc" ? "desc" : "asc")
+    else { setSortBy(field); setSortDir(field === "fecha" ? "desc" : "asc") }
+  }
+
+  const sortedItems = [...items].sort((a, b) => {
+    let cmp = 0
+    if (sortBy === "fecha") cmp = new Date(a.creadoEn).getTime() - new Date(b.creadoEn).getTime()
+    else if (sortBy === "hospital") cmp = a.hospital.nombre.localeCompare(b.hospital.nombre, "es")
+    else if (sortBy === "titulo") cmp = a.titulo.localeCompare(b.titulo, "es")
+    else if (sortBy === "sla") {
+      const slaScore = (inc: Incidencia) => {
+        if (["RESUELTA", "CERRADA"].includes(inc.estado)) return 9999
+        if (!inc.slaHoras) return 9998
+        return (now - new Date(inc.creadoEn).getTime()) / (inc.slaHoras * 3600000)
+      }
+      cmp = slaScore(a) - slaScore(b)
+    }
+    return sortDir === "asc" ? cmp : -cmp
+  })
+
   const hwCategorias = ["BC_ROBO", "ZEBRA_MC", "ZEBRA_IMPRESORA", "READER_RFID", "GATEWAY_BT", "MINI_PC", "NEVERA", "PANTALLA", "TOTEM"]
   const swCategorias = ["INLAB", "OTRO"]
 
@@ -545,6 +570,21 @@ export default function IncidenciasPage() {
           <option value="">Todos los equipos</option>
           {EQUIPOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
         </select>
+        <select
+          value={`${sortBy}_${sortDir}`}
+          onChange={e => {
+            const [f, d] = e.target.value.split("_") as ["fecha" | "sla" | "hospital" | "titulo", "asc" | "desc"]
+            setSortBy(f); setSortDir(d)
+          }}
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none cursor-pointer">
+          <option value="fecha_desc">↓ Más recientes</option>
+          <option value="fecha_asc">↑ Más antiguas</option>
+          <option value="sla_desc">↓ SLA más urgente</option>
+          <option value="sla_asc">↑ SLA más holgado</option>
+          <option value="hospital_asc">↑ Hospital A–Z</option>
+          <option value="hospital_desc">↓ Hospital Z–A</option>
+          <option value="titulo_asc">↑ Título A–Z</option>
+        </select>
       </div>
 
       {/* Active filter chips */}
@@ -604,14 +644,36 @@ export default function IncidenciasPage() {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/40">
                 <th className="w-1.5 p-0" />
-                {["Código", "Título", "Hospital", "Estado", "Prioridad", "SLA", "Asignado", ""].map(h => (
-                  <th key={h} className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">{h}</th>
+                {([
+                  { label: "Código", field: "fecha" as const },
+                  { label: "Título", field: "titulo" as const },
+                  { label: "Hospital", field: "hospital" as const },
+                  { label: "Estado" },
+                  { label: "Prioridad" },
+                  { label: "SLA", field: "sla" as const },
+                  { label: "Asignado" },
+                  { label: "" },
+                ] as { label: string; field?: "fecha" | "sla" | "hospital" | "titulo" }[]).map(h => (
+                  <th key={h.label}
+                    onClick={h.field ? () => toggleSort(h.field!) : undefined}
+                    className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors select-none ${
+                      h.field ? "cursor-pointer hover:text-gray-700 dark:hover:text-gray-200" : ""
+                    } ${h.field && sortBy === h.field ? "text-teal-600 dark:text-teal-400" : "text-gray-400"}`}>
+                    <span className="flex items-center gap-1">
+                      {h.label}
+                      {h.field && (
+                        <span className="text-[10px]">
+                          {sortBy === h.field ? (sortDir === "asc" ? "↑" : "↓") : <span className="opacity-30">↕</span>}
+                        </span>
+                      )}
+                    </span>
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {PRIORIDADES.map(p => {
-                const group = items.filter(i => i.prioridad === p.value)
+                const group = sortedItems.filter(i => i.prioridad === p.value)
                 if (group.length === 0) return null
                 const collapsed = collapsedGroups.has(p.value)
                 return (
@@ -671,7 +733,7 @@ export default function IncidenciasPage() {
         /* ── CARD VIEW ── */
         <div className="space-y-1">
           {PRIORIDADES.map(p => {
-            const group = items.filter(i => i.prioridad === p.value)
+            const group = sortedItems.filter(i => i.prioridad === p.value)
             if (group.length === 0) return null
             const collapsed = collapsedGroups.has(p.value)
             return (
