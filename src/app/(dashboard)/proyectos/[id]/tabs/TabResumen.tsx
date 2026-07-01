@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
-import QRCode from "qrcode"
 import type { Proyecto, HardwareUnidad } from "../types"
 import { fmtFecha, ESTADO_LABEL, ESTADO_COLOR, PRIORIDAD, FASE_ESTADO_COLOR, HW_ESTADO, HW_TIPO_LABEL } from "../types"
 
@@ -59,8 +58,9 @@ export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proye
 
   useEffect(() => {
     if (shareUrl) {
-      QRCode.toDataURL(shareUrl, { width: 220, margin: 2, color: { dark: "#111827", light: "#ffffff" } })
-        .then(setQrDataUrl).catch(() => setQrDataUrl(null))
+      import("qrcode").then(m =>
+        m.default.toDataURL(shareUrl, { width: 220, margin: 2, color: { dark: "#111827", light: "#ffffff" } })
+      ).then(setQrDataUrl).catch(() => setQrDataUrl(null))
     } else {
       setQrDataUrl(null)
     }

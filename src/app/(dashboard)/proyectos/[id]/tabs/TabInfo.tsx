@@ -1,11 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { TEAL } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
-import { ComentariosPanel } from "@/components/ComentariosPanel"
 import type { Proyecto } from "../types"
+
+const ComentariosPanel = dynamic(
+  () => import("@/components/ComentariosPanel").then(m => ({ default: m.ComentariosPanel })),
+  { ssr: false }
+)
 import { fmtFechaInput } from "../types"
 
 function ComentariosInInfo({ ppId }: { ppId: string }) {

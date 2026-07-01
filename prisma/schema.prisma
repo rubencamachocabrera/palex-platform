@@ -217,11 +217,12 @@ model Usuario {
   favoritos         Favorito[]
   llamadas          RegistroLlamada[]
   tareasAsignadas       Tarea[]          @relation("TareasAsignadas")
-  incidenciasReportadas Incidencia[]     @relation("IncidenciasReportadas")
-  incidenciasAsignadas  Incidencia[]     @relation("IncidenciasAsignadas")
-  eventosIncidencia     EventoIncidencia[] @relation("EventosIncidencia")
-  notasEquipo           NotaEquipo[]       @relation("NotasEquipo")
-  checkins              CheckinHospital[]  @relation("CheckinsUsuario")
+  incidenciasReportadas Incidencia[]        @relation("IncidenciasReportadas")
+  incidenciasAsignadas  Incidencia[]        @relation("IncidenciasAsignadas")
+  eventosIncidencia     EventoIncidencia[]  @relation("EventosIncidencia")
+  notasEquipo           NotaEquipo[]        @relation("NotasEquipo")
+  checkins              CheckinHospital[]   @relation("CheckinsUsuario")
+  relacionesCreadas     IncidenciaRelacion[] @relation("RelacionesCreadasPor")
 
   @@map("usuarios")
 }
@@ -876,6 +877,8 @@ model Incidencia {
   asignadoA           Usuario?             @relation("IncidenciasAsignadas", fields: [asignadoAId], references: [id], onDelete: SetNull)
 
   eventos             EventoIncidencia[]
+  relacionesOrigen    IncidenciaRelacion[] @relation("RelacionesOrigen")
+  relacionesDestino   IncidenciaRelacion[] @relation("RelacionesDestino")
 
   coasignadosIds      Json?                @default("[]") @map("coasignados_ids")
   slaPausadoEn        DateTime?            @map("sla_pausado_en")
@@ -927,4 +930,28 @@ model RespuestaRapidaIncidencia {
   activo    Boolean @default(true)
 
   @@map("respuestas_rapidas_incidencia")
+}
+
+enum TipoRelacionIncidencia {
+  DUPLICADA
+  RELACIONADA
+  CAUSA_RAIZ
+}
+
+model IncidenciaRelacion {
+  id            String                 @id @default(cuid())
+  tipo          TipoRelacionIncidencia
+  incidenciaId  String                 @map("incidencia_id")
+  relacionadaId String                 @map("relacionada_id")
+  creadoPorId   String                 @map("creado_por_id")
+  creadoEn      DateTime               @default(now()) @map("creado_en")
+
+  incidencia    Incidencia             @relation("RelacionesOrigen", fields: [incidenciaId], references: [id], onDelete: Cascade)
+  relacionada   Incidencia             @relation("RelacionesDestino", fields: [relacionadaId], references: [id], onDelete: Cascade)
+  creadoPor     Usuario                @relation("RelacionesCreadasPor", fields: [creadoPorId], references: [id])
+
+  @@unique([incidenciaId, relacionadaId])
+  @@index([incidenciaId])
+  @@index([relacionadaId])
+  @@map("incidencias_relaciones")
 }

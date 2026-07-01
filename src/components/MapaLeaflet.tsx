@@ -140,6 +140,27 @@ function getCoords(h: HospitalMapa): [number, number] | null {
   return COORDS_POR_CIUDAD[h.ciudad.toLowerCase().trim()] ?? null
 }
 
+function geoDist([lat1, lng1]: [number, number], [lat2, lng2]: [number, number]) {
+  return Math.sqrt((lat1 - lat2) ** 2 + (lng1 - lng2) ** 2)
+}
+
+function nearestNeighbor(points: [number, number][]): number[] {
+  if (points.length === 0) return []
+  const visited = [0]
+  const unvisited = points.map((_, i) => i).slice(1)
+  while (unvisited.length > 0) {
+    const last = visited[visited.length - 1]
+    let bestI = 0, bestD = Infinity
+    for (let i = 0; i < unvisited.length; i++) {
+      const d = geoDist(points[last], points[unvisited[i]])
+      if (d < bestD) { bestD = d; bestI = i }
+    }
+    visited.push(unvisited[bestI])
+    unvisited.splice(bestI, 1)
+  }
+  return visited
+}
+
 function cargarLeaflet(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!document.getElementById("leaflet-css")) {
@@ -175,6 +196,15 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
   const [mapReady, setMapReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [selected, setSelected] = useState<HospitalMapa | null>(null)
+
+  // Ruta optimizada
+  const [rutaMode, setRutaMode] = useState(false)
+  const [rutaOrden, setRutaOrden] = useState<HospitalMapa[]>([])
+  const [rutaLoading, setRutaLoading] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rutaPolylineRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rutaMarkersRef = useRef<any[]>([])
 
   // Filtros
   const [searchQ, setSearchQ] = useState("")
@@ -269,6 +299,93 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
     })
   }, [zonasFiltro, tiposFiltro, searchQ])
 
+  // Ruta de hoy: fetch, compute nearest-neighbor, render polyline + numbered markers
+  useEffect(() => {
+    if (!mapReady || !mapObj.current) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const L = (window as any).L
+    if (!L) return
+
+    // Always clean up previous ruta layers
+    rutaMarkersRef.current.forEach(m => { try { mapObj.current.removeLayer(m) } catch { /* ignore */ } })
+    rutaMarkersRef.current = []
+    if (rutaPolylineRef.current) {
+      try { mapObj.current.removeLayer(rutaPolylineRef.current) } catch { /* ignore */ }
+      rutaPolylineRef.current = null
+    }
+
+    if (!rutaMode) {
+      // Restore all markers to full opacity
+      markersRef.current.forEach(({ marker, h }) => {
+        const color = zoneColorMap[h.zona.id] ?? TEAL
+        marker.setStyle({ fillColor: color, radius: 9, opacity: 1, fillOpacity: 0.88 })
+        if (!mapObj.current.hasLayer(marker)) mapObj.current.addLayer(marker)
+      })
+      setRutaOrden([])
+      return
+    }
+
+    setRutaLoading(true)
+    const hoy = new Date()
+    const desde = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).toISOString()
+    const hasta = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1).toISOString()
+
+    fetch(`/api/visitas?desde=${desde}&hasta=${hasta}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((visitas: { hospitalId: string }[]) => {
+        if (!mapObj.current) return
+        const visitaHospIds = new Set(visitas.map(v => v.hospitalId))
+        const rutaHospitales = hospitales.filter(h => visitaHospIds.has(h.id))
+
+        const withCoords = rutaHospitales
+          .map(h => ({ h, coords: getCoords(h) }))
+          .filter((x): x is { h: HospitalMapa; coords: [number, number] } => x.coords !== null)
+
+        if (withCoords.length === 0) { setRutaOrden([]); return }
+
+        const points = withCoords.map(x => x.coords)
+        const order = nearestNeighbor(points)
+        const orderedHospitales = order.map(i => withCoords[i].h)
+        const orderedCoords = order.map(i => withCoords[i].coords)
+
+        setRutaOrden(orderedHospitales)
+
+        // Dim all base markers
+        markersRef.current.forEach(({ marker }) => {
+          marker.setStyle({ fillOpacity: 0.12, opacity: 0.2 })
+        })
+
+        // Polyline dashed
+        rutaPolylineRef.current = L.polyline(orderedCoords, {
+          color: TEAL, weight: 3, opacity: 0.75, dashArray: "8 10",
+        }).addTo(mapObj.current)
+
+        // Numbered markers
+        orderedHospitales.forEach((h, i) => {
+          const icon = L.divIcon({
+            className: "",
+            html: `<div style="width:28px;height:28px;border-radius:50%;background:${TEAL};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,169,157,0.4);">${i + 1}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          })
+          const m = L.marker(orderedCoords[i], { icon })
+            .bindTooltip(`${i + 1}. ${h.nombre}`, { permanent: false, direction: "top", offset: [0, -8], className: "leaflet-tooltip-palex" })
+            .addTo(mapObj.current)
+            .on("click", () => setSelected(h))
+          rutaMarkersRef.current.push(m)
+        })
+
+        if (orderedCoords.length > 1) {
+          mapObj.current.fitBounds(orderedCoords, { padding: [50, 50] })
+        } else if (orderedCoords.length === 1) {
+          mapObj.current.setView(orderedCoords[0], 13)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setRutaLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rutaMode, mapReady])
+
   const toggleZona = (id: string) => {
     setZonasFiltro(prev => {
       const next = new Set(prev)
@@ -359,10 +476,12 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
 
           {/* Contador y limpiar */}
           <div className="flex items-center gap-2 ml-auto shrink-0">
-            <span className="text-[10px] font-semibold text-gray-400">
-              {visibleCount} / {hospitales.length}
-            </span>
-            {hasFilter && (
+            {!rutaMode && (
+              <span className="text-[10px] font-semibold text-gray-400">
+                {visibleCount} / {hospitales.length}
+              </span>
+            )}
+            {hasFilter && !rutaMode && (
               <button
                 onClick={() => { setSearchQ(""); setZonasFiltro(new Set()); setTiposFiltro(new Set()) }}
                 className="text-[10px] text-gray-400 hover:text-red-500 transition-colors px-2 py-0.5 rounded-lg hover:bg-red-50"
@@ -370,6 +489,19 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
                 Limpiar
               </button>
             )}
+            <button
+              onClick={() => setRutaMode(m => !m)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border transition-all"
+              style={rutaMode
+                ? { backgroundColor: TEAL, color: "#fff", borderColor: TEAL }
+                : { backgroundColor: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
+              title="Ruta optimizada de visitas de hoy"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+              {rutaLoading ? "Cargando…" : "Ruta hoy"}
+            </button>
           </div>
         </div>
       )}
@@ -393,8 +525,8 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
         </div>
       )}
 
-      {/* Leyenda de zonas — interactiva */}
-      {mapReady && zonasPaleta.length > 0 && (
+      {/* Leyenda de zonas — interactiva (oculta en modo ruta) */}
+      {mapReady && zonasPaleta.length > 0 && !rutaMode && (
         <div className="absolute bottom-6 left-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 max-w-[180px]">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Zonas</p>
           <div className="space-y-1.5">
@@ -416,6 +548,43 @@ export default function MapaLeaflet({ hospitales }: { hospitales: HospitalMapa[]
               <p className="text-[10px] text-amber-500 mt-0.5">{hospitales.length - ubicados.length} sin coordenadas</p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Panel ruta de hoy */}
+      {mapReady && rutaMode && (
+        <div className="absolute bottom-6 left-4 z-[1000] bg-white/97 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 w-56 max-h-72 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: TEAL }} />
+            <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Ruta de hoy</p>
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-auto" style={{ backgroundColor: `${TEAL}15`, color: TEAL }}>{rutaOrden.length}</span>
+          </div>
+          {rutaLoading ? (
+            <p className="text-xs text-gray-400 py-2">Calculando ruta…</p>
+          ) : rutaOrden.length === 0 ? (
+            <p className="text-xs text-gray-400 py-2">Sin visitas programadas para hoy</p>
+          ) : (
+            <div className="space-y-1.5">
+              {rutaOrden.map((h, i) => (
+                <button
+                  key={h.id}
+                  onClick={() => setSelected(h)}
+                  className="flex items-center gap-2 w-full text-left hover:bg-gray-50 rounded-lg px-1.5 py-1 transition-colors"
+                >
+                  <div className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: TEAL }}>
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-800 truncate leading-tight">{h.nombre}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{h.ciudad}</p>
+                  </div>
+                </button>
+              ))}
+              <div className="pt-2 mt-1 border-t border-gray-100">
+                <p className="text-[10px] text-gray-400">Orden optimizado por proximidad</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

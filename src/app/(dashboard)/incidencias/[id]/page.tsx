@@ -223,6 +223,18 @@ export default function IncidenciaDetallePage() {
   const [saving, setSaving] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
+  // Relaciones entre incidencias
+  interface Relacion {
+    id: string; tipo: string; creadoEn: string; creadoPor: string; direccion: "origen" | "destino"
+    incidencia: { id: string; codigo: string; titulo: string; estado: string; prioridad: string }
+  }
+  const [relaciones, setRelaciones] = useState<Relacion[]>([])
+  const [relacionTipo, setRelacionTipo] = useState<"DUPLICADA" | "RELACIONADA" | "CAUSA_RAIZ">("RELACIONADA")
+  const [relacionQ, setRelacionQ] = useState("")
+  const [relacionSugerencias, setRelacionSugerencias] = useState<{ id: string; codigo: string; titulo: string }[]>([])
+  const [relacionSeleccionada, setRelacionSeleccionada] = useState<{ id: string; codigo: string; titulo: string } | null>(null)
+  const [vinculando, setVinculando] = useState(false)
+
   useEffect(() => {
     const main = document.getElementById("main-content")
     if (!main) return
@@ -254,6 +266,60 @@ export default function IncidenciaDetallePage() {
       if (Array.isArray(d)) setUsuarios(d)
     }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    fetch(`/api/incidencias/${id}/relaciones`).then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setRelaciones(d)
+    }).catch(() => {})
+  }, [id])
+
+  useEffect(() => {
+    const q = relacionQ.trim()
+    if (q.length < 2) { setRelacionSugerencias([]); return }
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => {
+      fetch(`/api/incidencias?q=${encodeURIComponent(q)}&limit=5`, { signal: ctrl.signal })
+        .then(r => r.ok ? r.json() : [])
+        .then(d => {
+          if (Array.isArray(d)) setRelacionSugerencias(d.map((i: { id: string; codigo: string; titulo: string }) => ({ id: i.id, codigo: i.codigo, titulo: i.titulo })))
+        })
+        .catch(() => {})
+    }, 300)
+    return () => { clearTimeout(timer); ctrl.abort() }
+  }, [relacionQ])
+
+  async function agregarRelacion() {
+    if (!relacionSeleccionada) return
+    setVinculando(true)
+    try {
+      const r = await fetch(`/api/incidencias/${id}/relaciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: relacionTipo, relacionadaId: relacionSeleccionada.id }),
+      })
+      if (r.ok) {
+        const nueva = await r.json()
+        setRelaciones(prev => [nueva, ...prev])
+        setRelacionSeleccionada(null)
+        setRelacionQ("")
+        success("Incidencia vinculada")
+      } else {
+        const err = await r.json()
+        toastError(err.error ?? "Error al vincular")
+      }
+    } catch { toastError("Error al vincular") }
+    finally { setVinculando(false) }
+  }
+
+  async function eliminarRelacion(relacionId: string) {
+    const r = await fetch(`/api/incidencias/${id}/relaciones?relacionId=${relacionId}`, { method: "DELETE" })
+    if (r.ok) {
+      setRelaciones(prev => prev.filter(rel => rel.id !== relacionId))
+      success("Relación eliminada")
+    } else {
+      toastError("Error al eliminar relación")
+    }
+  }
 
   async function cambiarEstado(nuevoEstado: string) {
     setSaving(true)
@@ -806,6 +872,82 @@ export default function IncidenciaDetallePage() {
               Cerrar incidencia
             </button>
           )}
+
+          {/* Incidencias relacionadas */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Relacionadas</h3>
+
+            {relaciones.length > 0 ? (
+              <div className="space-y-2 mb-4">
+                {relaciones.map(rel => {
+                  const TIPO_LABEL: Record<string, { label: string; color: string }> = {
+                    DUPLICADA:  { label: "Duplicada",  color: "#f59e0b" },
+                    RELACIONADA:{ label: "Relacionada",color: "#6366f1" },
+                    CAUSA_RAIZ: { label: "Causa raíz", color: "#ef4444" },
+                  }
+                  const tl = TIPO_LABEL[rel.tipo] ?? { label: rel.tipo, color: "#6b7280" }
+                  const est = getEstadoStyle(rel.incidencia.estado)
+                  return (
+                    <div key={rel.id} className="rounded-xl border border-gray-100 dark:border-gray-800 p-3 flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${tl.color}15`, color: tl.color }}>{tl.label}</span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: est.bg, color: est.color }}>{est.label}</span>
+                        </div>
+                        <Link href={`/incidencias/${rel.incidencia.id}`} className="text-xs font-semibold hover:underline text-gray-900 dark:text-white block truncate" style={{ color: TEAL }}>
+                          {rel.incidencia.codigo} — {rel.incidencia.titulo}
+                        </Link>
+                        <p className="text-[10px] text-gray-400 mt-0.5">por {rel.creadoPor}</p>
+                      </div>
+                      <button onClick={() => eliminarRelacion(rel.id)} className="shrink-0 text-gray-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20" aria-label="Eliminar relación">
+                        <IconX size={12} />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 mb-4">Sin incidencias vinculadas</p>
+            )}
+
+            {/* Añadir relación */}
+            <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="relative">
+                <input
+                  value={relacionSeleccionada ? `${relacionSeleccionada.codigo} — ${relacionSeleccionada.titulo}` : relacionQ}
+                  onChange={e => { setRelacionSeleccionada(null); setRelacionQ(e.target.value) }}
+                  placeholder="Buscar por código o título…"
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
+                />
+                {relacionSugerencias.length > 0 && !relacionSeleccionada && (
+                  <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
+                    {relacionSugerencias.filter(s => s.id !== id).map(s => (
+                      <button key={s.id} onClick={() => { setRelacionSeleccionada(s); setRelacionSugerencias([]) }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors">
+                        <span className="font-mono font-bold text-gray-500">{s.codigo}</span>
+                        <span className="text-gray-700 dark:text-gray-200 ml-1.5 truncate">{s.titulo}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <select value={relacionTipo} onChange={e => setRelacionTipo(e.target.value as typeof relacionTipo)}
+                  className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1"
+                  style={{ "--tw-ring-color": TEAL } as React.CSSProperties}>
+                  <option value="RELACIONADA">Relacionada</option>
+                  <option value="DUPLICADA">Duplicada</option>
+                  <option value="CAUSA_RAIZ">Causa raíz</option>
+                </select>
+                <button onClick={agregarRelacion} disabled={vinculando || !relacionSeleccionada}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-40 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: TEAL }}>
+                  {vinculando ? "…" : "Vincular"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right: Timeline + Event form */}
