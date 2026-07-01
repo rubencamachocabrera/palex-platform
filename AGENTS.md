@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-07-02 (Sprint 18).
+> Ultima actualizacion: 2026-07-01 (Sprint 19).
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -115,8 +115,9 @@ src/
       admin/log/page.tsx                Log de actividad (solo ADMIN)
       admin/equipo/page.tsx             Panel equipo — workload por usuario (solo ADMIN)
       admin/carga-trabajo/page.tsx      Heatmap mensual visitas (solo ADMIN)
-      incidencias/page.tsx              Helpdesk: lista + filtros + KPIs + crear modal
-      incidencias/[id]/page.tsx         Detalle incidencia + timeline eventos + SLA
+      incidencias/page.tsx              Helpdesk: lista + filtros + KPIs + crear modal + boton Metricas
+      incidencias/[id]/page.tsx         Detalle incidencia + timeline eventos + SLA + panel relaciones
+      incidencias/stats/page.tsx        Metricas rendimiento: KPIs, categorias, HW/SW, tabla tecnicos
       llamadas/page.tsx                 Registro de llamadas — CRUD, KPIs, filtros
       perfil/page.tsx                   Nombre + contrasena + notificaciones + sync calendario
     api/                                ~50 rutas con rate limiting + Zod validation
@@ -127,11 +128,14 @@ src/
       visitas/                          CRUD + comentarios. GET sin `datos`, ?desde=&hasta=
       proyectos/                        CRUD + fases + tareas + hitos + entradas + solicitudes + contactos + adjuntos + comentarios + modulos + share + excel
       hardware/                         CRUD + tipos + unidades
-      incidencias/                      CRUD + eventos. Helpdesk HW/SW, SLA, timeline
+      incidencias/                      CRUD + eventos + relaciones. Helpdesk HW/SW, SLA, timeline
+      incidencias/stats/route.ts        GET stats por periodo — KPIs, categorias, SLA, tecnicos
+      incidencias/[id]/relaciones/      GET/POST/DELETE vincular incidencias (DUPLICADA/RELACIONADA/CAUSA_RAIZ)
       llamadas/                         CRUD con IDOR zona
       tags/, recordatorios/, favoritos/, calendario/ical/, onboarding/, presence/, notificaciones/
       perfil/                           { rol, onboardingCompletado, calendarToken }
   components/
+    SlaAlertasWidget.tsx                Widget dashboard: incidencias criticas/altas con SLA <24h, countdown 30s
     Sidebar.tsx                         Dark #0f172a, colapsable, nav por rol
     TopBar.tsx                          Busqueda global, dark/light toggle, notificaciones
     ThemeProvider.tsx                    dark/light, localStorage, anti-FOUC
@@ -182,15 +186,16 @@ Tag              (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio     (titulo, descripcion?, fecha, completado, usuario)
 Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique)
 RegistroLlamada  (hospital, contacto?, usuario, duracion, asunto, resultado, seguimiento)
-Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad, coasignadosIds JSON [{id,nombre}], slaPausadoEn DateTime?, slaPausadoMs Int)
+Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad, coasignadosIds JSON [{id,nombre}], slaPausadoEn DateTime?, slaPausadoMs Int, fechaResolucion DateTime?, fechaCierre DateTime?)
 EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, fotos JSON?, editadoPor?, editadoEn?, incidencia, autor)
 RespuestaRapidaIncidencia (texto, categoria?, orden, activo) @@map("respuestas_rapidas_incidencia")
+IncidenciaRelacion (tipo TipoRelacionIncidencia, incidenciaId, relacionadaId, creadoPorId, @@unique[incidenciaId+relacionadaId]) @@map("incidencias_relaciones")
 LogActividad, ConfigApp (crmActivo, incidenciasActivo), PlantillaVisita, ModuloInlab
 NotaEquipo (texto, autorId, mencionIds JSON, fijada, creadoEn) @@map("notas_equipo") — notas del equipo accesibles a todos los roles
 Oportunidad      (DESACTIVADO)
 ```
 
-**Enums clave:** EstadoProyecto (5), EstadoModulo (5), TipoFase (11), TipoFavorito (2), TipoIncidencia (2), CategoriaIncidencia (10), PrioridadIncidencia (4), EstadoIncidencia (6), TipoEventoIncidencia (11)
+**Enums clave:** EstadoProyecto (5), EstadoModulo (5), TipoFase (11), TipoFavorito (2), TipoIncidencia (2), CategoriaIncidencia (10), PrioridadIncidencia (4), EstadoIncidencia (6), TipoEventoIncidencia (11), TipoRelacionIncidencia (3: DUPLICADA|RELACIONADA|CAUSA_RAIZ)
 
 ---
 
@@ -221,6 +226,8 @@ Oportunidad      (DESACTIVADO)
 - POST `/api/incidencias/[id]/eventos`: acepta `fecha` (usa como creadoEn), `fotos` (array base64 max 5).
 - PATCH `/api/incidencias/[id]/eventos/[eventoId]`: edicion solo autor o ADMIN, guarda editadoPor+editadoEn.
 - GET/POST/DELETE `/api/incidencias/respuestas-rapidas`: plantillas de respuesta. ADMIN para POST/DELETE.
+- GET/POST/DELETE `/api/incidencias/[id]/relaciones`: vincular incidencias. POST valida auto-relacion y duplicados (incluyendo inversos, 409). DELETE solo autor o ADMIN. Normaliza origen+destino en GET.
+- GET `/api/incidencias/stats`: acepta `?desde=&hasta=`. Devuelve KPIs globales, porCategoria/porPrioridad/porTipo, tecnicos[] con { total, resueltas, slaRate, horasTotales }. Cache private 60s. SLA usando `fechaResolucion` (NO `resolvedAt`).
 - equipoResponsable enum: SERVICIO_TECNICO | APLICACIONES | COMERCIAL | MARKETING | PROYECTOS (5 equipos, NO "AMBOS")
 - KPIs lista: usar `totales` (fetch sin filtros) para contadores globales; `items` solo para la lista filtrada.
 - Lista incidencias: ordenacion client-side (fecha/SLA/hospital/titulo). Agrupacion por prioridad collapsible. Drawer lateral para detalle rapido. QuickAssign inline desde lista.
@@ -255,9 +262,14 @@ Oportunidad      (DESACTIVADO)
 **Pasaporte hardware:** /share/hardware/[id] — pagina publica sin auth (CSP exento), hero dark-blue, badge estado/garantia, info tecnica, historial incidencias activas/cerradas colapsible. API GET /api/share/hardware/[id].
 **Check-in/Check-out hospitales:** modelo CheckinHospital (checkins_hospital), relaciones nombradas "CheckinsUsuario"/"CheckinsHospital". API POST /api/checkin (idempotente), GET /api/checkin?hospitalId&activo=, PATCH /api/checkin/[id] (checkout, calcula duracion minutos). Banner activo en detalle hospital con pulsante verde + contador en vivo (actualizado cada 60s), boton Check-in en cabecera.
 **QuickActionsFAB:** boton flotante context-aware en dashboard layout. Acciones por ruta (hospitales/[id], hospitales, visitas, proyectos/[id], proyectos, incidencias, llamadas, hardware, recordatorios, notas). 1 accion = FAB directo; N acciones = menu expandible con backdrop blur. Usa CustomEvents para comunicar con paginas.
+**Ruta optimizada mapa:** toggle "Ruta hoy" en /mapa. Algoritmo nearest-neighbor (greedy TSP) sobre visitas del dia. Polyline Leaflet punteada teal, marcadores numerados L.divIcon, fitBounds automatico. Panel lista ordenada en esquina inferior izquierda.
+**Vincular incidencias:** modelo IncidenciaRelacion (3 tipos: DUPLICADA/RELACIONADA/CAUSA_RAIZ). Panel en detalle incidencia con buscador combobox + badge tipo + estado + link. API GET/POST/DELETE /api/incidencias/[id]/relaciones. Previene auto-relacion y duplicados inversos (409).
+**WOW visual (Sprint 19):** globals.css — 5 keyframes nuevos: stagger-list (10 hijos, 0-315ms), growBar+progress-bar-anim, drawRing+score-ring-path (CSS var --ring-offset), slaUrgent pulsante, confettiFall+confetti-particle. Todos respetan prefers-reduced-motion. Confetti al marcar proyecto COMPLETADO por primera vez. Score ring SVG animado en hospitales/[id] (reemplaza badge plano). Barras de avance animadas en lista proyectos (stagger por posicion + --bar-delay). SlaAlertasWidget en dashboard Admin+Proyectos (countdown live 30s, incidencias criticas/altas <24h).
+**Metricas incidencias:** /incidencias/stats — KPIs globales (total/abiertas/en-progreso/resueltas/SLA%), distribucion por categoria/prioridad/tipo HW-SW (donut chart SVG), tabla tecnico con tasa resolucion, cumplimiento SLA y horas trabajadas. Filtro periodo 7/30/90/todo dias. Accesible via boton "Metricas" en header incidencias.
+**Dynamic imports:** ComentariosPanel en TabInfo (next/dynamic, ssr:false). QRCode en TabResumen (import() dinamico en useEffect). @dnd-kit ya existia.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin protegidos en middleware Edge. /share/ exento (publico por diseno).
-**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones. @dnd-kit dynamic import (no en bundle inicial /proyectos).
+**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones. @dnd-kit, ComentariosPanel, QRCode = dynamic imports (no en bundle inicial).
 
 ---
 
@@ -277,7 +289,9 @@ Oportunidad      (DESACTIVADO)
 - [ ] Object storage: migrar fotos/adjuntos de base64 en DB a R2/S3 (~2-3 dias, bloqueado)
 
 ### Activo (pendiente tecnico menor)
-- [ ] Dynamic imports para QR, ComentariosPanel, SignaturePad (DnD ya hecho — bajo impacto)
+- [x] ComentariosPanel dynamic import — IMPLEMENTADO (Sprint 19, TabInfo)
+- [x] QRCode dynamic import — IMPLEMENTADO (Sprint 19, TabResumen)
+- [ ] SignaturePad dynamic import — pendiente (bajo impacto)
 - [ ] bodyParser size limits — no aplica en Next.js 16.x a nivel config; pendiente revisar alternativa por ruta
 
 ### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
@@ -290,13 +304,20 @@ Oportunidad      (DESACTIVADO)
 - [x] Pasaporte hardware — IMPLEMENTADO (Sprint 18)
 - [x] Check-in/Check-out hospitales — IMPLEMENTADO (Sprint 18)
 - [x] Quick Actions flotantes (FAB) — IMPLEMENTADO (Sprint 18)
+- [x] Ruta optimizada mapa — IMPLEMENTADO (Sprint 19)
+- [x] WOW visual — IMPLEMENTADO (Sprint 19): confetti, score ring, stagger, SLA widget, barras animadas
 - [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia") — BLOQUEADO (requiere Resend)
 - [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer) — BLOQUEADO (requiere Resend)
-- [ ] Ruta optimizada mapa (ordenar visitas del dia por proximidad geografica)
+- [ ] Modo compacto toggle en lista proyectos
+- [ ] Geolocation check-in (auto-detectar hospital cercano)
+- [ ] Filtros guardados (guardar sets de filtros con nombre)
+- [ ] Agenda semanal /agenda (vista 5 dias — visitas + tareas + recordatorios)
+- [ ] Copiar fases/tareas entre proyectos
+- [ ] Calendario SLAs /incidencias/calendario (vista mensual, dots por SLA estado)
 
-### Backlog — Incidencias (modulo aparte, no priorizado)
-- [ ] Vinculacion entre incidencias (DUPLICADA, RELACIONADA, CAUSA_RAIZ) — modelo IncidenciaRelacion
-- [ ] Metricas rendimiento por tecnico (tiempo medio resolucion, cumplimiento SLA %)
+### Backlog — Incidencias (modulo aparte)
+- [x] Vinculacion entre incidencias (DUPLICADA, RELACIONADA, CAUSA_RAIZ) — IMPLEMENTADO (Sprint 19)
+- [x] Metricas rendimiento por tecnico — IMPLEMENTADO (Sprint 19, /incidencias/stats)
 - [ ] Notificacion automatica al cambiar estado (al reportador y al asignado)
 - [ ] Recurrencia / reapertura automatica (detectar patron hospital+equipo+categoria)
 - [ ] Escalado con reglas automaticas (CRITICA >4h sin asignar → auto-escalar + notificar ADMIN)
