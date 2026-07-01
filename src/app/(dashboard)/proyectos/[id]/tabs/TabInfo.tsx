@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { TEAL } from "@/lib/brand"
+import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
 import type { Proyecto } from "../types"
@@ -37,9 +37,31 @@ export function TabInfo({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto
   })
   const [guardando, setGuardando] = useState(false)
 
+  function launchConfetti() {
+    if (typeof window === "undefined") return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const colors = [TEAL, ORANGE, "#6366f1", "#f59e0b", "#10b981", "#ec4899", "#14b8a6"]
+    for (let i = 0; i < 90; i++) {
+      const el = document.createElement("div")
+      el.className = "confetti-particle"
+      const size = 6 + Math.random() * 8
+      el.style.cssText = `
+        left:${10 + Math.random() * 80}vw;top:-12px;
+        width:${size}px;height:${size}px;
+        background-color:${colors[Math.floor(Math.random() * colors.length)]};
+        animation-duration:${0.9 + Math.random() * 1.4}s;
+        animation-delay:${Math.random() * 0.6}s;
+        border-radius:${Math.random() > 0.5 ? "50%" : "2px"};
+      `
+      document.body.appendChild(el)
+      setTimeout(() => el.remove(), 3000)
+    }
+  }
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
     setGuardando(true)
+    const wasCompletado = pp.estado === "COMPLETADO"
     try {
       const r = await fetch(`/api/proyectos/${pp.id}`, {
         method: "PATCH",
@@ -53,6 +75,7 @@ export function TabInfo({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto
       })
       if (!r.ok) throw new Error()
       success("Guardado correctamente")
+      if (!wasCompletado && form.estado === "COMPLETADO") launchConfetti()
       onUpdate({ ...pp, ...form, prioridad: parseInt(form.prioridad), presupuesto: form.presupuesto ? parseFloat(form.presupuesto) : null, refContrato: form.refContrato.trim() || null })
     } catch {
       toastError("Error al guardar")

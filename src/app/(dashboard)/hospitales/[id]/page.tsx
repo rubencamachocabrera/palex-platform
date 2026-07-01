@@ -616,24 +616,52 @@ export default function HospitalDetailPage() {
                 </p>
               )}
             </div>
-            {healthScore !== null ? (
-              <div className="shrink-0 text-center" title={healthScore.label}>
-                <div className="w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 cursor-default"
-                  style={{ borderColor: healthScore.color, backgroundColor: `${healthScore.color}12` }}>
-                  <span className="text-lg font-black leading-none" style={{ color: healthScore.color }}>{healthScore.total}</span>
-                  <span className="text-[8px] font-semibold opacity-60 mt-0.5" style={{ color: healthScore.color }}>/100</span>
+            {healthScore !== null ? (() => {
+              const R = 34, circ = 2 * Math.PI * R
+              const offset = circ * (1 - healthScore.total / 100)
+              return (
+                <div className="shrink-0 text-center" title={healthScore.label}>
+                  <div className="relative w-16 h-16">
+                    <svg width="64" height="64" viewBox="0 0 80 80" className="absolute inset-0" style={{ transform: "rotate(-90deg)" }}>
+                      <circle cx="40" cy="40" r={R} fill="none" stroke={`${healthScore.color}18`} strokeWidth="7" />
+                      <circle
+                        cx="40" cy="40" r={R} fill="none"
+                        stroke={healthScore.color} strokeWidth="7"
+                        strokeLinecap="round"
+                        strokeDasharray={circ}
+                        className="score-ring-path"
+                        style={{ "--ring-offset": offset } as React.CSSProperties}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-base font-black leading-none" style={{ color: healthScore.color }}>{healthScore.total}</span>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-gray-400 mt-0.5 max-w-[64px] leading-tight">{healthScore.label}</p>
                 </div>
-                <p className="text-[9px] text-gray-400 mt-0.5 max-w-[56px] leading-tight">{healthScore.label}</p>
-              </div>
-            ) : hospital.score !== undefined && hospital.score > 0 ? (
-              <div className="shrink-0 text-center">
-                <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2"
-                  style={{ borderColor: hospital.score >= 80 ? "#16a34a" : hospital.score >= 50 ? TEAL : "#f59e0b", backgroundColor: hospital.score >= 80 ? "#f0fdf4" : hospital.score >= 50 ? `${TEAL}10` : "#fef3c7" }}>
-                  <span className="text-sm font-black" style={{ color: hospital.score >= 80 ? "#16a34a" : hospital.score >= 50 ? TEAL : "#f59e0b" }}>{hospital.score}</span>
+              )
+            })() : hospital.score !== undefined && hospital.score > 0 ? (() => {
+              const sc = hospital.score ?? 0
+              const color = sc >= 80 ? "#16a34a" : sc >= 50 ? TEAL : "#f59e0b"
+              const R = 30, circ = 2 * Math.PI * R
+              const offset = circ * (1 - sc / 100)
+              return (
+                <div className="shrink-0 text-center">
+                  <div className="relative w-14 h-14">
+                    <svg width="56" height="56" viewBox="0 0 72 72" className="absolute inset-0" style={{ transform: "rotate(-90deg)" }}>
+                      <circle cx="36" cy="36" r={R} fill="none" stroke={`${color}18`} strokeWidth="6" />
+                      <circle cx="36" cy="36" r={R} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={circ} className="score-ring-path"
+                        style={{ "--ring-offset": offset } as React.CSSProperties} />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-black" style={{ color }}>{sc}</span>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-gray-400 mt-0.5">score</p>
                 </div>
-                <p className="text-[9px] text-gray-400 mt-0.5">score</p>
-              </div>
-            ) : null}
+              )
+            })() : null}
           </div>
 
           {/* Health Score breakdown */}

@@ -11,6 +11,7 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { AlertasPanel } from "@/components/AlertasPanel"
+import { SlaAlertasWidget } from "@/components/SlaAlertasWidget"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -620,6 +621,9 @@ async function DashboardAdmin({ userId }: { userId: string }) {
         }
       </div>
 
+      {/* Widget SLA críticos */}
+      <SlaAlertasWidget />
+
       {/* Alertas hardware */}
       {(hwGarantiaVencidaCount > 0 || hwMantenimientoVencidoCount > 0) && (
         <Link
@@ -1132,6 +1136,9 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       <QuickActionsField />
 
       <FavoritosSection userId={userId} />
+
+      {/* Widget SLA críticos */}
+      <SlaAlertasWidget />
 
       {hayMiDia && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">

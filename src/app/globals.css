@@ -525,6 +525,63 @@ button:not([disabled]):active {
   animation: gradientShift 6s ease infinite;
 }
 
+/* ─── Stagger list (space-y layouts) ───────────────────────────────────────── */
+.stagger-list > * {
+  animation: staggerFadeUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-list > *:nth-child(1)  { animation-delay:   0ms; }
+.stagger-list > *:nth-child(2)  { animation-delay:  35ms; }
+.stagger-list > *:nth-child(3)  { animation-delay:  70ms; }
+.stagger-list > *:nth-child(4)  { animation-delay: 105ms; }
+.stagger-list > *:nth-child(5)  { animation-delay: 140ms; }
+.stagger-list > *:nth-child(6)  { animation-delay: 175ms; }
+.stagger-list > *:nth-child(7)  { animation-delay: 210ms; }
+.stagger-list > *:nth-child(8)  { animation-delay: 245ms; }
+.stagger-list > *:nth-child(9)  { animation-delay: 280ms; }
+.stagger-list > *:nth-child(10) { animation-delay: 315ms; }
+
+/* ─── Progress bar grow on mount ───────────────────────────────────────────── */
+@keyframes growBar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.progress-bar-anim {
+  transform-origin: left center;
+  animation: growBar 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bar-delay, 250ms);
+}
+
+/* ─── SVG score ring draw ───────────────────────────────────────────────────── */
+@keyframes drawRing {
+  from { stroke-dashoffset: 226; }
+  to   { stroke-dashoffset: var(--ring-offset, 0); }
+}
+.score-ring-path {
+  animation: drawRing 1000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 300ms;
+}
+
+/* ─── SLA countdown pulse (urgente) ─────────────────────────────────────────── */
+@keyframes slaUrgent {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+.sla-urgent { animation: slaUrgent 1.4s ease-in-out infinite; }
+
+/* ─── Confetti particle ──────────────────────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+  80%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(90vh) rotate(540deg) scale(0.6); }
+}
+.confetti-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

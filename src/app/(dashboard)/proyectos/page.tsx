@@ -498,8 +498,8 @@ export default function ProyectosPage() {
             <p className="text-sm text-gray-500">Crea el primero con el botón superior</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {items.map(item => {
+          <div className="stagger-list space-y-3">
+            {items.map((item, idx) => {
               const pct = progreso(item.fases)
               const ef = estadoEfectivo(item)
               const estadoStyle = ESTADO_COLOR[ef] ?? { bg: "#f3f4f6", text: "#6b7280" }
@@ -549,10 +549,10 @@ export default function ProyectosPage() {
                       <span>Progreso de fases</span>
                       <span className="font-semibold" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }}
+                        className="h-full rounded-full progress-bar-anim"
+                        style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL, "--bar-delay": `${200 + idx * 60}ms` } as React.CSSProperties}
                       />
                     </div>
                   </div>
