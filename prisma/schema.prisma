@@ -213,7 +213,8 @@ model Usuario {
   proyectos         Proyecto[]       @relation("ProyectoResponsable")
   fasesResponsable  FaseProyecto[]   @relation("FaseResponsable")
   logs              LogActividad[]
-  recordatorios     Recordatorio[]
+  recordatorios             Recordatorio[]
+  recordatoriosAsignados    Recordatorio[]  @relation("RecordatoriosAsignados")
   favoritos         Favorito[]
   llamadas          RegistroLlamada[]
   tareasAsignadas       Tarea[]          @relation("TareasAsignadas")
@@ -792,17 +793,20 @@ model CheckinHospital {
 // --- RECORDATORIOS ---------------------------------------------------
 
 model Recordatorio {
-  id          String    @id @default(cuid())
-  titulo      String
-  descripcion String?
-  fecha       DateTime
-  completado  Boolean   @default(false)
-  usuarioId   String    @map("usuario_id")
-  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  creadoEn    DateTime  @default(now()) @map("creado_en")
-  editadoEn   DateTime  @updatedAt @map("editado_en")
+  id            String    @id @default(cuid())
+  titulo        String
+  descripcion   String?
+  fecha         DateTime
+  completado    Boolean   @default(false)
+  usuarioId     String    @map("usuario_id")
+  asignadoAId   String?   @map("asignado_a_id")
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  asignadoA     Usuario?  @relation("RecordatoriosAsignados", fields: [asignadoAId], references: [id], onDelete: SetNull)
+  creadoEn      DateTime  @default(now()) @map("creado_en")
+  editadoEn     DateTime  @updatedAt @map("editado_en")
 
   @@index([usuarioId, fecha])
+  @@index([asignadoAId])
   @@index([fecha])
   @@map("recordatorios")
 }

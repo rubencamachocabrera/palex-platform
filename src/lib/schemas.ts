@@ -104,6 +104,7 @@ export const RecordatorioCreate = z.object({
   titulo: str,
   descripcion: strOpt.nullable(),
   fecha: dateStr,
+  asignadoAId: strOpt.nullable(),
 })
 
 export const RecordatorioPatch = z.object({
@@ -111,6 +112,7 @@ export const RecordatorioPatch = z.object({
   descripcion: strOpt.nullable().optional(),
   fecha: dateStrOpt,
   completado: z.boolean().optional(),
+  asignadoAId: strOpt.nullable().optional(),
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })
 
 export const OnboardingPatch = z.object({

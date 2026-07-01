@@ -16,11 +16,12 @@ export async function GET(_req: NextRequest) {
     const now = new Date()
     const hace7dias = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const hace48h = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+    const hace24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, hwGarantiaVencida, hwMantenimientoVencido] = await Promise.all([
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, recordatoriosAsignadosNuevos, hwGarantiaVencida, hwMantenimientoVencido] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -105,15 +106,26 @@ export async function GET(_req: NextRequest) {
         orderBy: { creadoEn: "desc" },
         take: 10,
       }),
-      // Recordatorios: due/overdue, not completed, user's own
+      // Recordatorios: due/overdue, not completed, own OR assigned to me
       db.recordatorio.findMany({
         where: {
-          usuarioId: userId,
+          OR: [{ usuarioId: userId }, { asignadoAId: userId }],
           completado: false,
           fecha: { lte: now },
         },
-        select: { id: true, titulo: true, fecha: true },
+        select: { id: true, titulo: true, fecha: true, asignadoAId: true, usuario: { select: { nombre: true } } },
         orderBy: { fecha: "asc" },
+        take: 5,
+      }),
+      // Recordatorios assigned to me by others in last 24h
+      db.recordatorio.findMany({
+        where: {
+          asignadoAId: userId,
+          usuarioId: { not: userId },
+          creadoEn: { gte: hace24h },
+        },
+        select: { id: true, titulo: true, creadoEn: true, usuario: { select: { nombre: true } } },
+        orderBy: { creadoEn: "desc" },
         take: 5,
       }),
       // Hardware: warranty expired (ADMIN only)
@@ -222,6 +234,13 @@ export async function GET(_req: NextRequest) {
           mensaje: esHoy ? "Recordatorio de hoy" : `Vencido hace ${diasRetraso} día${diasRetraso === 1 ? "" : "s"}`,
         }
       }),
+      ...recordatoriosAsignadosNuevos.map(r => ({
+        tipo: "recordatorio_asignado" as const,
+        id: r.id,
+        titulo: r.titulo,
+        href: "/recordatorios",
+        mensaje: `${r.usuario.nombre} te ha asignado un recordatorio`,
+      })),
       ...hwGarantiaVencida.map(u => {
         const dias = Math.floor((now.getTime() - new Date(u.fechaGarantia!).getTime()) / 86400000)
         return {

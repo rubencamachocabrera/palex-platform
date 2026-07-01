@@ -3,6 +3,14 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
+const SELECT = {
+  id: true, titulo: true, descripcion: true, fecha: true, completado: true, creadoEn: true,
+  usuarioId: true,
+  asignadoAId: true,
+  usuario:    { select: { id: true, nombre: true } },
+  asignadoA:  { select: { id: true, nombre: true } },
+}
+
 export async function GET(req: NextRequest) {
   try {
     const rl = checkRateLimit(req, "recordatorios", { limit: 60, windowMs: 60000 })
@@ -11,18 +19,20 @@ export async function GET(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
+    const uid = session.user.id
     const pendientes = req.nextUrl.searchParams.get("pendientes")
 
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-
-    const where: Record<string, unknown> = { usuarioId: session.user.id }
-    if (pendientes === "true") {
-      where.completado = false
-    }
+    const completadoFilter = pendientes === "true" ? { completado: false } : {}
 
     const recordatorios = await db.recordatorio.findMany({
-      where,
+      where: {
+        OR: [
+          { usuarioId: uid },
+          { asignadoAId: uid },
+        ],
+        ...completadoFilter,
+      },
+      select: SELECT,
       orderBy: { fecha: "asc" },
     })
 
@@ -37,22 +47,29 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "recordatorios-post", { limit: 30, windowMs: 60000 })
+    if (rl) return rl
+
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const { titulo, descripcion, fecha } = await req.json()
+    const { titulo, descripcion, fecha, asignadoAId } = await req.json()
 
     if (!titulo || typeof titulo !== "string" || !titulo.trim()) {
       return NextResponse.json({ error: "El titulo es obligatorio" }, { status: 400 })
     }
-
     if (!fecha) {
       return NextResponse.json({ error: "La fecha es obligatoria" }, { status: 400 })
     }
-
     const fechaParsed = new Date(fecha)
     if (isNaN(fechaParsed.getTime())) {
       return NextResponse.json({ error: "Fecha no valida" }, { status: 400 })
+    }
+
+    // Verify assignee exists if provided
+    if (asignadoAId && typeof asignadoAId === "string") {
+      const user = await db.usuario.findUnique({ where: { id: asignadoAId }, select: { id: true } })
+      if (!user) return NextResponse.json({ error: "Usuario asignado no encontrado" }, { status: 400 })
     }
 
     const recordatorio = await db.recordatorio.create({
@@ -61,7 +78,9 @@ export async function POST(req: NextRequest) {
         descripcion: descripcion && typeof descripcion === "string" ? descripcion.trim() : null,
         fecha: fechaParsed,
         usuarioId: session.user.id,
+        asignadoAId: asignadoAId && typeof asignadoAId === "string" ? asignadoAId : null,
       },
+      select: SELECT,
     })
 
     return NextResponse.json(recordatorio, { status: 201 })
