@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { TEAL } from "@/lib/brand"
+import { TEAL, TIPO_RESULTADO_COLOR } from "@/lib/brand"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -258,12 +258,7 @@ export function CommandPalette() {
   if (visits.length)    grupos.push({ label: "Visitas",           items: visits })
   if (proys.length)     grupos.push({ label: "Proyectos",         items: proys })
 
-  const TIPO_COLOR: Record<string, { bg: string; color: string }> = {
-    accion:      { bg: "#F0F9FF", color: "#0EA5E9" },
-    hospital:    { bg: "#E6F7F6", color: TEAL },
-    visita:      { bg: "#FEF3E5", color: "#F7941D" },
-    proyecto:    { bg: "#EEF2FF", color: "#4F46E5" },
-  }
+  const TIPO_COLOR = TIPO_RESULTADO_COLOR
   const TIPO_LABEL: Record<string, string> = {
     accion: "Acción", hospital: "Hospital", visita: "Visita",
     proyecto: "Proyecto",

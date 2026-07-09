@@ -38,6 +38,7 @@ export function TabAdjuntos({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
   }
 
   async function eliminar(adjuntoId: string) {
+    if (!confirm("¿Eliminar este adjunto? Esta acción no se puede deshacer.")) return
     try {
       await fetch(`/api/proyectos/${pp.id}/adjuntos/${adjuntoId}`, { method: "DELETE" })
       setAdjuntos(prev => prev.filter(a => a.id !== adjuntoId))

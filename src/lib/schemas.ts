@@ -220,7 +220,7 @@ export const EventoIncidenciaCreate = z.object({
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().default(false),
   fecha: z.coerce.date().optional(),
-  fotos: z.array(z.string()).max(5).optional(),
+  fotos: z.array(z.string().max(2_000_000)).max(5).optional(),
   realizadoPorNombres: z.array(z.string().max(200)).max(20).optional(),
 })
 
@@ -229,7 +229,7 @@ export const EventoIncidenciaPatch = z.object({
   descripcion: z.string().min(1).max(5000).optional(),
   duracion: z.coerce.number().int().min(0).max(9999).optional().nullable(),
   privado: z.boolean().optional(),
-  fotos: z.array(z.string()).max(5).optional(),
+  fotos: z.array(z.string().max(2_000_000)).max(5).optional(),
   realizadoPorNombres: z.array(z.string().max(200)).max(20).optional(),
   fecha: z.coerce.date().optional(),
 }).refine(o => Object.keys(o).length > 0, { message: "Sin campos" })

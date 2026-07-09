@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { RecordatorioCreate, parseBody } from "@/lib/schemas"
 
 const SELECT = {
   id: true, titulo: true, descripcion: true, fecha: true, completado: true, creadoEn: true,
@@ -53,21 +54,12 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const { titulo, descripcion, fecha, asignadoAId } = await req.json()
-
-    if (!titulo || typeof titulo !== "string" || !titulo.trim()) {
-      return NextResponse.json({ error: "El titulo es obligatorio" }, { status: 400 })
-    }
-    if (!fecha) {
-      return NextResponse.json({ error: "La fecha es obligatoria" }, { status: 400 })
-    }
-    const fechaParsed = new Date(fecha)
-    if (isNaN(fechaParsed.getTime())) {
-      return NextResponse.json({ error: "Fecha no valida" }, { status: 400 })
-    }
+    const parsed = parseBody(RecordatorioCreate, await req.json())
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const { titulo, descripcion, fecha, asignadoAId } = parsed.data
 
     // Verify assignee exists if provided
-    if (asignadoAId && typeof asignadoAId === "string") {
+    if (asignadoAId) {
       const user = await db.usuario.findUnique({ where: { id: asignadoAId }, select: { id: true } })
       if (!user) return NextResponse.json({ error: "Usuario asignado no encontrado" }, { status: 400 })
     }
@@ -75,10 +67,10 @@ export async function POST(req: NextRequest) {
     const recordatorio = await db.recordatorio.create({
       data: {
         titulo: titulo.trim(),
-        descripcion: descripcion && typeof descripcion === "string" ? descripcion.trim() : null,
-        fecha: fechaParsed,
+        descripcion: descripcion ? descripcion.trim() : null,
+        fecha: new Date(fecha),
         usuarioId: session.user.id,
-        asignadoAId: asignadoAId && typeof asignadoAId === "string" ? asignadoAId : null,
+        asignadoAId: asignadoAId ?? null,
       },
       select: SELECT,
     })

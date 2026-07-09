@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { ORANGE, ORANGE_LIGHT } from "@/lib/brand"
 
 interface Props {
   error: Error & { digest?: string }
@@ -12,8 +13,8 @@ export default function ModuleError({ error, reset }: Props) {
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: "#FEF3E5" }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F7941D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: ORANGE_LIGHT }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
@@ -27,7 +28,7 @@ export default function ModuleError({ error, reset }: Props) {
         <button
           onClick={reset}
           className="text-sm font-medium px-4 py-2 rounded-xl text-white transition-colors cursor-pointer"
-          style={{ backgroundColor: "#F7941D" }}
+          style={{ backgroundColor: ORANGE }}
         >
           Reintentar
         </button>

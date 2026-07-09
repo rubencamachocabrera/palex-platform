@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface PeriodStats {
@@ -141,15 +142,10 @@ export default function ComparadorPage() {
 
   return (
     <div>
-      {/* ── Cabecera ── */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--fg, #1e293b)" }}>
-          Comparador de periodos
-        </h1>
-        <p style={{ margin: "4px 0 0", fontSize: 14, color: "var(--muted, #64748b)" }}>
-          Compara la actividad del periodo actual con el anterior equivalente
-        </p>
-      </div>
+      <PageHeader
+        title="Comparador de periodos"
+        subtitle="Compara la actividad del periodo actual con el anterior equivalente"
+      />
 
       {/* ── Selector periodo ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>

@@ -149,7 +149,7 @@ export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proye
     const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     // Inyectamos toolbar y CSS directamente en el HTML de Leaflet — sin iframe.
     // Sin iframe no hay rasterizacion: el mapa se renderiza como HTML nativo en el PDF.
-    const toolbar = `<div id="__ptb" style="position:fixed;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:2px solid #00A99D;display:flex;align-items:center;gap:12px;padding:0 20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.1)"><span style="font-weight:800;color:#00A99D;font-size:14px;white-space:nowrap">Palex·<span style="color:#F7941D">InLab</span></span><span style="flex:1;font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pp.titulo)} &middot; ${esc(pp.hospital.nombre)} &middot; ${fecha}</span><span id="__pst" style="font-size:11px;color:#9ca3af;white-space:nowrap">Cargando tiles&hellip;</span><button id="__pbp" disabled onclick="window.print()" style="padding:7px 18px;background:#00A99D;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;white-space:nowrap">Imprimir &mdash; PDF</button><button onclick="window.close()" style="padding:7px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cerrar</button></div>`
+    const toolbar = `<div id="__ptb" style="position:fixed;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:2px solid ${TEAL};display:flex;align-items:center;gap:12px;padding:0 20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.1)"><span style="font-weight:800;color:${TEAL};font-size:14px;white-space:nowrap">Palex·<span style="color:${ORANGE}">InLab</span></span><span style="flex:1;font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pp.titulo)} &middot; ${esc(pp.hospital.nombre)} &middot; ${fecha}</span><span id="__pst" style="font-size:11px;color:#9ca3af;white-space:nowrap">Cargando tiles&hellip;</span><button id="__pbp" disabled onclick="window.print()" style="padding:7px 18px;background:${TEAL};color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;white-space:nowrap">Imprimir &mdash; PDF</button><button onclick="window.close()" style="padding:7px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cerrar</button></div>`
     const printHead = [
       "<style>",
       "@media print{",
@@ -198,7 +198,7 @@ export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proye
     const prioColor = PRIORIDAD[pp.prioridad]?.color ?? ""
     const tipoH = pp.hospital.tipo ? (TIPO_H_LABEL[pp.hospital.tipo] ?? pp.hospital.tipo) : ""
     const fasesRows = pp.fases.map(f => {
-      const cols: Record<string,string> = { COMPLETADO:"#16a34a", EN_PROGRESO:"#00A99D", BLOQUEADO:"#dc2626", PENDIENTE:"#9ca3af" }
+      const cols: Record<string,string> = { COMPLETADO:"#16a34a", EN_PROGRESO:TEAL, BLOQUEADO:"#dc2626", PENDIENTE:"#9ca3af" }
       const lbls: Record<string,string> = { COMPLETADO:"Completado", EN_PROGRESO:"En progreso", BLOQUEADO:"Bloqueado", PENDIENTE:"Pendiente" }
       return `<tr><td class="cell">${e(f.nombre)}</td><td class="cell" style="color:${cols[f.estado]??'#9ca3af'};font-weight:600">${lbls[f.estado]??f.estado}</td><td class="cell tr">${fmtFecha(f.fechaReal ?? f.fechaPlan)}</td></tr>`
     }).join("")
@@ -219,19 +219,19 @@ export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proye
     const contactosHTML = pp.contactos.map(({contacto:c}) =>
       `<div class="contact"><p class="cn">${e(c.nombre)}${c.principal?` <span class="badge-p">Principal</span>`:""}</p>${c.cargo?`<p class="cm">${e(c.cargo)}</p>`:""}${c.email?`<p class="cm">${e(c.email)}</p>`:""}${c.telefono?`<p class="cm">${e(c.telefono)}</p>`:""}</div>`
     ).join("")
-    const pb = `<div class="pw"><div class="pb" style="width:${pct}%;background:${pct===100?"#16a34a":"#00A99D"}"></div></div>`
+    const pb = `<div class="pw"><div class="pb" style="width:${pct}%;background:${pct===100?"#16a34a":TEAL}"></div></div>`
     win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${e(pp.titulo)} — Informe de Proyecto</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;background:#fff;font-size:13px}
 .toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:#f8fafc;border-bottom:2px solid #e5e7eb;position:sticky;top:0;z-index:10}
-.tb{font-weight:800;color:#00A99D;font-size:15px}.tb em{color:#F7941D;font-style:normal}
-.bp{padding:8px 20px;background:#00A99D;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.tb{font-weight:800;color:${TEAL};font-size:15px}.tb em{color:${ORANGE};font-style:normal}
+.bp{padding:8px 20px;background:${TEAL};color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
 .bc{padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-left:8px}
-.cover{min-height:100vh;display:flex;flex-direction:column;border-top:8px solid #00A99D;page-break-after:always;break-after:page}
+.cover{min-height:100vh;display:flex;flex-direction:column;border-top:8px solid ${TEAL};page-break-after:always;break-after:page}
 .ctop{padding:32px 44px 0;display:flex;justify-content:space-between;align-items:center}
-.cbrand{font-size:18px;font-weight:800;color:#00A99D;letter-spacing:-0.5px}.cbrand em{color:#F7941D;font-style:normal}
+.cbrand{font-size:18px;font-weight:800;color:${TEAL};letter-spacing:-0.5px}.cbrand em{color:${ORANGE};font-style:normal}
 .cbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 44px 28px}
 .eye{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:14px}
 .ctitle{font-size:38px;font-weight:800;color:#111827;line-height:1.1;letter-spacing:-0.5px;margin-bottom:8px}
@@ -264,7 +264,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
 .contact{margin-bottom:10px}
 .cn{font-size:13px;font-weight:700;color:#111827}
 .cm{font-size:11px;color:#6b7280;margin-top:1px}
-.badge-p{display:inline-block;font-size:9px;background:#00A99D18;color:#00A99D;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:5px}
+.badge-p{display:inline-block;font-size:9px;background:${TEAL}18;color:${TEAL};padding:1px 6px;border-radius:10px;font-weight:700;margin-left:5px}
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
 .tbl thead th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9ca3af;padding:0 0 7px;text-align:left;border-bottom:1px solid #e5e7eb}
 .cell{padding:7px 8px 7px 0;border-bottom:1px solid #f9fafb;vertical-align:top}
@@ -285,8 +285,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
 @media print{
   .toolbar,.no-print{display:none!important}
   .cover{min-height:100vh;page-break-after:always;break-after:page}
-  .phdr{display:flex!important;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px solid #00A99D;margin-bottom:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .phb{font-weight:800;color:#00A99D;font-size:12px}.phb em{color:#F7941D;font-style:normal}
+  .phdr{display:flex!important;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px solid ${TEAL};margin-bottom:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .phb{font-weight:800;color:${TEAL};font-size:12px}.phb em{color:${ORANGE};font-style:normal}
   .phm{font-size:10px;color:#9ca3af;text-align:right}
   .kgrid,.cmeta{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .pfooter{display:flex!important;justify-content:space-between;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;margin-top:28px}
@@ -323,7 +323,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
       <div class="mi"><p>Hardware</p><p>${pp.hardwareUnidades.length} uds${totalHW>0?" · "+totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}):""}</p></div>
       <div class="mi"><p>Visitas</p><p>${pp.visitas.length} (${visitasOK} completadas)</p></div>
     </div>
-    <div class="pl"><span>${fasesOK} de ${pp.fases.length} fases completadas</span><span style="font-weight:700;color:${pct===100?"#16a34a":"#00A99D"}">${pct}%</span></div>
+    <div class="pl"><span>${fasesOK} de ${pp.fases.length} fases completadas</span><span style="font-weight:700;color:${pct===100?"#16a34a":TEAL}">${pct}%</span></div>
     ${pb}
   </div>
   <div class="cfooter"><span class="cfb">Palex Medical · InLab</span><span class="cfc">Documento confidencial — uso interno</span></div>
@@ -332,10 +332,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
   <div class="phdr"><span class="phb">Palex Medical · <em>InLab</em></span><div class="phm"><strong>${e(pp.titulo)}</strong><br>${e(fecha)}</div></div>
   <div class="sec"><p class="stitle">Indicadores del proyecto</p>
     <div class="kgrid">
-      <div class="kcard" style="border-top-color:${pct===100?"#16a34a":"#00A99D"}"><p class="kl">Progreso</p><p class="kv" style="color:${pct===100?"#16a34a":"#00A99D"}">${pct}%</p><p class="ks">${fasesOK}/${pp.fases.length} fases</p></div>
+      <div class="kcard" style="border-top-color:${pct===100?"#16a34a":TEAL}"><p class="kl">Progreso</p><p class="kv" style="color:${pct===100?"#16a34a":TEAL}">${pct}%</p><p class="ks">${fasesOK}/${pp.fases.length} fases</p></div>
       <div class="kcard" style="border-top-color:#7c3aed"><p class="kl">Hardware</p><p class="kv" style="color:#7c3aed">${pp.hardwareUnidades.length} uds</p><p class="ks">${totalHW>0?totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}):"Sin precios"}</p></div>
       <div class="kcard" style="border-top-color:#0369a1"><p class="kl">Visitas</p><p class="kv" style="color:#0369a1">${pp.visitas.length}</p><p class="ks">${visitasOK} completadas</p></div>
-      <div class="kcard" style="border-top-color:#F7941D"><p class="kl">Duración</p><p class="kv" style="color:#F7941D">${duracionDias?duracionDias+" d":"—"}</p><p class="ks">${duracionDias?"días planificados":"Sin fechas"}</p></div>
+      <div class="kcard" style="border-top-color:${ORANGE}"><p class="kl">Duración</p><p class="kv" style="color:${ORANGE}">${duracionDias?duracionDias+" d":"—"}</p><p class="ks">${duracionDias?"días planificados":"Sin fechas"}</p></div>
     </div>
   </div>
   <div class="sec two">
@@ -352,7 +352,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
     </div>
   </div>
   ${pp.fases.length>0?`<div class="sec"><p class="stitle">Fases del proyecto</p><table class="tbl"><thead><tr><th>Fase</th><th>Estado</th><th class="tr">Fecha</th></tr></thead><tbody>${fasesRows}</tbody></table>${hitosHTML?`<div class="hitos-wrap">${hitosHTML}</div>`:""}</div>`:""}
-  ${pp.hardwareUnidades.length>0?`<div class="sec"><p class="stitle">Inventario de hardware</p>${hwSections}${totalHW>0?`<div class="hw-total"><span>Total hardware</span><span style="color:#00A99D">${totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</span></div>`:""}</div>`:""}
+  ${pp.hardwareUnidades.length>0?`<div class="sec"><p class="stitle">Inventario de hardware</p>${hwSections}${totalHW>0?`<div class="hw-total"><span>Total hardware</span><span style="color:${TEAL}">${totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</span></div>`:""}</div>`:""}
   ${pp.visitas.length>0?`<div class="sec"><p class="stitle">Visitas (${pp.visitas.length})</p><table class="tbl"><thead><tr><th>Fecha</th><th>Estado</th><th>Tipo</th><th>Técnico</th></tr></thead><tbody>${visitasRows}</tbody></table>${pp.visitas.length>8?`<p style="font-size:11px;color:#9ca3af;margin-top:7px">+${pp.visitas.length-8} visitas adicionales</p>`:""}</div>`:""}
   ${pp.descripcion||pp.notas?`<div class="sec"><p class="stitle">Notas y descripción</p>${pp.descripcion?`<div style="margin-bottom:14px"><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Descripción</p><p class="nt">${e(pp.descripcion)}</p></div>`:""}${pp.notas?`<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Notas internas</p><p class="nt">${e(pp.notas)}</p></div>`:""}</div>`:""}
   <div class="pfooter"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
@@ -763,7 +763,7 @@ ${pp.mapaHtml ? `<div class="map-page">
             style={{ borderColor: dragOver ? TEAL : "#e5e7eb", backgroundColor: dragOver ? `${TEAL}08` : "#fafafa" }}>
             {/* Subtle grid pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{
-              backgroundImage: "radial-gradient(circle, #00A99D 1px, transparent 1px)",
+              backgroundImage: `radial-gradient(circle, ${TEAL} 1px, transparent 1px)`,
               backgroundSize: "24px 24px"
             }} />
             <div className="relative flex flex-col items-center justify-center py-14 px-8 text-center">

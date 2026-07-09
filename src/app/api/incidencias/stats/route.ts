@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     const hasta = searchParams.get("hasta")
 
     const dateFilter = {
-      ...(desde ? { gte: new Date(desde) } : {}),
-      ...(hasta ? { lte: new Date(hasta) } : {}),
+      ...(desde ? { gte: new Date(desde + "T00:00:00") } : {}),
+      ...(hasta ? { lte: new Date(hasta + "T23:59:59") } : {}),
     }
     const where = Object.keys(dateFilter).length > 0 ? { creadoEn: dateFilter } : {}
 

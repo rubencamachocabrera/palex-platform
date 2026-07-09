@@ -31,30 +31,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const proyecto = await db.proyecto.findFirst({ where: proyectoWhere, select: { id: true, titulo: true } })
     if (!proyecto) return NextResponse.json({ error: "Proyecto no encontrado o sin acceso" }, { status: 404 })
 
-    const [fases, tareas, hitos] = await Promise.all([
-      Promise.all(
-        plantilla.fases.map(f =>
-          db.faseProyecto.create({
-            data: { proyectoId, tipo: f.tipo as TipoFase, nombre: f.nombre, orden: f.orden },
+    const [fases, tareas, hitos] = await db.$transaction(async tx => {
+      return Promise.all([
+        Promise.all(
+          plantilla.fases.map(f =>
+            tx.faseProyecto.create({
+              data: { proyectoId, tipo: f.tipo as TipoFase, nombre: f.nombre, orden: f.orden },
+            })
+          )
+        ),
+        Promise.all(
+          plantilla.tareas.map(t =>
+            tx.tarea.create({
+              data: { proyectoId, titulo: t.titulo, orden: t.orden },
+            })
+          )
+        ),
+        Promise.all(
+          plantilla.hitos.map(h => {
+            const fecha = new Date(Date.now() + h.diasDesdeHoy * 86_400_000)
+            return tx.hito.create({
+              data: { proyectoId, titulo: h.titulo, fecha },
+            })
           })
-        )
-      ),
-      Promise.all(
-        plantilla.tareas.map(t =>
-          db.tarea.create({
-            data: { proyectoId, titulo: t.titulo, orden: t.orden },
-          })
-        )
-      ),
-      Promise.all(
-        plantilla.hitos.map(h => {
-          const fecha = new Date(Date.now() + h.diasDesdeHoy * 86_400_000)
-          return db.hito.create({
-            data: { proyectoId, titulo: h.titulo, fecha },
-          })
-        })
-      ),
-    ])
+        ),
+      ])
+    })
 
     await logActividad(
       session.user.id, "EDITAR", "PROYECTO", proyectoId,

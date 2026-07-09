@@ -245,6 +245,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
   }
 
   async function eliminarHito(hitoId: string) {
+    if (!confirm("¿Eliminar este hito? Esta acción no se puede deshacer.")) return
     try {
       await fetch(`/api/proyectos/${pp.id}/hitos/${hitoId}`, { method: "DELETE" })
       onUpdate({ ...pp, hitos: pp.hitos.filter(h => h.id !== hitoId) })
@@ -299,6 +300,7 @@ export function TabTimeline({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proy
   }
 
   async function eliminarEntrada(entradaId: string) {
+    if (!confirm("¿Eliminar esta entrada? Esta acción no se puede deshacer.")) return
     try {
       await fetch(`/api/proyectos/${pp.id}/entradas/${entradaId}`, { method: "DELETE" })
       onUpdate({ ...pp, entradas: (pp.entradas ?? []).filter(e => e.id !== entradaId) })

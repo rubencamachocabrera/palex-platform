@@ -77,43 +77,48 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where.hospital = { zona: { usuarios: { some: { usuarioId: session.user.id } } } }
     }
 
-    const existing = await db.incidencia.findFirst({
-      where,
-      select: { id: true, estado: true, asignadoAId: true, codigo: true, titulo: true, slaPausadoEn: true, slaPausadoMs: true },
-    })
-    if (!existing) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
+    const txResult = await db.$transaction(async tx => {
+      const existing = await tx.incidencia.findFirst({
+        where,
+        select: { id: true, estado: true, asignadoAId: true, codigo: true, titulo: true, slaPausadoEn: true, slaPausadoMs: true },
+      })
+      if (!existing) return null
 
-    const data: Record<string, unknown> = { ...parsed.data }
+      const data: Record<string, unknown> = { ...parsed.data }
 
-    if (parsed.data.estado === "RESUELTA" && existing.estado !== "RESUELTA") {
-      data.fechaResolucion = new Date()
-    }
-    if (parsed.data.estado === "CERRADA" && existing.estado !== "CERRADA") {
-      data.fechaCierre = new Date()
-      if (!data.fechaResolucion) data.fechaResolucion = new Date()
-    }
-
-    const ESTADOS_PAUSA = ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"]
-    if (parsed.data.estado && parsed.data.estado !== existing.estado) {
-      const entraPausa = ESTADOS_PAUSA.includes(parsed.data.estado) && !ESTADOS_PAUSA.includes(existing.estado)
-      const salePausa = !ESTADOS_PAUSA.includes(parsed.data.estado) && ESTADOS_PAUSA.includes(existing.estado)
-      if (entraPausa) {
-        data.slaPausadoEn = new Date()
-      } else if (salePausa && existing.slaPausadoEn) {
-        const pausadoMs = Date.now() - new Date(existing.slaPausadoEn).getTime()
-        data.slaPausadoMs = (existing.slaPausadoMs || 0) + pausadoMs
-        data.slaPausadoEn = null
+      if (parsed.data.estado === "RESUELTA" && existing.estado !== "RESUELTA") {
+        data.fechaResolucion = new Date()
       }
-    }
+      if (parsed.data.estado === "CERRADA" && existing.estado !== "CERRADA") {
+        data.fechaCierre = new Date()
+        if (!data.fechaResolucion) data.fechaResolucion = new Date()
+      }
 
-    const updated = await db.incidencia.update({
-      where: { id },
-      data: data as Parameters<typeof db.incidencia.update>[0]["data"],
-      include: {
-        hospital: { select: { id: true, nombre: true, ciudad: true } },
-        asignadoA: { select: { id: true, nombre: true } },
-      },
-    })
+      const ESTADOS_PAUSA = ["PENDIENTE_CLIENTE", "PENDIENTE_PROVEEDOR"]
+      if (parsed.data.estado && parsed.data.estado !== existing.estado) {
+        const entraPausa = ESTADOS_PAUSA.includes(parsed.data.estado) && !ESTADOS_PAUSA.includes(existing.estado)
+        const salePausa = !ESTADOS_PAUSA.includes(parsed.data.estado) && ESTADOS_PAUSA.includes(existing.estado)
+        if (entraPausa) {
+          data.slaPausadoEn = new Date()
+        } else if (salePausa && existing.slaPausadoEn) {
+          const pausadoMs = Date.now() - new Date(existing.slaPausadoEn).getTime()
+          data.slaPausadoMs = (existing.slaPausadoMs || 0) + pausadoMs
+          data.slaPausadoEn = null
+        }
+      }
+
+      const updated = await tx.incidencia.update({
+        where: { id },
+        data: data as Parameters<typeof db.incidencia.update>[0]["data"],
+        include: {
+          hospital: { select: { id: true, nombre: true, ciudad: true } },
+          asignadoA: { select: { id: true, nombre: true } },
+        },
+      })
+      return { existing, updated }
+    }, { isolationLevel: "Serializable" })
+    if (!txResult) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
+    const { existing, updated } = txResult
 
     if (parsed.data.estado && parsed.data.estado !== existing.estado) {
       await db.eventoIncidencia.create({

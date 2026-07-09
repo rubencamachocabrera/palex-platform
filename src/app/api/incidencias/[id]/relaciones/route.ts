@@ -9,6 +9,8 @@ const PostSchema = z.object({
   relacionadaId: z.string().min(1),
 })
 
+class RelacionDuplicadaError extends Error {}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const rl = checkRateLimit(req, "incidencias-relaciones", { limit: 60, windowMs: 60000 })
@@ -18,6 +20,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { id } = await params
+
+    if (session.user.role !== "ADMIN") {
+      const access = await db.incidencia.findFirst({
+        where: { id, hospital: { zona: { usuarios: { some: { usuarioId: session.user.id } } } } },
+        select: { id: true },
+      })
+      if (!access) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
 
     const [origen, destino] = await Promise.all([
       db.incidenciaRelacion.findMany({
@@ -62,34 +72,43 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (id === relacionadaId) return NextResponse.json({ error: "No puedes relacionar una incidencia consigo misma" }, { status: 400 })
 
-    // Verify both incidencias exist and user has access
+    const zonaWhere = session.user.role !== "ADMIN"
+      ? { hospital: { zona: { usuarios: { some: { usuarioId: session.user.id } } } } }
+      : {}
+
+    // Verify both incidencias exist and user has access (misma zona si no es ADMIN)
     const [inc, relacionada] = await Promise.all([
-      db.incidencia.findFirst({ where: { id }, select: { id: true } }),
-      db.incidencia.findFirst({ where: { id: relacionadaId }, select: { id: true } }),
+      db.incidencia.findFirst({ where: { id, ...zonaWhere }, select: { id: true } }),
+      db.incidencia.findFirst({ where: { id: relacionadaId, ...zonaWhere }, select: { id: true } }),
     ])
     if (!inc || !relacionada) return NextResponse.json({ error: "Incidencia no encontrada" }, { status: 404 })
 
-    // Check for existing reverse relation too
-    const existing = await db.incidenciaRelacion.findFirst({
-      where: {
-        OR: [
-          { incidenciaId: id, relacionadaId },
-          { incidenciaId: relacionadaId, relacionadaId: id },
-        ],
-      },
-    })
-    if (existing) return NextResponse.json({ error: "Ya existe una relación entre estas incidencias" }, { status: 409 })
+    const relacion = await db.$transaction(async tx => {
+      // Check for existing reverse relation too — dentro de la transaccion para evitar duplicados en concurrencia
+      const existing = await tx.incidenciaRelacion.findFirst({
+        where: {
+          OR: [
+            { incidenciaId: id, relacionadaId },
+            { incidenciaId: relacionadaId, relacionadaId: id },
+          ],
+        },
+      })
+      if (existing) throw new RelacionDuplicadaError()
 
-    const relacion = await db.incidenciaRelacion.create({
-      data: { tipo, incidenciaId: id, relacionadaId, creadoPorId: session.user.id },
-      include: { relacionada: { select: { id: true, codigo: true, titulo: true, estado: true, prioridad: true } }, creadoPor: { select: { nombre: true } } },
-    })
+      return tx.incidenciaRelacion.create({
+        data: { tipo, incidenciaId: id, relacionadaId, creadoPorId: session.user.id },
+        include: { relacionada: { select: { id: true, codigo: true, titulo: true, estado: true, prioridad: true } }, creadoPor: { select: { nombre: true } } },
+      })
+    }, { isolationLevel: "Serializable" })
 
     return NextResponse.json({
       id: relacion.id, tipo: relacion.tipo, creadoEn: relacion.creadoEn,
       creadoPor: relacion.creadoPor.nombre, incidencia: relacion.relacionada, direccion: "origen" as const,
     }, { status: 201 })
   } catch (e) {
+    if (e instanceof RelacionDuplicadaError) {
+      return NextResponse.json({ error: "Ya existe una relación entre estas incidencias" }, { status: 409 })
+    }
     console.error(e)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

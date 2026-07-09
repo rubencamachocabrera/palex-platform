@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { SkeletonRow } from "@/components/ui/Skeleton"
 
 interface Modulo {
   id: string
@@ -154,7 +155,9 @@ export default function ModulosInlabPage() {
       {/* Lista */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <p className="text-sm text-gray-400 p-6">Cargando...</p>
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {[1, 2, 3].map(i => <SkeletonRow key={i} />)}
+          </div>
         ) : modulos.length === 0 ? (
           <div className="p-10 text-center">
             <p className="text-sm font-medium text-gray-500 mb-1">Sin módulos definidos</p>

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 // GET /api/oportunidades/[id]
 export async function GET(
-  _: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/oportunidades/id")
+    if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     const { id } = await params
@@ -35,6 +38,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/oportunidades/id", { limit: 30, windowMs: 60000 })
+    if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
@@ -90,10 +95,12 @@ export async function PATCH(
 
 // DELETE /api/oportunidades/[id]
 export async function DELETE(
-  _: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = checkRateLimit(req, "/api/oportunidades/id", { limit: 30, windowMs: 60000 })
+    if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

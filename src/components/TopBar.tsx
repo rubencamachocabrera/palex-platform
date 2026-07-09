@@ -6,7 +6,7 @@ import Link from "next/link"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import { useSidebarToggle } from "@/components/Sidebar"
 import { useTheme } from "@/components/ThemeProvider"
-import { TEAL } from "@/lib/brand"
+import { TEAL, TIPO_RESULTADO_COLOR } from "@/lib/brand"
 
 interface Resultado {
   tipo: "hospital" | "visita" | "proyecto"
@@ -303,11 +303,10 @@ export function TopBar() {
                 </div>
                 <span
                   className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                  style={
-                    r.tipo === "hospital"    ? { backgroundColor: "#E6F7F6", color: TEAL }
-                    : r.tipo === "visita"    ? { backgroundColor: "#FEF3E5", color: "#F7941D" }
-                    : { backgroundColor: "#EEF2FF", color: "#4F46E5" }
-                  }
+                  style={{
+                    backgroundColor: (TIPO_RESULTADO_COLOR[r.tipo] ?? TIPO_RESULTADO_COLOR.proyecto).bg,
+                    color: (TIPO_RESULTADO_COLOR[r.tipo] ?? TIPO_RESULTADO_COLOR.proyecto).color,
+                  }}
                 >
                   {r.tipo === "hospital" ? "Hospital"
                    : r.tipo === "visita" ? "Visita"

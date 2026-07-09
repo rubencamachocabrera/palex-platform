@@ -14,9 +14,19 @@ export async function GET(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const idsParam = req.nextUrl.searchParams.get("ids") ?? ""
-    const ids = idsParam.split(",").map(s => s.trim()).filter(Boolean).slice(0, 50)
+    let ids = idsParam.split(",").map(s => s.trim()).filter(Boolean).slice(0, 50)
 
     if (!ids.length) return NextResponse.json({})
+
+    if (session.user.role !== "ADMIN") {
+      const permitidos = await db.hospital.findMany({
+        where: { id: { in: ids }, zona: { usuarios: { some: { usuarioId: session.user.id } } } },
+        select: { id: true },
+      })
+      const permitidosSet = new Set(permitidos.map(h => h.id))
+      ids = ids.filter(id => permitidosSet.has(id))
+      if (!ids.length) return NextResponse.json({})
+    }
 
     const results = await Promise.all(
       ids.map(async id => {

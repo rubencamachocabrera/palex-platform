@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
-import { TEAL, ORANGE } from "@/lib/brand"
+import { TEAL, TEAL_DARK, ORANGE } from "@/lib/brand"
 
 interface Zona {
   id: string
@@ -15,7 +15,7 @@ interface Zona {
 // Color determinista por nombre de zona
 function zonaColor(nombre: string): { bg: string; ring: string; text: string } {
   const palette = [
-    { bg: "#E0F7F5", ring: "#00A99D", text: "#007F75" },
+    { bg: "#E0F7F5", ring: TEAL, text: TEAL_DARK },
     { bg: "#EEF2FF", ring: "#6366F1", text: "#4338CA" },
     { bg: "#FEF3C7", ring: "#F59E0B", text: "#92400E" },
     { bg: "#FCE7F3", ring: "#EC4899", text: "#9D174D" },

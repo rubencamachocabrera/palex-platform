@@ -261,6 +261,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
   }
 
   async function eliminarTarea(tareaId: string) {
+    if (!confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) return
     try {
       await fetch(`/api/proyectos/${pp.id}/tareas/${tareaId}`, { method: "DELETE" })
       onUpdate({ ...pp, tareas: tareas.filter(t => t.id !== tareaId && t.parentId !== tareaId) })

@@ -71,6 +71,12 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     await db.usuario.delete({ where: { id } })
     return new NextResponse(null, { status: 204 })
   } catch (err) {
+    if ((err as { code?: string })?.code === "P2003") {
+      return NextResponse.json(
+        { error: "Este usuario tiene actividad registrada (visitas, llamadas, incidencias...) y no se puede eliminar. Desactivalo en su lugar." },
+        { status: 409 }
+      )
+    }
     console.error("[DELETE /api/usuarios/[id]]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }

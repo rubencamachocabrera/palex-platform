@@ -39,6 +39,7 @@ export function TabContactos({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Pro
   }
 
   async function desvincular(contactoId: string) {
+    if (!confirm("¿Desvincular este contacto del proyecto?")) return
     try {
       await fetch(`/api/proyectos/${pp.id}/contactos`, {
         method: "DELETE",

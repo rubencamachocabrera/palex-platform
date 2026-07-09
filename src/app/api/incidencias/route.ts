@@ -15,7 +15,12 @@ async function generarCodigo(): Promise<string> {
     const exists = await db.incidencia.findUnique({ where: { codigo: code }, select: { id: true } })
     if (!exists) return code
   }
-  return `INC-${year}-${String(Date.now()).slice(-6)}`
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = `INC-${year}-${String(Date.now()).slice(-6)}${attempt || ""}`
+    const exists = await db.incidencia.findUnique({ where: { codigo: code }, select: { id: true } })
+    if (!exists) return code
+  }
+  return `INC-${year}-${crypto.randomUUID().slice(0, 8)}`
 }
 
 export async function GET(req: NextRequest) {

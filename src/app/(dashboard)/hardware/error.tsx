@@ -1,15 +1,15 @@
 "use client"
 
 import { useEffect } from "react"
-import { TEAL } from "@/lib/brand"
+import { TEAL, ORANGE, ORANGE_LIGHT } from "@/lib/brand"
 
 export default function HardwareError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error("[Hardware]", error) }, [error])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#FEF3E5" }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F7941D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: ORANGE_LIGHT }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>
           <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
           <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
