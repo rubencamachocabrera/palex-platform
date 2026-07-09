@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/hardware/tipos/[id]", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/hardware/tipos/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   const role = (session?.user as { role?: string } | undefined)?.role
@@ -31,7 +31,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(_req as NextRequest, "/api/hardware/tipos/[id]", { limit: 30 })
+  const rl = await checkRateLimit(_req as NextRequest, "/api/hardware/tipos/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   const role = (session?.user as { role?: string } | undefined)?.role

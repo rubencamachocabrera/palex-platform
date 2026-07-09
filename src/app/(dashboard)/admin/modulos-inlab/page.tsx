@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { SkeletonRow } from "@/components/ui/Skeleton"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 interface Modulo {
   id: string
@@ -103,22 +104,19 @@ export default function ModulosInlabPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Módulos INLAB</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {modulos.length} módulo{modulos.length !== 1 ? "s" : ""} definido{modulos.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <button
-          onClick={() => { setMostrarForm(v => !v); setFormError("") }}
-          className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90"
-          style={{ backgroundColor: ORANGE }}
-        >
-          {mostrarForm ? "Cancelar" : "+ Nuevo módulo"}
-        </button>
-      </div>
+      <PageHeader
+        title="Módulos INLAB"
+        subtitle={`${modulos.length} módulo${modulos.length !== 1 ? "s" : ""} definido${modulos.length !== 1 ? "s" : ""}`}
+        actions={
+          <button
+            onClick={() => { setMostrarForm(v => !v); setFormError("") }}
+            className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90"
+            style={{ backgroundColor: ORANGE }}
+          >
+            {mostrarForm ? "Cancelar" : "+ Nuevo módulo"}
+          </button>
+        }
+      />
 
       {/* Formulario nuevo módulo */}
       {mostrarForm && (

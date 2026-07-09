@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  const rl = checkRateLimit(req, "/api/share/[token]", { limit: 20 })
+  const rl = await checkRateLimit(req, "/api/share/[token]", { limit: 20 })
   if (rl) return rl
   try {
     const { token } = await params

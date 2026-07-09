@@ -7,7 +7,7 @@ import { parseBody, OnboardingPatch } from "@/lib/schemas"
 // GET /api/onboarding — estado del onboarding del usuario en sesion
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "/api/onboarding")
+    const rl = await checkRateLimit(req, "/api/onboarding")
     if (rl) return rl
 
     const session = await auth()
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 // PATCH /api/onboarding — marcar onboarding como completado/pendiente
 export async function PATCH(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "/api/onboarding", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/onboarding", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

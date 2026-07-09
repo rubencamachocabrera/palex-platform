@@ -13,7 +13,7 @@ const NotaPatch = z.object({
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "notas-patch", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "notas-patch", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "notas-delete", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "notas-delete", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

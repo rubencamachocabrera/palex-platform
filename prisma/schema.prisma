@@ -844,7 +844,7 @@ model RegistroLlamada {
   creadoEn         DateTime  @default(now()) @map("creado_en")
   editadoEn        DateTime  @updatedAt @map("editado_en")
 
-  hospital  Hospital  @relation(fields: [hospitalId], references: [id])
+  hospital  Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
   contacto  Contacto? @relation(fields: [contactoId], references: [id], onDelete: SetNull)
   usuario   Usuario   @relation(fields: [usuarioId], references: [id])
 
@@ -874,7 +874,7 @@ model Incidencia {
   reportadoPorId      String               @map("reportado_por_id")
   asignadoAId         String?              @map("asignado_a_id")
 
-  hospital            Hospital             @relation(fields: [hospitalId], references: [id])
+  hospital            Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
   contacto            Contacto?            @relation(fields: [contactoId], references: [id], onDelete: SetNull)
   hardwareUnidad      HardwareUnidad?      @relation(fields: [hardwareUnidadId], references: [id], onDelete: SetNull)
   reportadoPor        Usuario              @relation("IncidenciasReportadas", fields: [reportadoPorId], references: [id])

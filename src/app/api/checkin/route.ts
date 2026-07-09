@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 // GET /api/checkin?hospitalId=&activo=true — checkins del usuario actual
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "checkin-get")
+    const rl = await checkRateLimit(req, "checkin-get")
     if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 // POST /api/checkin — iniciar check-in en un hospital
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "checkin-post")
+    const rl = await checkRateLimit(req, "checkin-post")
     if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

@@ -6,7 +6,7 @@ import { getRedis } from "@/lib/redis"
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "usuarios_menciones", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "usuarios_menciones", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

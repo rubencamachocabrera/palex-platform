@@ -11,7 +11,7 @@ function rangoAnterior(desde: Date, hasta: Date) {
 // GET /api/stats/comparador?periodo=30|90|365
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "stats-comparador")
+    const rl = await checkRateLimit(req, "stats-comparador")
     if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

@@ -8,7 +8,7 @@ import type { TipoFase } from "@prisma/client"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "plantilla-proyecto", { limit: 10, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "plantilla-proyecto", { limit: 10, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

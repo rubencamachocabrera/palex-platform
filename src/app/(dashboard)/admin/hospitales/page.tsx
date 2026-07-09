@@ -6,6 +6,7 @@ import { exportarCSV } from "@/lib/csv"
 import { exportarExcel } from "@/lib/excel"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 const TIPO_LABELS: Record<string, string> = {
   HOSPITAL_PUBLICO: "H. Público",
@@ -299,14 +300,10 @@ export default function HospitalesAdminPage() {
   return (
     <div className="space-y-5">
 
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Hospitales</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {loading ? "Cargando..." : `${hospitales.length} centros registrados`}
-          </p>
-        </div>
+      <PageHeader
+        title="Hospitales"
+        subtitle={loading ? "Cargando..." : `${hospitales.length} centros registrados`}
+        actions={
         <div className="flex gap-2 shrink-0">
           <button onClick={() => exportar("csv")}
             className="flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
@@ -333,7 +330,8 @@ export default function HospitalesAdminPage() {
             Nuevo hospital
           </button>
         </div>
-      </div>
+        }
+      />
 
       {/* Error de carga */}
       {fetchError && (

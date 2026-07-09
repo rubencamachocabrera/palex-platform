@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { parseBody, TareaCreate } from "@/lib/schemas"
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/tareas")
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/tareas")
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

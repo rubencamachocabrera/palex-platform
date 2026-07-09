@@ -8,7 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 // GET /api/perfil — datos del usuario en sesion
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "/api/perfil")
+    const rl = await checkRateLimit(req, "/api/perfil")
     if (rl) return rl
 
     const session = await auth()
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 // PATCH /api/perfil — actualiza nombre y/o contraseña
 export async function PATCH(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "/api/perfil", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/perfil", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { parseBody, ContactoPivot } from "@/lib/schemas"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/contactos", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/contactos", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/contactos", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/contactos", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

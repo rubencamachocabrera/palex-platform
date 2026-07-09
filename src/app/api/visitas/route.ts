@@ -6,7 +6,7 @@ import { logActividad } from "@/lib/log-actividad"
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "visitas", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "visitas", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "visitas", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "visitas", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(_req, "/api/hospitales/timeline")
+    const rl = await checkRateLimit(_req, "/api/hospitales/timeline")
     if (rl) return rl
 
     const session = await auth()

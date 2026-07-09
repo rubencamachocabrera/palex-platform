@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(_, "/api/hospitales/id")
+    const rl = await checkRateLimit(_, "/api/hospitales/id")
     if (rl) return rl
 
     const session = await auth()
@@ -55,7 +55,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "/api/hospitales/id", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/hospitales/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()
@@ -80,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(_, "/api/hospitales/id", { limit: 30 })
+    const rl = await checkRateLimit(_, "/api/hospitales/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

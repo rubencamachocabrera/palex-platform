@@ -68,7 +68,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               request.headers.get("x-real-ip")
             : null) ?? "unknown"
 
-        if (checkRateLimitByKey(`login:${ip}`, { limit: 5, windowMs: 60_000 })) {
+        if (await checkRateLimitByKey(`login:${ip}`, { limit: 5, windowMs: 60_000 })) {
           return null
         }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { TEAL } from "@/lib/brand"
 import { EmptyState } from "@/components/ui/EmptyState"
+import { PageHeader } from "@/components/ui/PageHeader"
 import { usePerfil } from "@/hooks/usePerfil"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -485,34 +486,34 @@ export default function RecordatoriosPage() {
   // ── Main render ───────────────────────────────────────────────────────────
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#E6F7F6", color: TEAL }}>
-            <ClockIcon size={18} />
-          </span>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Recordatorios</h1>
-            {pendientesCount > 0 && (
-              <p className="text-xs text-gray-400 dark:text-gray-500">{pendientesCount} pendiente{pendientesCount !== 1 ? "s" : ""}</p>
-            )}
-          </div>
-          {vencidos.length > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400">
-              {vencidos.length} vencido{vencidos.length !== 1 ? "s" : ""}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={() => { setShowForm(true); setFecha(new Date(Date.now() + 3600000).toISOString().slice(0, 16)) }}
-          className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-xl text-white transition-colors hover:opacity-90 shadow-sm"
-          style={{ backgroundColor: TEAL, minHeight: 44 }}
-        >
-          <PlusIcon />
-          <span className="hidden sm:inline">Nuevo recordatorio</span>
-          <span className="sm:hidden">Nuevo</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Recordatorios"
+        icon={<ClockIcon size={18} />}
+        iconColor={TEAL}
+        subtitle={
+          (pendientesCount > 0 || vencidos.length > 0) && (
+            <>
+              {pendientesCount > 0 && <span>{pendientesCount} pendiente{pendientesCount !== 1 ? "s" : ""}</span>}
+              {vencidos.length > 0 && (
+                <span className="ml-2 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400">
+                  {vencidos.length} vencido{vencidos.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </>
+          )
+        }
+        actions={
+          <button
+            onClick={() => { setShowForm(true); setFecha(new Date(Date.now() + 3600000).toISOString().slice(0, 16)) }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-xl text-white transition-colors hover:opacity-90 shadow-sm"
+            style={{ backgroundColor: TEAL, minHeight: 44 }}
+          >
+            <PlusIcon />
+            <span className="hidden sm:inline">Nuevo recordatorio</span>
+            <span className="sm:hidden">Nuevo</span>
+          </button>
+        }
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">

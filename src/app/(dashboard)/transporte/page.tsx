@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { usePerfil } from "@/hooks/usePerfil"
+import { PageHeader } from "@/components/ui/PageHeader"
 import type { TabKeyTransporte } from "./_lib/types"
 import { TabDashboard }   from "./_components/TabDashboard"
 import { TabMapa }        from "./_components/TabMapa"
@@ -45,26 +46,26 @@ export default function TransportePage() {
   return (
     <div className="max-w-7xl mx-auto space-y-0 pb-10">
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">Transporte de muestras</h1>
-            <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border"
+      <PageHeader
+        title="Transporte de muestras"
+        subtitle={
+          <>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border mr-1.5 align-middle"
               style={{ color: ORANGE, borderColor: `${ORANGE}50`, backgroundColor: `${ORANGE}0c` }}>
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
               </svg>
               Vista demo
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+            <span className="inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full mr-1.5 align-middle"
               style={{ backgroundColor: `${activeTab.color}15`, color: activeTab.color }}>
               {activeTab.labelShort}
             </span>
-          </div>
-          <p className="text-sm text-gray-400">Cadena de frío · rutas, neveras y temperatura en tiempo real (Sur de Córdoba)</p>
-        </div>
-      </div>
+            <br className="sm:hidden" />
+            Cadena de frío · rutas, neveras y temperatura en tiempo real (Sur de Córdoba)
+          </>
+        }
+      />
 
       {/* Tab navigation */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5 overflow-hidden">

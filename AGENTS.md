@@ -269,8 +269,8 @@ Oportunidad      (DESACTIVADO)
 **Dynamic imports:** ComentariosPanel en TabInfo (next/dynamic, ssr:false). QRCode en TabResumen (import() dinamico en useEffect). @dnd-kit ya existia.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin protegidos en middleware Edge. /share/ exento (publico por diseno).
-**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis presence/menciones (rate-limit es solo in-memory pese al nombre — ver deuda tecnica seccion 8). @dnd-kit, ComentariosPanel, QRCode = dynamic imports (no en bundle inicial).
-**Sprint 20 — auditoria y hardening:** 3 auditorias paralelas (seguridad API, logica de negocio/Prisma, UX/consistencia) sobre todo el codebase. 13 hallazgos corregidos: IDOR de zona en score de hospitales y relaciones de incidencias, limite de tamano en fotos de eventos, rate-limit en `oportunidades`, Zod en `recordatorios`, fecha UTC en `incidencias/stats`, `DELETE usuario` con actividad (409 en vez de 500), transacciones en `aplicar-plantilla` y en relaciones/pausas SLA de incidencias (evita race conditions y lost updates), `confirm()` en 4 acciones de borrado de proyectos que no lo tenian, colores de marca hardcodeados consolidados en `brand.ts` (11 `error.tsx`, `TabResumen.tsx`, `admin/zonas`), mapeo tipo→color unificado (`TIPO_RESULTADO_COLOR`). Detalle completo en `AUDITORIA-SPRINT20.md`.
+**Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones (rate-limit con fallback in-memory automatico si Redis no esta configurado). @dnd-kit, ComentariosPanel, QRCode = dynamic imports (no en bundle inicial).
+**Sprint 20 — auditoria y hardening (completo):** 3 auditorias paralelas (seguridad API, logica de negocio/Prisma, UX/consistencia) sobre todo el codebase, 16 hallazgos, todos corregidos. IDOR de zona en score de hospitales y relaciones de incidencias, limite de tamano en fotos de eventos, rate-limit en `oportunidades`, Zod en `recordatorios`, fecha UTC en `incidencias/stats`, `DELETE usuario` con actividad (409 en vez de 500), transacciones en `aplicar-plantilla` y en relaciones/pausas SLA de incidencias (evita race conditions y lost updates), `confirm()` en 4 acciones de borrado de proyectos que no lo tenian, colores de marca hardcodeados consolidados en `brand.ts` (11 `error.tsx`, `TabResumen.tsx`, `admin/zonas`), mapeo tipo→color unificado (`TIPO_RESULTADO_COLOR`). Rate limiting migrado a Redis real (`checkRateLimit`/`checkRateLimitByKey` async, ~150 call-sites actualizados, fallback in-memory si Redis no esta configurado). `PageHeader` unificado en 12 paginas adicionales (ampliado con `icon`/`iconColor` opcionales); excepciones deliberadas documentadas (mapa, incidencias/stats, perfil, paginas de detalle, pipeline CRM desactivado). `onDelete: Restrict` explicito en `Incidencia.hospital`/`RegistroLlamada.hospital`. Detalle completo en `AUDITORIA-SPRINT20.md`.
 
 ---
 
@@ -280,9 +280,6 @@ Oportunidad      (DESACTIVADO)
 |-----------|-------|-----------|
 | ALTA | `/datos` es 100% mockup — sin APIs reales | datos/page.tsx |
 | ALTA | Object storage: fotos/adjuntos en base64 en DB — necesario antes de 20 usuarios | Bloqueado (requiere R2/S3) |
-| MEDIA | Rate limiting solo en memoria — `checkRateLimit`/`checkRateLimitByKey` nunca usan Redis pese a la variante `checkRateLimitByKeyAsync` existir | `lib/rate-limit.ts` — ver `AUDITORIA-SPRINT20.md` |
-| MEDIA | `PageHeader` solo se usa en ~12 de ~30 paginas del dashboard, resto con `<h1>` casero | ver `AUDITORIA-SPRINT20.md` |
-| BAJA | `Incidencia.hospital` / `RegistroLlamada.hospital` sin `onDelete` explicito (Restrict por defecto, inofensivo hoy) | `prisma/schema.prisma` |
 
 ---
 

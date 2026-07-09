@@ -6,7 +6,7 @@ import { parseBody, TagPatch } from "@/lib/schemas"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "/api/tags/id", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/tags/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(_req, "/api/tags/id", { limit: 30 })
+    const rl = await checkRateLimit(_req, "/api/tags/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

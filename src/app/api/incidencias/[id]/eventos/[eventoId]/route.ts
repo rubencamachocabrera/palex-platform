@@ -9,7 +9,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; eventoId: string }> },
 ) {
   try {
-    const rl = checkRateLimit(req, "incidencias-eventos-patch", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-eventos-patch", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

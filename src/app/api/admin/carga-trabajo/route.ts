@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Solo ADMIN" }, { status: 403 })
 
-    const rl = checkRateLimit(req, "admin-carga-trabajo")
+    const rl = await checkRateLimit(req, "admin-carga-trabajo")
     if (rl) return rl
 
     const url = new URL(req.url)

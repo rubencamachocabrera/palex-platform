@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(_req, "/api/plantillas/[id]")
+  const rl = await checkRateLimit(_req, "/api/plantillas/[id]")
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req, "/api/plantillas/[id]", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/plantillas/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(_req, "/api/plantillas/[id]", { limit: 30 })
+  const rl = await checkRateLimit(_req, "/api/plantillas/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

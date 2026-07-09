@@ -14,7 +14,7 @@ const SELECT = {
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "recordatorios", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "recordatorios", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "recordatorios-post", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "recordatorios-post", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

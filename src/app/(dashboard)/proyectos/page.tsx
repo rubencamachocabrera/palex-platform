@@ -5,6 +5,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useFavoritos } from "@/hooks/useFavoritos"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 const KanbanView = dynamic(() => import("./KanbanView"), { ssr: false })
 
@@ -357,12 +358,10 @@ export default function ProyectosPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Proyectos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestión completa del ciclo de vida de proyectos</p>
-        </div>
+      <PageHeader
+        title="Proyectos"
+        subtitle="Gestión completa del ciclo de vida de proyectos"
+        actions={
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
             <button
@@ -399,7 +398,8 @@ export default function ProyectosPage() {
             Nuevo
           </button>
         </div>
-      </div>
+        }
+      />
 
       {/* KPIs */}
       <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

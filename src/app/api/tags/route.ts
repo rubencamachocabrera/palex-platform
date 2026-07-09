@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "tags", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "tags", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

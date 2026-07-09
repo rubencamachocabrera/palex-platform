@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 // PATCH /api/checkin/[id] — hacer check-out
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "checkin-patch")
+    const rl = await checkRateLimit(req, "checkin-patch")
     if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

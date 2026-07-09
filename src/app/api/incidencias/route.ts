@@ -25,7 +25,7 @@ async function generarCodigo(): Promise<string> {
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "incidencias", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "incidencias-post", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-post", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

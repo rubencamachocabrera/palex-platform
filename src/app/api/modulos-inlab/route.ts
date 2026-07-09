@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/modulos-inlab")
+  const rl = await checkRateLimit(req, "/api/modulos-inlab")
   if (rl) return rl
   try {
     const session = await auth()
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/modulos-inlab", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/modulos-inlab", { limit: 30 })
   if (rl) return rl
   try {
     const session = await auth()

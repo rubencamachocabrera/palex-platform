@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { parseBody, HitoCreate } from "@/lib/schemas"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/hitos", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/hitos", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

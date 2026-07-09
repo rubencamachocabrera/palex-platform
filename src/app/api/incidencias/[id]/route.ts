@@ -7,7 +7,7 @@ import { parseBody, IncidenciaPatch } from "@/lib/schemas"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-detail", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-detail", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-patch", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-patch", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-delete", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-delete", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

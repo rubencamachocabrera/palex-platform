@@ -10,7 +10,7 @@ async function getOrCreateConfig() {
 }
 
 export async function GET(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/config")
+  const rl = await checkRateLimit(req, "/api/config")
   if (rl) return rl
 
   const session = await auth()
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/config", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/config", { limit: 30 })
   if (rl) return rl
 
   const session = await auth()

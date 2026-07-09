@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -392,23 +393,20 @@ export default function UsuariosPage() {
   return (
     <div className="space-y-6">
 
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Usuarios del sistema</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {loading ? "Cargando..." : `${totalUsuarios} usuario${totalUsuarios !== 1 ? "s" : ""} registrado${totalUsuarios !== 1 ? "s" : ""}`}
-          </p>
-        </div>
-        <button
-          onClick={() => { setMostrarForm(true); setFormError("") }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 min-h-[44px] shrink-0"
-          style={{ backgroundColor: ORANGE }}
-        >
-          <IconPlus className="w-4 h-4" />
-          Nuevo usuario
-        </button>
-      </div>
+      <PageHeader
+        title="Usuarios del sistema"
+        subtitle={loading ? "Cargando..." : `${totalUsuarios} usuario${totalUsuarios !== 1 ? "s" : ""} registrado${totalUsuarios !== 1 ? "s" : ""}`}
+        actions={
+          <button
+            onClick={() => { setMostrarForm(true); setFormError("") }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 min-h-[44px] shrink-0"
+            style={{ backgroundColor: ORANGE }}
+          >
+            <IconPlus className="w-4 h-4" />
+            Nuevo usuario
+          </button>
+        }
+      />
 
       {/* ── KPI chips ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

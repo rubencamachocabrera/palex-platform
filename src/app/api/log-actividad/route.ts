@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    const rl = checkRateLimit(req, "log-actividad")
+    const rl = await checkRateLimit(req, "log-actividad")
     if (rl) return rl
 
     const url = new URL(req.url)

@@ -7,7 +7,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(req, "/api/modulos-inlab/[id]", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/modulos-inlab/[id]", { limit: 30 })
   if (rl) return rl
   try {
     const session = await auth()
@@ -37,7 +37,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(_req, "/api/modulos-inlab/[id]", { limit: 30 })
+  const rl = await checkRateLimit(_req, "/api/modulos-inlab/[id]", { limit: 30 })
   if (rl) return rl
   try {
     const session = await auth()

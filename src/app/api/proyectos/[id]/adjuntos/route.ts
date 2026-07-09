@@ -7,7 +7,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/adjuntos")
+  const rl = await checkRateLimit(_req as NextRequest, "/api/proyectos/adjuntos")
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -33,7 +33,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/adjuntos", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/adjuntos", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

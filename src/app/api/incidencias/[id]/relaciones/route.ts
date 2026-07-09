@@ -13,7 +13,7 @@ class RelacionDuplicadaError extends Error {}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-relaciones", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-relaciones", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-relaciones-post", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-relaciones-post", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-relaciones-del", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-relaciones-del", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

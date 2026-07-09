@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -1182,11 +1183,7 @@ export default function AdminHardwarePage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Hardware &amp; Materiales</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Catálogo de modelos, referencias Palex e inventario de unidades</p>
-      </div>
+      <PageHeader title="Hardware & Materiales" subtitle="Catálogo de modelos, referencias Palex e inventario de unidades" />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">

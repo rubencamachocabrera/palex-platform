@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(req: Request) {
-  const rl = checkRateLimit(req as NextRequest, "/api/hardware")
+  const rl = await checkRateLimit(req as NextRequest, "/api/hardware")
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const rl = checkRateLimit(req as NextRequest, "/api/hardware", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/hardware", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   const role = (session?.user as { role?: string } | undefined)?.role

@@ -7,7 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_: NextRequest, { params }: Params) {
-  const rl = checkRateLimit(_, "/api/usuarios/[id]")
+  const rl = await checkRateLimit(_, "/api/usuarios/[id]")
   if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")
@@ -23,7 +23,7 @@ export async function GET(_: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const rl = checkRateLimit(req, "/api/usuarios/[id]", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/usuarios/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_: NextRequest, { params }: Params) {
-  const rl = checkRateLimit(_, "/api/usuarios/[id]", { limit: 30 })
+  const rl = await checkRateLimit(_, "/api/usuarios/[id]", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (session?.user?.role !== "ADMIN")

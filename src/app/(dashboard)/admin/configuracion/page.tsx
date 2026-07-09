@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
 import {
   DEFAULT_SCORING_CONFIG, invalidateScoringCache,
   type ScoringConfig, type CategoriaConfig, type ReglaConfig,
@@ -880,10 +881,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">
       <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-          <p className="text-gray-500 mt-1 text-sm">Módulos y ajustes de la plataforma.</p>
-        </div>
+        <PageHeader title="Configuración" subtitle="Módulos y ajustes de la plataforma." />
 
         {loading ? (
           <div className="space-y-4">

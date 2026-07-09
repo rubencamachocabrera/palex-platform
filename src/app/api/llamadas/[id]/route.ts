@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(req, "llamadas-detail", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "llamadas-detail", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

@@ -48,15 +48,8 @@ interface RateLimitOptions {
   windowMs?: number
 }
 
-export function checkRateLimitByKey(
-  key: string,
-  options: RateLimitOptions = {}
-): boolean {
-  const { limit = 60, windowMs = 60_000 } = options
-  return memIncrement(key, limit, windowMs)
-}
-
-export async function checkRateLimitByKeyAsync(
+/** Rate limit por clave arbitraria (ej. login por IP). Usa Redis si esta configurado, memoria si no. */
+export async function checkRateLimitByKey(
   key: string,
   options: RateLimitOptions = {}
 ): Promise<boolean> {
@@ -64,26 +57,29 @@ export async function checkRateLimitByKeyAsync(
   return redisIncrement(key, limit, windowMs)
 }
 
-export function checkRateLimit(
+/** Rate limit por ruta de API (IP + nombre de ruta). Usa Redis si esta configurado, memoria si no. */
+export async function checkRateLimit(
   req: NextRequest,
   route: string,
   options: RateLimitOptions = {}
-): NextResponse | null {
+): Promise<NextResponse | null> {
   const { limit = 60, windowMs = 60_000 } = options
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
     "unknown"
   const key = ip + ":" + route
-  const exceeded = memIncrement(key, limit, windowMs)
+  const exceeded = await redisIncrement(key, limit, windowMs)
   if (!exceeded) return null
+  // Retry-After preciso solo si el fallback in-memory registro la entrada; si vino de Redis, aproximamos con windowMs.
   const entry = memStore.get(key)
+  const retryAfterMs = entry ? entry.resetAt - Date.now() : windowMs
   return NextResponse.json(
     { error: "Too many requests" },
     {
       status: 429,
       headers: {
-        "Retry-After": String(Math.ceil(((entry?.resetAt ?? Date.now()) - Date.now()) / 1000)),
+        "Retry-After": String(Math.ceil(Math.max(retryAfterMs, 0) / 1000)),
         "X-RateLimit-Limit": String(limit),
         "X-RateLimit-Remaining": "0",
       },

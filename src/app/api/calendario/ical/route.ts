@@ -38,7 +38,7 @@ function foldLine(line: string): string {
 // GET /api/calendario/ical?uid=xxx&token=xxx
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "/api/calendario/ical", { limit: 20 })
+    const rl = await checkRateLimit(req, "/api/calendario/ical", { limit: 20 })
     if (rl) return rl
 
     const { searchParams } = new URL(req.url)

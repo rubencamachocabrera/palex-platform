@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string; comentarioId: string }> }) {
-  const rl = checkRateLimit(_req, "/api/visitas/comentarios", { limit: 30 })
+  const rl = await checkRateLimit(_req, "/api/visitas/comentarios", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

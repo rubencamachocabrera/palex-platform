@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { parseBody, TareaPatch } from "@/lib/schemas"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; tareaId: string }> }) {
-  const rl = checkRateLimit(req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
+  const rl = await checkRateLimit(req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -43,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string; tareaId: string }> }) {
-  const rl = checkRateLimit(_req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
+  const rl = await checkRateLimit(_req as NextRequest, "/api/proyectos/tareas", { limit: 30 })
   if (rl) return rl
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

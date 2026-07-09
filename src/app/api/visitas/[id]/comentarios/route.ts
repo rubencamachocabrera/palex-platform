@@ -15,7 +15,7 @@ async function canAccessVisita(userId: string, role: string, visita: { usuarioId
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(_req, "/api/visitas/comentarios")
+  const rl = await checkRateLimit(_req, "/api/visitas/comentarios")
   if (rl) return rl
 
   const session = await auth()
@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rl = checkRateLimit(req, "/api/visitas/comentarios", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/visitas/comentarios", { limit: 30 })
   if (rl) return rl
 
   const session = await auth()

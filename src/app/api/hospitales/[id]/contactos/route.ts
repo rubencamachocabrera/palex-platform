@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(_, "/api/hospitales/contactos")
+    const rl = await checkRateLimit(_, "/api/hospitales/contactos")
     if (rl) return rl
 
     const session = await auth()
@@ -34,7 +34,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

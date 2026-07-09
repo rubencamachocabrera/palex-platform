@@ -7,7 +7,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; contactoId: string }> }
 ) {
-  const rl = checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/hospitales/contactos", { limit: 30 })
   if (rl) return rl
   try {
     const session = await auth()

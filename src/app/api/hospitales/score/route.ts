@@ -7,7 +7,7 @@ import { computeHospitalScore } from "@/lib/hospital-score"
 // GET /api/hospitales/score?ids=id1,id2 — batch scores for hospital list
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "hospitales-score")
+    const rl = await checkRateLimit(req, "hospitales-score")
     if (rl) return rl
 
     const session = await auth()

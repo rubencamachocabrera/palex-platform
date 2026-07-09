@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 // GET /api/share/hardware/[id] — pasaporte público de una unidad HW (sin auth)
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "share-hardware")
+    const rl = await checkRateLimit(req, "share-hardware")
     if (rl) return rl
 
     const { id } = await params

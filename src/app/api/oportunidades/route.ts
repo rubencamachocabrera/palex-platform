@@ -6,7 +6,7 @@ import { db } from "@/lib/db"
 // GET /api/oportunidades — lista (ADMIN ve todas, VENTAS las suyas)
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "oportunidades", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "oportunidades", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 // POST /api/oportunidades — crea oportunidad (VENTAS y ADMIN)
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "oportunidades", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "oportunidades", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

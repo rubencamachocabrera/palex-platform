@@ -1,16 +1,16 @@
 # Graph Report - palex-platform  (2026-07-09)
 
 ## Corpus Check
-- 309 files · ~456,191 words
+- 309 files · ~456,352 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6357 nodes · 11596 edges · 542 communities (527 shown, 15 thin omitted)
+- 6357 nodes · 11615 edges · 535 communities (520 shown, 15 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 144 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4274165a`
+- Built from commit: `04523c49`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -311,7 +311,6 @@
 - [[_COMMUNITY_Community 308|Community 308]]
 - [[_COMMUNITY_Community 309|Community 309]]
 - [[_COMMUNITY_Community 310|Community 310]]
-- [[_COMMUNITY_Community 311|Community 311]]
 - [[_COMMUNITY_Community 312|Community 312]]
 - [[_COMMUNITY_Community 313|Community 313]]
 - [[_COMMUNITY_Community 314|Community 314]]
@@ -333,7 +332,6 @@
 - [[_COMMUNITY_Community 330|Community 330]]
 - [[_COMMUNITY_Community 331|Community 331]]
 - [[_COMMUNITY_Community 332|Community 332]]
-- [[_COMMUNITY_Community 333|Community 333]]
 - [[_COMMUNITY_Community 334|Community 334]]
 - [[_COMMUNITY_Community 335|Community 335]]
 - [[_COMMUNITY_Community 336|Community 336]]
@@ -454,7 +452,6 @@
 - [[_COMMUNITY_Community 451|Community 451]]
 - [[_COMMUNITY_Community 452|Community 452]]
 - [[_COMMUNITY_Community 453|Community 453]]
-- [[_COMMUNITY_Community 454|Community 454]]
 - [[_COMMUNITY_Community 455|Community 455]]
 - [[_COMMUNITY_Community 456|Community 456]]
 - [[_COMMUNITY_Community 457|Community 457]]
@@ -477,10 +474,8 @@
 - [[_COMMUNITY_Community 474|Community 474]]
 - [[_COMMUNITY_Community 475|Community 475]]
 - [[_COMMUNITY_Community 476|Community 476]]
-- [[_COMMUNITY_Community 477|Community 477]]
 - [[_COMMUNITY_Community 478|Community 478]]
 - [[_COMMUNITY_Community 479|Community 479]]
-- [[_COMMUNITY_Community 480|Community 480]]
 - [[_COMMUNITY_Community 481|Community 481]]
 - [[_COMMUNITY_Community 482|Community 482]]
 - [[_COMMUNITY_Community 483|Community 483]]
@@ -499,8 +494,6 @@
 - [[_COMMUNITY_Community 496|Community 496]]
 - [[_COMMUNITY_Community 497|Community 497]]
 - [[_COMMUNITY_Community 498|Community 498]]
-- [[_COMMUNITY_Community 499|Community 499]]
-- [[_COMMUNITY_Community 500|Community 500]]
 - [[_COMMUNITY_Community 501|Community 501]]
 - [[_COMMUNITY_Community 502|Community 502]]
 - [[_COMMUNITY_Community 503|Community 503]]
@@ -570,7 +563,7 @@
 ## Import Cycles
 - 1-file cycle: `src/app/(dashboard)/visitas/[id]/page.tsx -> src/app/(dashboard)/visitas/[id]/page.tsx`
 
-## Communities (542 total, 15 thin omitted)
+## Communities (535 total, 15 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.04
@@ -602,7 +595,7 @@ Nodes (31): description, details, id, score, scoreDisplayMode, title, details, d
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
-Nodes (18): GET(), rangoAnterior(), PATCH(), GET(), GET(), NotaPatch, activeCache, { auth, handlers, signIn, signOut } (+10 more)
+Nodes (18): GET(), GET(), rangoAnterior(), PATCH(), activeCache, { auth, handlers, signIn, signOut }, authConfig, { auth } (+10 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.07
@@ -626,19 +619,19 @@ Nodes (42): bool, BM25, detect_domain(), _load_csv(), Lowercase, split, remove p
 
 ### Community 13 - "Community 13"
 Cohesion: 0.03
-Nodes (63): ALL_TIPOS, CATEGORIAS, ContactoItem, dateGroupLabel(), EQUIPOS, ESTADOS, Evento, FormAction (+55 more)
+Nodes (94): ALL_TIPOS, CATEGORIAS, ContactoItem, dateGroupLabel(), EQUIPOS, ESTADOS, Evento, FormAction (+86 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.08
-Nodes (19): ACCION_CFG, ActividadPage(), ALL_ENTIDADES, DayGroup, ENTIDAD_CFG, ENTIDAD_ICONS, groupByDay(), LogEntry (+11 more)
+Cohesion: 0.04
+Nodes (40): ACCION_CFG, ActividadPage(), ALL_ENTIDADES, DayGroup, ENTIDAD_CFG, ENTIDAD_ICONS, groupByDay(), LogEntry (+32 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.05
-Nodes (30): useToast(), AlertasTab(), AsignarUnidadModal(), CAT_FORM_EMPTY, CatTiposModal(), diasDesde(), EditUnidadDrawer(), fmtAntiguedad() (+22 more)
+Nodes (20): CAT_FORM_EMPTY, diasDesde(), EditUnidadDrawer(), fmtAntiguedad(), HardwareCatalogo, HardwareUnidad, HW_ESTADO, InstalacionesTab() (+12 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.06
-Nodes (43): ProyectoModulo, Adjunto, Contacto, ContactoPivot, EntradaTimeline, ESTADO_COLOR, ESTADO_LABEL, Fase (+35 more)
+Cohesion: 0.03
+Nodes (84): Toast, ToastContext, ToastContextValue, ToastType, useToast(), AlertasTab(), AsignarUnidadModal(), CatTiposModal() (+76 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.14
@@ -653,16 +646,16 @@ Cohesion: 0.11
 Nodes (24): POST(), GET(), POST(), canAccessVisita(), generarCodigo(), GET(), POST(), logActividad() (+16 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.05
-Nodes (28): AlertaItem, AlertasPanel(), IncSla, PRIO_COLOR, SlaAlertasWidget(), agruparPorMes(), agruparPrevisionPorMes(), calcTrend() (+20 more)
+Cohesion: 0.06
+Nodes (25): AlertaItem, AlertasPanel(), IncSla, PRIO_COLOR, SlaAlertasWidget(), agruparPorMes(), agruparPrevisionPorMes(), calcTrend() (+17 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.05
 Nodes (41): 1. Accessibility (CRITICAL), 2. Touch & Interaction (CRITICAL), 3. Performance (HIGH), 4. Layout & Responsive (HIGH), 5. Typography & Color (MEDIUM), 6. Animation (MEDIUM), 7. Style Selection (MEDIUM), 8. Charts & Data (LOW) (+33 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.04
-Nodes (11): Props, Props, Props, SignaturePad, Props, Props, Props, Props (+3 more)
+Cohesion: 0.03
+Nodes (28): Props, Props, Props, PrintView, SignaturePad, FieldType, FORM_SCHEMA, FormField (+20 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.08
@@ -677,28 +670,28 @@ Cohesion: 0.09
 Nodes (28): axe-core, environment, benchmarkIndex, credits, hostUserAgent, networkUserAgent, fetchTime, finalDisplayedUrl (+20 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.06
-Nodes (24): GET(), checkRateLimitByKey(), checkRateLimitByKeyAsync(), lastCleanup, maybePurge(), memIncrement(), memStore, RateLimitEntry (+16 more)
+Cohesion: 0.07
+Nodes (19): GET(), GET(), globalForPrisma, computeHospitalScore(), HospitalScore, DELETE(), GET(), POST() (+11 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.07
 Nodes (15): CatalogoCard(), CatalogoItem, CatalogoTab(), COLORES_PRESET, ESTADO_INFO, FORM_EMPTY, ringStyle, TiposModal() (+7 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.09
-Nodes (20): TagItem, TagPills(), TagSelector(), TagSelectorProps, fechaRel(), ESTADO_COLOR, ESTADO_LABEL, IconChevronRight() (+12 more)
+Cohesion: 0.04
+Nodes (46): CargaData, CargaTrabajoPage(), diasEnMes(), MESES, ROL_COLOR, ROL_LABEL, UsuarioCarga, TagItem (+38 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.22
 Nodes (9): user-timings, description, errorMessage, errorStack, guidanceLevel, id, score, scoreDisplayMode (+1 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.14
-Nodes (27): getConsumoMensual(), getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria(), getIndicadores(), CAUSAS, DESCS (+19 more)
+Cohesion: 0.15
+Nodes (26): getConsumoMensual(), getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria(), getIndicadores(), CAUSAS, DESCS (+18 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.11
-Nodes (11): Toast, ToastContext, ToastContextValue, ToastType, ModuloInfo, ESTADO_MODULO_COLOR, ESTADO_MODULO_LABEL, EstadoModulo (+3 more)
+Cohesion: 0.25
+Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-allowed-attr
 
 ### Community 32 - "Community 32"
 Cohesion: 0.05
@@ -709,8 +702,8 @@ Cohesion: 0.08
 Nodes (12): avatarColor(), IconProps, isRol(), Rol, ROL_CONFIG, RolConfig, ROLES, RolPill() (+4 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.11
-Nodes (20): CATEGORIAS, EQUIPOS, EQUIPOS_MAP, ESTADOS, fmtMin(), getEstadoStyle(), getPrioridadStyle(), Hospital (+12 more)
+Cohesion: 0.25
+Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-hidden-focus
 
 ### Community 35 - "Community 35"
 Cohesion: 0.05
@@ -721,8 +714,8 @@ Cohesion: 0.10
 Nodes (13): EVENTOS, generarDatos(), Hospital, PeriodoKey, PERIODOS, PuntoTemporal, SEASONAL_MULT, seededRand() (+5 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.07
-Nodes (21): ESTADO_MODULO_COLOR, ESTADO_MODULO_LABEL, EstadoModulo, ModuloInlab, ProyectoDetalle(), TabAdjuntos, TabCockpit, TabContactos (+13 more)
+Cohesion: 0.25
+Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-allowed-role
 
 ### Community 38 - "Community 38"
 Cohesion: 0.08
@@ -737,20 +730,20 @@ Cohesion: 0.12
 Nodes (19): avColor(), Comentario, fechaRel(), Props, extractMentionIds(), MentionInput(), Props, ROL_COLORS (+11 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.15
-Nodes (10): PAGE_SIZES, Props, SortDir, SortKey, TabExplorador(), TuboKey, Props, TabIndicadores() (+2 more)
+Cohesion: 0.10
+Nodes (20): Props, Props, PAGE_SIZES, Props, SortDir, SortKey, TabExplorador(), TuboKey (+12 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.08
-Nodes (21): CentroGrupo, Contacto, CONTACTO_EMPTY, ESTADO_COLOR, ESTADO_LABEL, FaseResumen, PROY_ESTADO_COLOR, PROY_ESTADO_LABEL (+13 more)
+Cohesion: 0.33
+Nodes (6): heading-order, description, id, score, scoreDisplayMode, title
 
 ### Community 43 - "Community 43"
 Cohesion: 0.24
 Nodes (19): OfflineIndicator(), SaveStatus, useOfflineSync(), UseOfflineSyncOptions, useOnlineStatus(), clearSyncQueue(), deleteDraft(), DraftVisita (+11 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.07
-Nodes (17): Contacto, FILTROS_FECHA, formatDuration(), Hospital, Llamada, RESULTADOS, IconChevronDown(), IconPhone() (+9 more)
+Cohesion: 0.33
+Nodes (6): td-has-header, description, id, score, scoreDisplayMode, title
 
 ### Community 45 - "Community 45"
 Cohesion: 0.08
@@ -766,11 +759,11 @@ Nodes (4): useTheme(), Notificacion, Resultado, TopBar()
 
 ### Community 48 - "Community 48"
 Cohesion: 0.11
-Nodes (16): EQUIPOS, ESTADO_EQUIPO, EstadoEquipo, Props, SEV_CONFIG, Alerta, ConsumoParams, DiaSemanaHeatmap (+8 more)
+Nodes (15): EQUIPOS, ESTADO_EQUIPO, EstadoEquipo, SEV_CONFIG, Alerta, ConsumoParams, DiaSemanaHeatmap, IndicadorAvanzado (+7 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.07
-Nodes (22): CargaData, CargaTrabajoPage(), diasEnMes(), MESES, ROL_COLOR, ROL_LABEL, UsuarioCarga, DatosPage() (+14 more)
+Nodes (12): Modulo, ModulosInlabPage(), isHoy(), isVencido(), Recordatorio, RecordatoriosPage(), UsuarioMini, BreadcrumbItem (+4 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.23
@@ -785,8 +778,8 @@ Cohesion: 0.14
 Nodes (13): ESTADO_COLOR, ESTADO_LABEL, TabFlota(), TIPO_LABEL, TabMapa(), TransporteMapaLeaflet, getRutas(), generarRutas() (+5 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.17
-Nodes (17): PrintView, FieldType, FORM_SCHEMA, FormField, FormSection, getSections(), initFormData(), calcProgress() (+9 more)
+Cohesion: 0.33
+Nodes (6): meta-viewport, description, id, score, scoreDisplayMode, title
 
 ### Community 54 - "Community 54"
 Cohesion: 0.12
@@ -829,12 +822,12 @@ Cohesion: 0.12
 Nodes (6): Accion, ACCIONES_BASE, CommandPalette(), KeyboardShortcutsProvider(), useKeyboardShortcuts(), TIPO_RESULTADO_COLOR
 
 ### Community 64 - "Community 64"
-Cohesion: 0.14
-Nodes (8): AreaChart(), DonutChart(), TuboKey, Props, TuboKey, EVENTOS, ConsumoMensual, ForecastPunto
+Cohesion: 0.13
+Nodes (8): AreaChart(), DonutChart(), ForecastChart(), TuboKey, Props, TuboKey, ConsumoMensual, ForecastPunto
 
 ### Community 65 - "Community 65"
-Cohesion: 0.16
-Nodes (13): ForecastChart(), calcR2(), EJE_CONFIG, EjeX, Props, ScatterPlot(), TabCorrelaciones(), ANOMALIAS (+5 more)
+Cohesion: 0.29
+Nodes (7): calcR2(), EJE_CONFIG, EjeX, Props, ScatterPlot(), TabCorrelaciones(), CorrelacionPunto
 
 ### Community 66 - "Community 66"
 Cohesion: 0.25
@@ -873,12 +866,12 @@ Cohesion: 0.12
 Nodes (14): BottomNav(), NavTab, tabs, Icons, NAV_GROUPS, NAV_GROUPS_ADMIN, NAV_GROUPS_PROYECTOS, NAV_GROUPS_VENTAS (+6 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.10
-Nodes (12): Tarea, ESTADO_FASE, ESTADO_PROY, fmtFecha(), PRIORIDAD_COLOR, progreso(), SlideKPIs(), SlidePortada() (+4 more)
+Cohesion: 0.19
+Nodes (8): ESTADO_FASE, ESTADO_PROY, fmtFecha(), PRIORIDAD_COLOR, progreso(), SlideKPIs(), SlidePortada(), estadoProyecto()
 
 ### Community 76 - "Community 76"
 Cohesion: 0.11
-Nodes (5): ADMIN_STEPS, FINAL_STEP, GENERAL_STEPS, Step, IconHospital()
+Nodes (4): ADMIN_STEPS, FINAL_STEP, GENERAL_STEPS, Step
 
 ### Community 77 - "Community 77"
 Cohesion: 0.18
@@ -893,12 +886,12 @@ Cohesion: 0.12
 Nodes (15): ESTADO_PARADA_COLOR, ESTADO_PARADA_LABEL, ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, DESCS_INC, ESTADOS_INC, GRAVEDADES, LABORATORIO (+7 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.17
-Nodes (10): ESTADO_ORDER, GRAV_COLOR, GRAV_ORDER, Props, SortDir, SortKey, TIPO_COLOR, Incidencia (+2 more)
+Cohesion: 0.18
+Nodes (9): ESTADO_ORDER, GRAV_COLOR, GRAV_ORDER, SortDir, SortKey, TIPO_COLOR, Incidencia, TipoIncidencia (+1 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.18
-Nodes (9): FORM_EMPTY, HospitalesAdminPage(), TIPO_COLOR, TIPO_LABELS_FULL, Zona, exportarExcel(), exportarExcelSimple(), Hospital (+1 more)
+Cohesion: 0.33
+Nodes (6): valid-lang, description, id, score, scoreDisplayMode, title
 
 ### Community 82 - "Community 82"
 Cohesion: 0.20
@@ -1002,7 +995,7 @@ Nodes (4): hooks, PreToolUse, SessionStart, Hook SessionStart — inyecta CONTEX
 
 ### Community 108 - "Community 108"
 Cohesion: 0.08
-Nodes (16): GET(), GET(), globalForPrisma, computeHospitalScore(), HospitalScore, GET(), NotaCreate, POST() (+8 more)
+Nodes (21): canAccessVisita(), GET(), GET(), checkRateLimitByKey(), checkRateLimitByKeyAsync(), lastCleanup, maybePurge(), memIncrement() (+13 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.40
@@ -1013,8 +1006,8 @@ Cohesion: 0.08
 Nodes (25): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+17 more)
 
 ### Community 112 - "Community 112"
-Cohesion: 0.83
-Nodes (3): canAccessVisita(), GET(), POST()
+Cohesion: 0.33
+Nodes (6): has-hsts, description, id, score, scoreDisplayMode, title
 
 ### Community 113 - "Community 113"
 Cohesion: 0.83
@@ -1053,12 +1046,12 @@ Cohesion: 0.50
 Nodes (3): JWT, Session, User
 
 ### Community 123 - "Community 123"
-Cohesion: 0.25
-Nodes (8): image-aspect-ratio, description, errorMessage, errorStack, id, score, scoreDisplayMode, title
+Cohesion: 0.33
+Nodes (6): is-on-https, description, id, score, scoreDisplayMode, title
 
 ### Community 126 - "Community 126"
-Cohesion: 0.10
-Nodes (20): exportarCSV(), DraggableCard(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, fmtEuros(), FORM_VACIO (+12 more)
+Cohesion: 0.07
+Nodes (28): FORM_EMPTY, HospitalesAdminPage(), TIPO_COLOR, TIPO_LABELS_FULL, Zona, exportarCSV(), exportarExcel(), exportarExcelSimple() (+20 more)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.22
@@ -1090,7 +1083,7 @@ Nodes (23): network-requests, script-treemap-data, data, nodes, scale, skipSummi
 
 ### Community 154 - "Community 154"
 Cohesion: 0.10
-Nodes (23): is-on-https, script-treemap-data, data, nodes, scale, skipSumming, summary, timestamp (+15 more)
+Nodes (23): main-thread-tasks, script-treemap-data, data, nodes, scale, skipSumming, summary, timestamp (+15 more)
 
 ### Community 155 - "Community 155"
 Cohesion: 0.09
@@ -1102,11 +1095,11 @@ Nodes (22): long-tasks, mainthread-work-breakdown, metricSavings, description, d
 
 ### Community 157 - "Community 157"
 Cohesion: 0.10
-Nodes (21): description, id, score, scoreDisplayMode, title, aria-input-field-name, focus-traps, landmark-one-main (+13 more)
+Nodes (21): description, id, score, scoreDisplayMode, title, aria-input-field-name, focus-traps, frame-title (+13 more)
 
 ### Community 158 - "Community 158"
 Cohesion: 0.10
-Nodes (20): description, id, score, scoreDisplayMode, title, aria-roles, frame-title, input-button-name (+12 more)
+Nodes (20): description, id, score, scoreDisplayMode, title, aria-roles, definition-list, input-button-name (+12 more)
 
 ### Community 159 - "Community 159"
 Cohesion: 0.11
@@ -1114,51 +1107,51 @@ Nodes (19): description, id, score, scoreDisplayMode, title, description, id, sc
 
 ### Community 160 - "Community 160"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, aria-allowed-role, label, listitem (+11 more)
 
 ### Community 161 - "Community 161"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, aria-required-parent, frame-title, input-button-name (+11 more)
 
 ### Community 162 - "Community 162"
 Cohesion: 0.11
-Nodes (19): image-redundant-alt, input-button-name, table-fake-caption, description, id, score, scoreDisplayMode, title (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, aria-treeitem-name, image-redundant-alt, table-fake-caption (+11 more)
 
 ### Community 163 - "Community 163"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, accesskeys, bypass, heading-order (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, accesskeys, table-duplicate-name, td-headers-attr (+11 more)
 
 ### Community 164 - "Community 164"
 Cohesion: 0.11
-Nodes (19): listitem, table-duplicate-name, video-caption, description, description, id, score, scoreDisplayMode (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
 
 ### Community 165 - "Community 165"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, aria-allowed-role, input-image-alt, td-headers-attr (+11 more)
+Nodes (19): description, id, score, scoreDisplayMode, title, aria-allowed-role, bypass, input-image-alt (+11 more)
 
 ### Community 166 - "Community 166"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, audits, aria-text, label-content-name-mismatch (+11 more)
+Nodes (19): audits, label-content-name-mismatch, listitem, tabindex, description, id, score, scoreDisplayMode (+11 more)
 
 ### Community 167 - "Community 167"
 Cohesion: 0.11
 Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
 
 ### Community 168 - "Community 168"
-Cohesion: 0.25
-Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-command-name
+Cohesion: 0.50
+Nodes (3): NotaPatch, DELETE(), PATCH()
 
 ### Community 169 - "Community 169"
 Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, aria-input-field-name, bypass, object-alt (+11 more)
+Nodes (19): bypass, link-in-text-block, object-alt, description, id, score, scoreDisplayMode, title (+11 more)
 
 ### Community 170 - "Community 170"
 Cohesion: 0.11
 Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
 
 ### Community 171 - "Community 171"
-Cohesion: 0.11
-Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
+Cohesion: 0.33
+Nodes (6): description, id, score, scoreDisplayMode, title, aria-toggle-field-name
 
 ### Community 172 - "Community 172"
 Cohesion: 0.11
@@ -1178,11 +1171,11 @@ Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, 
 
 ### Community 176 - "Community 176"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-progressbar-name (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
 
 ### Community 177 - "Community 177"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-roles (+9 more)
 
 ### Community 178 - "Community 178"
 Cohesion: 0.12
@@ -1198,15 +1191,15 @@ Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, 
 
 ### Community 181 - "Community 181"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-deprecated-role (+9 more)
 
 ### Community 182 - "Community 182"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-progressbar-name (+9 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-roles (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
 
 ### Community 184 - "Community 184"
 Cohesion: 0.12
@@ -1246,11 +1239,11 @@ Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, 
 
 ### Community 193 - "Community 193"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-deprecated-role (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
 
 ### Community 194 - "Community 194"
 Cohesion: 0.12
-Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, description (+9 more)
+Nodes (17): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-progressbar-name (+9 more)
 
 ### Community 195 - "Community 195"
 Cohesion: 0.12
@@ -1325,8 +1318,8 @@ Cohesion: 0.20
 Nodes (10): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, accesskeys (+2 more)
 
 ### Community 213 - "Community 213"
-Cohesion: 0.22
-Nodes (4): DIAS, MESES, Props, TabAnalitica()
+Cohesion: 0.25
+Nodes (3): DIAS, MESES, TabAnalitica()
 
 ### Community 214 - "Community 214"
 Cohesion: 0.22
@@ -1716,10 +1709,6 @@ Nodes (8): trusted-types-xss, description, errorMessage, errorStack, id, score, 
 Cohesion: 0.25
 Nodes (8): valid-source-maps, description, errorMessage, errorStack, id, score, scoreDisplayMode, title
 
-### Community 311 - "Community 311"
-Cohesion: 0.25
-Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-allowed-role
-
 ### Community 312 - "Community 312"
 Cohesion: 0.25
 Nodes (8): description, errorMessage, errorStack, id, score, scoreDisplayMode, title, aria-conditional-attr
@@ -1803,10 +1792,6 @@ Nodes (8): largest-contentful-paint, description, errorMessage, errorStack, id, 
 ### Community 332 - "Community 332"
 Cohesion: 0.25
 Nodes (8): main-thread-tasks, description, errorMessage, errorStack, id, score, scoreDisplayMode, title
-
-### Community 333 - "Community 333"
-Cohesion: 0.33
-Nodes (6): description, id, score, scoreDisplayMode, title, aria-allowed-attr
 
 ### Community 334 - "Community 334"
 Cohesion: 0.25
@@ -2288,10 +2273,6 @@ Nodes (6): custom-controls-labels, description, id, score, scoreDisplayMode, tit
 Cohesion: 0.33
 Nodes (6): custom-controls-roles, description, id, score, scoreDisplayMode, title
 
-### Community 454 - "Community 454"
-Cohesion: 0.33
-Nodes (6): definition-list, description, id, score, scoreDisplayMode, title
-
 ### Community 455 - "Community 455"
 Cohesion: 0.33
 Nodes (6): document-title, description, id, score, scoreDisplayMode, title
@@ -2310,7 +2291,7 @@ Nodes (6): form-field-multiple-labels, description, id, score, scoreDisplayMode,
 
 ### Community 459 - "Community 459"
 Cohesion: 0.11
-Nodes (19): image-redundant-alt, input-button-name, link-name, description, id, score, scoreDisplayMode, title (+11 more)
+Nodes (19): input-button-name, link-name, tabindex, description, id, score, scoreDisplayMode, title (+11 more)
 
 ### Community 460 - "Community 460"
 Cohesion: 0.33
@@ -2380,21 +2361,13 @@ Nodes (4): 13. Estado actual y deuda tecnica, Backlog (no priorizado), Completad
 Cohesion: 0.33
 Nodes (6): th-has-data-cells, description, id, score, scoreDisplayMode, title
 
-### Community 477 - "Community 477"
-Cohesion: 0.33
-Nodes (6): definition-list, description, id, score, scoreDisplayMode, title
-
 ### Community 478 - "Community 478"
-Cohesion: 0.33
-Nodes (6): select-name, description, id, score, scoreDisplayMode, title
+Cohesion: 0.11
+Nodes (19): description, id, score, scoreDisplayMode, title, description, id, score (+11 more)
 
 ### Community 479 - "Community 479"
 Cohesion: 0.33
 Nodes (6): description, id, score, scoreDisplayMode, title, aria-command-name
-
-### Community 480 - "Community 480"
-Cohesion: 0.33
-Nodes (6): tabindex, description, id, score, scoreDisplayMode, title
 
 ### Community 481 - "Community 481"
 Cohesion: 0.33
@@ -2467,14 +2440,6 @@ Nodes (6): custom-controls-roles, description, id, score, scoreDisplayMode, titl
 ### Community 498 - "Community 498"
 Cohesion: 0.33
 Nodes (6): document-title, description, id, score, scoreDisplayMode, title
-
-### Community 499 - "Community 499"
-Cohesion: 0.33
-Nodes (6): csp-xss, description, id, score, scoreDisplayMode, title
-
-### Community 500 - "Community 500"
-Cohesion: 0.33
-Nodes (6): deprecations, description, id, score, scoreDisplayMode, title
 
 ### Community 501 - "Community 501"
 Cohesion: 0.33
@@ -2628,11 +2593,11 @@ Nodes (4): 8. Frontend — Componentes y patrones, Componentes clave, Hooks cust
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `audits` connect `Community 184` to `Community 10`, `Community 11`, `Community 17`, `Community 276`, `Community 277`, `Community 278`, `Community 279`, `Community 280`, `Community 281`, `Community 282`, `Community 283`, `Community 284`, `Community 285`, `Community 286`, `Community 287`, `Community 288`, `Community 289`, `Community 290`, `Community 291`, `Community 292`, `Community 293`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 300`, `Community 301`, `Community 302`, `Community 303`, `Community 304`, `Community 305`, `Community 306`, `Community 179`, `Community 180`, `Community 181`, `Community 182`, `Community 183`, `Community 307`, `Community 308`, `Community 309`, `Community 310`, `Community 205`, `Community 220`, `Community 221`, `Community 222`, `Community 223`, `Community 224`, `Community 225`, `Community 115`, `Community 123`?**
+- **Why does `audits` connect `Community 184` to `Community 10`, `Community 11`, `Community 17`, `Community 276`, `Community 277`, `Community 278`, `Community 279`, `Community 280`, `Community 281`, `Community 282`, `Community 283`, `Community 284`, `Community 285`, `Community 286`, `Community 31`, `Community 287`, `Community 288`, `Community 289`, `Community 290`, `Community 291`, `Community 292`, `Community 293`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 300`, `Community 301`, `Community 302`, `Community 303`, `Community 304`, `Community 305`, `Community 306`, `Community 179`, `Community 180`, `Community 181`, `Community 182`, `Community 183`, `Community 307`, `Community 308`, `Community 309`, `Community 310`, `Community 205`, `Community 220`, `Community 221`, `Community 222`, `Community 223`, `Community 224`, `Community 225`, `Community 115`?**
   _High betweenness centrality (0.131) - this node is a cross-community bridge._
 - **Why does `redirects` connect `Community 10` to `Community 201`, `Community 204`, `Community 173`, `Community 174`, `Community 175`, `Community 176`, `Community 177`, `Community 178`, `Community 115`, `Community 180`, `Community 205`, `Community 182`, `Community 183`, `Community 179`, `Community 181`, `Community 184`?**
   _High betweenness centrality (0.114) - this node is a cross-community bridge._
-- **Why does `audits` connect `Community 187` to `Community 129`, `Community 132`, `Community 134`, `Community 8`, `Community 17`, `Community 29`, `Community 311`, `Community 312`, `Community 313`, `Community 314`, `Community 185`, `Community 316`, `Community 189`, `Community 190`, `Community 186`, `Community 315`, `Community 188`, `Community 317`, `Community 318`, `Community 319`, `Community 320`, `Community 321`, `Community 322`, `Community 323`, `Community 324`, `Community 325`, `Community 326`, `Community 327`, `Community 329`, `Community 330`, `Community 331`, `Community 208`, `Community 209`, `Community 332`, `Community 334`, `Community 336`, `Community 337`, `Community 338`, `Community 339`, `Community 340`, `Community 341`, `Community 342`, `Community 343`, `Community 344`, `Community 345`, `Community 227`, `Community 228`, `Community 229`, `Community 230`, `Community 231`, `Community 117`?**
+- **Why does `audits` connect `Community 187` to `Community 129`, `Community 132`, `Community 134`, `Community 8`, `Community 17`, `Community 29`, `Community 34`, `Community 312`, `Community 313`, `Community 314`, `Community 185`, `Community 316`, `Community 189`, `Community 318`, `Community 186`, `Community 315`, `Community 188`, `Community 317`, `Community 190`, `Community 319`, `Community 320`, `Community 321`, `Community 322`, `Community 323`, `Community 324`, `Community 325`, `Community 326`, `Community 327`, `Community 329`, `Community 330`, `Community 331`, `Community 208`, `Community 209`, `Community 332`, `Community 334`, `Community 336`, `Community 337`, `Community 338`, `Community 339`, `Community 340`, `Community 341`, `Community 342`, `Community 343`, `Community 344`, `Community 345`, `Community 227`, `Community 228`, `Community 229`, `Community 230`, `Community 231`, `Community 117`?**
   _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **Are the 57 inferred relationships involving `checkRateLimit()` (e.g. with `DELETE()` and `GET()`) actually correct?**
   _`checkRateLimit()` has 57 INFERRED edges - model-reasoned connections that need verification._

@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function GET(_req: NextRequest) {
   try {
-    const rl = checkRateLimit(_req, "/api/notificaciones")
+    const rl = await checkRateLimit(_req, "/api/notificaciones")
     if (rl) return rl
 
     const session = await auth()

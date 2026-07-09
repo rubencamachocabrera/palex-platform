@@ -10,7 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(req, "/api/contactos/id", { limit: 30 })
+    const rl = await checkRateLimit(req, "/api/contactos/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()
@@ -60,7 +60,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rl = checkRateLimit(_, "/api/contactos/id", { limit: 30 })
+    const rl = await checkRateLimit(_, "/api/contactos/id", { limit: 30 })
     if (rl) return rl
 
     const session = await auth()

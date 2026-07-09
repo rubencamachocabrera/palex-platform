@@ -6,7 +6,7 @@ import { parseBody, EventoIncidenciaCreate } from "@/lib/schemas"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "incidencias-eventos", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "incidencias-eventos", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

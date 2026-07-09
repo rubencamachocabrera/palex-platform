@@ -19,7 +19,7 @@ const FASES_DEFAULT = [
 ] as const
 
 export async function GET(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/proyectos")
+  const rl = await checkRateLimit(req, "/api/proyectos")
   if (rl) return rl
 
   const session = await auth()
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, "/api/proyectos", { limit: 30 })
+  const rl = await checkRateLimit(req, "/api/proyectos", { limit: 30 })
   if (rl) return rl
 
   const session = await auth()

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, TEAL_DARK, ORANGE } from "@/lib/brand"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 interface Zona {
   id: string
@@ -123,28 +124,22 @@ export default function ZonasPage() {
   return (
     <div className="max-w-5xl mx-auto">
 
-      {/* ── Cabecera ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" style={{ backgroundColor: TEAL }}>
-              <IconZona size={15} />
-            </span>
-            Zonas geográficas
-          </h1>
-          <p className="text-sm text-gray-400 mt-1 ml-10">
-            Organización territorial de la red de centros Palex
-          </p>
-        </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:opacity-90 shrink-0"
-          style={{ backgroundColor: ORANGE }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nueva zona
-        </button>
-      </div>
+      <PageHeader
+        title="Zonas geográficas"
+        subtitle="Organización territorial de la red de centros Palex"
+        icon={<IconZona size={15} />}
+        iconColor={TEAL}
+        actions={
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:opacity-90 shrink-0"
+            style={{ backgroundColor: ORANGE }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva zona
+          </button>
+        }
+      />
 
       {/* ── KPI chips ── */}
       <div className="grid grid-cols-3 gap-3 mb-6">

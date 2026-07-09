@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "respuestas-rapidas", { limit: 60, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "respuestas-rapidas", { limit: 60, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "respuestas-rapidas-post", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "respuestas-rapidas-post", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const rl = checkRateLimit(req, "respuestas-rapidas-del", { limit: 30, windowMs: 60000 })
+    const rl = await checkRateLimit(req, "respuestas-rapidas-del", { limit: 30, windowMs: 60000 })
     if (rl) return rl
 
     const session = await auth()

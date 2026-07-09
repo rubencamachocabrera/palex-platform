@@ -6,7 +6,7 @@ import { computeHospitalScore } from "@/lib/hospital-score"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rl = checkRateLimit(req, "hospitales-score-id")
+    const rl = await checkRateLimit(req, "hospitales-score-id")
     if (rl) return rl
 
     const session = await auth()
