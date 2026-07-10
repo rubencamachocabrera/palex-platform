@@ -1,0 +1,22 @@
+name: Escalar incidencias críticas
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  escalar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al endpoint de escalado automático
+        run: |
+          set -e
+          status=$(curl -s -o response.json -w "%{http_code}" \
+            "https://palex-platform-production.up.railway.app/api/cron/escalar-incidencias?secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $status"
+          cat response.json
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Fallo llamando al endpoint de escalado (HTTP $status)"
+            exit 1
+          fi
