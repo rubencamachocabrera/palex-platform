@@ -25,6 +25,7 @@ const PROTECTED_PREFIXES = [
   "/incidencias",
   "/comparador",
   "/checkin",
+  "/agenda",
 ]
 
 export default auth((req) => {

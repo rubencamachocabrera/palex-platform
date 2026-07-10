@@ -253,10 +253,23 @@ export default function ProyectosPage() {
   const [filtroResponsable, setFiltroResponsable] = useState("")
   const [responsables, setResponsables] = useState<Responsable[]>([])
   const [vista, setVista] = useState<"lista" | "kanban">("lista")
+  const [compacto, setCompacto] = useState(false)
   const [mostrarModal, setMostrarModal] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("proyectos_compacto")
+    if (stored === "true") setCompacto(true)
+  }, [])
+
+  const toggleCompacto = () => {
+    setCompacto(v => {
+      localStorage.setItem("proyectos_compacto", String(!v))
+      return !v
+    })
+  }
 
   const PAGE_SIZE = 100
 
@@ -377,6 +390,24 @@ export default function ProyectosPage() {
               <IconKanban /> Kanban
             </button>
           </div>
+          {vista === "lista" && (
+            <button
+              onClick={toggleCompacto}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              title={compacto ? "Vista detallada" : "Vista compacta"}
+            >
+              {compacto ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              )}
+              {compacto ? "Detallada" : "Compacta"}
+            </button>
+          )}
           {vista === "lista" && items.length > 0 && (
             <button
               onClick={exportarCSV}
@@ -498,7 +529,7 @@ export default function ProyectosPage() {
             <p className="text-sm text-gray-500">Crea el primero con el botón superior</p>
           </div>
         ) : (
-          <div className="stagger-list space-y-3">
+          <div className={compacto ? "stagger-list space-y-1.5" : "stagger-list space-y-3"}>
             {items.map((item, idx) => {
               const pct = progreso(item.fases)
               const ef = estadoEfectivo(item)
@@ -506,6 +537,42 @@ export default function ProyectosPage() {
               const prio = PRIORIDAD_LABEL[item.prioridad]
               const retrasado = item.fechaFinPlan && new Date(item.fechaFinPlan) < new Date()
                 && ef !== "COMPLETADO" && ef !== "CANCELADO"
+              if (compacto) {
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/proyectos/${item.id}`}
+                    className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm px-4 py-2.5 card-hover group"
+                  >
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
+                      {ESTADO_LABEL[ef]}
+                    </span>
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-teal-700 transition-colors truncate min-w-0 flex-1">
+                      {item.titulo}
+                    </h2>
+                    <span className="text-xs text-gray-400 truncate hidden sm:block max-w-[220px]">
+                      {item.hospital.nombre}{item.responsable && ` · ${item.responsable.nombre}`}
+                    </span>
+                    {retrasado && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 shrink-0">Retrasado</span>
+                    )}
+                    <div className="hidden md:flex items-center gap-1.5 shrink-0 w-24">
+                      <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#16a34a" : TEAL }} />
+                      </div>
+                      <span className="text-[10px] font-semibold shrink-0" style={{ color: pct === 100 ? "#16a34a" : TEAL }}>{pct}%</span>
+                    </div>
+                    <button onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavPP(item.id) }}
+                      className="p-1 rounded cursor-pointer transition-colors shrink-0"
+                      title={favPP.has(item.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      style={{ color: favPP.has(item.id) ? "#f59e0b" : "#e5e7eb" }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill={favPP.has(item.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </button>
+                  </Link>
+                )
+              }
               return (
                 <Link
                   key={item.id}

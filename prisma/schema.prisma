@@ -216,6 +216,7 @@ model Usuario {
   recordatorios             Recordatorio[]
   recordatoriosAsignados    Recordatorio[]  @relation("RecordatoriosAsignados")
   favoritos         Favorito[]
+  filtrosGuardados  FiltroGuardado[]
   llamadas          RegistroLlamada[]
   tareasAsignadas       Tarea[]          @relation("TareasAsignadas")
   incidenciasReportadas Incidencia[]        @relation("IncidenciasReportadas")
@@ -825,6 +826,21 @@ model Favorito {
   @@unique([usuarioId, entidadId, tipo])
   @@index([usuarioId])
   @@map("favoritos")
+}
+
+model FiltroGuardado {
+  id        String   @id @default(cuid())
+  usuarioId String   @map("usuario_id")
+  entidad   String
+  nombre    String
+  filtros   Json
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, entidad, nombre])
+  @@index([usuarioId, entidad])
+  @@map("filtros_guardados")
 }
 
 // --- REGISTRO DE LLAMADAS ------------------------------------------------

@@ -125,6 +125,12 @@ export const ComentarioCreate = z.object({
   foto: z.string().max(2_000_000).optional(),
 })
 
+export const FiltroGuardadoCreate = z.object({
+  entidad: z.enum(["incidencias", "proyectos", "visitas", "hospitales"]),
+  nombre: z.string().min(1).max(100),
+  filtros: z.record(z.string(), z.string()),
+})
+
 export const TagCreate = z.object({
   nombre: z.string().min(1).max(100),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),

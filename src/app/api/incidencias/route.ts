@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, codigo: true, titulo: true, tipo: true, categoria: true,
           prioridad: true, estado: true, equipoResponsable: true, slaHoras: true,
+          slaPausadoMs: true, slaPausadoEn: true,
           creadoEn: true, actualizadoEn: true, fechaResolucion: true, fechaCierre: true,
           hospital: { select: { id: true, nombre: true, ciudad: true } },
           contacto: { select: { id: true, nombre: true, cargo: true } },
@@ -186,12 +187,46 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Deteccion de recurrencia: mismo hospital+categoria+equipo, resuelta/cerrada en los ultimos 30 dias
+    let recurrencia: { id: string; codigo: string; titulo: string } | null = null
+    try {
+      const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      const previa = await db.incidencia.findFirst({
+        where: {
+          id: { not: incidencia.id },
+          hospitalId,
+          categoria: rest.categoria,
+          equipoResponsable: rest.equipoResponsable,
+          estado: { in: ["RESUELTA", "CERRADA"] },
+          creadoEn: { gte: hace30dias },
+        },
+        select: { id: true, codigo: true, titulo: true },
+        orderBy: { creadoEn: "desc" },
+      })
+      if (previa) {
+        await db.incidenciaRelacion.create({
+          data: { tipo: "RELACIONADA", incidenciaId: incidencia.id, relacionadaId: previa.id, creadoPorId: session.user.id },
+        })
+        await db.eventoIncidencia.create({
+          data: {
+            incidenciaId: incidencia.id,
+            autorId: session.user.id,
+            tipo: "NOTA",
+            descripcion: `Posible recurrencia detectada automáticamente — vinculada a ${previa.codigo} (mismo hospital, categoría y equipo, resuelta en los últimos 30 días)`,
+          },
+        })
+        recurrencia = previa
+      }
+    } catch (e) {
+      console.error("[POST /api/incidencias] deteccion recurrencia", e)
+    }
+
     await logActividad(
       session.user.id, "CREAR", "INCIDENCIA", incidencia.id,
       `Incidencia ${codigo}: ${rest.titulo} — ${hospital.nombre}`,
     ).catch(() => {})
 
-    return NextResponse.json(incidencia, { status: 201 })
+    return NextResponse.json({ ...incidencia, recurrencia }, { status: 201 })
   } catch (err) {
     console.error("[POST /api/incidencias]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })

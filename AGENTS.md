@@ -9,7 +9,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-07-09 (Sprint 20 — auditoria de seguridad/logica/UX, ver `AUDITORIA-SPRINT20.md`).
+> Ultima actualizacion: 2026-07-10 (Sprint 21 — backlog: filtros guardados, agenda, calendario SLA, recurrencia/escalado incidencias).
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -185,6 +185,7 @@ Comentario       (texto, autor, mencionIds:JSON — vinculado a visita o proyect
 Tag              (nombre, color, tipo: VISITA|PROYECTO), VisitaTag, ProyectoTag
 Recordatorio     (titulo, descripcion?, fecha, completado, usuario)
 Favorito         (usuarioId, entidadId, tipo: TipoFavorito, @@unique)
+FiltroGuardado   (usuarioId, entidad: string, nombre, filtros: JSON, @@unique[usuarioId+entidad+nombre]) @@map("filtros_guardados")
 RegistroLlamada  (hospital, contacto?, usuario, duracion, asunto, resultado, seguimiento)
 Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA, hospital, HW unidad, coasignadosIds JSON [{id,nombre}], slaPausadoEn DateTime?, slaPausadoMs Int, fechaResolucion DateTime?, fechaCierre DateTime?)
 EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, fotos JSON?, editadoPor?, editadoEn?, incidencia, autor)
@@ -271,6 +272,8 @@ Oportunidad      (DESACTIVADO)
 **Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin protegidos en middleware Edge. /share/ exento (publico por diseno).
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones (rate-limit con fallback in-memory automatico si Redis no esta configurado). @dnd-kit, ComentariosPanel, QRCode = dynamic imports (no en bundle inicial).
 **Sprint 20 — auditoria y hardening (completo):** 3 auditorias paralelas (seguridad API, logica de negocio/Prisma, UX/consistencia) sobre todo el codebase, 16 hallazgos, todos corregidos. IDOR de zona en score de hospitales y relaciones de incidencias, limite de tamano en fotos de eventos, rate-limit en `oportunidades`, Zod en `recordatorios`, fecha UTC en `incidencias/stats`, `DELETE usuario` con actividad (409 en vez de 500), transacciones en `aplicar-plantilla` y en relaciones/pausas SLA de incidencias (evita race conditions y lost updates), `confirm()` en 4 acciones de borrado de proyectos que no lo tenian, colores de marca hardcodeados consolidados en `brand.ts` (11 `error.tsx`, `TabResumen.tsx`, `admin/zonas`), mapeo tipo→color unificado (`TIPO_RESULTADO_COLOR`). Rate limiting migrado a Redis real (`checkRateLimit`/`checkRateLimitByKey` async, ~150 call-sites actualizados, fallback in-memory si Redis no esta configurado). `PageHeader` unificado en 12 paginas adicionales (ampliado con `icon`/`iconColor` opcionales); excepciones deliberadas documentadas (mapa, incidencias/stats, perfil, paginas de detalle, pipeline CRM desactivado). `onDelete: Restrict` explicito en `Incidencia.hospital`/`RegistroLlamada.hospital`. Detalle completo en `AUDITORIA-SPRINT20.md`.
+**Sprint 21 — backlog completo:** modo compacto en lista de proyectos (toggle localStorage `proyectos_compacto`, fila slim vs. card). Copiar fases/tareas/hitos entre proyectos (`POST /api/proyectos/[id]/copiar-desde`, transaccion, preserva timeline relativo de hitos, modal con buscador). Filtros guardados DB-backed (modelo `FiltroGuardado`, `@@unique([usuarioId, entidad, nombre])`, CRUD en `/api/filtros-guardados`, UI en `/incidencias`). Agenda semanal `/agenda` (vista Lun-Vie, `GET /api/agenda?desde=&hasta=` agrega visitas+tareas+recordatorios del usuario, navegacion por semana). Calendario de incidencias `/incidencias/calendario` (clona el patron de `visitas/calendario`, dots por peor estado SLA del dia: VENCIDO/EN_RIESGO/OK/RESUELTA). Notificacion automatica de cambio de estado (bloque nuevo en `/api/notificaciones` leyendo `EventoIncidencia` tipo `CAMBIO_ESTADO`, sin modelo nuevo). Recurrencia automatica (al crear incidencia, busca resuelta/cerrada mismo hospital+categoria+equipo en 30 dias, auto-vincula `IncidenciaRelacion` tipo `RELACIONADA` + evento + toast). Escalado automatico (`GET /api/cron/escalar-incidencias`, protegido por `CRON_SECRET`, marca evento `ESCALADO` en CRITICAs sin asignar >4h, idempotente; la notificacion a ADMIN se sirve del mismo bloque de `/api/notificaciones`). **Pendiente de configuracion manual**: `CRON_SECRET` en Railway + un cron externo (Railway no tiene cron nativo) que llame a `/api/cron/escalar-incidencias` cada 15-30 min.
+Fix colateral: `GET /api/incidencias` no seleccionaba `slaPausadoMs`/`slaPausadoEn`, por lo que `SlaAlertasWidget` calculaba mal el SLA de incidencias pausadas — corregido (necesario para el calendario SLA).
 
 ---
 
@@ -309,19 +312,19 @@ Oportunidad      (DESACTIVADO)
 - [x] WOW visual — IMPLEMENTADO (Sprint 19): confetti, score ring, stagger, SLA widget, barras animadas
 - [ ] Briefing matutino automatico (email + tarjeta dashboard "Tu dia") — BLOQUEADO (requiere Resend)
 - [ ] Resumen semanal ADMIN (email lunes con KPIs, tendencias, top performer) — BLOQUEADO (requiere Resend)
-- [ ] Modo compacto toggle en lista proyectos
+- [x] Modo compacto toggle en lista proyectos — IMPLEMENTADO (Sprint 21)
 - [ ] Geolocation check-in (auto-detectar hospital cercano)
-- [ ] Filtros guardados (guardar sets de filtros con nombre)
-- [ ] Agenda semanal /agenda (vista 5 dias — visitas + tareas + recordatorios)
-- [ ] Copiar fases/tareas entre proyectos
-- [ ] Calendario SLAs /incidencias/calendario (vista mensual, dots por SLA estado)
+- [x] Filtros guardados (guardar sets de filtros con nombre) — IMPLEMENTADO (Sprint 21, en /incidencias)
+- [x] Agenda semanal /agenda (vista 5 dias — visitas + tareas + recordatorios) — IMPLEMENTADO (Sprint 21)
+- [x] Copiar fases/tareas entre proyectos — IMPLEMENTADO (Sprint 21)
+- [x] Calendario SLAs /incidencias/calendario (vista mensual, dots por SLA estado) — IMPLEMENTADO (Sprint 21)
 
 ### Backlog — Incidencias (modulo aparte)
 - [x] Vinculacion entre incidencias (DUPLICADA, RELACIONADA, CAUSA_RAIZ) — IMPLEMENTADO (Sprint 19)
 - [x] Metricas rendimiento por tecnico — IMPLEMENTADO (Sprint 19, /incidencias/stats)
-- [ ] Notificacion automatica al cambiar estado (al reportador y al asignado)
-- [ ] Recurrencia / reapertura automatica (detectar patron hospital+equipo+categoria)
-- [ ] Escalado con reglas automaticas (CRITICA >4h sin asignar → auto-escalar + notificar ADMIN)
+- [x] Notificacion automatica al cambiar estado (al reportador y al asignado) — IMPLEMENTADO (Sprint 21, computado en /api/notificaciones desde EventoIncidencia CAMBIO_ESTADO)
+- [x] Recurrencia / reapertura automatica (detectar patron hospital+equipo+categoria) — IMPLEMENTADO (Sprint 21, auto-vincula via IncidenciaRelacion al crear)
+- [x] Escalado con reglas automaticas (CRITICA >4h sin asignar → auto-escalar + notificar ADMIN) — IMPLEMENTADO (Sprint 21, `/api/cron/escalar-incidencias` — requiere configurar CRON_SECRET + un cron externo que lo llame, Railway no tiene cron nativo)
 
 ### Backlog — Infraestructura (no priorizado)
 - [ ] Notificaciones por email (Resend o similar)

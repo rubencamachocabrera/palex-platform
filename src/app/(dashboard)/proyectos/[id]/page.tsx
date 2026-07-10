@@ -53,6 +53,12 @@ export default function ProyectoDetalle() {
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<string | null>(null)
   const [aplicandoPlantilla, setAplicandoPlantilla] = useState(false)
 
+  const [showCopiarModal, setShowCopiarModal] = useState(false)
+  const [copiarBusqueda, setCopiarBusqueda] = useState("")
+  const [copiarResultados, setCopiarResultados] = useState<{ id: string; titulo: string; hospital: { nombre: string } }[]>([])
+  const [copiarSeleccionado, setCopiarSeleccionado] = useState<string | null>(null)
+  const [copiando, setCopiando] = useState(false)
+
   function abrirNuevaVisitaModal() {
     if (!pp) return
     const hoy = new Date().toISOString().split("T")[0]
@@ -110,6 +116,38 @@ export default function ProyectoDetalle() {
       toastError("Error al aplicar la plantilla")
     } finally {
       setAplicandoPlantilla(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!showCopiarModal || copiarBusqueda.trim().length < 2) { setCopiarResultados([]); return }
+    const t = setTimeout(() => {
+      fetch(`/api/proyectos?q=${encodeURIComponent(copiarBusqueda.trim())}&limit=10`)
+        .then(r => r.ok ? r.json() : [])
+        .then(d => setCopiarResultados(Array.isArray(d) ? d.filter((p: { id: string }) => p.id !== params.id) : []))
+        .catch(() => {})
+    }, 300)
+    return () => clearTimeout(t)
+  }, [copiarBusqueda, showCopiarModal, params.id])
+
+  async function copiarDesdeOtroProyecto() {
+    if (!copiarSeleccionado || !pp) return
+    setCopiando(true)
+    try {
+      const r = await fetch(`/api/proyectos/${pp.id}/copiar-desde`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proyectoOrigenId: copiarSeleccionado }),
+      })
+      if (!r.ok) { const d = await r.json().catch(() => null); throw new Error(d?.error) }
+      const { fases, tareas, hitos } = await r.json()
+      success(`Copiado: ${fases} fases, ${tareas} tareas y ${hitos} hitos`)
+      setShowCopiarModal(false)
+      setCopiarSeleccionado(null)
+      await cargar()
+    } catch (e: unknown) {
+      toastError(e instanceof Error && e.message ? e.message : "Error al copiar el proyecto")
+    } finally {
+      setCopiando(false)
     }
   }
 
@@ -240,10 +278,19 @@ export default function ProyectoDetalle() {
             </svg>
             Presentar
           </Link>
+          <button
+            onClick={() => { setShowCopiarModal(true); setCopiarSeleccionado(null); setCopiarBusqueda(""); setCopiarResultados([]) }}
+            className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors ${pp.fases.length > 0 ? "ml-auto" : ""}`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copiar de otro proyecto
+          </button>
           {pp.fases.length === 0 && (
             <button
               onClick={() => { setShowPlantillaModal(true); setPlantillaSeleccionada(null) }}
-              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border-2 border-dashed hover:opacity-80 transition-opacity ml-auto"
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border-2 border-dashed hover:opacity-80 transition-opacity"
               style={{ borderColor: TEAL, color: TEAL }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -406,6 +453,63 @@ export default function ProyectoDetalle() {
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 cursor-pointer hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: TEAL }}>
                 {aplicandoPlantilla ? "Aplicando…" : "Aplicar plantilla"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Copiar desde otro proyecto ── */}
+      {showCopiarModal && pp && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+          onClick={e => { if (e.target === e.currentTarget) setShowCopiarModal(false) }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Copiar de otro proyecto</p>
+                <p className="text-xs text-gray-400 mt-0.5">Busca el proyecto origen — se añadirán sus fases, tareas e hitos a este</p>
+              </div>
+              <button onClick={() => setShowCopiarModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <input
+                value={copiarBusqueda}
+                onChange={e => { setCopiarBusqueda(e.target.value); setCopiarSeleccionado(null) }}
+                placeholder="Buscar proyecto por título..."
+                autoFocus
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+              />
+              {copiarResultados.length > 0 && (
+                <div className="max-h-56 overflow-y-auto space-y-1.5">
+                  {copiarResultados.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setCopiarSeleccionado(p.id)}
+                      className="w-full text-left p-3 rounded-xl border-2 transition-all cursor-pointer"
+                      style={{
+                        borderColor: copiarSeleccionado === p.id ? TEAL : "#e5e7eb",
+                        backgroundColor: copiarSeleccionado === p.id ? `${TEAL}08` : "transparent",
+                      }}
+                    >
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.titulo}</p>
+                      <p className="text-xs text-gray-400 truncate">{p.hospital.nombre}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {copiarBusqueda.trim().length >= 2 && copiarResultados.length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-2">Sin resultados</p>
+              )}
+            </div>
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-gray-800">
+              <button onClick={() => setShowCopiarModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">Cancelar</button>
+              <button onClick={copiarDesdeOtroProyecto} disabled={!copiarSeleccionado || copiando}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: TEAL }}>
+                {copiando ? "Copiando…" : "Copiar"}
               </button>
             </div>
           </div>

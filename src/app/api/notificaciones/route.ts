@@ -21,7 +21,9 @@ export async function GET(_req: NextRequest) {
     const hace30dias = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, recordatoriosAsignadosNuevos, hwGarantiaVencida, hwMantenimientoVencido] = await Promise.all([
+    const hace4h = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+
+    const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, recordatoriosAsignadosNuevos, hwGarantiaVencida, hwMantenimientoVencido, incidenciasCambioEstado, incidenciasCriticasSinAsignar] = await Promise.all([
       db.oportunidad.findMany({
         where: {
           ...(rol === "ADMIN" ? {} : { usuarioId: userId }),
@@ -160,6 +162,35 @@ export async function GET(_req: NextRequest) {
             take: 5,
           })
         : Promise.resolve([]),
+      // Incidencias: cambio de estado reciente, dirigido a reportador o asignado (no al autor del cambio)
+      db.eventoIncidencia.findMany({
+        where: {
+          tipo: "CAMBIO_ESTADO",
+          autorId: { not: userId },
+          creadoEn: { gte: hace24h },
+          incidencia: { OR: [{ reportadoPorId: userId }, { asignadoAId: userId }] },
+        },
+        select: {
+          id: true, descripcion: true, creadoEn: true,
+          incidencia: { select: { id: true, codigo: true, titulo: true } },
+        },
+        orderBy: { creadoEn: "desc" },
+        take: 10,
+      }),
+      // Incidencias: CRITICA sin asignar >4h (ADMIN only) — alimenta el escalado automatico
+      rol === "ADMIN"
+        ? db.incidencia.findMany({
+            where: {
+              prioridad: "CRITICA",
+              asignadoAId: null,
+              estado: { notIn: ["RESUELTA", "CERRADA"] },
+              creadoEn: { lt: hace4h },
+            },
+            select: { id: true, codigo: true, titulo: true, creadoEn: true, hospital: { select: { nombre: true } } },
+            orderBy: { creadoEn: "asc" },
+            take: 10,
+          })
+        : Promise.resolve([]),
     ])
 
     const items = [
@@ -259,6 +290,23 @@ export async function GET(_req: NextRequest) {
           titulo: `${u.catalogo.marca} ${u.catalogo.modelo}`,
           href: "/hardware",
           mensaje: `Mantenimiento vencido hace ${dias} día${dias === 1 ? "" : "s"}${u.hospital ? ` · ${u.hospital.nombre}` : ""}`,
+        }
+      }),
+      ...incidenciasCambioEstado.map(e => ({
+        tipo: "incidencia_cambio_estado" as const,
+        id: e.id,
+        titulo: `${e.incidencia.codigo} · ${e.incidencia.titulo}`,
+        href: `/incidencias/${e.incidencia.id}`,
+        mensaje: e.descripcion,
+      })),
+      ...incidenciasCriticasSinAsignar.map(inc => {
+        const horas = Math.floor((now.getTime() - new Date(inc.creadoEn).getTime()) / 3_600_000)
+        return {
+          tipo: "incidencia_escalada" as const,
+          id: inc.id,
+          titulo: `${inc.codigo} · ${inc.titulo}`,
+          href: `/incidencias/${inc.id}`,
+          mensaje: `CRÍTICA sin asignar hace ${horas}h${inc.hospital ? ` · ${inc.hospital.nombre}` : ""}`,
         }
       }),
     ]
