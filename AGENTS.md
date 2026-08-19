@@ -1,7 +1,11 @@
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
-This version has breaking changes. Read `node_modules/next/dist/docs/` before writing any code.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
 <!-- END:nextjs-agent-rules -->
 
 ---
@@ -9,7 +13,7 @@ This version has breaking changes. Read `node_modules/next/dist/docs/` before wr
 # Plataforma de gestion de proyectos hospitalarios — Guia del Proyecto
 
 > Fuente de verdad para cada sesion de desarrollo.
-> Ultima actualizacion: 2026-07-10 (Sprint 21 — backlog: filtros guardados, agenda, calendario SLA, recurrencia/escalado incidencias).
+> Ultima actualizacion: 2026-08-20 (Sprint 22 — auditoria seguridad/arquitectura + diseno, fixes aplicados).
 > Historial de sprints completados: `AGENTS-ARCHIVE.md` (no importar como contexto).
 
 ---
@@ -275,6 +279,8 @@ Oportunidad      (DESACTIVADO)
 **Sprint 21 — backlog completo:** modo compacto en lista de proyectos (toggle localStorage `proyectos_compacto`, fila slim vs. card). Copiar fases/tareas/hitos entre proyectos (`POST /api/proyectos/[id]/copiar-desde`, transaccion, preserva timeline relativo de hitos, modal con buscador). Filtros guardados DB-backed (modelo `FiltroGuardado`, `@@unique([usuarioId, entidad, nombre])`, CRUD en `/api/filtros-guardados`, UI en `/incidencias`). Agenda semanal `/agenda` (vista Lun-Vie, `GET /api/agenda?desde=&hasta=` agrega visitas+tareas+recordatorios del usuario, navegacion por semana). Calendario de incidencias `/incidencias/calendario` (clona el patron de `visitas/calendario`, dots por peor estado SLA del dia: VENCIDO/EN_RIESGO/OK/RESUELTA). Notificacion automatica de cambio de estado (bloque nuevo en `/api/notificaciones` leyendo `EventoIncidencia` tipo `CAMBIO_ESTADO`, sin modelo nuevo). Recurrencia automatica (al crear incidencia, busca resuelta/cerrada mismo hospital+categoria+equipo en 30 dias, auto-vincula `IncidenciaRelacion` tipo `RELACIONADA` + evento + toast). Escalado automatico (`GET /api/cron/escalar-incidencias`, protegido por `CRON_SECRET`, marca evento `ESCALADO` en CRITICAs sin asignar >4h, idempotente; la notificacion a ADMIN se sirve del mismo bloque de `/api/notificaciones`). **Pendiente de configuracion manual**: `CRON_SECRET` en Railway + un cron externo (Railway no tiene cron nativo) que llame a `/api/cron/escalar-incidencias` cada 15-30 min.
 Fix colateral: `GET /api/incidencias` no seleccionaba `slaPausadoMs`/`slaPausadoEn`, por lo que `SlaAlertasWidget` calculaba mal el SLA de incidencias pausadas — corregido (necesario para el calendario SLA).
 
+**Sprint 22 — auditoria seguridad/arquitectura + diseno (completo):** 2 auditorias paralelas (seguridad/arquitectura/ciberseguridad, y diseno UI/UX con skill `ui-ux-pro-max`) sobre todo el codebase, fixes aplicados en el mismo dia. Seguridad: IP spoofing corregido en `rate-limit.ts`/`auth.ts` (se tomaba el primer valor de `X-Forwarded-For`, falsificable — ahora se toma el ultimo, mas rate-limit de login por email independiente de la IP); Next.js `16.2.6 → 16.3.1` (resuelve CVE altos/criticos de Server Functions/SSRF); `crypto.timingSafeEqual` en el secreto de `cron/escalar-incidencias`; limites en `FiltroGuardado.filtros`; transaccion Serializable + Zod en `/api/checkin`; validacion de enum `estado` antes de PATCH/POST en `proyectos/[id]`, `visitas/[id]` y `hardware/unidades` (antes devolvian 500 generico en vez de 400 en input invalido). `/api/log-actividad` sin filtro de zona para no-ADMIN — dejado sin tocar a proposito (requeriria rehacer el conteo/paginacion con joins distintos por tipo de entidad, no es un fix mecanico). `PATCH /api/hardware/unidades/[id]` sin ningun check de zona/rol mas alla de autenticado — no se toco (podria ser diseno intencional de inventario compartido cross-zona; decision de negocio pendiente). Diseno: clase `.card` reutilizable (`--radius-card`+`--el-1`) aplicada a KPI cards/hospitales/proyectos, tipografia de `PageHeader` refinada, hex hardcodeados corregidos (login, PageHeader), gradiente+glow en `Sidebar`, pills de formulario de visita de relleno solido a `bg-teal-50`+borde, `STATUS_COLORS` centralizado en `brand.ts` para incidencias. Verificado visualmente en navegador (login, dashboard, hospitales, incidencias, proyectos, pills de visita, dark mode) sin regresiones. **Deliberadamente NO abordado** por alto riesgo/alcance — requieren esfuerzo dedicado aparte: unificar el doble sistema de dark mode (overrides globales `.dark .bg-white` vs. clases `dark:` locales), y trocear `visitas/[id]/page.tsx` (2177 lineas, sin code-split a diferencia de `proyectos/[id]`, formulario de 13 secciones con offline/autosave/firma/fotos/presencia — alto riesgo de regresion sin testing dedicado).
+
 ---
 
 ## 8. Deuda tecnica activa
@@ -283,6 +289,11 @@ Fix colateral: `GET /api/incidencias` no seleccionaba `slaPausadoMs`/`slaPausado
 |-----------|-------|-----------|
 | ALTA | `/datos` es 100% mockup — sin APIs reales | datos/page.tsx |
 | ALTA | Object storage: fotos/adjuntos en base64 en DB — necesario antes de 20 usuarios | Bloqueado (requiere R2/S3) |
+| MEDIA | `visitas/[id]/page.tsx` sin code-split (2177 lineas, monolito) — a diferencia de `proyectos/[id]` | visitas/[id]/page.tsx |
+| MEDIA | Doble sistema de dark mode (overrides globales vs. clases `dark:` locales) — doble mantenimiento | globals.css, componentes varios |
+| BAJA | `/api/log-actividad` no filtra por zona para no-ADMIN — decision de diseno sin documentar explicitamente | api/log-actividad/route.ts |
+| BAJA | `PATCH /api/hardware/unidades/[id]` sin check de zona/rol — puede ser intencional (inventario compartido) | api/hardware/unidades/[id]/route.ts |
+| BAJA | `xlsx` con CVE sin fix upstream — riesgo bajo (solo generacion, no parseo de ficheros subidos) | package.json |
 
 ---
 
@@ -295,7 +306,7 @@ Fix colateral: `GET /api/incidencias` no seleccionaba `slaPausadoMs`/`slaPausado
 ### Activo (pendiente tecnico menor)
 - [x] ComentariosPanel dynamic import — IMPLEMENTADO (Sprint 19, TabInfo)
 - [x] QRCode dynamic import — IMPLEMENTADO (Sprint 19, TabResumen)
-- [ ] SignaturePad dynamic import — pendiente (bajo impacto)
+- [x] SignaturePad dynamic import — ya IMPLEMENTADO (verificado en auditoria de hoy, visitas/[id]/page.tsx:19)
 - [ ] bodyParser size limits — no aplica en Next.js 16.x a nivel config; pendiente revisar alternativa por ruta
 
 ### Backlog — Features nuevas (priorizadas por impacto/esfuerzo)
