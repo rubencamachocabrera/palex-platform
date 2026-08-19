@@ -128,7 +128,13 @@ export const ComentarioCreate = z.object({
 export const FiltroGuardadoCreate = z.object({
   entidad: z.enum(["incidencias", "proyectos", "visitas", "hospitales"]),
   nombre: z.string().min(1).max(100),
-  filtros: z.record(z.string(), z.string()),
+  filtros: z.record(z.string(), z.string().max(500))
+    .refine(o => Object.keys(o).length <= 30, { message: "Demasiados filtros" }),
+})
+
+export const CheckinCreate = z.object({
+  hospitalId: id,
+  notas: z.string().max(2000).optional().nullable(),
 })
 
 export const TagCreate = z.object({

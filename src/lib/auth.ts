@@ -4,7 +4,7 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { authConfig } from "@/lib/auth.config"
-import { checkRateLimitByKey } from "@/lib/rate-limit"
+import { checkRateLimitByKey, getClientIp } from "@/lib/rate-limit"
 
 // Cache de usuario activo — evita query DB en cada request (TTL 5 min)
 const ACTIVE_CHECK_MS = 5 * 60 * 1000
@@ -62,17 +62,20 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials, request) {
-        const ip =
-          (request instanceof Request
-            ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-              request.headers.get("x-real-ip")
-            : null) ?? "unknown"
+        const ip = request instanceof Request ? getClientIp(request) : "unknown"
 
         if (await checkRateLimitByKey(`login:${ip}`, { limit: 5, windowMs: 60_000 })) {
           return null
         }
 
         if (!credentials?.email || !credentials?.password) return null
+
+        const email = (credentials.email as string).toLowerCase()
+
+        // Limite por email ademas del limite por IP: rotar de IP no basta para saltarse el freno.
+        if (await checkRateLimitByKey(`login-email:${email}`, { limit: 5, windowMs: 60_000 })) {
+          return null
+        }
 
         const usuario = await db.usuario.findUnique({
           where: { email: credentials.email as string },

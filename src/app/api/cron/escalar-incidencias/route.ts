@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createHash, timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+
+function secretsMatch(recibido: string, esperado: string): boolean {
+  const a = createHash("sha256").update(recibido).digest()
+  const b = createHash("sha256").update(esperado).digest()
+  return timingSafeEqual(a, b)
+}
 
 // GET /api/cron/escalar-incidencias — pensado para ser golpeado por un cron externo
 // (Railway no tiene cron nativo). Configurar CRON_SECRET y llamar cada 15-30 min con
@@ -15,7 +22,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "CRON_SECRET no configurado" }, { status: 503 })
     }
     const secretRecibido = req.headers.get("x-cron-secret") ?? req.nextUrl.searchParams.get("secret")
-    if (secretRecibido !== secretEsperado) {
+    if (!secretRecibido || !secretsMatch(secretRecibido, secretEsperado)) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 

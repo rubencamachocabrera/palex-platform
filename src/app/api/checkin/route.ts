@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { CheckinCreate, parseBody } from "@/lib/schemas"
 
 // GET /api/checkin?hospitalId=&activo=true — checkins del usuario actual
 export async function GET(req: NextRequest) {
@@ -46,22 +47,27 @@ export async function POST(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const usuarioId = (session.user as { id: string }).id
-    const { hospitalId, notas } = await req.json()
-    if (!hospitalId) return NextResponse.json({ error: "hospitalId requerido" }, { status: 400 })
+    const parsed = parseBody(CheckinCreate, await req.json())
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const { hospitalId, notas } = parsed.data
 
-    // Si ya hay un check-in activo en este hospital, devolverlo
-    const activo = await db.checkinHospital.findFirst({
-      where: { usuarioId, hospitalId, salidaEn: null },
-    })
-    if (activo) return NextResponse.json(activo, { status: 200 })
+    // Transaccion serializable: evita crear check-ins duplicados por doble-tap o reintento offline
+    const { checkin, creado } = await db.$transaction(async (tx) => {
+      const activo = await tx.checkinHospital.findFirst({
+        where: { usuarioId, hospitalId, salidaEn: null },
+      })
+      if (activo) return { checkin: activo, creado: false }
 
-    const checkin = await db.checkinHospital.create({
-      data: { usuarioId, hospitalId, notas: notas || null },
-      include: {
-        hospital: { select: { id: true, nombre: true, ciudad: true } },
-      },
-    })
-    return NextResponse.json(checkin, { status: 201 })
+      const nuevo = await tx.checkinHospital.create({
+        data: { usuarioId, hospitalId, notas: notas || null },
+        include: {
+          hospital: { select: { id: true, nombre: true, ciudad: true } },
+        },
+      })
+      return { checkin: nuevo, creado: true }
+    }, { isolationLevel: "Serializable" })
+
+    return NextResponse.json(checkin, { status: creado ? 201 : 200 })
   } catch (err) {
     console.error("[POST checkin]", err)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

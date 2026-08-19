@@ -48,6 +48,20 @@ interface RateLimitOptions {
   windowMs?: number
 }
 
+/**
+ * Extrae la IP del cliente desde X-Forwarded-For tomando el ULTIMO valor de la cadena
+ * (el que anade el proxy de confianza de Railway), no el primero (que el cliente controla
+ * libremente y puede falsificar para saltarse el rate-limit).
+ */
+export function getClientIp(req: { headers: Headers }): string {
+  const xff = req.headers.get("x-forwarded-for")
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]
+  }
+  return req.headers.get("x-real-ip") ?? "unknown"
+}
+
 /** Rate limit por clave arbitraria (ej. login por IP). Usa Redis si esta configurado, memoria si no. */
 export async function checkRateLimitByKey(
   key: string,
@@ -64,10 +78,7 @@ export async function checkRateLimit(
   options: RateLimitOptions = {}
 ): Promise<NextResponse | null> {
   const { limit = 60, windowMs = 60_000 } = options
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
+  const ip = getClientIp(req)
   const key = ip + ":" + route
   const exceeded = await redisIncrement(key, limit, windowMs)
   if (!exceeded) return null
