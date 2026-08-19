@@ -52,12 +52,15 @@ export async function POST(req: Request) {
   if (!session?.user || (rol !== "ADMIN" && rol !== "PROYECTOS")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   try {
     const body = await req.json()
+    const ESTADOS_VALIDOS = ["DISPONIBLE", "ASIGNADO", "EN_MANTENIMIENTO", "RETIRADO", "BAJA"]
 
     // Bulk creation: array of units
     if (Array.isArray(body)) {
       if (body.length === 0) return NextResponse.json([], { status: 201 })
       if (!body.every((u) => u.catalogoId))
         return NextResponse.json({ error: "catalogoId requerido en todas las unidades" }, { status: 400 })
+      if (!body.every((u) => u.estado === undefined || ESTADOS_VALIDOS.includes(u.estado)))
+        return NextResponse.json({ error: "estado invalido en alguna unidad" }, { status: 400 })
       const unidades = await Promise.all(
         body.map((item) =>
           db.hardwareUnidad.create({
@@ -80,6 +83,8 @@ export async function POST(req: Request) {
 
     // Single creation
     if (!body.catalogoId) return NextResponse.json({ error: "catalogoId requerido" }, { status: 400 })
+    if (body.estado !== undefined && !ESTADOS_VALIDOS.includes(body.estado))
+      return NextResponse.json({ error: `estado invalido: ${body.estado}` }, { status: 400 })
     const unidad = await db.hardwareUnidad.create({
       data: {
         catalogoId: body.catalogoId,

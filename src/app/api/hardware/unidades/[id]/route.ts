@@ -11,6 +11,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
   try {
     const body = await req.json()
+    const ESTADOS_VALIDOS = ["DISPONIBLE", "ASIGNADO", "EN_MANTENIMIENTO", "RETIRADO", "BAJA"]
+    if ("estado" in body && !ESTADOS_VALIDOS.includes(body.estado)) {
+      return NextResponse.json({ error: `estado invalido: ${body.estado}` }, { status: 400 })
+    }
     const data: Record<string, unknown> = {}
     if ("numSerie" in body) data.numSerie = body.numSerie || null
     if ("estado" in body) data.estado = body.estado

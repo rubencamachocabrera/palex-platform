@@ -88,6 +88,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json()
     const allowed = ["titulo", "descripcion", "estado", "prioridad", "presupuesto",
                      "fechaInicio", "fechaFinPlan", "fechaFinReal", "notas", "refContrato", "refConcurso", "responsableId", "mapaHtml"]
+    const ESTADOS_VALIDOS = ["NUEVO", "EN_CURSO", "PAUSADO", "COMPLETADO", "CANCELADO"]
+    if ("estado" in body && !ESTADOS_VALIDOS.includes(body.estado)) {
+      return NextResponse.json({ error: `estado invalido: ${body.estado}` }, { status: 400 })
+    }
     const data: Record<string, unknown> = {}
     for (const key of allowed) {
       if (key in body) {
@@ -96,6 +100,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         } else if (key === "presupuesto") {
           const n = parseFloat(body[key])
           data[key] = Number.isFinite(n) ? n : null
+        } else if (key === "prioridad") {
+          const n = parseInt(body[key], 10)
+          data[key] = Number.isFinite(n) ? n : undefined
         } else if (key === "titulo") {
           data[key] = String(body[key] ?? "").trim() || undefined
         } else {

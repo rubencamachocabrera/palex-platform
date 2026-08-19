@@ -64,6 +64,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!await canAccessVisita(session.user.id, session.user.role as string, visita))
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
+    const ESTADOS_VALIDOS = ["BORRADOR", "COMPLETADA", "ARCHIVADA"]
+    if (body.estado !== undefined && !ESTADOS_VALIDOS.includes(body.estado)) {
+      return NextResponse.json({ error: `estado invalido: ${body.estado}` }, { status: 400 })
+    }
+
     const datosParaScore = body.datos !== undefined
       ? (body.datos as Record<string, unknown>)
       : (visita.datos as Record<string, unknown> ?? {})
