@@ -305,9 +305,10 @@ function RadioPills({ field, value, onChange, onBlur, readOnly }: {
           <button key={o} type="button" disabled={readOnly}
             onClick={() => { if (!readOnly) { onChange(active ? "" : o); onBlur?.() } }}
             className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] disabled:cursor-default ${
-              active ? "text-white" : "bg-white text-gray-700 border-gray-200"
+              active
+                ? "bg-teal-50 dark:bg-teal-500/15 border-teal-300 dark:border-teal-500/40 text-teal-700 dark:text-teal-300"
+                : "bg-white text-gray-700 border-gray-200"
             }`}
-            style={active ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}
           >{o}</button>
         )
       })}
@@ -330,10 +331,11 @@ function CheckPills({ field, value, onChange, onBlur, readOnly }: {
             onClick={() => {
               if (!readOnly) { onChange(active ? arr.filter(x => x !== o) : [...arr, o]); onBlur?.() }
             }}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default ${
-              active ? "text-white" : "bg-white text-gray-700 border-gray-200"
+            className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] text-left disabled:cursor-default flex items-center gap-1.5 ${
+              active
+                ? "bg-teal-50 dark:bg-teal-500/15 border-teal-300 dark:border-teal-500/40 text-teal-700 dark:text-teal-300"
+                : "bg-white text-gray-700 border-gray-200"
             }`}
-            style={active ? { backgroundColor: TEAL, borderColor: TEAL } : undefined}
           >
             {active && <IconCheck size={13} className="shrink-0" />}
             {o}

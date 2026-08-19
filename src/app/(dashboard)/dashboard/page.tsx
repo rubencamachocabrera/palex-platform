@@ -86,7 +86,7 @@ function KpiCard({ label, value, sub, icon, trend }: {
   label: string; value: string | number; sub?: string; icon: React.ReactNode; trend?: number
 }) {
   return (
-    <div className="card-hover bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+    <div className="card card-hover p-5">
       <div className="flex items-start justify-between mb-3">
         <span className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">{icon}</span>
         {trend !== undefined && (

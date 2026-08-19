@@ -542,7 +542,7 @@ export default function ProyectosPage() {
                   <Link
                     key={item.id}
                     href={`/proyectos/${item.id}`}
-                    className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm px-4 py-2.5 card-hover group"
+                    className="card flex items-center gap-3 px-4 py-2.5 card-hover group"
                   >
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: estadoStyle.bg, color: estadoStyle.text }}>
                       {ESTADO_LABEL[ef]}
@@ -577,7 +577,7 @@ export default function ProyectosPage() {
                 <Link
                   key={item.id}
                   href={`/proyectos/${item.id}`}
-                  className="block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 card-hover group"
+                  className="card block p-5 card-hover group"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="flex-1 min-w-0">

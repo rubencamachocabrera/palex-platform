@@ -377,6 +377,8 @@ function NavLink({
         justifyContent: collapsed ? "center" : undefined,
         backgroundColor: bg,
         color,
+        boxShadow: active ? "inset 0 0 0 1px rgba(0,169,157,.25), 0 0 12px rgba(0,169,157,.12)" : "none",
+        transition: "background-color 150ms, color 150ms, box-shadow 150ms",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -476,7 +478,7 @@ function SidebarInner({
     <aside
       className="flex flex-col h-full"
       style={{
-        backgroundColor: BG,
+        background: `linear-gradient(165deg, ${BG} 0%, #17304c 100%)`,
         borderRight: `1px solid ${BD}`,
         width: collapsed ? 64 : 256,
         transition: "width 220ms cubic-bezier(.4,0,.2,1)",

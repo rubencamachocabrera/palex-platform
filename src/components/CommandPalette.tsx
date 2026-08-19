@@ -279,7 +279,7 @@ export function CommandPalette() {
 
       {/* Panel */}
       <div
-        className="fixed left-1/2 top-[15%] z-50 w-full max-w-xl -translate-x-1/2 rounded-2xl bg-white dark:bg-[#1e293b] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+        className="fixed left-1/2 top-[15%] z-50 w-full max-w-xl -translate-x-1/2 rounded-2xl bg-white dark:bg-[#1e293b] shadow-[var(--el-4)] border border-gray-100 dark:border-gray-700 overflow-hidden"
         role="dialog"
         aria-modal
         aria-label="Búsqueda global"

@@ -13,6 +13,7 @@
  */
 
 import Link from "next/link"
+import { TEAL } from "@/lib/brand"
 
 interface BreadcrumbItem {
   label: string
@@ -59,13 +60,13 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
           {icon && (
             <span
               className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
-              style={{ backgroundColor: iconColor ?? "#00A99D" }}
+              style={{ backgroundColor: iconColor ?? TEAL }}
             >
               {icon}
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight truncate">{title}</h1>
+            <h1 className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white truncate">{title}</h1>
             {subtitle && (
               <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
             )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
-import { TEAL, TEAL_LIGHT, ORANGE } from "@/lib/brand"
+import { TEAL, ORANGE, STATUS_COLORS } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton"
@@ -49,19 +49,19 @@ interface Hospital { id: string; nombre: string; ciudad: string }
 interface Usuario { id: string; nombre: string }
 
 const ESTADOS = [
-  { value: "ABIERTA", label: "Abierta", color: "#ef4444", bg: "#fef2f2" },
-  { value: "EN_PROGRESO", label: "En progreso", color: "#f59e0b", bg: "#fffbeb" },
-  { value: "PENDIENTE_CLIENTE", label: "Pend. cliente", color: "#8b5cf6", bg: "#f5f3ff" },
-  { value: "PENDIENTE_PROVEEDOR", label: "Pend. proveedor", color: "#6366f1", bg: "#eef2ff" },
-  { value: "RESUELTA", label: "Resuelta", color: "#10b981", bg: "#ecfdf5" },
-  { value: "CERRADA", label: "Cerrada", color: "#6b7280", bg: "#f3f4f6" },
+  { value: "ABIERTA", label: "Abierta", ...STATUS_COLORS.estado.ABIERTA },
+  { value: "EN_PROGRESO", label: "En progreso", ...STATUS_COLORS.estado.EN_PROGRESO },
+  { value: "PENDIENTE_CLIENTE", label: "Pend. cliente", ...STATUS_COLORS.estado.PENDIENTE_CLIENTE },
+  { value: "PENDIENTE_PROVEEDOR", label: "Pend. proveedor", ...STATUS_COLORS.estado.PENDIENTE_PROVEEDOR },
+  { value: "RESUELTA", label: "Resuelta", ...STATUS_COLORS.estado.RESUELTA },
+  { value: "CERRADA", label: "Cerrada", ...STATUS_COLORS.estado.CERRADA },
 ]
 
 const PRIORIDADES = [
-  { value: "CRITICA", label: "Crítica", color: "#dc2626", bg: "#fef2f2" },
-  { value: "ALTA", label: "Alta", color: "#f97316", bg: "#fff7ed" },
-  { value: "MEDIA", label: "Media", color: "#f59e0b", bg: "#fffbeb" },
-  { value: "BAJA", label: "Baja", color: TEAL, bg: TEAL_LIGHT },
+  { value: "CRITICA", label: "Crítica", ...STATUS_COLORS.prioridad.CRITICA },
+  { value: "ALTA", label: "Alta", ...STATUS_COLORS.prioridad.ALTA },
+  { value: "MEDIA", label: "Media", ...STATUS_COLORS.prioridad.MEDIA },
+  { value: "BAJA", label: "Baja", ...STATUS_COLORS.prioridad.BAJA },
 ]
 
 const CATEGORIAS: Record<string, string> = {

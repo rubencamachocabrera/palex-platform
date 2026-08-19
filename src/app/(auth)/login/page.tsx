@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { signIn } from "next-auth/react"
 import Image from "next/image"
-import { TEAL, ORANGE, ORANGE_DARK } from "@/lib/brand"
+import { TEAL, ORANGE, ORANGE_DARKER, ORANGE_DARKEST } from "@/lib/brand"
 
 export default function LoginPage() {
   const [error, setError]               = useState("")
@@ -76,7 +76,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 mb-3">
             <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: ORANGE }} />
             <span className="text-[10px] font-bold tracking-[0.28em] uppercase"
-              style={{ color: "#b45309" }}>
+              style={{ color: ORANGE_DARKER }}>
               Acceso privado
             </span>
           </div>
@@ -218,19 +218,19 @@ export default function LoginPage() {
               disabled={loading || redirecting}
               className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50"
               style={{
-                backgroundColor: "#b45309",
+                backgroundColor: ORANGE_DARKER,
                 color: "white",
                 boxShadow: `0 4px 18px ${ORANGE}45`,
               }}
               onMouseEnter={e => {
                 if (!loading && !redirecting) {
-                  e.currentTarget.style.backgroundColor = "#92400e"
+                  e.currentTarget.style.backgroundColor = ORANGE_DARKEST
                   e.currentTarget.style.boxShadow       = `0 6px 24px ${ORANGE}60`
                   e.currentTarget.style.transform        = "translateY(-1px)"
                 }
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = "#b45309"
+                e.currentTarget.style.backgroundColor = ORANGE_DARKER
                 e.currentTarget.style.boxShadow       = `0 4px 18px ${ORANGE}45`
                 e.currentTarget.style.transform        = "translateY(0)"
               }}>

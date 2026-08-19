@@ -344,7 +344,7 @@ export default function HospitalesPage() {
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{zona}</span>
                 <span className="text-xs text-gray-300">({lista.length})</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="card overflow-hidden">
                 <div className="divide-y divide-gray-100">
                   {lista.map(h => (
                     <div key={h.id} className="relative group">
@@ -438,7 +438,7 @@ export default function HospitalesPage() {
                   <div key={h.id} className="relative group">
                     <Link
                       href={`/hospitales/${h.id}`}
-                      className="card-hover block bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50"
+                      className="card card-hover block p-4 active:bg-gray-50"
                     >
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">

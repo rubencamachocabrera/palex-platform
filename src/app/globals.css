@@ -380,6 +380,18 @@ button:not([disabled]):active {
   border-color: rgba(0, 169, 157, 0.30) !important;
 }
 
+/* ─── Card surface (token radius + elevation-1) ──────────────────────────────── */
+.card {
+  border-radius: var(--radius-card);
+  box-shadow: var(--el-1);
+  background-color: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.dark .card {
+  background-color: #1e293b;
+  border-color: rgba(255,255,255,0.09);
+}
+
 /* ─── Kanban card ─────────────────────────────────────────────────────────── */
 .kanban-card {
   transition: box-shadow 200ms ease-out, border-color 180ms ease-out !important;
