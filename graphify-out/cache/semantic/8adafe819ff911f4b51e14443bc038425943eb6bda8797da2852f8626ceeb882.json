@@ -1,0 +1,1 @@
+{"nodes": [{"id": "search_route_get", "label": "GET /api/search", "file_type": "code", "source_file": "src/app/api/search/route.ts", "source_location": "6-79", "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

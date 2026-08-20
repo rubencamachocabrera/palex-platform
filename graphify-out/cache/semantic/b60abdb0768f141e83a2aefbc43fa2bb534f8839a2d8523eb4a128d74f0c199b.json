@@ -1,0 +1,1 @@
+{"nodes": [{"id": "calendario_ical_get", "label": "GET /api/calendario/ical", "file_type": "code", "source_file": "src/app/api/calendario/ical/route.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

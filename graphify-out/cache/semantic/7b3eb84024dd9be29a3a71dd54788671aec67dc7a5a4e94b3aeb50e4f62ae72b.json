@@ -1,0 +1,1 @@
+{"nodes": [{"id": "proyectos_id_comentarios_comentarioid_route_delete", "label": "DELETE /api/proyectos/[id]/comentarios/[comentarioId]", "file_type": "code", "source_file": "src/app/api/proyectos/[id]/comentarios/[comentarioId]/route.ts", "source_location": "6-23", "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
