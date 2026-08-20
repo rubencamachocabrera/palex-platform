@@ -71,7 +71,13 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     await db.usuario.delete({ where: { id } })
     return new NextResponse(null, { status: 204 })
   } catch (err) {
-    if ((err as { code?: string })?.code === "P2003") {
+    // Postgres distingue FK con ON DELETE RESTRICT explicito (23001) de un
+    // NO ACTION implicito (23503) — Prisma solo mapea el segundo a P2003,
+    // asi que hay que comprobar tambien el codigo crudo del driver adapter.
+    const cause = (err as { cause?: { code?: string } })?.cause
+    const pgCode = cause?.code
+    const isFkViolation = (err as { code?: string })?.code === "P2003" || pgCode === "23503" || pgCode === "23001"
+    if (isFkViolation) {
       return NextResponse.json(
         { error: "Este usuario tiene actividad registrada (visitas, llamadas, incidencias...) y no se puede eliminar. Desactivalo en su lugar." },
         { status: 409 }

@@ -88,18 +88,22 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
 
     const { id } = await params
 
-    const [visitas, oportunidades, proyectos] = await Promise.all([
+    const [visitas, oportunidades, proyectos, llamadas, incidencias] = await Promise.all([
       db.visita.count({ where: { hospitalId: id } }),
       db.oportunidad.count({ where: { hospitalId: id } }),
       db.proyecto.count({ where: { hospitalId: id } }),
+      db.registroLlamada.count({ where: { hospitalId: id } }),
+      db.incidencia.count({ where: { hospitalId: id } }),
     ])
 
-    const total = visitas + oportunidades + proyectos
+    const total = visitas + oportunidades + proyectos + llamadas + incidencias
     if (total > 0) {
       const partes: string[] = []
       if (visitas > 0) partes.push(`${visitas} visita${visitas !== 1 ? "s" : ""}`)
       if (oportunidades > 0) partes.push(`${oportunidades} oportunidad${oportunidades !== 1 ? "es" : ""}`)
       if (proyectos > 0) partes.push(`${proyectos} proyecto${proyectos !== 1 ? "s" : ""}`)
+      if (llamadas > 0) partes.push(`${llamadas} llamada${llamadas !== 1 ? "s" : ""}`)
+      if (incidencias > 0) partes.push(`${incidencias} incidencia${incidencias !== 1 ? "s" : ""}`)
       return NextResponse.json(
         { error: `No se puede eliminar: tiene ${partes.join(", ")} vinculados` },
         { status: 409 }
@@ -109,6 +113,17 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     await db.hospital.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (err) {
+    // Salvaguarda: cualquier relacion no contemplada arriba que tenga
+    // onDelete Restrict (explicito o implicito) devuelve 409 en vez de 500.
+    const cause = (err as { cause?: { code?: string } })?.cause
+    const pgCode = cause?.code
+    const isFkViolation = (err as { code?: string })?.code === "P2003" || pgCode === "23503" || pgCode === "23001"
+    if (isFkViolation) {
+      return NextResponse.json(
+        { error: "No se puede eliminar: tiene datos vinculados (llamadas, incidencias u otros registros)." },
+        { status: 409 }
+      )
+    }
     console.error("[DELETE]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
