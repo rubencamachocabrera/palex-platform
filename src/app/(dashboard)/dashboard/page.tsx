@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { AlertasPanel } from "@/components/AlertasPanel"
 import { SlaAlertasWidget } from "@/components/SlaAlertasWidget"
+import { GeolocationCheckin } from "@/components/GeolocationCheckin"
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador", COMPLETADA: "Completada", ARCHIVADA: "Archivada",
@@ -1134,6 +1135,8 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
       <PageHeader title={`Hola, ${nombre.split(" ")[0]}`} subtitle="Aqui esta tu resumen de hoy" />
 
       <QuickActionsField />
+
+      <GeolocationCheckin />
 
       <FavoritosSection userId={userId} />
 
