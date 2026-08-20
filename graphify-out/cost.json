@@ -12,6 +12,13 @@
       "output_tokens": 0,
       "files": 321,
       "note": "full rebuild after path reorg fix; token counts not captured from subagent usage (placeholder 0)"
+    },
+    {
+      "date": "2026-08-20T19:04:07.960163+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 18,
+      "note": "incremental update Sprint 23 (18 files), manual clean merge to avoid fuzzy-dedup data loss"
     }
   ],
   "total_input_tokens": 0,

@@ -240,9 +240,9 @@
     "semantic_hash": "0922c165843404c5e2fe6135dbf549f4"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\dashboard\\page.tsx": {
-    "mtime": 1787173642.7893538,
-    "ast_hash": "36ba65903e22f7706fee3f0fbfd0983a",
-    "semantic_hash": "36ba65903e22f7706fee3f0fbfd0983a"
+    "mtime": 1787235552.0124986,
+    "ast_hash": "b776d5ada7cb6ffc657d4d4e1bccadee",
+    "semantic_hash": "b776d5ada7cb6ffc657d4d4e1bccadee"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\datos\\_components\\Charts.tsx": {
     "mtime": 1780656362.7400987,
@@ -630,9 +630,9 @@
     "semantic_hash": "72c23bd0b243a45e2216e1692cac74b8"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\page.tsx": {
-    "mtime": 1787214912.7781203,
-    "ast_hash": "75e0c5929a0f4889ec2c00b6256bf7d5",
-    "semantic_hash": "75e0c5929a0f4889ec2c00b6256bf7d5"
+    "mtime": 1787251298.183915,
+    "ast_hash": "6e9c659c017ea74016e4d47881685455",
+    "semantic_hash": "6e9c659c017ea74016e4d47881685455"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\calendario\\error.tsx": {
     "mtime": 1779174550.8928733,
@@ -775,9 +775,9 @@
     "semantic_hash": "7ceb08995c8e0364b6f00c9afb3826b4"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\route.ts": {
-    "mtime": 1783626099.0172138,
-    "ast_hash": "cad55edeeae4d2c2884cd823af10048b",
-    "semantic_hash": "cad55edeeae4d2c2884cd823af10048b"
+    "mtime": 1787235261.059742,
+    "ast_hash": "a80202441258c8922726207ffbd3e4a9",
+    "semantic_hash": "a80202441258c8922726207ffbd3e4a9"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\[id]\\score\\route.ts": {
     "mtime": 1783626099.1388,
@@ -1065,9 +1065,9 @@
     "semantic_hash": "b05066bc11ce30df3dddb3433f7b0e64"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\api\\usuarios\\[id]\\route.ts": {
-    "mtime": 1783626105.2082584,
-    "ast_hash": "33e83d73c1efab52ce4d5c5b4d5536bc",
-    "semantic_hash": "33e83d73c1efab52ce4d5c5b4d5536bc"
+    "mtime": 1787235199.3414955,
+    "ast_hash": "2fcbb64694fa22d53791331cdebe52f5",
+    "semantic_hash": "2fcbb64694fa22d53791331cdebe52f5"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\api\\usuarios\\menciones\\route.ts": {
     "mtime": 1783626104.9691145,
@@ -1180,9 +1180,9 @@
     "semantic_hash": "c394dc59b47b23e2f97f9192260a8436"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\components\\MapaLeaflet.tsx": {
-    "mtime": 1782883918.5421345,
-    "ast_hash": "953cc7c48ecfc96956fd0351beaed351",
-    "semantic_hash": "953cc7c48ecfc96956fd0351beaed351"
+    "mtime": 1787235874.1769638,
+    "ast_hash": "4810274d32db5c501af282c1d1c64a33",
+    "semantic_hash": "4810274d32db5c501af282c1d1c64a33"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\components\\MentionInput.tsx": {
     "mtime": 1782903157.3954146,
@@ -1500,9 +1500,9 @@
     "semantic_hash": "2058c16c2335139ff2853654930a87c3"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\AGENTS.md": {
-    "mtime": 1787179757.6474943,
-    "ast_hash": "9d1e93303fca14d3e0493fd210883cd3",
-    "semantic_hash": "9d1e93303fca14d3e0493fd210883cd3"
+    "mtime": 1787251917.1148105,
+    "ast_hash": "b704a412cf9fba182aa6659a56a03587",
+    "semantic_hash": "b704a412cf9fba182aa6659a56a03587"
   },
   "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\AUDITORIA-SPRINT20.md": {
     "mtime": 1783626376.650884,
@@ -1603,5 +1603,65 @@
     "mtime": 1787214877.5270913,
     "ast_hash": "d1d252d9571124231b0ccfcbdc00a1f4",
     "semantic_hash": "d1d252d9571124231b0ccfcbdc00a1f4"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\CampoField.tsx": {
+    "mtime": 1787250991.3257818,
+    "ast_hash": "1288828a295eb0d372738762616f14f3",
+    "semantic_hash": "1288828a295eb0d372738762616f14f3"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\FotosSeccion.tsx": {
+    "mtime": 1787250956.4176188,
+    "ast_hash": "469f560ae5e66111decba950f7082066",
+    "semantic_hash": "469f560ae5e66111decba950f7082066"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\InlineFieldEditor.tsx": {
+    "mtime": 1787251038.1670547,
+    "ast_hash": "cab48697a78305f08594548882069173",
+    "semantic_hash": "cab48697a78305f08594548882069173"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\SaveIndicator.tsx": {
+    "mtime": 1787251001.038644,
+    "ast_hash": "7526cbe0f8af23c01f3b0f883d26db53",
+    "semantic_hash": "7526cbe0f8af23c01f3b0f883d26db53"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\SectionIcon.tsx": {
+    "mtime": 1787250939.0669904,
+    "ast_hash": "f6321ac3932ae8e99b4ebe7bf0b73376",
+    "semantic_hash": "f6321ac3932ae8e99b4ebe7bf0b73376"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\SectionNav.tsx": {
+    "mtime": 1787251016.5680296,
+    "ast_hash": "8a92f200e199c767d7ff27e4ead11524",
+    "semantic_hash": "8a92f200e199c767d7ff27e4ead11524"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\_components\\VistaResumen.tsx": {
+    "mtime": 1787251085.5801876,
+    "ast_hash": "99814873d6f5bb7a2f27469cf9bad105",
+    "semantic_hash": "99814873d6f5bb7a2f27469cf9bad105"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\helpers.ts": {
+    "mtime": 1787250931.5482407,
+    "ast_hash": "93111277fbb5220d76831f26210d9431",
+    "semantic_hash": "93111277fbb5220d76831f26210d9431"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\(dashboard)\\visitas\\[id]\\types.ts": {
+    "mtime": 1787236203.1007948,
+    "ast_hash": "4f39a10f8a96935597ddaf36c1c6a010",
+    "semantic_hash": "4f39a10f8a96935597ddaf36c1c6a010"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\app\\api\\hospitales\\cercano\\route.ts": {
+    "mtime": 1787235889.060069,
+    "ast_hash": "0e3d377bee4f7507cdc47f81b147736e",
+    "semantic_hash": "0e3d377bee4f7507cdc47f81b147736e"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\components\\GeolocationCheckin.tsx": {
+    "mtime": 1787235901.7777443,
+    "ast_hash": "491ab7e15fb831724946be6a5e4c972f",
+    "semantic_hash": "491ab7e15fb831724946be6a5e4c972f"
+  },
+  "C:\\Users\\ruben\\Desktop\\PROYECTOS-UNIVERSO\\PALEXAPP\\palex-platform\\src\\lib\\hospital-coords.ts": {
+    "mtime": 1787235835.5215714,
+    "ast_hash": "de21f85ee6edcd70f4260642115592b3",
+    "semantic_hash": "de21f85ee6edcd70f4260642115592b3"
   }
 }
