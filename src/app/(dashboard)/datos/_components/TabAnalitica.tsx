@@ -124,7 +124,7 @@ function ComparadorMeses({ hospitalId, meses }: { hospitalId: string; meses: num
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-indigo-500 shrink-0" />
           <select value={idxA} onChange={e => setIdxA(+e.target.value)}
-            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none">
+            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
             {data.map((d, i) => <option key={i} value={i}>{d.mes}</option>)}
           </select>
         </div>
@@ -132,7 +132,7 @@ function ComparadorMeses({ hospitalId, meses }: { hospitalId: string; meses: num
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-orange-400 shrink-0" />
           <select value={idxB} onChange={e => setIdxB(+e.target.value)}
-            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none">
+            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
             {data.map((d, i) => <option key={i} value={i}>{d.mes}</option>)}
           </select>
         </div>
@@ -197,12 +197,12 @@ function EstacionalidadChart({ hospitalId }: { hospitalId: string }) {
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select value={anioA} onChange={e => setAnioA(+e.target.value)}
-          className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none">
+          className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
           {anios.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <span className="text-xs font-bold text-gray-300">vs</span>
         <select value={anioB} onChange={e => setAnioB(+e.target.value)}
-          className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none">
+          className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
           {anios.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <span className="text-[10px] text-gray-400 ml-auto">{firstTubo.label}</span>

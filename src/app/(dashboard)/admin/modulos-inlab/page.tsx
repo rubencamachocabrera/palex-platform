@@ -5,6 +5,7 @@ import { useToast } from "@/components/Toast"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { SkeletonRow } from "@/components/ui/Skeleton"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { useModalA11y } from "@/hooks/useModalA11y"
 
 interface Modulo {
   id: string
@@ -27,6 +28,7 @@ export default function ModulosInlabPage() {
   const [renameGuardando, setRenameGuardando] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const modalRef = useModalA11y(!!renameModal, () => setRenameModal(null))
 
   async function cargar() {
     const r = await fetch("/api/modulos-inlab?admin=1")
@@ -169,6 +171,7 @@ export default function ModulosInlabPage() {
                   {["Módulo", "Proyectos", "Estado", "Acciones"].map(h => (
                     <th
                       key={h}
+                      scope="col"
                       className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide"
                     >
                       {h}
@@ -249,8 +252,8 @@ export default function ModulosInlabPage() {
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setRenameModal(null) }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">Renombrar módulo</h2>
+          <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="renombrar-modulo-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 id="renombrar-modulo-titulo" className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">Renombrar módulo</h2>
             <p className="text-xs text-gray-400 mb-4 truncate">{renameModal.nombre}</p>
             <input
               autoFocus

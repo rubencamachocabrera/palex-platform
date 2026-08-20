@@ -658,14 +658,14 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) { setMostrarForm(false); setFormError("") } }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-labelledby="modal-nuevo-usuario-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#fff7ed" }}>
                   <IconPlus className="w-5 h-5" style={{ color: ORANGE }} />
                 </div>
-                <h2 className="text-base font-bold text-gray-900">Nuevo usuario</h2>
+                <h2 id="modal-nuevo-usuario-titulo" className="text-base font-bold text-gray-900">Nuevo usuario</h2>
               </div>
               <button
                 onClick={() => { setMostrarForm(false); setFormError("") }}
@@ -724,7 +724,7 @@ export default function UsuariosPage() {
               {/* Rol inicial */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Rol inicial</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2" role="group" aria-label="Rol inicial">
                   {ROLES.map(r => {
                     const cfg = ROL_CONFIG[r]
                     const isSelected = form.rol === r
@@ -732,6 +732,7 @@ export default function UsuariosPage() {
                       <button
                         key={r}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => setForm(f => ({ ...f, rol: r }))}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all min-h-[44px]"
                         style={
@@ -796,7 +797,7 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setEditModal(null) }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-labelledby="modal-editar-usuario-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -807,7 +808,7 @@ export default function UsuariosPage() {
                   {editModal.nombre.trim().charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900 leading-tight">Editar usuario</h2>
+                  <h2 id="modal-editar-usuario-titulo" className="text-base font-bold text-gray-900 leading-tight">Editar usuario</h2>
                   <p className="text-xs text-gray-400 leading-tight">{editModal.email}</p>
                 </div>
               </div>
@@ -844,7 +845,7 @@ export default function UsuariosPage() {
 
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rol</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2" role="group" aria-label="Rol">
                   {ROLES.map(r => {
                     const cfg = ROL_CONFIG[r]
                     const isSelected = editForm.rol === r
@@ -852,6 +853,7 @@ export default function UsuariosPage() {
                       <button
                         key={r}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => setEditForm(f => ({ ...f, rol: r }))}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all min-h-[44px]"
                         style={
@@ -928,7 +930,7 @@ export default function UsuariosPage() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setZonaModal(null) }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-labelledby="modal-zonas-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm my-auto overflow-hidden">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -936,7 +938,7 @@ export default function UsuariosPage() {
                   <IconMapPin className="w-5 h-5" style={{ color: TEAL }} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900 leading-tight">Gestionar zonas</h2>
+                  <h2 id="modal-zonas-titulo" className="text-base font-bold text-gray-900 leading-tight">Gestionar zonas</h2>
                   <p className="text-xs text-gray-400 leading-tight">{zonaModal.nombre}</p>
                 </div>
               </div>

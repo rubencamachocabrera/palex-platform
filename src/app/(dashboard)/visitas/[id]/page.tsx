@@ -11,6 +11,7 @@ import type { TodoItem } from "@/components/visitas/TodoChecklist"
 import type { AudioNota } from "@/components/visitas/VoiceNotes"
 import { useOfflineSync } from "@/hooks/useOfflineSync"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import { AnalisisPanel } from "@/components/visitas/AnalisisPanel"
 import { calcularScore } from "@/lib/visita-analysis"
 
@@ -261,6 +262,7 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
               {!readOnly && (
                 <button
                   onClick={() => eliminar(foto.id)}
+                  aria-label="Eliminar foto"
                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
                 >
                   <IconTrash size={12} />
@@ -272,7 +274,8 @@ function FotosSeccion({ sectionId, fotos, onChange, readOnly }: {
                 onChange={e => updateCaption(foto.id, e.target.value)}
                 placeholder="Descripción…"
                 disabled={readOnly}
-                className="mt-1.5 w-full text-xs border-0 bg-transparent text-gray-500 placeholder-gray-300 focus:outline-none"
+                aria-label="Descripción de la foto"
+                className="mt-1.5 w-full text-xs border-0 bg-transparent text-gray-500 placeholder-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-300"
               />
             </div>
           ))}
@@ -298,11 +301,11 @@ function RadioPills({ field, value, onChange, onBlur, readOnly }: {
   onBlur?: () => void; readOnly: boolean
 }) {
   return (
-    <div className="flex flex-wrap gap-2" onBlur={onBlur}>
+    <div id={field.id} role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-2" onBlur={onBlur}>
       {field.opts?.map(o => {
         const active = value === o
         return (
-          <button key={o} type="button" disabled={readOnly}
+          <button key={o} type="button" disabled={readOnly} role="radio" aria-checked={active}
             onClick={() => { if (!readOnly) { onChange(active ? "" : o); onBlur?.() } }}
             className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] disabled:cursor-default ${
               active
@@ -323,11 +326,11 @@ function CheckPills({ field, value, onChange, onBlur, readOnly }: {
 }) {
   const arr = (value as string[] | undefined) ?? []
   return (
-    <div className="flex flex-wrap gap-2">
+    <div id={field.id} role="group" aria-label={field.label} className="flex flex-wrap gap-2">
       {field.opts?.map(o => {
         const active = arr.includes(o)
         return (
-          <button key={o} type="button" disabled={readOnly}
+          <button key={o} type="button" disabled={readOnly} aria-pressed={active}
             onClick={() => {
               if (!readOnly) { onChange(active ? arr.filter(x => x !== o) : [...arr, o]); onBlur?.() }
             }}
@@ -347,18 +350,18 @@ function CheckPills({ field, value, onChange, onBlur, readOnly }: {
 }
 
 // ─── Rating ────────────────────────────────────────────────────────────────────
-function RatingField({ value, onChange, onBlur, readOnly }: {
-  value: unknown; onChange: (v: unknown) => void; onBlur?: () => void; readOnly: boolean
+function RatingField({ field, value, onChange, onBlur, readOnly }: {
+  field: FormField; value: unknown; onChange: (v: unknown) => void; onBlur?: () => void; readOnly: boolean
 }) {
   const v = (value as number | undefined) ?? 0
   const [hover, setHover] = useState(0)
   const labels = ["", "Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"]
   const active = hover || v
   return (
-    <div>
-      <div className="flex gap-1.5">
+    <div id={field.id}>
+      <div role="radiogroup" aria-label={field.label} className="flex gap-1.5">
         {[1,2,3,4,5].map(n => (
-          <button key={n} type="button" disabled={readOnly}
+          <button key={n} type="button" disabled={readOnly} role="radio" aria-checked={v === n} aria-label={`${n} de 5`}
             onClick={() => { if (!readOnly) { onChange(v === n ? 0 : n); onBlur?.() } }}
             onMouseEnter={() => !readOnly && setHover(n)}
             onMouseLeave={() => setHover(0)}
@@ -391,19 +394,19 @@ function CampoField({ field, value, onChange, onBlur, error, readOnly }: {
 
   if (field.type === "radio") return <RadioPills field={field} value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
   if (field.type === "checks") return <CheckPills field={field} value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
-  if (field.type === "rating") return <RatingField value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
+  if (field.type === "rating") return <RatingField field={field} value={value} onChange={onChange} onBlur={onBlur} readOnly={readOnly} />
   if (field.type === "textarea") return (
-    <textarea value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
+    <textarea id={field.id} value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
       placeholder={field.ph} disabled={readOnly} rows={4} className={`${base} resize-none`} />
   )
   if (field.type === "select") return (
-    <select value={(value as string) ?? ""} onChange={e => { onChange(e.target.value); onBlur?.() }} disabled={readOnly} className={base}>
+    <select id={field.id} value={(value as string) ?? ""} onChange={e => { onChange(e.target.value); onBlur?.() }} disabled={readOnly} className={base}>
       <option value="">— Seleccionar —</option>
       {field.opts?.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
   )
   return (
-    <input type={field.type} value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
+    <input id={field.id} type={field.type} value={(value as string) ?? ""} onChange={e => onChange(e.target.value)} onBlur={onBlur}
       placeholder={field.ph} disabled={readOnly} className={base} />
   )
 }
@@ -617,9 +620,9 @@ function InlineFieldEditor({ field, value, onChange }: {
 
   if (field.type === "radio" && field.opts) {
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div id={field.id} role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-1.5">
         {field.opts.map(opt => (
-          <button key={opt} type="button"
+          <button key={opt} type="button" role="radio" aria-checked={value === opt}
             onClick={() => onChange(value === opt ? "" : opt)}
             className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
               value === opt ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
@@ -634,11 +637,11 @@ function InlineFieldEditor({ field, value, onChange }: {
   if (field.type === "checks" && field.opts) {
     const arr = Array.isArray(value) ? (value as string[]) : []
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div id={field.id} role="group" aria-label={field.label} className="flex flex-wrap gap-1.5">
         {field.opts.map(opt => {
           const on = arr.includes(opt)
           return (
-            <button key={opt} type="button"
+            <button key={opt} type="button" aria-pressed={on}
               onClick={() => onChange(on ? arr.filter((x: string) => x !== opt) : [...arr, opt])}
               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 on ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
@@ -653,9 +656,9 @@ function InlineFieldEditor({ field, value, onChange }: {
 
   if (field.type === "select" && field.opts) {
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div id={field.id} role="group" aria-label={field.label} className="flex flex-wrap gap-1.5">
         {field.opts.map(opt => (
-          <button key={opt} type="button"
+          <button key={opt} type="button" aria-pressed={value === opt}
             onClick={() => onChange(value === opt ? "" : opt)}
             className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
               value === opt ? "text-white font-medium border-transparent" : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
@@ -670,9 +673,9 @@ function InlineFieldEditor({ field, value, onChange }: {
   if (field.type === "rating") {
     const num = typeof value === "number" ? value : 0
     return (
-      <div className="flex gap-1">
+      <div id={field.id} role="radiogroup" aria-label={field.label} className="flex gap-1">
         {[1, 2, 3, 4, 5].map(star => (
-          <button key={star} type="button"
+          <button key={star} type="button" role="radio" aria-checked={star === num} aria-label={`${star} de 5`}
             onClick={() => onChange(star === num ? 0 : star)}
             className="w-6 h-6 flex items-center justify-center hover:opacity-80 transition-opacity"
           >
@@ -688,7 +691,7 @@ function InlineFieldEditor({ field, value, onChange }: {
 
   if (field.type === "textarea") {
     return (
-      <textarea className={`${base} resize-none`} style={ringStyle} rows={3}
+      <textarea id={field.id} className={`${base} resize-none`} style={ringStyle} rows={3}
         value={typeof value === "string" ? value : ""}
         placeholder={field.ph ?? ""}
         onChange={e => onChange(e.target.value)}
@@ -702,7 +705,7 @@ function InlineFieldEditor({ field, value, onChange }: {
     : field.type === "tel" ? "tel" : "text"
 
   return (
-    <input type={inputType} className={base} style={ringStyle}
+    <input id={field.id} type={inputType} className={base} style={ringStyle}
       value={typeof value === "string" || typeof value === "number" ? String(value) : ""}
       placeholder={field.ph ?? ""}
       onChange={e => onChange(field.type === "number"
@@ -872,7 +875,7 @@ function VistaResumen({
                         }
                         return (
                           <div key={field.id}>
-                            <label className="text-[11px] font-medium text-gray-500 mb-1 block">
+                            <label htmlFor={field.id} className="text-[11px] font-medium text-gray-500 mb-1 block">
                               {field.label}{field.req && <span className="text-red-400 ml-0.5">*</span>}
                             </label>
                             <InlineFieldEditor
@@ -978,6 +981,7 @@ export default function VisitaPage() {
   const userId = perfil?.id ?? ""
   const userName = perfil?.nombre ?? ""
   const [mostrarGuardarPlantilla, setMostrarGuardarPlantilla] = useState(false)
+  const modalPlantillaRef = useModalA11y(mostrarGuardarPlantilla, () => setMostrarGuardarPlantilla(false))
   const [nombrePlantilla, setNombrePlantilla] = useState("")
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
   const [showGaleria, setShowGaleria] = useState(false)
@@ -1662,7 +1666,7 @@ export default function VisitaPage() {
               <select
                 disabled={readOnly || vinculandoPP}
                 onChange={e => e.target.value && vincularProyecto(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
+                className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
                 defaultValue=""
               >
                 <option value="">Sin proyecto asociado</option>
@@ -1709,7 +1713,7 @@ export default function VisitaPage() {
                 <select
                   disabled={readOnly || vinculandoContacto}
                   onChange={e => e.target.value && vincularContacto(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
+                  className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-300 disabled:opacity-50 min-h-[32px] flex-1 max-w-xs"
                   defaultValue=""
                 >
                   <option value="">Sin contacto principal</option>
@@ -1838,7 +1842,7 @@ export default function VisitaPage() {
                         const err = fieldErrors[field.id]
                         return (
                           <div key={field.id}>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
                               {field.label}
                               {field.req && <span className="text-red-400 ml-1">*</span>}
                             </label>
@@ -2129,15 +2133,15 @@ export default function VisitaPage() {
       {/* Modal guardar como plantilla */}
       {mostrarGuardarPlantilla && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm">
+          <div ref={modalPlantillaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="titulo-guardar-plantilla" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
                 </svg>
-                <h2 className="text-base font-bold text-gray-900">Guardar como plantilla</h2>
+                <h2 id="titulo-guardar-plantilla" className="text-base font-bold text-gray-900">Guardar como plantilla</h2>
               </div>
-              <button onClick={() => setMostrarGuardarPlantilla(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50">
+              <button onClick={() => setMostrarGuardarPlantilla(false)} aria-label="Cerrar" className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>

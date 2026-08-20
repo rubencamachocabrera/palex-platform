@@ -35,6 +35,7 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${geistSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       {/* Script inline — evita el flash de tema incorrecto antes de hidratación */}
       <head>

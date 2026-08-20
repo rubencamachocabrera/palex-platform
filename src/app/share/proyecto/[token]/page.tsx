@@ -330,9 +330,9 @@ export default function ShareProyectoPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-100">
-                          <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Modelo</th>
-                          <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">N/S</th>
-                          <th className="text-left text-xs font-semibold text-gray-400 pb-2">Estado</th>
+                          <th scope="col" className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Modelo</th>
+                          <th scope="col" className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">N/S</th>
+                          <th scope="col" className="text-left text-xs font-semibold text-gray-400 pb-2">Estado</th>
                         </tr>
                       </thead>
                       <tbody>

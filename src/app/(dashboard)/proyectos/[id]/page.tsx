@@ -8,6 +8,7 @@ import { TEAL } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { TagSelector } from "@/components/TagSelector"
 import { PLANTILLAS_PROYECTO } from "@/lib/project-templates"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import {
   type Proyecto, type Tab,
   TABS, ESTADO_LABEL, ESTADO_COLOR, PRIORIDAD, fmtFecha,
@@ -58,6 +59,10 @@ export default function ProyectoDetalle() {
   const [copiarResultados, setCopiarResultados] = useState<{ id: string; titulo: string; hospital: { nombre: string } }[]>([])
   const [copiarSeleccionado, setCopiarSeleccionado] = useState<string | null>(null)
   const [copiando, setCopiando] = useState(false)
+
+  const nuevaVisitaModalRef = useModalA11y(showNuevaVisitaModal, () => setShowNuevaVisitaModal(false))
+  const plantillaModalRef = useModalA11y(showPlantillaModal, () => setShowPlantillaModal(false))
+  const copiarModalRef = useModalA11y(showCopiarModal, () => setShowCopiarModal(false))
 
   function abrirNuevaVisitaModal() {
     if (!pp) return
@@ -339,13 +344,13 @@ export default function ProyectoDetalle() {
       {showNuevaVisitaModal && pp && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisitaModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={nuevaVisitaModalRef} role="dialog" aria-modal="true" aria-labelledby="modal-nueva-visita-titulo" tabIndex={-1} className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Nueva visita</p>
+                <p id="modal-nueva-visita-titulo" className="text-sm font-bold text-gray-900 dark:text-white">Nueva visita</p>
                 <p className="text-xs text-gray-400 mt-0.5">{pp.hospital.nombre} · {pp.titulo}</p>
               </div>
-              <button onClick={() => setShowNuevaVisitaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+              <button onClick={() => setShowNuevaVisitaModal(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -395,13 +400,13 @@ export default function ProyectoDetalle() {
       {showPlantillaModal && pp && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowPlantillaModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={plantillaModalRef} role="dialog" aria-modal="true" aria-labelledby="modal-plantilla-titulo" tabIndex={-1} className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Plantillas de proyecto</p>
+                <p id="modal-plantilla-titulo" className="text-sm font-bold text-gray-900 dark:text-white">Plantillas de proyecto</p>
                 <p className="text-xs text-gray-400 mt-0.5">Selecciona una plantilla para auto-crear fases, tareas e hitos</p>
               </div>
-              <button onClick={() => setShowPlantillaModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+              <button onClick={() => setShowPlantillaModal(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -463,13 +468,13 @@ export default function ProyectoDetalle() {
       {showCopiarModal && pp && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowCopiarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={copiarModalRef} role="dialog" aria-modal="true" aria-labelledby="modal-copiar-titulo" tabIndex={-1} className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Copiar de otro proyecto</p>
+                <p id="modal-copiar-titulo" className="text-sm font-bold text-gray-900 dark:text-white">Copiar de otro proyecto</p>
                 <p className="text-xs text-gray-400 mt-0.5">Busca el proyecto origen — se añadirán sus fases, tareas e hitos a este</p>
               </div>
-              <button onClick={() => setShowCopiarModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+              <button onClick={() => setShowCopiarModal(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>

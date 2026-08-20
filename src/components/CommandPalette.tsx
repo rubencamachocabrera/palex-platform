@@ -290,6 +290,11 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded={resultados.length > 0}
+            aria-controls="cp-listbox"
+            aria-autocomplete="list"
+            aria-activedescendant={resultados.length > 0 ? `cp-item-${indiceActivo}` : undefined}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
@@ -308,7 +313,7 @@ export function CommandPalette() {
         </div>
 
         {/* Resultados */}
-        <div ref={listaRef} className="max-h-[360px] overflow-y-auto py-2">
+        <div ref={listaRef} id="cp-listbox" role="listbox" aria-label="Resultados" className="max-h-[360px] overflow-y-auto py-2">
           {resultados.length === 0 && query.length >= 2 && !cargando && (
             <div className="py-10 text-center text-sm text-gray-400">
               Sin resultados para &ldquo;{query}&rdquo;
@@ -328,6 +333,9 @@ export function CommandPalette() {
                 return (
                   <button
                     key={item.id}
+                    id={`cp-item-${idx}`}
+                    role="option"
+                    aria-selected={activo}
                     onClick={() => item.onSelect?.()}
                     onMouseEnter={() => setIndiceActivo(idx)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"

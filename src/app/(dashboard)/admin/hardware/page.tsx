@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { useModalA11y } from "@/hooks/useModalA11y"
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -102,6 +103,7 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
   onSaved: (saved: CatalogoItem) => void
 }) {
   const { success, error: toastError } = useToast()
+  const modalRef = useModalA11y(true, onClose)
   const [form, setForm] = useState(item ? {
     tipoId: item.tipoId ?? "",
     marca: item.marca,
@@ -208,14 +210,14 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
       {/* Overlay */}
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="material-drawer-titulo" className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-base font-bold text-gray-900">{item ? "Editar material" : "Nuevo material"}</h2>
+            <h2 id="material-drawer-titulo" className="text-base font-bold text-gray-900">{item ? "Editar material" : "Nuevo material"}</h2>
             <p className="text-xs text-gray-400 mt-0.5">{item ? `${item.marca} ${item.modelo}` : "Añadir al catálogo"}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
             <IcoX />
           </button>
         </div>
@@ -409,6 +411,7 @@ function TiposModal({ tipos, onClose, onTiposChanged }: {
   onTiposChanged: () => void
 }) {
   const { success, error: toastError } = useToast()
+  const modalRef = useModalA11y(true, onClose)
   const [nuevoNombre, setNuevoNombre] = useState("")
   const [nuevoColor, setNuevoColor] = useState(COLORES_PRESET[0])
   const [creando, setCreando] = useState(false)
@@ -472,14 +475,14 @@ function TiposModal({ tipos, onClose, onTiposChanged }: {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+        <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="tipos-modal-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Tipos de hardware</h2>
+              <h2 id="tipos-modal-titulo" className="text-base font-bold text-gray-900">Tipos de hardware</h2>
               <p className="text-xs text-gray-400 mt-0.5">Categorías disponibles para clasificar materiales</p>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
+            <button onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IcoX /></button>
           </div>
 
           {/* Lista */}
@@ -701,6 +704,7 @@ function UnidadesModal({ item, onClose, onChanged }: {
   onChanged: () => void
 }) {
   const { success, error: toastError } = useToast()
+  const modalRef = useModalA11y(true, onClose)
   const [unidades, setUnidades] = useState<UnidadItem[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ numSerie: "", notas: "", fechaCompra: "", fechaGarantia: "" })
@@ -749,7 +753,7 @@ function UnidadesModal({ item, onClose, onChanged }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="unidades-modal-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0">
           {item.tipo && (
@@ -759,12 +763,12 @@ function UnidadesModal({ item, onClose, onChanged }: {
             </span>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-gray-900">{item.marca} {item.modelo}</h2>
+            <h2 id="unidades-modal-titulo" className="text-base font-bold text-gray-900">{item.marca} {item.modelo}</h2>
             {item.referenciaPalex && (
               <span className="text-xs font-mono" style={{ color: TEAL }}>{item.referenciaPalex}</span>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer shrink-0"><IcoX /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer shrink-0"><IcoX /></button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
@@ -806,11 +810,11 @@ function UnidadesModal({ item, onClose, onChanged }: {
             <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
-                  <th className="text-left pb-2 font-semibold">Nº Serie</th>
-                  <th className="text-left pb-2 font-semibold">Estado</th>
-                  <th className="text-left pb-2 font-semibold">Asignado a</th>
-                  <th className="text-left pb-2 font-semibold">Garantía</th>
-                  <th />
+                  <th scope="col" className="text-left pb-2 font-semibold">Nº Serie</th>
+                  <th scope="col" className="text-left pb-2 font-semibold">Estado</th>
+                  <th scope="col" className="text-left pb-2 font-semibold">Asignado a</th>
+                  <th scope="col" className="text-left pb-2 font-semibold">Garantía</th>
+                  <th scope="col" />
                 </tr>
               </thead>
               <tbody>
@@ -1105,12 +1109,12 @@ function InventarioTab({ tipos }: { tipos: HardwareTipo[] }) {
           <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-3 font-semibold">Modelo</th>
-                <th className="text-left px-4 py-3 font-semibold hidden sm:table-cell">Ref. Palex</th>
-                <th className="text-left px-4 py-3 font-semibold">Nº Serie</th>
-                <th className="text-left px-4 py-3 font-semibold">Estado</th>
-                <th className="text-left px-4 py-3 font-semibold hidden md:table-cell">Asignado a</th>
-                <th className="text-left px-4 py-3 font-semibold hidden lg:table-cell">Garantía</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold">Modelo</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold hidden sm:table-cell">Ref. Palex</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold">Nº Serie</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold">Estado</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold hidden md:table-cell">Asignado a</th>
+                <th scope="col" className="text-left px-4 py-3 font-semibold hidden lg:table-cell">Garantía</th>
               </tr>
             </thead>
             <tbody>

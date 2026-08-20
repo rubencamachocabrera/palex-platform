@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { MentionInput, extractMentionIds } from "@/components/MentionInput"
 import { MentionText } from "@/components/MentionText"
+import { useModalA11y } from "@/hooks/useModalA11y"
 
 interface Autor { id: string; nombre: string; rol: string }
 interface Nota {
@@ -154,6 +155,7 @@ export default function NotasPage() {
   const [editando, setEditando] = useState<Nota | null>(null)
   const [textoEdit, setTextoEdit] = useState("")
   const [guardandoEdit, setGuardandoEdit] = useState(false)
+  const modalEditRef = useModalA11y(!!editando, () => setEditando(null))
 
   const fetchNotas = useCallback(async () => {
     setLoading(true)
@@ -309,10 +311,10 @@ export default function NotasPage() {
       {editando && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setEditando(null) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={modalEditRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="notas-modal-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">Editar nota</p>
-              <button onClick={() => setEditando(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
+              <p id="notas-modal-titulo" className="text-sm font-bold text-gray-900 dark:text-white">Editar nota</p>
+              <button onClick={() => setEditando(null)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>

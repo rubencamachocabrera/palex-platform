@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState"
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import {
   IconSearch, IconPlus, IconX, IconChevronDown, IconFileExport,
   IconAlertTriangle, IconClock, IconArrowRight, IconWrench,
@@ -199,6 +200,10 @@ export default function IncidenciasPage() {
   const [exportHasta, setExportHasta] = useState("")
   const [exportHospitalId, setExportHospitalId] = useState("")
   const [exportEstado, setExportEstado] = useState("")
+
+  const drawerA11yRef = useModalA11y(!!drawerIncId, () => setDrawerIncId(null))
+  const modalA11yRef = useModalA11y(showModal, () => setShowModal(false))
+  const exportA11yRef = useModalA11y(showExport, () => setShowExport(false))
 
   // SLA ticker — update every 60s
   useEffect(() => {
@@ -724,24 +729,24 @@ export default function IncidenciasPage() {
             placeholder="Buscar por código, título, descripción..."
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-gray-900 dark:text-white" />
           {busqueda && (
-            <button onClick={() => setBusqueda("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button onClick={() => setBusqueda("")} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
               <IconX size={14} />
             </button>
           )}
         </div>
         <select value={filtroPrioridad} onChange={e => setFiltroPrioridad(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none cursor-pointer">
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
           <option value="">Todas las prioridades</option>
           {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
         <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none cursor-pointer">
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
           <option value="">HW + SW</option>
           <option value="HARDWARE">Hardware</option>
           <option value="SOFTWARE">Software</option>
         </select>
         <select value={filtroEquipo} onChange={e => setFiltroEquipo(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none cursor-pointer">
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
           <option value="">Todos los equipos</option>
           {EQUIPOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
         </select>
@@ -751,7 +756,7 @@ export default function IncidenciasPage() {
             const [f, d] = e.target.value.split("_") as ["fecha" | "sla" | "hospital" | "titulo", "asc" | "desc"]
             setSortBy(f); setSortDir(d)
           }}
-          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none cursor-pointer">
+          className="px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer">
           <option value="fecha_desc">↓ Más recientes</option>
           <option value="fecha_asc">↑ Más antiguas</option>
           <option value="sla_desc">↓ SLA más urgente</option>
@@ -781,16 +786,18 @@ export default function IncidenciasPage() {
                   <p className="text-xs text-gray-400 px-3 py-3 text-center">Sin filtros guardados</p>
                 ) : (
                   filtrosGuardados.map(f => (
-                    <button
+                    <div
                       key={f.id}
-                      onClick={() => aplicarFiltroGuardado(f)}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
-                      <span className="truncate text-gray-700 dark:text-gray-200">{f.nombre}</span>
-                      <span onClick={e => borrarFiltroGuardado(f.id, e)} className="text-gray-300 hover:text-red-500 shrink-0 p-0.5">
+                      <button onClick={() => aplicarFiltroGuardado(f)} className="flex-1 min-w-0 text-left cursor-pointer">
+                        <span className="truncate text-gray-700 dark:text-gray-200 block">{f.nombre}</span>
+                      </button>
+                      <button onClick={e => borrarFiltroGuardado(f.id, e)} aria-label={`Borrar filtro ${f.nombre}`}
+                        className="text-gray-300 hover:text-red-500 shrink-0 p-0.5 cursor-pointer">
                         <IconX size={12} />
-                      </span>
-                    </button>
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -899,7 +906,7 @@ export default function IncidenciasPage() {
           <table className="w-full min-w-[860px]">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/40">
-                <th className="w-1.5 p-0" />
+                <th scope="col" className="w-1.5 p-0" />
                 {([
                   { label: "Código", field: "fecha" as const },
                   { label: "Título", field: "titulo" as const },
@@ -910,7 +917,7 @@ export default function IncidenciasPage() {
                   { label: "Asignado" },
                   { label: "" },
                 ] as { label: string; field?: "fecha" | "sla" | "hospital" | "titulo" }[]).map(h => (
-                  <th key={h.label}
+                  <th key={h.label} scope="col"
                     onClick={h.field ? () => toggleSort(h.field!) : undefined}
                     className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors select-none ${
                       h.field ? "cursor-pointer hover:text-gray-700 dark:hover:text-gray-200" : ""
@@ -950,7 +957,9 @@ export default function IncidenciasPage() {
                       const recentActivity = (now - new Date(inc.actualizadoEn).getTime()) < 7200000
                       return (
                         <tr key={inc.id} onClick={() => setDrawerIncId(inc.id)}
-                          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group border-b border-gray-50 dark:border-gray-800">
+                          tabIndex={0} role="button" aria-label={`Ver incidencia ${inc.codigo}: ${inc.titulo}`}
+                          onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setDrawerIncId(inc.id) } }}
+                          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group border-b border-gray-50 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400">
                           <td className="p-0 w-1.5">
                             <div className="w-1.5 min-h-[52px] rounded-r-sm" style={{ backgroundColor: pri.color }} />
                           </td>
@@ -1027,7 +1036,9 @@ export default function IncidenciasPage() {
                       const recentActivity = (now - new Date(inc.actualizadoEn).getTime()) < 7200000
                       return (
                         <div key={inc.id} onClick={() => setDrawerIncId(inc.id)}
-                          className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group">
+                          tabIndex={0} role="button" aria-label={`Ver incidencia ${inc.codigo}: ${inc.titulo}`}
+                          onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setDrawerIncId(inc.id) } }}
+                          className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-all hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-teal-400">
                           {recentActivity && (
                             <span className="absolute top-3.5 right-3.5 flex h-2.5 w-2.5" title="Actividad reciente (últimas 2h)">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
@@ -1055,7 +1066,7 @@ export default function IncidenciasPage() {
                                   <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#10b98115", color: "#10b981" }}>SLA cumplido</span>
                                 )}
                               </div>
-                              <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate"><Highlight text={inc.titulo} term={busqueda} /></h3>
+                              <h2 className="font-semibold text-gray-900 dark:text-white text-sm truncate"><Highlight text={inc.titulo} term={busqueda} /></h2>
                               <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                                 <span>{inc.hospital.nombre}</span>
                                 <span>·</span>
@@ -1090,7 +1101,8 @@ export default function IncidenciasPage() {
         <>
           <div className="fixed inset-0 bg-black/20 dark:bg-black/50 z-40 backdrop-blur-[2px]"
             onClick={() => setDrawerIncId(null)} />
-          <div className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[560px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col"
+          <div ref={drawerA11yRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="drawer-inc-titulo"
+            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[560px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col outline-none"
             style={{ animation: "slideInRight 0.2s ease-out" }}>
             <style>{`@keyframes slideInRight { from { transform: translateX(100%) } to { transform: translateX(0) } }`}</style>
 
@@ -1102,11 +1114,11 @@ export default function IncidenciasPage() {
                 ) : drawerInc ? (
                   <>
                     <span className="text-xs font-mono font-bold text-gray-400">{drawerInc.codigo}</span>
-                    <h2 className="text-base font-bold text-gray-900 dark:text-white mt-0.5 leading-snug">{drawerInc.titulo}</h2>
+                    <h2 id="drawer-inc-titulo" className="text-base font-bold text-gray-900 dark:text-white mt-0.5 leading-snug">{drawerInc.titulo}</h2>
                   </>
                 ) : null}
               </div>
-              <button onClick={() => setDrawerIncId(null)}
+              <button onClick={() => setDrawerIncId(null)} aria-label="Cerrar"
                 className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 <IconX size={18} />
               </button>
@@ -1242,10 +1254,11 @@ export default function IncidenciasPage() {
         <>
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowModal(false)} />
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh] px-4 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[calc(100vh-2rem)] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div ref={modalA11yRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="crear-inc-titulo"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[calc(100vh-2rem)] overflow-y-auto outline-none" onClick={e => e.stopPropagation()}>
               <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between z-10">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Nueva incidencia</h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"><IconX size={18} /></button>
+                <h2 id="crear-inc-titulo" className="text-lg font-bold text-gray-900 dark:text-white">Nueva incidencia</h2>
+                <button onClick={() => setShowModal(false)} aria-label="Cerrar" className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"><IconX size={18} /></button>
               </div>
               <div className="px-6 py-4 space-y-4">
                 {/* Hospital */}
@@ -1257,6 +1270,7 @@ export default function IncidenciasPage() {
                         {hospitales.find(h => h.id === form.hospitalId)?.nombre} — {hospitales.find(h => h.id === form.hospitalId)?.ciudad}
                       </span>
                       <button onClick={() => { setForm(f => ({ ...f, hospitalId: "", contactoId: "", hardwareUnidadId: "" })); setHospitalSearch("") }}
+                        aria-label="Quitar hospital seleccionado"
                         className="text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer"><IconX size={14} /></button>
                     </div>
                   ) : (
@@ -1303,7 +1317,7 @@ export default function IncidenciasPage() {
                   <div>
                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Categoría *</label>
                     <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                       {(form.tipo === "HARDWARE" ? hwCategorias : swCategorias).map(c => <option key={c} value={c}>{CATEGORIAS[c]}</option>)}
                     </select>
                   </div>
@@ -1346,7 +1360,7 @@ export default function IncidenciasPage() {
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Contacto hospital</label>
                   <select value={form.contactoId} onChange={e => setForm(f => ({ ...f, contactoId: e.target.value }))}
                     disabled={!form.hospitalId}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none disabled:opacity-50">
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50">
                     <option value="">Sin contacto</option>
                     {contactos.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.cargo ? ` — ${c.cargo}` : ""}</option>)}
                   </select>
@@ -1363,7 +1377,7 @@ export default function IncidenciasPage() {
                             style={idx === 0 ? { backgroundColor: `${TEAL}12`, color: TEAL, borderColor: `${TEAL}40` } : { backgroundColor: "#f1f5f9", color: "#64748b", borderColor: "#e2e8f0" }}>
                             {idx === 0 && <span className="text-[9px] font-bold opacity-60">PRINCIPAL</span>}
                             {u?.nombre ?? uid}
-                            <button onClick={() => setAsignadosIds(prev => prev.filter(id => id !== uid))} className="hover:text-red-500 transition-colors cursor-pointer"><IconX size={10} /></button>
+                            <button onClick={() => setAsignadosIds(prev => prev.filter(id => id !== uid))} aria-label={`Quitar a ${u?.nombre ?? "asignado"}`} className="hover:text-red-500 transition-colors cursor-pointer"><IconX size={10} /></button>
                           </span>
                         )
                       })}
@@ -1380,7 +1394,7 @@ export default function IncidenciasPage() {
                   <div>
                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Unidad de hardware afectada</label>
                     <select value={form.hardwareUnidadId} onChange={e => setForm(f => ({ ...f, hardwareUnidadId: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                       <option value="">No especificada</option>
                       {hwUnidades.map(u => <option key={u.id} value={u.id}>{u.catalogo.marca} {u.catalogo.modelo}{u.numSerie ? ` — SN: ${u.numSerie}` : ""}</option>)}
                     </select>
@@ -1391,7 +1405,7 @@ export default function IncidenciasPage() {
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 shrink-0">SLA (horas)</label>
                   <input type="number" value={form.slaHoras} onChange={e => setForm(f => ({ ...f, slaHoras: e.target.value }))}
                     min="1" max="9999"
-                    className="w-24 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                    className="w-24 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                 </div>
               </div>
               <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex justify-end gap-3">
@@ -1412,10 +1426,11 @@ export default function IncidenciasPage() {
         <>
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowExport(false)} />
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] px-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div ref={exportA11yRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="export-inc-titulo"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md outline-none" onClick={e => e.stopPropagation()}>
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Exportar informe</h2>
-                <button onClick={() => setShowExport(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"><IconX size={18} /></button>
+                <h2 id="export-inc-titulo" className="text-lg font-bold text-gray-900 dark:text-white">Exportar informe</h2>
+                <button onClick={() => setShowExport(false)} aria-label="Cerrar" className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"><IconX size={18} /></button>
               </div>
               <div className="px-6 py-5 space-y-4">
                 <div>
@@ -1430,18 +1445,18 @@ export default function IncidenciasPage() {
                   <div>
                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Desde</label>
                     <input type="date" value={exportDesde} onChange={e => setExportDesde(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Hasta</label>
                     <input type="date" value={exportHasta} onChange={e => setExportHasta(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Estado</label>
                   <select value={exportEstado} onChange={e => setExportEstado(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                     <option value="">Todos los estados</option>
                     {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
                   </select>

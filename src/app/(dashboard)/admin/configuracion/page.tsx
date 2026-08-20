@@ -170,10 +170,10 @@ function PlantillasSection() {
           <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3"></th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
+                <th scope="col" className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -187,7 +187,7 @@ function PlantillasSection() {
                           value={editNombre}
                           onChange={e => setEditNombre(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter") renombrar(item.id); if (e.key === "Escape") setEditId(null) }}
-                          className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none"
+                          className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                         />
                         <button onClick={() => renombrar(item.id)} className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
                         <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -353,10 +353,10 @@ function ModulosInlabSection() {
           <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">Proyectos</th>
-                <th className="px-4 py-3"></th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Nombre</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">Proyectos</th>
+                <th scope="col" className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -370,7 +370,7 @@ function ModulosInlabSection() {
                           value={editNombre}
                           onChange={e => setEditNombre(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter") renombrar(item.id); if (e.key === "Escape") setEditId(null) }}
-                          className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none"
+                          className="flex-1 px-2 py-1 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                         />
                         <button onClick={() => renombrar(item.id)} className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
                         <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -578,7 +578,7 @@ function TagsSection() {
                       <div className="flex items-center gap-2">
                         <input autoFocus value={editNombre} onChange={e => setEditNombre(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter") guardarEdit(item.id); if (e.key === "Escape") setEditId(null) }}
-                          className="flex-1 px-3 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none" />
+                          className="flex-1 px-3 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
                         <button onClick={() => guardarEdit(item.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: TEAL }}>OK</button>
                         <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancelar">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -824,7 +824,7 @@ function ScoringSection({ initialConfig }: { initialConfig: ScoringConfig }) {
                 <select
                   value={regla.nivel}
                   onChange={e => setReglas(cfg.reglas.map((r, j) => j === i ? { ...r, nivel: e.target.value as "alto" | "medio" | "info" } : r))}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none"
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
                   style={{ color: NIVEL_COLOR[regla.nivel] }}
                 >
                   {(["alto", "medio", "info"] as const).map(n => (

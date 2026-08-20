@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import { TagPills } from "@/components/TagSelector"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -137,6 +138,8 @@ export default function VisitasPage() {
   const [contactoId, setContactoId] = useState("")
   const [eliminarId, setEliminarId] = useState<string | null>(null)
   const [eliminando, setEliminando] = useState(false)
+  const modalEliminarRef = useModalA11y(!!eliminarId, () => { if (!eliminando) setEliminarId(null) })
+  const modalNuevaVisitaRef = useModalA11y(mostrarModal, () => setMostrarModal(false))
   const [tagsDisponibles, setTagsDisponibles] = useState<{ id: string; nombre: string; color: string }[]>([])
   const [filtroTag, setFiltroTag] = useState("")
   const searchParams = useSearchParams()
@@ -656,7 +659,7 @@ export default function VisitasPage() {
       {eliminarId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !eliminando && setEliminarId(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in-95 dark:bg-[#1e293b]">
+          <div ref={modalEliminarRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-visita-lista-titulo" className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in-95 dark:bg-[#1e293b] outline-none">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -664,7 +667,7 @@ export default function VisitasPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">Eliminar visita</h3>
+                <h3 id="modal-eliminar-visita-lista-titulo" className="text-base font-bold text-gray-900 dark:text-white">Eliminar visita</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Esta accion no se puede deshacer</p>
               </div>
             </div>
@@ -690,16 +693,16 @@ export default function VisitasPage() {
         <div className="fixed inset-0 z-50 flex items-start justify-center py-4 sm:py-8 px-4 backdrop-blur-sm overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col animate-in fade-in zoom-in-95 duration-200"
+          <div ref={modalNuevaVisitaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-nueva-visita-lista-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col animate-in fade-in zoom-in-95 duration-200 outline-none"
             style={{ borderTop: `3px solid ${TEAL}`, maxHeight: "calc(100vh - 2rem)" }}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div>
-                <p className="font-bold text-gray-900 dark:text-white">Nueva visita</p>
+                <p id="modal-nueva-visita-lista-titulo" className="font-bold text-gray-900 dark:text-white">Nueva visita</p>
                 {userName && <p className="text-xs text-gray-400 mt-0.5">Responsable: <span className="font-medium text-gray-600 dark:text-gray-300">{userName}</span></p>}
               </div>
-              <button onClick={() => setMostrarModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 cursor-pointer">
+              <button onClick={() => setMostrarModal(false)} aria-label="Cerrar" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 cursor-pointer">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>

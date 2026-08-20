@@ -260,12 +260,12 @@ export default function IncidenciasStatsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 dark:border-gray-800">
-                    <th className="px-5 py-3 text-left">Técnico</th>
-                    <th className="px-3 py-3 text-center">Total</th>
-                    <th className="px-3 py-3 text-center">Resueltas</th>
-                    <th className="px-3 py-3 text-center">SLA</th>
-                    <th className="px-3 py-3 text-center">Horas</th>
-                    <th className="px-5 py-3 text-left">Resolución</th>
+                    <th scope="col" className="px-5 py-3 text-left">Técnico</th>
+                    <th scope="col" className="px-3 py-3 text-center">Total</th>
+                    <th scope="col" className="px-3 py-3 text-center">Resueltas</th>
+                    <th scope="col" className="px-3 py-3 text-center">SLA</th>
+                    <th scope="col" className="px-3 py-3 text-center">Horas</th>
+                    <th scope="col" className="px-5 py-3 text-left">Resolución</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { TEAL } from "@/lib/brand"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import { comprimirImagen } from "@/lib/img-compress"
 import { MentionInput, extractMentionIds } from "@/components/MentionInput"
 import { MentionText } from "@/components/MentionText"
@@ -48,6 +49,7 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const listaRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const lightboxRef = useModalA11y(!!lightbox, () => setLightbox(null))
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -164,6 +166,7 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
               <div key={i} className="relative">
                 <img src={src} alt={`Adjunto ${i + 1}`} className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
                 <button onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
+                  aria-label="Quitar foto"
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold hover:bg-red-600 cursor-pointer shadow-sm">
                   <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -188,6 +191,7 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
             </svg>
           </button>
           <button onClick={enviar} disabled={(!texto.trim() && fotos.length === 0) || enviando}
+            aria-label="Enviar comentario"
             className="px-3 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0 min-h-[38px] cursor-pointer"
             style={{ backgroundColor: TEAL }}>
             {enviando ? "…" : (
@@ -201,11 +205,13 @@ export function ComentariosPanel({ endpoint, usuarioId, esAdmin }: Props) {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm"
+        <div ref={lightboxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Ver foto ampliada"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm outline-none"
           style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
           onClick={() => setLightbox(null)}>
           <img src={lightbox} alt="Foto ampliada" className="max-w-full max-h-[85vh] rounded-xl shadow-2xl" />
           <button onClick={() => setLightbox(null)}
+            aria-label="Cerrar"
             className="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

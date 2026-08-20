@@ -119,7 +119,7 @@ function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asigna
       />
       <div className="flex flex-wrap gap-2">
         <select value={prioridad} onChange={e => onChange("prioridad", e.target.value)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
           <option value="BAJA">Baja</option>
           <option value="MEDIA">Media</option>
           <option value="ALTA">Alta</option>
@@ -128,10 +128,10 @@ function QuickFormInline({ parentId, titulo, prioridad, fechaVencimiento, asigna
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-gray-400">Vence:</label>
           <input type="date" value={fechaVencimiento} onChange={e => onChange("fechaVencimiento", e.target.value)}
-            className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white" />
         </div>
         <select value={asignadoAId} onChange={e => onChange("asignadoAId", e.target.value)}
-          className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+          className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
           <option value="">Sin asignar</option>
           {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
         </select>
@@ -480,7 +480,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                   />
                   <div className="flex flex-wrap gap-2">
                     <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
                       <option value="BAJA">Baja</option><option value="MEDIA">Media</option>
                       <option value="ALTA">Alta</option><option value="CRITICA">Crítica</option>
                     </select>
@@ -488,11 +488,11 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                       <label className="text-xs text-gray-400">Vence:</label>
                       <input type="date" value={editForm.fechaVencimiento}
                         onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
-                        className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                        className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white" />
                     </div>
                     <select value={editForm.asignadoAId}
                       onChange={e => setEditForm(p => ({ ...p, asignadoAId: e.target.value }))}
-                      className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white">
+                      className="flex-1 min-w-28 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white">
                       <option value="">Sin asignar</option>
                       {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
                     </select>
@@ -626,16 +626,16 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
                             />
                             <div className="flex flex-wrap gap-2">
                               <select value={editForm.prioridad} onChange={e => setEditForm(p => ({ ...p, prioridad: e.target.value }))}
-                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none">
+                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent">
                                 <option value="BAJA">Baja</option><option value="MEDIA">Media</option>
                                 <option value="ALTA">Alta</option><option value="CRITICA">Crítica</option>
                               </select>
                               <input type="date" value={editForm.fechaVencimiento}
                                 onChange={e => setEditForm(p => ({ ...p, fechaVencimiento: e.target.value }))}
-                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white" />
+                                className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white" />
                               <select value={editForm.asignadoAId}
                                 onChange={e => setEditForm(p => ({ ...p, asignadoAId: e.target.value }))}
-                                className="flex-1 min-w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none bg-white">
+                                className="flex-1 min-w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white">
                                 <option value="">Sin asignar</option>
                                 {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
                               </select>

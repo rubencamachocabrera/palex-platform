@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import {
   IconArrowLeft, IconMail, IconPhone, IconPlus, IconX,
 } from "@/components/ui/Icons"
@@ -183,6 +184,14 @@ export default function HospitalDetailPage() {
 
   // Llamada rápida
   const [showLlamada, setShowLlamada] = useState(false)
+
+  const modalNuevaVisitaRef = useModalA11y(showNuevaVisita, () => setShowNuevaVisita(false))
+  const modalLlamadaRef = useModalA11y(showLlamada, () => setShowLlamada(false))
+  const modalQRRef = useModalA11y(showQR, () => setShowQR(false))
+  const modalNuevoProyectoRef = useModalA11y(showNuevoProyecto, () => setShowNuevoProyecto(false))
+  const modalEliminarVisitaRef = useModalA11y(!!eliminarVisitaId, () => setEliminarVisitaId(null))
+  const modalAddCentroRef = useModalA11y(showAddCentro, () => setShowAddCentro(false))
+  const modalContactoRef = useModalA11y(contactoModal, () => setContactoModal(false))
   const [llamadaForm, setLlamadaForm] = useState({ motivo: "", resultado: "", contactoId: "", duracion: "", notas: "", seguimiento: false, fechaSeguimiento: "" })
   const [registrandoLlamada, setRegistrandoLlamada] = useState(false)
 
@@ -1288,13 +1297,13 @@ export default function HospitalDetailPage() {
       {showNuevaVisita && hospital && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowNuevaVisita(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={modalNuevaVisitaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-nueva-visita-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <h2 className="text-sm font-bold text-gray-900 dark:text-white">Nueva visita</h2>
+                <h2 id="modal-nueva-visita-titulo" className="text-sm font-bold text-gray-900 dark:text-white">Nueva visita</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p>
               </div>
-              <button onClick={() => setShowNuevaVisita(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+              <button onClick={() => setShowNuevaVisita(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <div className="px-5 py-4 space-y-3.5">
               <div>
@@ -1341,10 +1350,10 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Llamada rápida ── */}
       {showLlamada && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setShowLlamada(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={modalLlamadaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-llamada-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-              <div><h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
-              <button onClick={() => setShowLlamada(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+              <div><h2 id="modal-llamada-titulo" className="text-sm font-bold text-gray-900 dark:text-gray-100">Registrar llamada</h2><p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p></div>
+              <button onClick={() => setShowLlamada(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <form onSubmit={registrarLlamada} className="px-5 py-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
               <div>
@@ -1412,9 +1421,9 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: QR ── */}
       {showQR && hospital && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setShowQR(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full">
+          <div ref={modalQRRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-qr-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full outline-none">
             <div className="flex items-center justify-between w-full">
-              <p className="font-semibold text-gray-800 text-sm">QR del hospital</p>
+              <p id="modal-qr-titulo" className="font-semibold text-gray-800 text-sm">QR del hospital</p>
               <button onClick={() => setShowQR(false)} aria-label="Cerrar QR" className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 cursor-pointer"><IconX size={16} /></button>
             </div>
             <canvas ref={qrCanvasRef} className="rounded-xl" />
@@ -1436,13 +1445,13 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Nuevo proyecto ── */}
       {showNuevoProyecto && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid #6366f1` }}>
+          <div ref={modalNuevoProyectoRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-nuevo-proyecto-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid #6366f1` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div>
-                <h2 className="text-sm font-bold text-gray-900">Nuevo proyecto</h2>
+                <h2 id="modal-nuevo-proyecto-titulo" className="text-sm font-bold text-gray-900">Nuevo proyecto</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{hospital!.nombre}</p>
               </div>
-              <button onClick={() => setShowNuevoProyecto(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+              <button onClick={() => setShowNuevoProyecto(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <form onSubmit={crearProyecto} className="px-5 py-4 space-y-3.5">
               <div>
@@ -1468,9 +1477,9 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Eliminar visita ── */}
       {eliminarVisitaId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm">
+          <div ref={modalEliminarVisitaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-visita-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm outline-none">
             <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-bold text-red-600">Eliminar visita</h2>
+              <h2 id="modal-eliminar-visita-titulo" className="text-sm font-bold text-red-600">Eliminar visita</h2>
               <p className="text-xs text-gray-500 mt-1">Esta acción no se puede deshacer. La visita y todos sus datos asociados se eliminarán permanentemente.</p>
             </div>
             <div className="flex gap-2 px-5 py-4">
@@ -1489,13 +1498,13 @@ export default function HospitalDetailPage() {
       {showAddCentro && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setShowAddCentro(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={modalAddCentroRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-add-centro-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div>
-                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Añadir centro al grupo</h2>
+                <h2 id="modal-add-centro-titulo" className="text-sm font-bold text-gray-900 dark:text-gray-100">Añadir centro al grupo</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{hospital.nombre}</p>
               </div>
-              <button onClick={() => setShowAddCentro(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+              <button onClick={() => setShowAddCentro(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-3">
               {buscandoCandidatos ? (
@@ -1535,10 +1544,10 @@ export default function HospitalDetailPage() {
       {/* ── MODAL: Contacto ── */}
       {contactoModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto" style={{ borderTop: `3px solid ${TEAL}` }}>
+          <div ref={modalContactoRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-contacto-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto outline-none" style={{ borderTop: `3px solid ${TEAL}` }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-bold text-gray-900">{editContacto ? "Editar contacto" : "Nuevo contacto"}</h2>
-              <button onClick={() => setContactoModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
+              <h2 id="modal-contacto-titulo" className="text-sm font-bold text-gray-900">{editContacto ? "Editar contacto" : "Nuevo contacto"}</h2>
+              <button onClick={() => setContactoModal(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"><IconX size={15} /></button>
             </div>
             <div className="px-5 py-4 space-y-3.5">
               <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Nombre <span className="text-red-400">*</span></label>

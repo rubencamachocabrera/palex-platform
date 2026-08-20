@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import type { Proyecto, HardwareUnidad } from "../types"
 import { fmtFecha, ESTADO_LABEL, ESTADO_COLOR, PRIORIDAD, FASE_ESTADO_COLOR, HW_ESTADO, HW_TIPO_LABEL } from "../types"
 
@@ -25,6 +26,7 @@ function RowInfo({ label, value }: { label: string; value: string }) {
 export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyecto) => void }) {
   const { success, error: toastError } = useToast()
   const [shareModal, setShareModal] = useState(false)
+  const shareModalRef = useModalA11y(shareModal, () => setShareModal(false))
   const [generando, setGenerando] = useState(false)
   const [revoking, setRevoking] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -210,7 +212,7 @@ export function TabResumen({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proye
       const rows = units.map(u =>
         `<tr><td class="cell">${e(u.catalogo.marca)} ${e(u.catalogo.modelo)}</td><td class="cell mono">${e(u.numSerie??"—")}</td><td class="cell" style="color:${HW_ESTADO[u.estado]?.color??"#6b7280"}">${HW_ESTADO[u.estado]?.label??u.estado}</td><td class="cell tr">${u.catalogo.precio!=null?u.catalogo.precio.toLocaleString("es-ES",{style:"currency",currency:"EUR"}):"—"}</td></tr>`
       ).join("")
-      return `<div class="hw-group"><p class="hw-tipo">${e(HW_TIPO_LABEL[tipo]??tipo)} (${units.length})</p><table class="tbl"><thead><tr><th>Modelo</th><th>N/S</th><th>Estado</th><th class="tr">Precio/ud</th></tr></thead><tbody>${rows}</tbody>${sub>0?`<tfoot><tr><td colspan="3" class="sub-lbl">Subtotal</td><td class="sub-val tr">${sub.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</td></tr></tfoot>`:""}</table></div>`
+      return `<div class="hw-group"><p class="hw-tipo">${e(HW_TIPO_LABEL[tipo]??tipo)} (${units.length})</p><table class="tbl"><thead><tr><th scope="col">Modelo</th><th scope="col">N/S</th><th scope="col">Estado</th><th scope="col" class="tr">Precio/ud</th></tr></thead><tbody>${rows}</tbody>${sub>0?`<tfoot><tr><td colspan="3" class="sub-lbl">Subtotal</td><td class="sub-val tr">${sub.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</td></tr></tfoot>`:""}</table></div>`
     }).join("")
     const visitasRows = pp.visitas.slice(0,8).map(v => {
       const col = v.estado==="COMPLETADA"?"#16a34a":v.estado==="BORRADOR"?"#d97706":"#6b7280"
@@ -351,9 +353,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1
       ${pp.contactos.length>0?contactosHTML:`<p style="font-size:12px;color:#9ca3af">Sin contactos vinculados</p>`}
     </div>
   </div>
-  ${pp.fases.length>0?`<div class="sec"><p class="stitle">Fases del proyecto</p><table class="tbl"><thead><tr><th>Fase</th><th>Estado</th><th class="tr">Fecha</th></tr></thead><tbody>${fasesRows}</tbody></table>${hitosHTML?`<div class="hitos-wrap">${hitosHTML}</div>`:""}</div>`:""}
+  ${pp.fases.length>0?`<div class="sec"><p class="stitle">Fases del proyecto</p><table class="tbl"><thead><tr><th scope="col">Fase</th><th scope="col">Estado</th><th scope="col" class="tr">Fecha</th></tr></thead><tbody>${fasesRows}</tbody></table>${hitosHTML?`<div class="hitos-wrap">${hitosHTML}</div>`:""}</div>`:""}
   ${pp.hardwareUnidades.length>0?`<div class="sec"><p class="stitle">Inventario de hardware</p>${hwSections}${totalHW>0?`<div class="hw-total"><span>Total hardware</span><span style="color:${TEAL}">${totalHW.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}</span></div>`:""}</div>`:""}
-  ${pp.visitas.length>0?`<div class="sec"><p class="stitle">Visitas (${pp.visitas.length})</p><table class="tbl"><thead><tr><th>Fecha</th><th>Estado</th><th>Tipo</th><th>Técnico</th></tr></thead><tbody>${visitasRows}</tbody></table>${pp.visitas.length>8?`<p style="font-size:11px;color:#9ca3af;margin-top:7px">+${pp.visitas.length-8} visitas adicionales</p>`:""}</div>`:""}
+  ${pp.visitas.length>0?`<div class="sec"><p class="stitle">Visitas (${pp.visitas.length})</p><table class="tbl"><thead><tr><th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col">Tipo</th><th scope="col">Técnico</th></tr></thead><tbody>${visitasRows}</tbody></table>${pp.visitas.length>8?`<p style="font-size:11px;color:#9ca3af;margin-top:7px">+${pp.visitas.length-8} visitas adicionales</p>`:""}</div>`:""}
   ${pp.descripcion||pp.notas?`<div class="sec"><p class="stitle">Notas y descripción</p>${pp.descripcion?`<div style="margin-bottom:14px"><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Descripción</p><p class="nt">${e(pp.descripcion)}</p></div>`:""}${pp.notas?`<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:5px">Notas internas</p><p class="nt">${e(pp.notas)}</p></div>`:""}</div>`:""}
   <div class="pfooter"><span>Palex Medical · InLab — Confidencial</span><span>Generado: ${e(fecha)}</span></div>
 </div>
@@ -975,7 +977,7 @@ ${pp.mapaHtml ? `<div class="map-page">
                         <thead>
                           <tr className="border-b border-gray-100">
                             {["Modelo", "N/S", "Estado", "Precio/ud"].map((h, i) => (
-                              <th key={h} className={`text-xs font-semibold text-gray-400 pb-2 ${i === 3 ? "text-right" : "text-left pr-4"}`}>{h}</th>
+                              <th key={h} scope="col" className={`text-xs font-semibold text-gray-400 pb-2 ${i === 3 ? "text-right" : "text-left pr-4"}`}>{h}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1136,15 +1138,15 @@ ${pp.mapaHtml ? `<div class="map-page">
       {shareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           onClick={e => { if (e.target === e.currentTarget) setShareModal(false) }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div ref={shareModalRef} role="dialog" aria-modal="true" aria-labelledby="modal-compartir-titulo" tabIndex={-1} className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden outline-none">
             {/* Header */}
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-base">Compartir proyecto</h3>
+                  <h3 id="modal-compartir-titulo" className="font-bold text-gray-900 text-base">Compartir proyecto</h3>
                   <p className="text-xs text-gray-400 mt-0.5">Cualquier persona con el enlace puede ver el resumen sin iniciar sesión</p>
                 </div>
-                <button onClick={() => setShareModal(false)} className="text-gray-300 hover:text-gray-500 transition-colors p-1 -mt-1 -mr-1">
+                <button onClick={() => setShareModal(false)} aria-label="Cerrar" className="text-gray-300 hover:text-gray-500 transition-colors p-1 -mt-1 -mr-1">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>

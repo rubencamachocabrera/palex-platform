@@ -199,21 +199,21 @@ export function TabExplorador({ hospitalId, periodo, hospitales }: Props) {
           <table className="w-full text-xs min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="py-2.5 pr-3 text-left cursor-pointer hover:text-gray-700 transition-colors whitespace-nowrap"
+                <th scope="col" className="py-2.5 pr-3 text-left cursor-pointer hover:text-gray-700 transition-colors whitespace-nowrap"
                   onClick={() => toggleSort("mes")}>
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
                     Mes <SortIcon k="mes" />
                   </span>
                 </th>
                 {TUBOS.filter(t => colsVis.has(t.key as TuboKey)).map(t => (
-                  <th key={t.key} className="py-2.5 px-2 text-right cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                  <th key={t.key} scope="col" className="py-2.5 px-2 text-right cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
                     onClick={() => toggleSort(t.key as TuboKey)}>
                     <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: t.color }}>
                       {t.label} <SortIcon k={t.key as SortKey} />
                     </span>
                   </th>
                 ))}
-                <th className="py-2.5 pl-3 text-right cursor-pointer hover:text-gray-700 transition-colors whitespace-nowrap"
+                <th scope="col" className="py-2.5 pl-3 text-right cursor-pointer hover:text-gray-700 transition-colors whitespace-nowrap"
                   onClick={() => toggleSort("total")}>
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
                     Total <SortIcon k="total" />

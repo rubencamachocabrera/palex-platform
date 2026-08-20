@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useToast } from "@/components/Toast"
 import { TEAL, TEAL_DARK, ORANGE } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { useModalA11y } from "@/hooks/useModalA11y"
 
 interface Zona {
   id: string
@@ -87,6 +88,7 @@ export default function ZonasPage() {
     setEditando(z); setForm({ nombre: z.nombre, descripcion: z.descripcion ?? "" }); setError(""); setModalOpen(true)
   }
   function cerrar() { setModalOpen(false) }
+  const modalRef = useModalA11y(modalOpen, cerrar)
 
   async function guardar() {
     if (!form.nombre.trim()) { setError("El nombre es obligatorio"); return }
@@ -336,7 +338,7 @@ export default function ZonasPage() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onMouseDown={e => { if (e.target === e.currentTarget) cerrar() }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto animate-in scale-in duration-150">
+          <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-zona-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md my-auto animate-in scale-in duration-150">
             {/* Cabecera modal */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
@@ -344,11 +346,11 @@ export default function ZonasPage() {
                   style={{ backgroundColor: editando ? TEAL : ORANGE }}>
                   <IconZona size={14} />
                 </span>
-                <h2 className="text-base font-bold text-gray-900">
+                <h2 id="modal-zona-titulo" className="text-base font-bold text-gray-900">
                   {editando ? `Editar — ${editando.nombre}` : "Nueva zona"}
                 </h2>
               </div>
-              <button onClick={cerrar} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <button onClick={cerrar} aria-label="Cerrar" className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>

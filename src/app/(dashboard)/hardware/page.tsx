@@ -7,6 +7,7 @@ import { exportarCSV } from "@/lib/csv"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { useModalA11y } from "@/hooks/useModalA11y"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -516,8 +517,12 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
             return (
               <div key={hospital.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
                   className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
-                  onClick={() => setExpandido(isOpen ? null : hospital.id)}>
+                  onClick={() => setExpandido(isOpen ? null : hospital.id)}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandido(isOpen ? null : hospital.id) } }}>
                   {/* Semáforo */}
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: meta.dot }} />
                   {/* Info */}
@@ -559,12 +564,12 @@ function InstalacionesTab({ unidades, onUpdated, tipos }: {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="text-gray-400 border-b border-gray-200">
-                            <th className="text-left pb-2 font-medium">Tipo</th>
-                            <th className="text-left pb-2 font-medium">Dispositivo</th>
-                            <th className="text-left pb-2 font-medium">Nº serie</th>
-                            <th className="text-left pb-2 font-medium">Estado</th>
-                            <th className="text-left pb-2 font-medium">Antigüedad</th>
-                            <th className="text-left pb-2 font-medium">Garantía</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Tipo</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Dispositivo</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Nº serie</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Estado</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Antigüedad</th>
+                            <th scope="col" className="text-left pb-2 font-medium">Garantía</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -760,16 +765,18 @@ function MaterialDrawer({ tipos, item, onClose, onSaved }: {
   const FLDCLS = "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 bg-white placeholder:text-gray-300 transition-colors"
   const FLBL   = "block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5"
   const ringCss = { "--tw-ring-color": tipoSel?.color ?? TEAL } as React.CSSProperties
+  const modalRef = useModalA11y(true, onClose)
 
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="material-drawer-titulo"
+        className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0"
           style={{ borderTop: `3px solid ${tipoSel?.color ?? TEAL}` }}>
           <div>
-            <h2 className="text-base font-bold text-gray-900">{item ? "Editar material" : "Nuevo material"}</h2>
+            <h2 id="material-drawer-titulo" className="text-base font-bold text-gray-900">{item ? "Editar material" : "Nuevo material"}</h2>
             <p className="text-xs text-gray-400 mt-0.5">{item ? `${item.marca} ${item.modelo}` : "Añadir al catálogo Palex"}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" aria-label="Cerrar">
@@ -1325,11 +1332,13 @@ function EditUnidadDrawer({ unidad, onClose, onSaved }: {
   const FLBL = "block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5"
   const ring = { "--tw-ring-color": tipoColor } as React.CSSProperties
   const hw   = HW_ESTADO[form.estado] ?? { label: form.estado, color: "#6b7280", bg: "#f3f4f6" }
+  const modalRef = useModalA11y(true, onClose)
 
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="edit-unidad-drawer-titulo"
+        className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 shrink-0"
           style={{ borderTop: `3px solid ${tipoColor}` }}>
           {unidad.catalogo.tipo && (
@@ -1337,7 +1346,7 @@ function EditUnidadDrawer({ unidad, onClose, onSaved }: {
               style={{ backgroundColor: tipoColor }}>{unidad.catalogo.tipo.nombre}</span>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-gray-900">{unidad.catalogo.marca} {unidad.catalogo.modelo}</h2>
+            <h2 id="edit-unidad-drawer-titulo" className="text-base font-bold text-gray-900">{unidad.catalogo.marca} {unidad.catalogo.modelo}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
               {unidad.catalogo.referenciaPalex && (
                 <code className="font-mono font-semibold mr-2" style={{ color: tipoColor }}>{unidad.catalogo.referenciaPalex}</code>
@@ -1835,11 +1844,11 @@ function ModelCard({ item, units, esAdmin, onEdit, onToggle, onUnitUpdated, onUn
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-[10px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
-                      <th className="text-left pb-2 font-semibold">Nº serie</th>
-                      <th className="text-left pb-2 font-semibold">Estado</th>
-                      <th className="text-left pb-2 font-semibold hidden sm:table-cell">Asignado a</th>
-                      <th className="text-left pb-2 font-semibold hidden md:table-cell">Garantía</th>
-                      <th className="pb-2 w-24 sticky right-0 bg-gray-50/60" />
+                      <th scope="col" className="text-left pb-2 font-semibold">Nº serie</th>
+                      <th scope="col" className="text-left pb-2 font-semibold">Estado</th>
+                      <th scope="col" className="text-left pb-2 font-semibold hidden sm:table-cell">Asignado a</th>
+                      <th scope="col" className="text-left pb-2 font-semibold hidden md:table-cell">Garantía</th>
+                      <th scope="col" className="pb-2 w-24 sticky right-0 bg-gray-50/60" />
                     </tr>
                   </thead>
                   <tbody>
@@ -2233,7 +2242,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/60">
                       {["Tipo","Dispositivo","Ref. Palex","Proveedor","Precio","Stock",""].map((h, i) => (
-                        <th key={i} className={`px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide ${i >= 3 ? "hidden md:table-cell" : i >= 2 ? "hidden sm:table-cell" : ""}`}>{h}</th>
+                        <th key={i} scope="col" className={`px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide ${i >= 3 ? "hidden md:table-cell" : i >= 2 ? "hidden sm:table-cell" : ""}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2291,14 +2300,14 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Nº Serie</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Hospital / Proyecto</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Antigüedad</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Garantía</th>
-                    <th className="px-3 py-3 w-24 sticky right-0 bg-gray-50/80 border-l border-gray-100" />
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Tipo</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dispositivo</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Nº Serie</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Hospital / Proyecto</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Antigüedad</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Garantía</th>
+                    <th scope="col" className="px-3 py-3 w-24 sticky right-0 bg-gray-50/80 border-l border-gray-100" />
                   </tr>
                 </thead>
                 <tbody>

@@ -93,6 +93,8 @@ export function TagSelector({ entityType, entityId, tagIds, onUpdate, readOnly }
           onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o) }}
           className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors shrink-0"
           title="Asignar etiqueta"
+          aria-haspopup="menu"
+          aria-expanded={open}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -100,10 +102,11 @@ export function TagSelector({ entityType, entityId, tagIds, onUpdate, readOnly }
         </button>
       )}
       {open && available.length > 0 && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg py-1.5 min-w-[160px] animate-in fade-in zoom-in-95 duration-150">
+        <div role="menu" aria-label="Etiquetas disponibles" className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg py-1.5 min-w-[160px] animate-in fade-in zoom-in-95 duration-150">
           {available.map(tag => (
             <button
               key={tag.id}
+              role="menuitem"
               onClick={e => { e.preventDefault(); e.stopPropagation(); addTag(tag.id); setOpen(false) }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
             >

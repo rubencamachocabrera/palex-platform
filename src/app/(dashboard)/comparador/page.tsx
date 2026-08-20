@@ -231,7 +231,7 @@ export default function ComparadorPage() {
                 <thead>
                   <tr style={{ background: "var(--surface, #f8fafc)" }}>
                     {["Métrica", `Periodo actual (${periodo}d)`, `Periodo anterior`, "Variación"].map(h => (
-                      <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 600, fontSize: 12, color: "var(--muted, #64748b)", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
+                      <th key={h} scope="col" style={{ padding: "10px 16px", textAlign: "left", fontWeight: 600, fontSize: 12, color: "var(--muted, #64748b)", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                         {h}
                       </th>
                     ))}

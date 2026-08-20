@@ -95,13 +95,13 @@ export function TabIncidencias() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-100 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Ruta</th>
-                <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3">Descripción</th>
-                <th className="px-4 py-3">Gravedad</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">MTTR</th>
+                <th scope="col" className="px-4 py-3">Fecha</th>
+                <th scope="col" className="px-4 py-3">Ruta</th>
+                <th scope="col" className="px-4 py-3">Tipo</th>
+                <th scope="col" className="px-4 py-3">Descripción</th>
+                <th scope="col" className="px-4 py-3">Gravedad</th>
+                <th scope="col" className="px-4 py-3">Estado</th>
+                <th scope="col" className="px-4 py-3">MTTR</th>
               </tr>
             </thead>
             <tbody>

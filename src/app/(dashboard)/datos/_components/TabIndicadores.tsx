@@ -233,7 +233,7 @@ export function TabIndicadores({ hospitalId, periodo }: Props) {
             <thead>
               <tr className="border-b border-gray-100">
                 {["Tubo", "Media", "Mediana", "σ", "CV%", "P10", "P25", "P75", "P90", "CAGR", "Trend"].map(h => (
-                  <th key={h} className="py-2.5 px-2 text-right first:text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} scope="col" className="py-2.5 px-2 text-right first:text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>

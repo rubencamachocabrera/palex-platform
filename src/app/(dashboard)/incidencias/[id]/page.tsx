@@ -6,6 +6,7 @@ import Link from "next/link"
 import { TEAL, TEAL_LIGHT, ORANGE } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useModalA11y } from "@/hooks/useModalA11y"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { comprimirImagen } from "@/lib/img-compress"
 import {
@@ -209,6 +210,8 @@ export default function IncidenciaDetallePage() {
   const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const lightboxA11yRef = useModalA11y(!!lightboxImg, () => setLightboxImg(null))
+  const deleteA11yRef = useModalA11y(showDeleteConfirm, () => setShowDeleteConfirm(false))
   const [editandoPrioridad, setEditandoPrioridad] = useState(false)
   const [editandoEquipo, setEditandoEquipo] = useState(false)
 
@@ -546,11 +549,11 @@ export default function IncidenciaDetallePage() {
       <h2 style="font-size:14px;text-transform:uppercase;color:#94a3b8;letter-spacing:1px;margin-bottom:12px">Historial de eventos (${inc.eventos.length})</h2>
       <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
         <thead><tr style="background:#f8fafc">
-          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Fecha</th>
-          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Tipo</th>
-          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Descripción</th>
-          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Autor</th>
-          <th style="padding:8px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Duración</th>
+          <th scope="col" style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Fecha</th>
+          <th scope="col" style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Tipo</th>
+          <th scope="col" style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Descripción</th>
+          <th scope="col" style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Autor</th>
+          <th scope="col" style="padding:8px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0">Duración</th>
         </tr></thead>
         <tbody>${eventosHTML}</tbody>
       </table>
@@ -1010,6 +1013,7 @@ export default function IncidenciaDetallePage() {
                     <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 group">
                       <img src={foto} alt="" className="w-full h-full object-cover" />
                       <button onClick={() => setEventoFotos(prev => prev.filter((_, idx) => idx !== i))}
+                        aria-label="Quitar foto"
                         className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <IconX size={14} className="text-white" />
                       </button>
@@ -1033,7 +1037,7 @@ export default function IncidenciaDetallePage() {
                     {realizadoPorNombres.map(nombre => (
                       <span key={nombre} className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
                         {nombre}
-                        <button onClick={() => setRealizadoPorNombres(p => p.filter(n => n !== nombre))} className="hover:text-red-500 transition-colors">
+                        <button onClick={() => setRealizadoPorNombres(p => p.filter(n => n !== nombre))} aria-label={`Quitar a ${nombre}`} className="hover:text-red-500 transition-colors">
                           <IconX size={9} />
                         </button>
                       </span>
@@ -1048,9 +1052,9 @@ export default function IncidenciaDetallePage() {
                   <IconClock size={14} className="text-gray-400" />
                   <input type="date" value={eventoFecha} onChange={e => setEventoFecha(e.target.value)}
                     max={new Date().toISOString().slice(0, 10)}
-                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                   <input type="time" value={eventoHora} onChange={e => setEventoHora(e.target.value)}
-                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none w-20" />
+                    className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-20" />
                 </div>
 
                 {/* Duración */}
@@ -1058,7 +1062,7 @@ export default function IncidenciaDetallePage() {
                   <span className="text-xs text-gray-400">Tiempo</span>
                   <input type="number" value={eventoDuracion} onChange={e => setEventoDuracion(e.target.value)}
                     min="0" max="9999" placeholder="—"
-                    className="w-16 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                    className="w-16 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                   <span className="text-xs text-gray-400">min</span>
                 </div>
 
@@ -1224,7 +1228,7 @@ export default function IncidenciaDetallePage() {
                                       <div className="flex items-center gap-2">
                                         <span className="text-[11px] text-gray-400 shrink-0">Realizado por</span>
                                         <select value="" onChange={e => { if (e.target.value && !editEvento.realizadoPorNombres.includes(e.target.value)) setEditEvento(p => ({ ...p, realizadoPorNombres: [...p.realizadoPorNombres, e.target.value] })) }}
-                                          className="flex-1 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none">
+                                          className="flex-1 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                                           <option value="">Añadir persona...</option>
                                           {usuarios.filter(u => !editEvento.realizadoPorNombres.includes(u.nombre)).map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
                                         </select>
@@ -1234,7 +1238,7 @@ export default function IncidenciaDetallePage() {
                                           {editEvento.realizadoPorNombres.map(n => (
                                             <span key={n} className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
                                               {n}
-                                              <button onClick={() => setEditEvento(p => ({ ...p, realizadoPorNombres: p.realizadoPorNombres.filter(x => x !== n) }))} className="hover:text-red-500"><IconX size={9} /></button>
+                                              <button onClick={() => setEditEvento(p => ({ ...p, realizadoPorNombres: p.realizadoPorNombres.filter(x => x !== n) }))} aria-label={`Quitar a ${n}`} className="hover:text-red-500"><IconX size={9} /></button>
                                             </span>
                                           ))}
                                         </div>
@@ -1245,14 +1249,14 @@ export default function IncidenciaDetallePage() {
                                       <div className="flex items-center gap-1">
                                         <IconClock size={12} className="text-gray-400" />
                                         <input type="date" value={editEvento.fecha} onChange={e => setEditEvento(p => ({ ...p, fecha: e.target.value }))}
-                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                                         <input type="time" value={editEvento.hora} onChange={e => setEditEvento(p => ({ ...p, hora: e.target.value }))}
-                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none w-[72px]" />
+                                          className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-[72px]" />
                                       </div>
                                       <div className="flex items-center gap-1">
                                         <input type="number" value={editEvento.duracion} onChange={e => setEditEvento(p => ({ ...p, duracion: e.target.value }))}
                                           min="0" max="9999" placeholder="—"
-                                          className="w-14 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none" />
+                                          className="w-14 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-400" />
                                         <span className="text-[11px] text-gray-400">min</span>
                                       </div>
                                       <button onClick={() => setEditEvento(p => ({ ...p, privado: !p.privado }))}
@@ -1316,8 +1320,9 @@ export default function IncidenciaDetallePage() {
 
       {/* Lightbox */}
       {lightboxImg && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
-          <button onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+        <div ref={lightboxA11yRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista ampliada de foto"
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 outline-none" onClick={() => setLightboxImg(null)}>
+          <button onClick={() => setLightboxImg(null)} aria-label="Cerrar" className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
             <IconX size={24} />
           </button>
           <img src={lightboxImg} alt="" className="max-w-full max-h-[90vh] rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
@@ -1329,11 +1334,12 @@ export default function IncidenciaDetallePage() {
         <>
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowDeleteConfirm(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div ref={deleteA11yRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="delete-inc-titulo"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 outline-none" onClick={e => e.stopPropagation()}>
               <div className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center bg-red-100 dark:bg-red-950/40">
                 <IconAlertTriangle size={22} className="text-red-500" />
               </div>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white text-center mb-1">¿Eliminar incidencia?</h2>
+              <h2 id="delete-inc-titulo" className="text-base font-bold text-gray-900 dark:text-white text-center mb-1">¿Eliminar incidencia?</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-1">
                 <span className="font-mono font-semibold">{inc.codigo}</span> — {inc.titulo}
               </p>

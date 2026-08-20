@@ -184,12 +184,12 @@ export function TabIncidencias({ hospitalId, periodo, hospitales }: Props) {
                       { k: "estado",    l: "Estado" },
                       { k: "mttrHoras", l: "MTTR" },
                     ] as const).map(col => (
-                      <th key={col.k} className="py-2 px-2 text-left font-semibold text-gray-400 uppercase tracking-wide text-[10px] cursor-pointer hover:text-gray-600 transition-colors whitespace-nowrap"
+                      <th key={col.k} scope="col" className="py-2 px-2 text-left font-semibold text-gray-400 uppercase tracking-wide text-[10px] cursor-pointer hover:text-gray-600 transition-colors whitespace-nowrap"
                         onClick={() => toggleSort(col.k)}>
                         <span className="flex items-center gap-1">{col.l} <SortIcon k={col.k} /></span>
                       </th>
                     ))}
-                    <th className="py-2 px-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Descripción</th>
+                    <th scope="col" className="py-2 px-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Descripción</th>
                   </tr>
                 </thead>
                 <tbody>

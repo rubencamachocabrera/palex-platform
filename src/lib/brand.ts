@@ -24,20 +24,24 @@ export const TIPO_RESULTADO_COLOR: Record<string, { bg: string; color: string }>
   proyecto: { bg: "#EEF2FF", color: "#4F46E5" },
 }
 
-/** Color por estado/prioridad de incidencia — fuente única, reusado en listas/detalle/stats. */
+/**
+ * Color por estado/prioridad de incidencia — fuente única, reusado en listas/detalle/stats.
+ * Tonos de texto oscurecidos (equivalente Tailwind -700) para cumplir WCAG AA (4.5:1) sobre el bg pálido;
+ * ver auditoría a11y — los tonos -500 originales daban ratios de 2.06–3.44:1.
+ */
 export const STATUS_COLORS = {
   estado: {
-    ABIERTA:              { color: "#ef4444", bg: "#fef2f2" },
-    EN_PROGRESO:          { color: "#f59e0b", bg: "#fffbeb" },
+    ABIERTA:              { color: "#b91c1c", bg: "#fef2f2" },
+    EN_PROGRESO:          { color: "#b45309", bg: "#fffbeb" },
     PENDIENTE_CLIENTE:    { color: "#8b5cf6", bg: "#f5f3ff" },
     PENDIENTE_PROVEEDOR:  { color: "#6366f1", bg: "#eef2ff" },
-    RESUELTA:             { color: "#10b981", bg: "#ecfdf5" },
+    RESUELTA:             { color: "#047857", bg: "#ecfdf5" },
     CERRADA:              { color: "#6b7280", bg: "#f3f4f6" },
   },
   prioridad: {
-    CRITICA: { color: "#dc2626", bg: "#fef2f2" },
+    CRITICA: { color: "#b91c1c", bg: "#fef2f2" },
     ALTA:    { color: "#f97316", bg: "#fff7ed" },
-    MEDIA:   { color: "#f59e0b", bg: "#fffbeb" },
-    BAJA:    { color: TEAL, bg: TEAL_LIGHT },
+    MEDIA:   { color: "#b45309", bg: "#fffbeb" },
+    BAJA:    { color: TEAL_DARK, bg: TEAL_LIGHT },
   },
 } as const

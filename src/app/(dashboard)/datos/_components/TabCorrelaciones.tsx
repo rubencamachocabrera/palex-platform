@@ -216,11 +216,11 @@ export function TabCorrelaciones({ hospitalId, periodo, hospitales }: Props) {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="py-2 pr-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Hospital</th>
-                  <th className="py-2 px-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Consumo</th>
-                  <th className="py-2 px-2 text-right text-[10px] font-semibold text-indigo-400 uppercase tracking-wide">Dist.</th>
-                  <th className="py-2 px-2 text-right text-[10px] font-semibold text-pink-400 uppercase tracking-wide">Pob.</th>
-                  <th className="py-2 pl-2 text-right text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">Vis.</th>
+                  <th scope="col" className="py-2 pr-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Hospital</th>
+                  <th scope="col" className="py-2 px-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Consumo</th>
+                  <th scope="col" className="py-2 px-2 text-right text-[10px] font-semibold text-indigo-400 uppercase tracking-wide">Dist.</th>
+                  <th scope="col" className="py-2 px-2 text-right text-[10px] font-semibold text-pink-400 uppercase tracking-wide">Pob.</th>
+                  <th scope="col" className="py-2 pl-2 text-right text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">Vis.</th>
                 </tr>
               </thead>
               <tbody>

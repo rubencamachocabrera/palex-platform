@@ -86,7 +86,7 @@ export function SlaAlertasWidget() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-red-700 leading-none">Alertas SLA</p>
-          <p className="text-xs text-red-400 mt-0.5">
+          <p className="text-xs text-red-400 mt-0.5" aria-live="polite">
             {vencidas > 0 && <span className="font-semibold">{vencidas} vencida{vencidas !== 1 ? "s" : ""} · </span>}
             {criticas} crítica{criticas !== 1 ? "s" : ""} · {incidencias.length} expiran en &lt;24h
           </p>
