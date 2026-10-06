@@ -34,15 +34,15 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, actions, breadcrumb, className = "", icon, iconColor }: PageHeaderProps) {
   return (
-    <div className={`mb-6 ${className}`}>
+    <header className={`page-header mb-7 sm:mb-8 ${className}`}>
       {/* Breadcrumb opcional */}
       {breadcrumb && breadcrumb.length > 0 && (
-        <nav className="flex items-center gap-1.5 mb-2">
+        <nav className="flex items-center gap-1.5 mb-3" aria-label="Migas de pan">
           {breadcrumb.map((item, i) => (
             <span key={i} className="flex items-center gap-1.5">
               <Link
                 href={item.href}
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-xs font-medium text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
               >
                 {item.label}
               </Link>
@@ -55,29 +55,29 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
       )}
 
       {/* Fila principal: título + acciones */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex items-start gap-3">
+      <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex items-start gap-3.5">
           {icon && (
             <span
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
-              style={{ backgroundColor: iconColor ?? TEAL }}
+              className="page-header-icon w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 mt-0.5"
+              style={{ background: `linear-gradient(145deg, ${iconColor ?? TEAL}, ${iconColor ?? TEAL}cc)` }}
             >
               {icon}
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white truncate">{title}</h1>
+            <h1 className="text-[26px] sm:text-[28px] leading-[1.15] font-extrabold tracking-[-0.03em] text-gray-900 dark:text-white truncate">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
+              <p className="max-w-3xl text-sm leading-6 text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>
             )}
           </div>
         </div>
         {actions && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 sm:justify-end">
             {actions}
           </div>
         )}
       </div>
-    </div>
+    </header>
   )
 }

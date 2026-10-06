@@ -239,19 +239,19 @@ export function TopBar() {
   }
 
   return (
-    <div className="h-14 bg-white border-b border-gray-100 flex items-center px-4 sm:px-6 gap-3 shrink-0 dark:bg-[#1e293b] dark:border-[rgba(255,255,255,0.07)]">
+    <header className="topbar-shell h-16 flex items-center px-4 sm:px-6 gap-3 shrink-0 sticky top-0 z-30 border-b border-slate-200/70 dark:border-[rgba(255,255,255,0.07)]">
 
       {/* Hamburger — solo mobile */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden text-gray-500 hover:text-gray-800 p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0"
+        className="lg:hidden text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition-colors shrink-0"
         aria-label="Abrir menu"
       >
         <MenuIcon />
       </button>
 
       {/* Buscador */}
-      <div ref={wrapRef} className="flex-1 max-w-sm relative">
+      <div ref={wrapRef} className="flex-1 max-w-md relative">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
@@ -267,12 +267,12 @@ export function TopBar() {
             onChange={e => setQ(e.target.value)}
             onFocus={() => { if (resultados.length > 0) setAbierto(true) }}
             placeholder="Buscar hospitales, visitas..."
-            className="w-full pl-9 pr-14 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-colors dark:bg-[#243147] dark:border-[rgba(255,255,255,0.1)] dark:text-slate-200 dark:placeholder-slate-500 dark:focus:bg-[#1e293b]"
+            className="w-full pl-9 pr-14 py-2.5 text-sm bg-slate-50/80 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-colors dark:bg-[#243147] dark:border-[rgba(255,255,255,0.1)] dark:text-slate-200 dark:placeholder-slate-500 dark:focus:bg-[#1e293b]"
             style={{ "--tw-ring-color": TEAL } as React.CSSProperties}
           />
           {!q && !buscando && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 pointer-events-none select-none">
-              <kbd className="text-[10px] font-medium text-gray-300 bg-gray-100 dark:bg-[#334155] dark:text-slate-500 px-1.5 py-0.5 rounded">/</kbd>
+              <kbd className="text-[10px] font-medium text-gray-400 bg-white border border-gray-200 shadow-sm dark:bg-[#334155] dark:border-transparent dark:text-slate-500 px-1.5 py-0.5 rounded-md">/</kbd>
             </div>
           )}
           {buscando && (
@@ -538,14 +538,14 @@ export function TopBar() {
       </div>
 
       {/* Acceso rapido hospitales */}
-      <a
+      <Link
         href="/hospitales"
-        className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+        className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-teal-200 hover:text-teal-700 hover:bg-teal-50 transition-colors"
       >
         <HospitalIcon />
         <span>Hospitales</span>
-      </a>
+      </Link>
 
-    </div>
+    </header>
   )
 }

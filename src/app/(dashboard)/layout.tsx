@@ -27,7 +27,7 @@ export default async function DashboardLayout({
           <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
-            <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-4 lg:pb-8">
+            <main id="main-content" className="app-main flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-4 lg:pb-8">
               <PageTransition>{children}</PageTransition>
             </main>
           </div>
