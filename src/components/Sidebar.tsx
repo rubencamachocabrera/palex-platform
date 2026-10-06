@@ -370,7 +370,7 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
-      className="relative flex items-center rounded-lg text-sm font-medium transition-colors duration-150 overflow-hidden"
+      className={`sidebar-nav-link relative flex items-center rounded-xl text-sm font-medium transition-colors duration-150 overflow-hidden${active ? " sidebar-nav-link-active" : ""}`}
       style={{
         gap: collapsed ? 0 : 10,
         padding: collapsed ? "9px 0" : "9px 11px",
@@ -476,7 +476,7 @@ function SidebarInner({
 
   return (
     <aside
-      className="flex flex-col h-full"
+      className="sidebar-shell flex flex-col h-full"
       style={{
         background: `linear-gradient(165deg, ${BG} 0%, #17304c 100%)`,
         borderRight: `1px solid ${BD}`,

@@ -87,7 +87,7 @@ function KpiCard({ label, value, sub, icon, trend }: {
   label: string; value: string | number; sub?: string; icon: React.ReactNode; trend?: number
 }) {
   return (
-    <div className="card card-hover p-5">
+    <div className="dashboard-kpi card card-hover p-5">
       <div className="flex items-start justify-between mb-3">
         <span className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">{icon}</span>
         {trend !== undefined && (
@@ -238,7 +238,7 @@ function QuickActionsField() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Link
           href="/visitas"
-          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+          className="dashboard-quick-action card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
         >
           <span
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
@@ -253,7 +253,7 @@ function QuickActionsField() {
         </Link>
         <Link
           href="/visitas?fecha=hoy"
-          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+          className="dashboard-quick-action card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
         >
           <span
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
@@ -268,7 +268,7 @@ function QuickActionsField() {
         </Link>
         <Link
           href="/visitas/calendario"
-          className="card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
+          className="dashboard-quick-action card-hover group flex items-center gap-4 p-4 sm:p-5 rounded-xl border-2 border-teal-100 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-200 dark:hover:border-teal-800 transition-all"
         >
           <span
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"

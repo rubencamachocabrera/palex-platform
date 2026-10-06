@@ -99,7 +99,7 @@ export function BottomNav() {
               <button
                 key="mas"
                 onClick={toggleSidebar}
-                className="flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors duration-150"
+                className="bottom-nav-item flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors duration-150"
                 style={{ minWidth: 56, minHeight: 44, color: "#9ca3af" }}
                 aria-label="Abrir menu"
               >
@@ -115,7 +115,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href!}
-              className="relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 transition-all duration-150"
+              className={`bottom-nav-item relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 transition-all duration-150${active ? " bottom-nav-item-active" : ""}`}
               style={{
                 minWidth: 56,
                 minHeight: 44,
@@ -135,7 +135,7 @@ export function BottomNav() {
               {/* Active dot indicator */}
               {active && (
                 <span
-                  className="absolute -bottom-0.5 w-1 h-1 rounded-full"
+                  className="bottom-nav-active-dot absolute -bottom-0.5 w-1 h-1 rounded-full"
                   style={{ backgroundColor: TEAL }}
                 />
               )}

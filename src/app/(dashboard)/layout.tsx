@@ -23,9 +23,9 @@ export default async function DashboardLayout({
     <KeyboardShortcutsProvider>
       <ToastProvider>
         <OnboardingWizard />
-        <div className="flex h-screen bg-page overflow-hidden">
+        <div className="app-shell flex h-screen bg-page overflow-hidden">
           <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="app-workspace flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
             <main id="main-content" className="app-main flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-4 lg:pb-8">
               <PageTransition>{children}</PageTransition>

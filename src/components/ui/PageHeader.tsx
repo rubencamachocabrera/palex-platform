@@ -55,18 +55,18 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
       )}
 
       {/* Fila principal: título + acciones */}
-      <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+      <div className="page-header-content flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex items-start gap-3.5">
           {icon && (
             <span
-              className="page-header-icon w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 mt-0.5"
+              className="page-header-icon w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 mt-0.5"
               style={{ background: `linear-gradient(145deg, ${iconColor ?? TEAL}, ${iconColor ?? TEAL}cc)` }}
             >
               {icon}
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-[26px] sm:text-[28px] leading-[1.15] font-extrabold tracking-[-0.03em] text-gray-900 dark:text-white truncate">{title}</h1>
+            <h1 className="text-[27px] sm:text-[31px] leading-[1.1] font-extrabold tracking-[-0.04em] text-gray-900 dark:text-white truncate">{title}</h1>
             {subtitle && (
               <p className="max-w-3xl text-sm leading-6 text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>
             )}

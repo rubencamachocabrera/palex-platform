@@ -16,7 +16,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   return (
-    <div ref={ref} className="page-enter h-full">
+    <div ref={ref} className="page-enter page-content h-full">
       {children}
     </div>
   )
