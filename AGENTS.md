@@ -63,7 +63,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### URL routing
 - Route group `(dashboard)` NO aparece en la URL
-- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/incidencias`, `/mapa`, `/datos`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`, `/notas`, `/actividad`
+- Rutas: `/dashboard`, `/hospitales`, `/visitas`, `/ventas/pipeline`, `/proyectos`, `/hardware`, `/incidencias`, `/mapa`, `/datos`, `/inlab`, `/admin`, `/perfil`, `/llamadas`, `/recordatorios`, `/notas`, `/actividad`
 - Ruta especial: `/proyectos/[id]/presentacion` — full-screen, sale de la layout normal
 - NO usar `/dashboard/hospitales`, `/dashboard/visitas`, etc.
 - NO existe `/pre-proyectos` — todo unificado en `/proyectos`
@@ -115,6 +115,7 @@ src/
       hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
       mapa/page.tsx                     Leaflet, coordenadas por ciudad
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
+      inlab/page.tsx                    Inteligencia InLab: perfil agregado inicial GULLA, consumo, operación y calidad
       admin/                            CRUD: usuarios, zonas, hospitales, hardware, tags
       admin/log/page.tsx                Log de actividad (solo ADMIN)
       admin/equipo/page.tsx             Panel equipo — workload por usuario (solo ADMIN)
