@@ -78,7 +78,7 @@ export function SlaAlertasWidget() {
   return (
     <div className="mb-6 rounded-2xl border overflow-hidden shadow-sm" style={{ borderColor: "#fca5a5" }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "linear-gradient(135deg, #fef2f2 0%, #fff7f7 100%)" }}>
+      <div className="sla-widget-head flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#dc262618" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>

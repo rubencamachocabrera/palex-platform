@@ -1,11 +1,11 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { signOut } from "next-auth/react"
-import { TEAL, ORANGE } from "@/lib/brand"
+import { ORANGE } from "@/lib/brand"
+import { BrandLockup, PalexMark } from "@/components/ui/BrandLockup"
 
 interface Props { nombre: string; rol: string }
 
@@ -17,14 +17,15 @@ const ROL_LABEL: Record<string, string> = {
 }
 
 // ─── Paleta dark ──────────────────────────────────────────────────────────────
-const BG   = "#1e3a5c"
-const BD   = "rgba(255,255,255,0.13)"
-const MUTE = "#8db2ce"
-const HTXT = "#d2e8f5"
-const HBG  = "rgba(255,255,255,0.11)"
-const ABG  = "rgba(0,169,157,0.25)"
-const ATXT = "#2dd4bf"
-const CARD = "#254c78"
+// Tinta Nexus: azul profundo con luz teal (ver tokens --ink-* en globals.css)
+const BG   = "#071626"
+const BD   = "rgba(148,197,255,0.09)"
+const MUTE = "#8199b3"
+const HTXT = "#e2edf7"
+const HBG  = "rgba(148,197,255,0.07)"
+const ABG  = "rgba(0,169,157,0.22)"
+const ATXT = "#5ff2e4"
+const CARD = "rgba(148,197,255,0.06)"
 
 // ─── Iconos SVG ───────────────────────────────────────────────────────────────
 const Icons: Record<string, () => React.ReactElement> = {
@@ -377,20 +378,20 @@ function NavLink({
         justifyContent: collapsed ? "center" : undefined,
         backgroundColor: bg,
         color,
-        boxShadow: active ? "inset 0 0 0 1px rgba(0,169,157,.25), 0 0 12px rgba(0,169,157,.12)" : "none",
-        transition: "background-color 150ms, color 150ms, box-shadow 150ms",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
       {/* Barra de acento izquierda */}
-      <span
-        className="absolute left-0 inset-y-1.5 w-[3px] rounded-full transition-all duration-150"
-        style={{ backgroundColor: active ? TEAL : "transparent", opacity: active ? 1 : 0 }}
-      />
+      {active && (
+        <span
+          className="sidebar-active-rail absolute left-0 inset-y-2 w-[3px] rounded-full"
+          style={{ backgroundColor: ATXT }}
+        />
+      )}
 
       {/* Icono */}
-      <span className="relative shrink-0 flex items-center justify-center" style={{ marginLeft: active && !collapsed ? 3 : 0 }}>
+      <span className="sidebar-nav-icon relative shrink-0 flex items-center justify-center" style={{ marginLeft: active && !collapsed ? 3 : 0 }}>
         <Icon />
         {/* Punto badge (modo colapsado) — usa opacidad, nunca sale del DOM */}
         {badge != null && badge > 0 && (
@@ -420,6 +421,39 @@ function NavLink({
         </span>
       )}
     </Link>
+  )
+}
+
+// ─── SidebarStatus ────────────────────────────────────────────────────────────
+function SidebarStatus({ collapsed }: { collapsed?: boolean }) {
+  const [online, setOnline] = useState(true)
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    update()
+    window.addEventListener("online", update)
+    window.addEventListener("offline", update)
+    return () => {
+      window.removeEventListener("online", update)
+      window.removeEventListener("offline", update)
+    }
+  }, [])
+
+  return (
+    <div
+      className="sidebar-status shrink-0 flex items-center text-[10px] uppercase tracking-[0.14em] select-none"
+      style={{
+        gap: 8,
+        padding: collapsed ? "10px 0" : "10px 18px",
+        justifyContent: collapsed ? "center" : undefined,
+        color: online ? "#7fd8cf" : ORANGE,
+        borderTop: `1px solid ${BD}`,
+      }}
+      title={online ? "Conectado" : "Sin conexión — modo offline"}
+      role="status"
+    >
+      <span className={`live-dot${online ? "" : " is-offline"}`} aria-hidden="true" />
+      {!collapsed && <span>{online ? "Sistema en línea" : "Modo offline"}</span>}
+    </div>
   )
 }
 
@@ -478,7 +512,7 @@ function SidebarInner({
     <aside
       className="sidebar-shell flex flex-col h-full"
       style={{
-        background: `linear-gradient(165deg, ${BG} 0%, #17304c 100%)`,
+        background: BG,
         borderRight: `1px solid ${BD}`,
         width: collapsed ? 64 : 256,
         transition: "width 220ms cubic-bezier(.4,0,.2,1)",
@@ -498,26 +532,19 @@ function SidebarInner({
         }}
       >
         {collapsed ? (
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white"
-            style={{ backgroundColor: TEAL }}
-            title="Palex Medical"
+          <Link
+            href="/dashboard"
+            className="sidebar-logo-mark w-10 h-10 rounded-xl flex items-center justify-center"
+            title="Palex Medical · InLab"
+            aria-label="Palex InLab — ir al dashboard"
           >
-            P
-          </div>
+            <PalexMark height={17} className="brand-mark-fill" />
+          </Link>
         ) : (
           <>
-            <div className="flex items-center gap-2.5">
-              <div className="bg-white rounded-lg px-2 py-1 flex items-center">
-                <Image src="/logo-palex.png" alt="Palex Medical" width={96} height={32} priority />
-              </div>
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide uppercase"
-                style={{ backgroundColor: ORANGE, color: "white" }}
-              >
-                InLab
-              </span>
-            </div>
+            <Link href="/dashboard" onClick={onClose} className="brand-link group" aria-label="Palex InLab — ir al dashboard">
+              <BrandLockup />
+            </Link>
             {onClose && (
               <button
                 onClick={onClose}
@@ -544,9 +571,9 @@ function SidebarInner({
             {/* Label de grupo — siempre en DOM, opacidad */}
             {group.label && (
               <p
-                className="text-[10px] font-semibold uppercase tracking-widest px-2 mb-1 transition-opacity duration-150 select-none"
+                className="sidebar-group-label text-[9.5px] font-medium uppercase px-2.5 mb-1.5 transition-opacity duration-150 select-none"
                 style={{
-                  color: MUTE,
+                  color: "#5d7690",
                   opacity: collapsed ? 0 : 1,
                   height: collapsed ? 0 : "auto",
                   overflow: "hidden",
@@ -586,6 +613,9 @@ function SidebarInner({
         ))}
       </nav>
 
+      {/* ── Estado del sistema (conexión real del navegador) ───────────────── */}
+      <SidebarStatus collapsed={collapsed} />
+
       {/* ── Footer usuario (unified — sin swap DOM) ──────────────────────── */}
       <div
         className="shrink-0"
@@ -598,6 +628,7 @@ function SidebarInner({
             padding: collapsed ? "6px 0" : "8px 10px",
             justifyContent: collapsed ? "center" : undefined,
             backgroundColor: collapsed ? "transparent" : CARD,
+            boxShadow: collapsed ? "none" : `inset 0 0 0 1px ${BD}`,
           }}
         >
           {/* Avatar */}
@@ -605,8 +636,7 @@ function SidebarInner({
             href="/perfil"
             onClick={onClose}
             title={collapsed ? nombre : undefined}
-            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ring-2 ring-offset-2 transition-opacity hover:opacity-80"
-            style={{ backgroundColor: TEAL, outline: `2px solid ${TEAL}60`, outlineOffset: 2 }}
+            className="sidebar-logo-mark shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white transition-opacity hover:opacity-85"
           >
             {inicial}
           </Link>
@@ -713,12 +743,13 @@ export function Sidebar({ nombre, rol }: Props) {
           style={{
             width: collapsed ? 64 : 256,
             transition: "width 220ms cubic-bezier(.4,0,.2,1), background-color 150ms",
-            backgroundColor: BG,
+            backgroundColor: "#040d18",
             borderTop: `1px solid ${BD}`,
+            borderRight: `1px solid ${BD}`,
             color: MUTE,
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = HTXT; e.currentTarget.style.backgroundColor = HBG }}
-          onMouseLeave={e => { e.currentTarget.style.color = MUTE; e.currentTarget.style.backgroundColor = BG }}
+          onMouseEnter={e => { e.currentTarget.style.color = HTXT; e.currentTarget.style.backgroundColor = "#0b2036" }}
+          onMouseLeave={e => { e.currentTarget.style.color = MUTE; e.currentTarget.style.backgroundColor = "#040d18" }}
         >
           {collapsed ? (
             <Icons.ChevronRight />

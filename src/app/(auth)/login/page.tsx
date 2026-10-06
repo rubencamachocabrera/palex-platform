@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { signIn } from "next-auth/react"
 import Image from "next/image"
-import { TEAL, ORANGE, ORANGE_DARKER, ORANGE_DARKEST } from "@/lib/brand"
+import { TEAL, ORANGE, ORANGE_DARKER } from "@/lib/brand"
 
 export default function LoginPage() {
   const [error, setError]               = useState("")
@@ -43,9 +43,9 @@ export default function LoginPage() {
     <>
       {/* ── Overlay post-login ─────────────────────────────────────────────── */}
       {redirecting && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-white">
+        <div className="login-hero login-overlay fixed inset-0 z-50 flex flex-col items-center justify-center gap-6">
           <Image src="/logo-palex.png" alt="Palex Medical" width={120} height={44} priority
-            style={{ opacity: 0.55 }} />
+            className="login-overlay-logo" style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }} />
           <div className="flex items-center gap-2">
             {[0, 160, 320].map((delay, i) => (
               <span key={i} className="w-2 h-2 rounded-full animate-bounce"
@@ -55,8 +55,8 @@ export default function LoginPage() {
                 }} />
             ))}
           </div>
-          <p className="text-xs tracking-[0.3em] uppercase font-semibold"
-            style={{ color: "#64748b" }}>
+          <p className="font-mono text-xs tracking-[0.3em] uppercase font-semibold"
+            style={{ color: "#5ff2e4" }}>
             Accediendo al sistema
           </p>
         </div>
@@ -74,13 +74,13 @@ export default function LoginPage() {
         {/* Encabezado */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: ORANGE }} />
-            <span className="text-[10px] font-bold tracking-[0.28em] uppercase"
+            <span className="live-dot" aria-hidden="true" />
+            <span className="font-mono text-[10.5px] font-semibold tracking-[0.24em] uppercase"
               style={{ color: ORANGE_DARKER }}>
               Acceso privado
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-[34px] leading-tight font-extrabold tracking-[-0.04em] text-gray-900">
             Iniciar sesión
           </h2>
           <p className="text-sm mt-1.5 text-gray-500 font-medium">
@@ -113,21 +113,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 autoFocus
                 placeholder="usuario@palex.com"
-                className="w-full py-3.5 pl-10 pr-4 rounded-xl text-sm text-gray-900 outline-none transition-all duration-200"
-                style={{
-                  background: "#f8fafc",
-                  border: "1.5px solid #e2e8f0",
-                } as React.CSSProperties}
-                onFocus={e => {
-                  e.currentTarget.style.borderColor = TEAL
-                  e.currentTarget.style.background  = "#ffffff"
-                  e.currentTarget.style.boxShadow   = `0 0 0 3px ${TEAL}20`
-                }}
-                onBlur={e => {
-                  e.currentTarget.style.borderColor = "#e2e8f0"
-                  e.currentTarget.style.background  = "#f8fafc"
-                  e.currentTarget.style.boxShadow   = "none"
-                }}
+                className="login-input w-full py-3.5 pl-10 pr-4 rounded-xl text-sm text-gray-900 outline-none"
               />
             </div>
           </div>
@@ -153,21 +139,7 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full py-3.5 pl-10 pr-12 rounded-xl text-sm text-gray-900 outline-none transition-all duration-200"
-                style={{
-                  background: "#f8fafc",
-                  border: "1.5px solid #e2e8f0",
-                } as React.CSSProperties}
-                onFocus={e => {
-                  e.currentTarget.style.borderColor = TEAL
-                  e.currentTarget.style.background  = "#ffffff"
-                  e.currentTarget.style.boxShadow   = `0 0 0 3px ${TEAL}20`
-                }}
-                onBlur={e => {
-                  e.currentTarget.style.borderColor = "#e2e8f0"
-                  e.currentTarget.style.background  = "#f8fafc"
-                  e.currentTarget.style.boxShadow   = "none"
-                }}
+                className="login-input w-full py-3.5 pl-10 pr-12 rounded-xl text-sm text-gray-900 outline-none"
               />
               <button type="button"
                 onClick={() => setShowPassword(s => !s)}
@@ -216,24 +188,8 @@ export default function LoginPage() {
           <div className="pt-1">
             <button type="submit"
               disabled={loading || redirecting}
-              className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50"
-              style={{
-                backgroundColor: ORANGE_DARKER,
-                color: "white",
-                boxShadow: `0 4px 18px ${ORANGE}45`,
-              }}
-              onMouseEnter={e => {
-                if (!loading && !redirecting) {
-                  e.currentTarget.style.backgroundColor = ORANGE_DARKEST
-                  e.currentTarget.style.boxShadow       = `0 6px 24px ${ORANGE}60`
-                  e.currentTarget.style.transform        = "translateY(-1px)"
-                }
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = ORANGE_DARKER
-                e.currentTarget.style.boxShadow       = `0 4px 18px ${ORANGE}45`
-                e.currentTarget.style.transform        = "translateY(0)"
-              }}>
+              className="login-submit w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 hover:-translate-y-px hover:brightness-110"
+              style={{ backgroundColor: ORANGE_DARKER, color: "white" }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24"

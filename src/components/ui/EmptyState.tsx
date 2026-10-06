@@ -122,7 +122,7 @@ export function EmptyState({ icon = "document", title, description, action, clas
 
   return (
     <div className={`empty-state flex flex-col items-center justify-center py-14 px-6 text-center ${className}`}>
-      <div className="mb-5 opacity-90 drop-shadow-sm dark:opacity-60">
+      <div className="empty-state-orb mb-5 rounded-full opacity-95 drop-shadow-sm dark:opacity-70">
         {illustration}
       </div>
 

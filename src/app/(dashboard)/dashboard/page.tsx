@@ -89,16 +89,16 @@ function KpiCard({ label, value, sub, icon, trend }: {
   return (
     <div className="dashboard-kpi card card-hover p-5">
       <div className="flex items-start justify-between mb-3">
-        <span className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">{icon}</span>
+        <span className="kpi-icon-tile w-10 h-10 rounded-xl flex items-center justify-center text-white">{icon}</span>
         {trend !== undefined && (
           <span className={`pop-in text-xs font-semibold px-1.5 py-0.5 rounded-full ${trend > 0 ? "bg-green-50 text-green-600" : trend < 0 ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400"}`}>
             {trend > 0 ? "+" : ""}{trend}%
           </span>
         )}
       </div>
-      <p className="number-reveal text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs font-medium text-gray-500 mt-1">{label}</p>
-      {sub && <p className="text-xs text-gray-300 mt-0.5">{sub}</p>}
+      <p className="number-reveal text-[30px] leading-none font-extrabold tracking-[-0.04em] text-gray-900 tabular-nums">{value}</p>
+      <p className="kpi-label text-gray-500 mt-2.5">{label}</p>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   )
 }
@@ -106,7 +106,10 @@ function KpiCard({ label, value, sub, icon, trend }: {
 function SectionHeader({ title, link, linkLabel }: { title: string; link?: string; linkLabel?: string }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="text-base font-bold text-gray-800">{title}</h2>
+      <h2 className="section-title flex items-center gap-2.5 text-base font-bold text-gray-800">
+        <span className="section-title-mark" aria-hidden="true" />
+        {title}
+      </h2>
       {link && <Link href={link} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>{linkLabel ?? "Ver todos"}</Link>}
     </div>
   )
@@ -122,12 +125,19 @@ function BarChart({ data }: { data: { mes: string; v: number }[] }) {
   const cH = H - PAD.t - PAD.b
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+      <defs>
+        <linearGradient id="nx-bar-teal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2ee6d6" />
+          <stop offset="100%" stopColor={TEAL} stopOpacity="0.75" />
+        </linearGradient>
+      </defs>
+      <line x1={PAD.l} x2={W - PAD.r} y1={PAD.t + cH + 0.5} y2={PAD.t + cH + 0.5} stroke="currentColor" strokeOpacity="0.12" />
       {data.map((d, i) => {
         const bH = d.v === 0 ? 2 : Math.max(4, (d.v / maxV) * cH)
         const cx = PAD.l + slotW * i + slotW / 2
         return (
           <g key={i}>
-            <rect x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={3} fill={TEAL} fillOpacity={d.v === 0 ? 0.2 : 0.85} />
+            <rect className="chart-bar" x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={4} fill={d.v === 0 ? TEAL : "url(#nx-bar-teal)"} fillOpacity={d.v === 0 ? 0.2 : 1} style={{ animationDelay: `${i * 45}ms` }} />
             {d.v > 0 && <text x={cx} y={PAD.t + cH - bH - 3} textAnchor="middle" fontSize={9} fill="#374151" fontWeight="600">{d.v}</text>}
             <text x={cx} y={H - 2} textAnchor="middle" fontSize={9} fill="#9ca3af">{d.mes}</text>
           </g>
@@ -145,7 +155,7 @@ function FunnelChart({ data }: { data: { etapa: string; label: string; count: nu
         <div key={d.etapa} className="flex items-center gap-2 text-xs">
           <span className="text-gray-500 w-24 shrink-0 truncate">{d.label}</span>
           <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-            <div className="h-full rounded-full transition-all"
+            <div className="progress-bar-anim h-full rounded-full transition-all"
               style={{ width: d.count === 0 ? "3px" : `${Math.max(6, (d.count / maxCount) * 100)}%`, backgroundColor: ETAPA_BAR_COLOR[d.etapa] ?? TEAL }} />
           </div>
           <span className="font-semibold text-gray-700 w-5 text-right shrink-0">{d.count}</span>
@@ -171,7 +181,7 @@ function PrediccionBars({ data }: { data: { mes: string; v: number }[] }) {
         const cx = PAD.l + slotW * i + slotW / 2
         return (
           <g key={i}>
-            <rect x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={3} fill={ORANGE} fillOpacity={d.v === 0 ? 0.15 : 0.75} />
+            <rect className="chart-bar" x={cx - barW / 2} y={PAD.t + cH - bH} width={barW} height={bH} rx={4} fill={ORANGE} fillOpacity={d.v === 0 ? 0.15 : 0.8} style={{ animationDelay: `${i * 45}ms` }} />
             {d.v > 0 && <text x={cx} y={PAD.t + cH - bH - 3} textAnchor="middle" fontSize={8} fill="#92400e">€{fmt(d.v)}</text>}
             <text x={cx} y={H - 2} textAnchor="middle" fontSize={9} fill="#9ca3af">{d.mes}</text>
           </g>
@@ -190,7 +200,7 @@ function Top5Chart({ data }: { data: { nombre: string; count: number }[] }) {
         <div key={i} className="flex items-center gap-2 text-xs">
           <span className="text-gray-600 w-28 truncate shrink-0" title={d.nombre}>{d.nombre}</span>
           <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-            <div className="h-full rounded"
+            <div className="progress-bar-anim h-full rounded"
               style={{ width: `${Math.max(6, (d.count / maxCount) * 100)}%`, backgroundColor: TEAL, opacity: 0.5 + 0.5 * (1 - i / Math.max(data.length - 1, 1)) }} />
           </div>
           <span className="font-semibold text-gray-600 w-6 text-right shrink-0">{d.count}</span>
@@ -210,7 +220,7 @@ function EstadoModulosChart({ data }: { data: { estado: string; count: number }[
         <div key={d.estado} className="flex items-center gap-2 text-xs">
           <span className="text-gray-500 w-28 shrink-0 truncate">{ESTADO_MOD_LABEL[d.estado] ?? d.estado}</span>
           <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-            <div className="h-full rounded"
+            <div className="progress-bar-anim h-full rounded"
               style={{ width: `${Math.max(4, (d.count / maxCount) * 100)}%`, backgroundColor: ESTADO_MOD_COLOR[d.estado] ?? TEAL }} />
           </div>
           <span className="font-semibold text-gray-700 w-6 text-right shrink-0">{d.count}</span>

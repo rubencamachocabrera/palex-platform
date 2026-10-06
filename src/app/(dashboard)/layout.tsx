@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/BottomNav"
 import { OnboardingWizard } from "@/components/OnboardingWizard"
 import { NotificationManager } from "@/components/NotificationManager"
 import { QuickActionsFAB } from "@/components/QuickActionsFAB"
+import { InteractionLayer } from "@/components/InteractionLayer"
 
 export default async function DashboardLayout({
   children,
@@ -27,7 +28,7 @@ export default async function DashboardLayout({
           <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
           <div className="app-workspace flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
-            <main id="main-content" className="app-main flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-4 lg:pb-8">
+            <main id="main-content" className="app-main flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-6 lg:pb-8">
               <PageTransition>{children}</PageTransition>
             </main>
           </div>
@@ -35,6 +36,7 @@ export default async function DashboardLayout({
         <BottomNav />
         <QuickActionsFAB />
         <NotificationManager />
+        <InteractionLayer />
       </ToastProvider>
     </KeyboardShortcutsProvider>
   )

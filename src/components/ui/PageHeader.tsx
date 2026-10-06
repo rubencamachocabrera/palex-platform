@@ -14,6 +14,7 @@
 
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
+import { LiveStamp } from "@/components/ui/LiveStamp"
 
 interface BreadcrumbItem {
   label: string
@@ -42,7 +43,7 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
             <span key={i} className="flex items-center gap-1.5">
               <Link
                 href={item.href}
-                className="text-xs font-medium text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+                className="page-header-eyebrow font-medium text-gray-500 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
               >
                 {item.label}
               </Link>
@@ -59,14 +60,15 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className = "
         <div className="min-w-0 flex items-start gap-3.5">
           {icon && (
             <span
-              className="page-header-icon w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 mt-0.5"
+              className="page-header-icon w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 mt-1"
               style={{ background: `linear-gradient(145deg, ${iconColor ?? TEAL}, ${iconColor ?? TEAL}cc)` }}
             >
               {icon}
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-[27px] sm:text-[31px] leading-[1.1] font-extrabold tracking-[-0.04em] text-gray-900 dark:text-white truncate">{title}</h1>
+            <div className="mb-1.5"><LiveStamp /></div>
+            <h1 className="page-header-title text-[26px] sm:text-[32px] leading-[1.12] font-extrabold tracking-[-0.045em] text-gray-900 dark:text-white truncate pb-0.5">{title}</h1>
             {subtitle && (
               <p className="max-w-3xl text-sm leading-6 text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>
             )}

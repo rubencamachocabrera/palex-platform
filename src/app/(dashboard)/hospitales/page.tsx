@@ -347,10 +347,10 @@ export default function HospitalesPage() {
               <div className="card overflow-hidden">
                 <div className="divide-y divide-gray-100">
                   {lista.map(h => (
-                    <div key={h.id} className="relative group">
+                    <div key={h.id} className="relative group flex items-center hover:bg-gray-50 transition-colors">
                       <Link
                         href={`/hospitales/${h.id}`}
-                        className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-colors active:bg-gray-100"
+                        className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-gray-100"
                       >
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-teal-600 shrink-0 bg-teal-50">
                           {TIPO_ICON[h.tipo] ?? <IconHospital size={18} />}
@@ -390,8 +390,7 @@ export default function HospitalesPage() {
                             )
                           })()}
                           <p className="text-xs text-gray-400">{h._count.visitas} visitas</p>
-                          <p className="text-xs text-gray-300">{h._count.contactos} contactos</p>
-                          <span className="text-gray-300 text-sm block">›</span>
+                          <p className="text-xs text-gray-400">{h._count.contactos} contactos</p>
                         </div>
                       </Link>
                       <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">

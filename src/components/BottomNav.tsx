@@ -75,18 +75,11 @@ export function BottomNav() {
 
   return (
     <nav
-      className="bottom-nav-container fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-gray-200/60 shadow-[0_-10px_30px_-22px_rgba(15,23,42,.35)] dark:border-gray-700/60"
-      style={{
-        backdropFilter: "blur(16px) saturate(180%)",
-        WebkitBackdropFilter: "blur(16px) saturate(180%)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-      }}
+      aria-label="Navegación principal"
+      className="bottom-nav-container fixed left-3 right-3 z-40 md:hidden rounded-[22px]"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}
     >
-      <style>{`
-        .bottom-nav-container { background-color: rgba(255,255,255,0.82); }
-        .dark .bottom-nav-container { background-color: rgba(15, 23, 42, 0.85); }
-      `}</style>
-      <div className="flex items-center justify-around px-1" style={{ height: 56 }}>
+      <div className="flex items-center justify-around px-1.5" style={{ height: 60 }}>
         {tabs.map((tab) => {
           const isMore = tab.href === null
           const active = !isMore && pathname !== null && (
@@ -100,7 +93,7 @@ export function BottomNav() {
                 key="mas"
                 onClick={toggleSidebar}
                 className="bottom-nav-item flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors duration-150"
-                style={{ minWidth: 56, minHeight: 44, color: "#9ca3af" }}
+                style={{ minWidth: 56, minHeight: 46, color: "#64748b" }}
                 aria-label="Abrir menu"
               >
                 {tab.icon(false)}
@@ -115,27 +108,26 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href!}
-              className={`bottom-nav-item relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 transition-all duration-150${active ? " bottom-nav-item-active" : ""}`}
+              className={`bottom-nav-item relative flex flex-col items-center justify-center gap-0.5 rounded-2xl px-2.5${active ? " bottom-nav-item-active" : ""}`}
               style={{
                 minWidth: 56,
-                minHeight: 44,
-                color: active ? TEAL : "#9ca3af",
-                transform: active ? "scale(1.05)" : "scale(1)",
-                backgroundColor: active ? `${TEAL}12` : "transparent",
+                minHeight: 46,
+                color: active ? TEAL : "#64748b",
+                transform: active ? "translateY(-1px)" : "none",
               }}
               aria-current={active ? "page" : undefined}
             >
               {tab.icon(active)}
               <span
                 className="text-[10px] font-medium leading-tight transition-colors duration-150"
-                style={{ color: active ? TEAL : "#9ca3af" }}
+                style={{ color: active ? TEAL : "#64748b", fontWeight: active ? 700 : 500 }}
               >
                 {tab.label}
               </span>
               {/* Active dot indicator */}
               {active && (
                 <span
-                  className="bottom-nav-active-dot absolute -bottom-0.5 w-1 h-1 rounded-full"
+                  className="bottom-nav-active-dot absolute -bottom-1 rounded-full"
                   style={{ backgroundColor: TEAL }}
                 />
               )}
