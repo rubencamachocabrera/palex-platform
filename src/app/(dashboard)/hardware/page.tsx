@@ -1019,7 +1019,7 @@ function CatTiposModal({ tipos, onClose, onChanged }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+      <div className="modal-surface rounded-2xl w-full max-w-md flex flex-col max-h-[80vh]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0" style={{ borderTop: `3px solid ${TEAL}` }}>
           <div>
             <h2 className="text-base font-bold text-gray-900">Tipos de hardware</h2>
@@ -1160,7 +1160,7 @@ function AsignarUnidadModal({ unidad, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
+      <div className="modal-surface rounded-2xl w-full max-w-md flex flex-col" style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
           {unidad.catalogo.tipo && (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white shrink-0"
@@ -1528,7 +1528,7 @@ function NuevaUnidadModal({ catalogo, onClose, onCreated }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
+      <div className="modal-surface rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
         style={{ borderTop: `3px solid ${tipoColor}` }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>

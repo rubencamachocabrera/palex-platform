@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { TEAL, ORANGE } from "@/lib/brand"
+import { TEAL, TEAL_DARK } from "@/lib/brand"
 
 // ─── Actions por contexto ─────────────────────────────────────────────────────
 interface Action {
@@ -97,17 +97,19 @@ export function QuickActionsFAB() {
       <button
         onClick={() => handleAction(actions[0])}
         aria-label={actions[0].label}
+        className="quick-fab"
         style={{
           position: "fixed", bottom: 88, right: 20,
-          width: 52, height: 52, borderRadius: "50%",
-          background: TEAL, color: "#fff", border: "none",
-          boxShadow: "0 4px 16px rgba(0,169,157,0.4)",
+          width: 56, height: 56, borderRadius: "50%",
+          background: `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`, color: "#fff",
+          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "0 10px 28px rgba(0,169,157,0.36)",
           display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", zIndex: 40,
           transition: "transform 0.15s, box-shadow 0.15s",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.07)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(0,169,157,0.5)" }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(0,169,157,0.4)" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.07)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 14px 32px rgba(0,169,157,0.48)" }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 10px 28px rgba(0,169,157,0.36)" }}
       >
         {actions[0].icon}
       </button>
@@ -141,8 +143,8 @@ export function QuickActionsFAB() {
               pointerEvents: open ? "auto" : "none",
             }}
           >
-            <span style={{
-              background: "rgba(15,23,42,0.85)", color: "#f8fafc",
+            <span className="quick-fab-label" style={{
+              background: "rgba(15,23,42,0.88)", color: "#f8fafc",
               padding: "5px 12px", borderRadius: 8,
               fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
@@ -153,13 +155,14 @@ export function QuickActionsFAB() {
             <button
               onClick={() => handleAction(action)}
               aria-label={action.label}
+              className="quick-fab-action"
               style={{
-                width: 46, height: 46, borderRadius: "50%",
+                width: 48, height: 48, borderRadius: "50%",
                 background: action.color ?? "#1e3a5c",
-                color: "#fff", border: "none",
+                color: "#fff", border: "1px solid rgba(255,255,255,0.28)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.22)",
+                boxShadow: "0 8px 18px rgba(15,23,42,0.2)",
                 flexShrink: 0,
                 transition: "transform 0.12s",
               }}
@@ -177,12 +180,13 @@ export function QuickActionsFAB() {
         onClick={() => setOpen(o => !o)}
         aria-label={open ? "Cerrar menú de acciones" : "Abrir acciones rápidas"}
         aria-expanded={open}
+        className="quick-fab"
         style={{
           position: "fixed", bottom: 88, right: 20,
-          width: 52, height: 52, borderRadius: "50%",
-          background: open ? "#374151" : TEAL,
-          color: "#fff", border: "none",
-          boxShadow: open ? "0 4px 16px rgba(0,0,0,0.3)" : "0 4px 16px rgba(0,169,157,0.4)",
+          width: 56, height: 56, borderRadius: "50%",
+          background: open ? "#374151" : `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`,
+          color: "#fff", border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: open ? "0 10px 28px rgba(15,23,42,0.3)" : "0 10px 28px rgba(0,169,157,0.36)",
           display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", zIndex: 40,
           transition: "background 0.2s, box-shadow 0.2s, transform 0.2s",

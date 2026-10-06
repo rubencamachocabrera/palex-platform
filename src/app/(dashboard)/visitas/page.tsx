@@ -659,7 +659,7 @@ export default function VisitasPage() {
       {eliminarId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !eliminando && setEliminarId(null)} />
-          <div ref={modalEliminarRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-visita-lista-titulo" className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in-95 dark:bg-[#1e293b] outline-none">
+          <div ref={modalEliminarRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-visita-lista-titulo" className="modal-surface relative rounded-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in-95 outline-none">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -693,7 +693,7 @@ export default function VisitasPage() {
         <div className="fixed inset-0 z-50 flex items-start justify-center py-4 sm:py-8 px-4 backdrop-blur-sm overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={e => { if (e.target === e.currentTarget) setMostrarModal(false) }}>
-          <div ref={modalNuevaVisitaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-nueva-visita-lista-titulo" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col animate-in fade-in zoom-in-95 duration-200 outline-none"
+          <div ref={modalNuevaVisitaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-nueva-visita-lista-titulo" className="modal-surface rounded-2xl w-full max-w-lg my-auto flex flex-col animate-in fade-in zoom-in-95 duration-200 outline-none"
             style={{ borderTop: `3px solid ${TEAL}`, maxHeight: "calc(100vh - 2rem)" }}>
 
             {/* Header */}
