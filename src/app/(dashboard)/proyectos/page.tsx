@@ -90,7 +90,7 @@ function IconKanban() {
 
 function KpiCard({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
+    <div className="stat-card p-5">
       <p className="text-sm text-gray-500">{label}</p>
       <p className="text-3xl font-bold mt-1" style={{ color: color ?? "#111827" }}>{value}</p>
     </div>
@@ -441,7 +441,7 @@ export default function ProyectosPage() {
       </div>
 
       {/* Filtros */}
-      <div className={`space-y-3 mb-5 ${vista === "kanban" ? "max-w-sm" : ""}`}>
+      <div className={`filter-surface space-y-3 mb-5 p-3 ${vista === "kanban" ? "max-w-sm" : ""}`}>
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"><IconSearch /></span>

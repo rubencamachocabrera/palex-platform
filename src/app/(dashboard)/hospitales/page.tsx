@@ -176,7 +176,7 @@ export default function HospitalesPage() {
   const favHospitales = hospitales.filter(h => favoritos.has(h.id))
 
   return (
-    <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
+    <div className="max-w-6xl mx-auto animate-in fade-in duration-200">
       <PageHeader
         title="Mis hospitales"
         subtitle={`${filtrados.length} de ${hospitales.length} centros${filtroZona !== "TODAS" ? ` · ${filtroZona}` : ""}`}
@@ -212,7 +212,7 @@ export default function HospitalesPage() {
       />
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-5">
+      <div className="filter-surface flex flex-col sm:flex-row gap-2 mb-4 p-2">
         <input
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
@@ -288,7 +288,7 @@ export default function HospitalesPage() {
           ))}
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="data-table-surface overflow-hidden">
           <EmptyState
             icon="search"
             title="No hay hospitales que coincidan"

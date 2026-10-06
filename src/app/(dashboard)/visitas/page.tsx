@@ -339,13 +339,13 @@ export default function VisitasPage() {
     <div className="animate-in fade-in duration-200">
 
       {/* ── HEADER ── */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex flex-col items-stretch gap-4 mb-5 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader
           title={userRol === "ADMIN" ? "Todas las visitas" : "Mis visitas"}
           subtitle={loading ? "Cargando..." : `${visitas.length} visita${visitas.length !== 1 ? "s" : ""}${filtradas.length !== visitas.length ? ` · ${filtradas.length} filtradas` : ""}`}
-          className="mb-0"
+          className="mb-0 flex-1"
         />
-        <div className="flex items-center gap-2 shrink-0 mt-0.5">
+        <div className="flex items-center gap-2 shrink-0 sm:mt-0.5">
           <Link href="/visitas/calendario"
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -378,7 +378,7 @@ export default function VisitasPage() {
             { label: "Última visita", value: ultimaFecha ? fechaRelativa(ultimaFecha) : "—", color: "#6366f1", bg: "#eef2ff",
               icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
           ].map(k => (
-            <div key={k.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div key={k.label} className="stat-card px-4 py-3 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: k.bg, color: k.color }}>{k.icon}</div>
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-none truncate" style={{ color: typeof k.value === "number" && k.value === 0 ? "#9ca3af" : k.color }}>{k.value}</p>
@@ -390,7 +390,7 @@ export default function VisitasPage() {
       )}
 
       {/* ── BARRA DE BÚSQUEDA + CONTROLES ── */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+      <div className="filter-surface flex flex-col sm:flex-row gap-2 mb-3 p-2">
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><IconSearch size={15} /></div>
           <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
@@ -438,7 +438,7 @@ export default function VisitasPage() {
 
       {/* ── FILTROS AVANZADOS ── */}
       {filtrosAvanzados && (
-        <div className="flex flex-wrap gap-3 mb-4 p-4 bg-gray-50/80 rounded-xl border border-gray-100">
+        <div className="filter-surface flex flex-wrap gap-3 mb-4 p-4">
           {/* Tipo */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-gray-500 shrink-0">Tipo:</span>
@@ -515,11 +515,11 @@ export default function VisitasPage() {
       {/* ── LISTA ── */}
       <div className="space-y-1">
         {loading ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-50">
+          <div className="data-table-surface divide-y divide-gray-50">
             {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         ) : filtradas.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+          <div className="data-table-surface">
             <EmptyState
               icon={busqueda ? "search" : "document"}
               title={busqueda ? `Sin resultados para "${busqueda}"` : filtroEstado === "TODOS" ? "No hay visitas registradas" : `No hay visitas "${ESTADO[filtroEstado]?.label ?? filtroEstado}"`}
@@ -537,7 +537,7 @@ export default function VisitasPage() {
                 <div className="flex-1 h-px bg-gray-100 ml-1" />
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden divide-y divide-gray-50/80">
+              <div className="data-table-surface overflow-hidden divide-y divide-gray-50/80">
                 {items.map(v => {
                   const est = ESTADO[v.estado]
                   const tipoC = TIPO_CONFIG[v.tipo]

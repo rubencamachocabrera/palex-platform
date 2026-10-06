@@ -704,7 +704,7 @@ export default function IncidenciasPage() {
           const activo = filtroEstado === filtroValor
           return (
             <button key={kpi.label} onClick={() => setFiltroEstado(activo ? "" : filtroValor)}
-              className={`rounded-2xl p-4 shadow-sm text-left transition-all hover:shadow-md border-2 ${activo ? "" : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700"} ${kpi.darkBg} cursor-pointer`}
+              className={`stat-card rounded-2xl p-4 text-left border-2 ${activo ? "" : "hover:border-gray-200 dark:hover:border-gray-700"} ${kpi.darkBg} cursor-pointer`}
               style={activo ? { backgroundColor: kpi.bg, borderColor: kpi.color } : { borderColor: "transparent" }}>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: activo ? kpi.color : undefined }}>{kpi.label}</p>
@@ -722,7 +722,7 @@ export default function IncidenciasPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="filter-surface flex flex-wrap items-center gap-2 mb-4 p-2">
         <div className="relative flex-1 min-w-[200px]">
           <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
@@ -902,7 +902,7 @@ export default function IncidenciasPage() {
           icon={<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>} />
       ) : vistaTabla ? (
         /* ── TABLE VIEW ── */
-        <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="data-table-surface overflow-x-auto">
           <table className="w-full min-w-[860px]">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/40">

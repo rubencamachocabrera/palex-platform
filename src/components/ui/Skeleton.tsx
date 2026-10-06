@@ -21,7 +21,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+    <div className="card rounded-2xl p-5 space-y-3">
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-3 w-1/3" />
       <Skeleton className="h-3 w-1/2" />
@@ -44,7 +44,7 @@ export function SkeletonRow() {
 
 export function SkeletonKPI() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+    <div className="card rounded-2xl p-5">
       <Skeleton className="h-3 w-20 mb-3" />
       <Skeleton className="h-8 w-14" />
     </div>

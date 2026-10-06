@@ -75,7 +75,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="bottom-nav-container fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-gray-200/60 dark:border-gray-700/60"
+      className="bottom-nav-container fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-gray-200/60 shadow-[0_-10px_30px_-22px_rgba(15,23,42,.35)] dark:border-gray-700/60"
       style={{
         backdropFilter: "blur(16px) saturate(180%)",
         WebkitBackdropFilter: "blur(16px) saturate(180%)",
@@ -99,7 +99,7 @@ export function BottomNav() {
               <button
                 key="mas"
                 onClick={toggleSidebar}
-                className="flex flex-col items-center justify-center gap-0.5 transition-colors duration-150"
+                className="flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors duration-150"
                 style={{ minWidth: 56, minHeight: 44, color: "#9ca3af" }}
                 aria-label="Abrir menu"
               >
@@ -115,12 +115,13 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href!}
-              className="flex flex-col items-center justify-center gap-0.5 transition-all duration-150"
+              className="relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 transition-all duration-150"
               style={{
                 minWidth: 56,
                 minHeight: 44,
                 color: active ? TEAL : "#9ca3af",
                 transform: active ? "scale(1.05)" : "scale(1)",
+                backgroundColor: active ? `${TEAL}12` : "transparent",
               }}
               aria-current={active ? "page" : undefined}
             >

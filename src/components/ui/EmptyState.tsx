@@ -121,14 +121,14 @@ export function EmptyState({ icon = "document", title, description, action, clas
     : icon
 
   return (
-    <div className={`flex flex-col items-center justify-center py-14 px-6 text-center ${className}`}>
-      <div className="mb-5 opacity-90 dark:opacity-60">
+    <div className={`empty-state flex flex-col items-center justify-center py-14 px-6 text-center ${className}`}>
+      <div className="mb-5 opacity-90 drop-shadow-sm dark:opacity-60">
         {illustration}
       </div>
 
-      <p className="text-gray-700 font-semibold text-sm mb-1">{title}</p>
+      <p className="text-gray-800 dark:text-slate-100 font-bold text-sm mb-1">{title}</p>
       {description && (
-        <p className="text-gray-400 text-xs max-w-xs leading-relaxed">{description}</p>
+        <p className="text-gray-500 dark:text-slate-400 text-xs max-w-xs leading-relaxed">{description}</p>
       )}
 
       {/* CTA */}
@@ -140,7 +140,7 @@ export function EmptyState({ icon = "document", title, description, action, clas
               className={
                 action.variant === "ghost"
                   ? "text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
-                  : "inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg text-white bg-teal-500 hover:bg-teal-600 transition-colors shadow-sm"
+                  : "btn-teal inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white bg-teal-500 hover:bg-teal-600 transition-colors shadow-sm"
               }
             >
               {action.label}
@@ -157,7 +157,7 @@ export function EmptyState({ icon = "document", title, description, action, clas
               className={
                 action.variant === "ghost"
                   ? "text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
-                  : "inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg text-white bg-teal-500 hover:bg-teal-600 transition-colors shadow-sm"
+                  : "btn-teal inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white bg-teal-500 hover:bg-teal-600 transition-colors shadow-sm"
               }
             >
               {action.label}

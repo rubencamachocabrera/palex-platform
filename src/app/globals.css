@@ -418,6 +418,70 @@ button:not([disabled]):active {
   border-color: rgba(255,255,255,0.09);
 }
 
+/* ─── Product surfaces — listas, filtros y tablas ─────────────────────────── */
+/* Estas piezas permiten que los módulos compartan la misma densidad visual sin
+   obligar a reescribir su lógica ni sus flujos de datos. */
+.filter-surface {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 8px 24px -24px rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .filter-surface {
+  background: rgba(30, 41, 59, 0.76);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.data-table-surface {
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--el-1);
+}
+.dark .data-table-surface {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.09);
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 20px -22px rgba(15, 23, 42, 0.65);
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal), rgba(0, 169, 157, 0));
+  opacity: 0.78;
+}
+.stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--el-2);
+}
+.dark .stat-card {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.08);
+}
+
+.empty-state {
+  border-radius: var(--radius-card);
+  background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(240,253,250,0.54));
+}
+.dark .empty-state {
+  background: linear-gradient(145deg, rgba(30,41,59,0.92), rgba(15,118,110,0.08));
+}
+
 /* ─── Kanban card ─────────────────────────────────────────────────────────── */
 .kanban-card {
   transition: box-shadow 200ms ease-out, border-color 180ms ease-out !important;
