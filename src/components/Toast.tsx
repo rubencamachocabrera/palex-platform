@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -59,8 +59,8 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
 
   return (
     <div
-      role="alert"
-      aria-live="polite"
+      // Errores: role=alert (assertive). El resto los anuncia la región polite contenedora.
+      role={t.type === "error" ? "alert" : undefined}
       className={`
         nexus-toast relative overflow-hidden flex items-center gap-3 pl-2.5 pr-3 py-2.5 rounded-2xl
         ${exiting ? "animate-in toast-out duration-300" : "animate-in toast-in duration-400"}
@@ -71,7 +71,7 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
       <span className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${s.tile}`} dangerouslySetInnerHTML={{ __html: s.icon }} />
       <p className="text-sm font-medium text-gray-800 flex-1 leading-snug">{t.message}</p>
       <button
-        onClick={dismiss}
+        onClick={e => { e.stopPropagation(); dismiss() }}
         className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         aria-label="Cerrar"
         dangerouslySetInnerHTML={{ __html: closeIcon }}
@@ -108,21 +108,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts(prev => [...prev.slice(-4), { id, type, message, duration }])
   }, [])
 
-  const value: ToastContextValue = {
+  // Valor estable: antes era un objeto nuevo en cada render, así que cada toast
+  // re-renderizaba a todos los consumidores y re-ejecutaba los efectos que tienen
+  // `toast`/`success`/`error` en sus dependencias (p. ej. cargas de datos).
+  const value = useMemo<ToastContextValue>(() => ({
     toast:   add,
     success: (m) => add(m, "success"),
     error:   (m) => add(m, "error"),
     info:    (m) => add(m, "info"),
     warning: (m) => add(m, "warning"),
-  }
+  }), [add])
 
   return (
     <ToastContext.Provider value={value}>
       {children}
       {/* Portal de toasts — bottom-right */}
+      {/* Posición vertical en .toast-region (globals.css): sube por encima del FAB si existe */}
       <div
-        className="fixed bottom-24 right-3 left-3 sm:left-auto md:bottom-6 sm:right-6 z-[100] flex flex-col gap-2 items-end pointer-events-none"
-        aria-label="Notificaciones"
+        className="toast-region fixed right-3 left-3 sm:left-auto sm:right-6 z-[100] flex flex-col gap-2 items-end pointer-events-none"
+        role="region"
+        aria-label="Avisos"
+        aria-live="polite"
+        aria-relevant="additions"
       >
         {toasts.map(t => (
           <div key={t.id} className="pointer-events-auto">

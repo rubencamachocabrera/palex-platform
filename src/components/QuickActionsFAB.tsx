@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { TEAL } from "@/lib/brand"
 import { dispatchFabAction } from "@/hooks/useFabAction"
@@ -15,7 +15,7 @@ interface Action {
   color?: string
 }
 
-function useContextActions(pathname: string, router: ReturnType<typeof useRouter>, incidenciasActivo: boolean): Action[] {
+function getContextActions(pathname: string, incidenciasActivo: boolean): Action[] {
   if (pathname.startsWith("/hospitales/") && pathname.split("/").length > 2) {
     const id = pathname.split("/")[2]
     return [
@@ -66,25 +66,42 @@ export function QuickActionsFAB() {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [visible, setVisible] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const { incidenciasActivo } = useConfigApp()
-  const actions = useContextActions(pathname, router, incidenciasActivo)
+  const actions = getContextActions(pathname, incidenciasActivo)
+  // Visibilidad derivada (antes un estado sincronizado en un efecto: el FAB
+  // aparecía un frame tarde y mostraba las acciones de la ruta anterior).
+  const visible = actions.length > 0
 
-  // No mostrar si no hay acciones o en rutas de auth
-  useEffect(() => {
-    setOpen(false)
-    setVisible(actions.length > 0)
-  }, [pathname, actions.length])
+  // Cerrar al cambiar de ruta
+  const [prevPath, setPrevPath] = useState(pathname)
+  if (prevPath !== pathname) { setPrevPath(pathname); setOpen(false) }
 
-  // Cerrar al pulsar Escape
-  const handleKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") setOpen(false)
-  }, [])
+  // Teclado: Escape cierra y devuelve el foco al FAB; flechas recorren el menú
   useEffect(() => {
-    document.addEventListener("keydown", handleKey)
-    return () => document.removeEventListener("keydown", handleKey)
-  }, [handleKey])
+    if (!open) return
+    const items = () => Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
+    // Foco al primer ítem al abrir (patrón menu button de WAI-ARIA)
+    const t = setTimeout(() => items()[0]?.focus(), 30)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+        triggerRef.current?.focus()
+        return
+      }
+      const list = items()
+      if (!list.length) return
+      const i = list.indexOf(document.activeElement as HTMLButtonElement)
+      if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % list.length].focus() }
+      else if (e.key === "ArrowUp") { e.preventDefault(); list[(i - 1 + list.length) % list.length].focus() }
+      else if (e.key === "Home") { e.preventDefault(); list[0].focus() }
+      else if (e.key === "End") { e.preventDefault(); list[list.length - 1].focus() }
+    }
+    document.addEventListener("keydown", onKey)
+    return () => { clearTimeout(t); document.removeEventListener("keydown", onKey) }
+  }, [open])
 
   if (!visible) return null
 
@@ -115,6 +132,8 @@ export function QuickActionsFAB() {
 
       {/* Menú de acciones: panel de cristal tipo command menu */}
       <div
+        ref={menuRef}
+        id="fab-menu"
         className={`nx-fab-menu${open ? " is-open" : ""}`}
         role="menu"
         aria-label="Acciones rápidas"
@@ -143,10 +162,12 @@ export function QuickActionsFAB() {
 
       {/* Botón principal */}
       <button
+        ref={triggerRef}
         onClick={() => setOpen(o => !o)}
         aria-label={open ? "Cerrar menú de acciones" : "Abrir acciones rápidas"}
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-controls="fab-menu"
         className={`quick-fab nx-fab${open ? " is-open" : ""}`}
       >
         <span className="nx-fab-icon nx-fab-plus"><IcoPlus /></span>

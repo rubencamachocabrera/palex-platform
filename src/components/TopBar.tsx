@@ -186,8 +186,18 @@ export function TopBar() {
         setNotifOpen(false)
       }
     }
+    // Escape cierra buscador y notificaciones
+    function onEsc(e: KeyboardEvent) {
+      if (e.key !== "Escape") return
+      setAbierto(false)
+      setNotifOpen(false)
+    }
     document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
+    document.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", handler)
+      document.removeEventListener("keydown", onEsc)
+    }
   }, [])
 
   // Atajo "/" para enfocar búsqueda (cuando no se está escribiendo en otro input)
@@ -267,6 +277,11 @@ export function TopBar() {
             onChange={e => setQ(e.target.value)}
             onFocus={() => { if (resultados.length > 0) setAbierto(true) }}
             placeholder="Buscar hospitales, visitas..."
+            aria-label="Buscar hospitales, visitas y proyectos"
+            aria-expanded={abierto}
+            aria-controls="topbar-search-results"
+            role="combobox"
+            aria-autocomplete="list"
             className="topbar-search w-full pl-10 pr-16 py-2.5 text-sm border rounded-xl focus:outline-none transition-all dark:text-slate-200 dark:placeholder-slate-500"
           />
           {!q && !buscando && (
@@ -284,7 +299,7 @@ export function TopBar() {
 
         {/* Dropdown resultados */}
         {abierto && resultados.length > 0 && (
-          <div className="nexus-popover slide-down absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-lg overflow-hidden z-50 p-1.5">
+          <div id="topbar-search-results" className="nexus-popover slide-down absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-[rgba(255,255,255,0.09)] shadow-lg overflow-hidden z-50 p-1.5">
             {resultados.map(r => (
               <button
                 key={`${r.tipo}-${r.id}`}
@@ -360,7 +375,9 @@ export function TopBar() {
         <button
           onClick={() => setNotifOpen(o => !o)}
           className="topbar-icon-btn relative p-2.5 rounded-xl text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-          aria-label="Notificaciones"
+          aria-label={notifs.length > 0 ? `Notificaciones (${notifs.length} sin leer)` : "Notificaciones"}
+          aria-expanded={notifOpen}
+          aria-haspopup="true"
         >
           <BellIcon />
           {notifs.length > 0 && (
@@ -519,7 +536,7 @@ export function TopBar() {
                       {/* X — descarta sin navegar */}
                       <button
                         onClick={() => dismissOne(n)}
-                        className="shrink-0 mt-0.5 w-6 h-6 rounded-md flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors opacity-0 group-hover:opacity-100"
+                        className="shrink-0 mt-0.5 w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-[rgba(255,255,255,0.08)] transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                         aria-label="Descartar notificación"
                         title="Descartar"
                       >

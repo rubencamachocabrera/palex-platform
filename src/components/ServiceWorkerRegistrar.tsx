@@ -5,6 +5,11 @@ import { useEffect } from "react";
 export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
+      // Solo recargar si se SUSTITUYE un SW que ya controlaba la página. En la
+      // primera instalación clients.claim() también dispara controllerchange y
+      // provocaba una recarga completa sin motivo.
+      const hadController = !!navigator.serviceWorker.controller
+      let reloading = false
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
         .then((reg) => {
@@ -27,6 +32,8 @@ export function ServiceWorkerRegistrar() {
           });
 
           navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (!hadController || reloading) return;
+            reloading = true;
             window.location.reload();
           });
         })

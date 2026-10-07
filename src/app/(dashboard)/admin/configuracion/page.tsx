@@ -869,7 +869,8 @@ export default function ConfiguracionPage() {
       })
       if (!r.ok) throw new Error()
       setConfig(prev => prev ? { ...prev, [key]: valor } : prev)
-      // Sidebar / FAB escuchan este evento para refrescar los modulos sin recargar
+      // Sidebar (palex:config) y useConfigApp/FAB (palex:config-updated) refrescan sin recargar
+      window.dispatchEvent(new CustomEvent("palex:config", { detail: { [key]: valor } }))
       window.dispatchEvent(new CustomEvent("palex:config-updated"))
       const label = key === "crmActivo" ? "CRM" : key === "incidenciasActivo" ? "Soporte (Incidencias)" : "Analítica"
       success(valor ? `${label} activado correctamente` : `${label} desactivado correctamente`)

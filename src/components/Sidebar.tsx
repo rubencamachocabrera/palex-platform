@@ -2,12 +2,29 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import { signOut } from "next-auth/react"
 import { ORANGE } from "@/lib/brand"
 import { BrandLockup, PalexMark } from "@/components/ui/BrandLockup"
 
-interface Props { nombre: string; rol: string }
+interface Props {
+  nombre: string
+  rol: string
+  /** Estado de módulos leído en el servidor: evita desajustes de hidratación. */
+  crmActivo?: boolean
+  incidenciasActivo?: boolean
+  analiticaActivo?: boolean
+}
+
+// Scroll del menú: se guarda en sessionStorage para sobrevivir a remontajes
+// (drawer móvil que se abre/cierra) y a recargas completas.
+const NAV_SCROLL_KEY = "palex_sidebar_scroll"
+function readNavScroll(): number {
+  try { return Number(sessionStorage.getItem(NAV_SCROLL_KEY)) || 0 } catch { return 0 }
+}
+function writeNavScroll(v: number) {
+  try { sessionStorage.setItem(NAV_SCROLL_KEY, String(Math.round(v))) } catch { /* */ }
+}
 
 const ROL_LABEL: Record<string, string> = {
   ADMIN:     "Administrador",
@@ -22,8 +39,7 @@ const BG   = "#071626"
 const BD   = "rgba(148,197,255,0.09)"
 const MUTE = "#8199b3"
 const HTXT = "#e2edf7"
-const HBG  = "rgba(148,197,255,0.07)"
-const ABG  = "rgba(0,169,157,0.22)"
+// Hover/activo de los enlaces del menú: ver .sidebar-nav-link en globals.css
 const ATXT = "#5ff2e4"
 const CARD = "rgba(148,197,255,0.06)"
 
@@ -362,13 +378,11 @@ function NavLink({
 }: {
   item: NavItem; active: boolean; collapsed?: boolean; badge?: number; onClick?: () => void
 }) {
-  const [hover, setHover] = useState(false)
   const [tipY, setTipY] = useState<number | null>(null)
   const Icon = Icons[item.icon]
 
-  const bg    = active ? ABG  : hover ? HBG  : "transparent"
-  const color = active ? ATXT : hover ? HTXT : MUTE
-
+  // Colores base/hover/activo en CSS (.sidebar-nav-link): un estado de hover en
+  // React se quedaba "pegado" si el ratón salía durante el colapso del panel.
   return (
     <Link
       href={item.href}
@@ -380,17 +394,14 @@ function NavLink({
         gap: collapsed ? 0 : 10,
         padding: collapsed ? "9px 0" : "9px 11px",
         justifyContent: collapsed ? "center" : undefined,
-        backgroundColor: bg,
-        color,
       }}
       onMouseEnter={e => {
-        setHover(true)
         if (collapsed) {
           const r = e.currentTarget.getBoundingClientRect()
           setTipY(r.top + r.height / 2)
         }
       }}
-      onMouseLeave={() => { setHover(false); setTipY(null) }}
+      onMouseLeave={() => setTipY(null)}
       onFocus={e => {
         if (collapsed) {
           const r = e.currentTarget.getBoundingClientRect()
@@ -483,56 +494,82 @@ function SidebarStatus({ collapsed }: { collapsed?: boolean }) {
 
 // ─── SidebarInner ─────────────────────────────────────────────────────────────
 function SidebarInner({
-  nombre, rol, collapsed, onClose,
+  nombre, rol, collapsed, onClose, crmActivo: crmInicial = false, incidenciasActivo: incInicial = true, analiticaActivo: anaInicial = true,
 }: Props & { collapsed?: boolean; onClose?: () => void }) {
   const pathname = usePathname()
   const groups   = NAV_GROUPS[rol] ?? NAV_GROUPS.VENTAS
   const inicial  = nombre.charAt(0).toUpperCase()
   const allHrefs = useMemo(() => groups.flatMap(g => g.items.map(i => i.href)), [groups])
+  const navRef   = useRef<HTMLElement>(null)
 
   const [pipelineBadge,    setPipelineBadge]    = useState(0)
   const [proyectosBadge, setProyectosBadge] = useState(0)
-  const [crmActivo, setCrmActivo] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false
-    try { return localStorage.getItem("palex_crm_activo") === "true" }
-    catch { return false }
-  })
-  const [incidenciasActivo, setIncidenciasActivo] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true
-    try { return localStorage.getItem("palex_incidencias_activo") !== "false" }
-    catch { return true }
-  })
-  const [analiticaActivo, setAnaliticaActivo] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true
-    try { return localStorage.getItem("palex_analitica_activo") !== "false" }
-    catch { return true }
-  })
-  const [configVersion, setConfigVersion] = useState(0)
+  // Valor inicial desde el servidor (mismo HTML en SSR y cliente → sin error de
+  // hidratación). Antes se leía localStorage en el render inicial.
+  const [crmActivo, setCrmActivo] = useState<boolean>(crmInicial)
+  const [incidenciasActivo, setIncidenciasActivo] = useState<boolean>(incInicial)
+  const [analiticaActivo, setAnaliticaActivo] = useState<boolean>(anaInicial)
 
-  // admin/configuracion emite este evento al cambiar un toggle → refrescar sin navegar
+  // Sincroniza módulos: al montar, al volver a la pestaña y cuando admin los
+  // cambia (evento "palex:config"). Antes se pedía /api/config en CADA navegación.
   useEffect(() => {
-    const h = () => setConfigVersion(v => v + 1)
-    window.addEventListener("palex:config-updated", h)
-    return () => window.removeEventListener("palex:config-updated", h)
+    const sync = () => {
+      fetch("/api/config")
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d != null) {
+            setCrmActivo(!!d.crmActivo)
+            setIncidenciasActivo(d.incidenciasActivo ?? true)
+            setAnaliticaActivo(d.analiticaActivo ?? true)
+          }
+        })
+        .catch(() => {})
+    }
+    const onVisible = () => { if (document.visibilityState === "visible") sync() }
+    const onConfig = (e: Event) => {
+      const d = (e as CustomEvent<{ crmActivo?: boolean; incidenciasActivo?: boolean; analiticaActivo?: boolean }>).detail ?? {}
+      if (typeof d.crmActivo === "boolean") setCrmActivo(d.crmActivo)
+      if (typeof d.incidenciasActivo === "boolean") setIncidenciasActivo(d.incidenciasActivo)
+      if (typeof d.analiticaActivo === "boolean") setAnaliticaActivo(d.analiticaActivo)
+    }
+    sync()
+    document.addEventListener("visibilitychange", onVisible)
+    window.addEventListener("palex:config", onConfig)
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible)
+      window.removeEventListener("palex:config", onConfig)
+    }
   }, [])
 
+  // Restaura el scroll del menú antes de pintar (sin salto visible) y lo guarda.
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    nav.scrollTop = readNavScroll()
+    let frame = 0
+    const onScroll = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => { frame = 0; writeNavScroll(nav.scrollTop) })
+    }
+    nav.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      nav.removeEventListener("scroll", onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  // El ítem activo queda visible: solo se desplaza si está fuera de la vista del
+  // menú (nunca se usa scrollIntoView, que movería también <main>/<body>).
   useEffect(() => {
-    fetch("/api/config")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d != null) {
-          setCrmActivo(d.crmActivo)
-          setIncidenciasActivo(d.incidenciasActivo ?? true)
-          setAnaliticaActivo(d.analiticaActivo ?? true)
-          try {
-            localStorage.setItem("palex_crm_activo", String(d.crmActivo))
-            localStorage.setItem("palex_incidencias_activo", String(d.incidenciasActivo ?? true))
-            localStorage.setItem("palex_analitica_activo", String(d.analiticaActivo ?? true))
-          } catch { /* */ }
-        }
-      })
-      .catch(() => {})
-  }, [pathname, configVersion])
+    const nav = navRef.current
+    const link = nav?.querySelector<HTMLElement>('a[aria-current="page"]')
+    if (!nav || !link) return
+    const n = nav.getBoundingClientRect()
+    const l = link.getBoundingClientRect()
+    const margin = 12
+    if (l.top < n.top + margin) nav.scrollTop -= (n.top + margin) - l.top
+    else if (l.bottom > n.bottom - margin) nav.scrollTop += l.bottom - (n.bottom - margin)
+  }, [pathname, crmActivo, incidenciasActivo, analiticaActivo])
 
   const visibleGroups = useMemo(() => groups
     .filter(g => (!g.crmOnly || crmActivo) && (!g.incidenciasOnly || incidenciasActivo) && (!g.analiticaOnly || analiticaActivo))
@@ -608,17 +645,19 @@ function SidebarInner({
 
       {/* ── Navegación ───────────────────────────────────────────────────── */}
       <nav
+        ref={navRef}
+        aria-label="Menú principal"
         className="flex-1 space-y-4"
-        style={{ padding: collapsed ? "10px 6px" : "10px 8px", overflowY: "auto", overflowX: "hidden" }}
+        style={{ padding: collapsed ? "10px 6px" : "10px 8px", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain" }}
       >
         {visibleGroups.map((group, gi) => (
-          <div key={gi}>
+          <div key={group.label ?? `g${gi}`}>
             {/* Label de grupo — siempre en DOM, opacidad */}
             {group.label && (
               <p
                 className="sidebar-group-label text-[9.5px] font-medium uppercase px-2.5 mb-1.5 transition-opacity duration-150 select-none"
                 style={{
-                  color: "#5d7690",
+                  color: "#7189a4", // 5:1 sobre la tinta (antes #5d7690, 3.8:1)
                   opacity: collapsed ? 0 : 1,
                   height: collapsed ? 0 : "auto",
                   overflow: "hidden",
@@ -681,6 +720,7 @@ function SidebarInner({
             href="/perfil"
             onClick={onClose}
             title={collapsed ? nombre : undefined}
+            aria-label={`Mi perfil (${nombre})`}
             className="sidebar-logo-mark shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white transition-opacity hover:opacity-85"
           >
             {inicial}
@@ -706,6 +746,8 @@ function SidebarInner({
               href="/perfil"
               onClick={onClose}
               title="Mi perfil"
+              aria-label="Mi perfil"
+              tabIndex={collapsed ? -1 : undefined}
               className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
               style={{ color: MUTE }}
               onMouseEnter={e => (e.currentTarget.style.color = HTXT)}
@@ -716,6 +758,8 @@ function SidebarInner({
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+              tabIndex={collapsed ? -1 : undefined}
               className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
               style={{ color: MUTE }}
               onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.backgroundColor = "rgba(248,113,113,0.1)" }}
@@ -735,6 +779,8 @@ function SidebarInner({
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            tabIndex={collapsed ? undefined : -1}
             className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
             style={{ color: MUTE }}
             onMouseEnter={e => { e.currentTarget.style.color = "#f87171" }}
@@ -750,10 +796,19 @@ function SidebarInner({
 }
 
 // ─── Sidebar principal ────────────────────────────────────────────────────────
-export function Sidebar({ nombre, rol }: Props) {
+export function Sidebar({ nombre, rol, crmActivo, incidenciasActivo, analiticaActivo }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed,  setCollapsed]  = useState(false)
   const pathname = usePathname()
+  const moduleProps = { crmActivo, incidenciasActivo, analiticaActivo }
+
+  // Escape cierra el drawer móvil
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileOpen(false) }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [mobileOpen])
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar_collapsed")
@@ -767,7 +822,9 @@ export function Sidebar({ nombre, rol }: Props) {
     })
   }
 
-  useEffect(() => { setMobileOpen(false) }, [pathname])
+  // Cerrar el drawer al navegar (ajuste de estado en render, sin efecto en cascada)
+  const [prevPath, setPrevPath] = useState(pathname)
+  if (prevPath !== pathname) { setPrevPath(pathname); setMobileOpen(false) }
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : ""
@@ -777,13 +834,17 @@ export function Sidebar({ nombre, rol }: Props) {
   return (
     <>
       {/* Desktop */}
-      <div className="hidden lg:flex shrink-0 h-screen sticky top-0 flex-col">
-        <SidebarInner nombre={nombre} rol={rol} collapsed={collapsed} />
+      {/* sidebar-desktop: z-index propio para que los tooltips fixed del modo
+          colapsado pinten por encima de <main> (sticky crea contexto de apilamiento) */}
+      <div className="sidebar-desktop hidden lg:flex shrink-0 h-screen sticky top-0 flex-col">
+        <SidebarInner {...moduleProps} nombre={nombre} rol={rol} collapsed={collapsed} />
 
         {/* Botón colapsar */}
         <button
           onClick={toggleCollapsed}
           title={collapsed ? "Expandir menú" : "Colapsar menú"}
+          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          aria-expanded={!collapsed}
           className="hidden lg:flex items-center justify-center h-9 shrink-0 transition-colors"
           style={{
             width: collapsed ? 64 : 256,
@@ -810,9 +871,15 @@ export function Sidebar({ nombre, rol }: Props) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <>
-          <div className="sidebar-overlay lg:hidden" onClick={() => setMobileOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-40 lg:hidden flex h-full animate-in slide-in-from-left duration-200">
-            <SidebarInner nombre={nombre} rol={rol} onClose={() => setMobileOpen(false)} />
+          {/* z 44/45: por encima del dock (z-40) y del FAB (z-41), por debajo de modales (z-50) */}
+          <div className="sidebar-overlay lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+          <div
+            className="sidebar-drawer fixed inset-y-0 left-0 lg:hidden flex h-full animate-in slide-in-from-left duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de navegación"
+          >
+            <SidebarInner {...moduleProps} nombre={nombre} rol={rol} onClose={() => setMobileOpen(false)} />
           </div>
         </>
       )}
