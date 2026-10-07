@@ -121,7 +121,9 @@ src/
       hardware/page.tsx                 Tabs: Resumen/Inventario/Instalaciones/Catalogo/Alertas
       mapa/page.tsx                     Leaflet, coordenadas por ciudad
       datos/page.tsx                    KPIs explotacion (MOCKUP — sin API real)
-      inlab/page.tsx                    Inteligencia InLab: perfil agregado inicial GULLA, consumo, operación y calidad
+      inlab/page.tsx                    Inteligencia InLab: selector hospital(es)+rango, 7 tabs, filtros por clic, + carga
+      inlab/_components/                UploadWizard (asistente CSV→agregados), VistaCargas, VistaComparar, VistaFacturacion, ShareModal
+      inlab/_demo/DemoGulla.tsx         Antigua página estática GULLA, ahora "Datos de demostración"
       admin/                            CRUD: usuarios, zonas, hospitales, hardware, tags
       admin/log/page.tsx                Log de actividad (solo ADMIN)
       admin/equipo/page.tsx             Panel equipo — workload por usuario (solo ADMIN)
@@ -145,6 +147,9 @@ src/
       llamadas/                         CRUD con IDOR zona
       tags/, recordatorios/, favoritos/, calendario/ical/, onboarding/, presence/, notificaciones/
       perfil/                           { rol, onboardingCompletado, calendarToken }
+      inlab/                            hospitales, datos, benchmark, cargas(+check,[id]), mapeos/[hospitalId], tarifas, shares(+[id])
+      share/inlab/[token]/              Informe InLab publico (sin auth)
+    share/inlab/[token]/page.tsx        Informe InLab publico de solo lectura + imprimible
   components/
     InteractionLayer.tsx                Foco de luz bajo el cursor en tarjetas (escribe --mx/--my). Sin efecto en tactil/reduced-motion
     ActivityIndicator.tsx               Envuelve fetch a /api: linea de energia + topbar animada si una peticion tarda >150ms
@@ -180,6 +185,9 @@ src/
     form-schema.ts, img-compress.ts, offline-db.ts, log-actividad.ts
     calendar-token.ts, csv.ts, visita-analysis.ts
     hospital-score.ts                   computeHospitalScore(hospitalId) — 0-100, breakdown 4 dims
+    inlab/                              Inteligencia InLab — ver inlab/README.md (mapping.ts = adaptacion al CSV real)
+  components/inlab/                     charts.tsx (SVG propios), Vistas.tsx, ui.tsx, InformeInlab.tsx (compartidos dashboard/share)
+docs/inlab/                             CSV sintetico de ejemplo + generador (no se sirve en produccion)
   middleware.ts                         Protege rutas, edge-compatible
 ```
 
@@ -212,6 +220,12 @@ IncidenciaRelacion (tipo TipoRelacionIncidencia, incidenciaId, relacionadaId, cr
 LogActividad, ConfigApp (crmActivo, incidenciasActivo @map("incidencias_activo"), analiticaActivo @map("analitica_activo") — todos Boolean @default(true), scoringConfig), PlantillaVisita, ModuloInlab
 NotaEquipo (texto, autorId, mencionIds JSON, fijada, creadoEn) @@map("notas_equipo") — notas del equipo accesibles a todos los roles
 Oportunidad      (DESACTIVADO)
+InlabCarga       (@@map "inlab_cargas" — hospital, usuario, fichero, hash sha-256, desde/hasta, filas, mapeo/opciones/avisos JSON, modo NUEVA|SUSTITUIR|OMITIR, estado COMPLETADA|PARCIAL|SUSTITUIDA)
+InlabConsumoDiario / InlabPuestoDiario / InlabActividadDiaria / InlabTiempoDiario / InlabEventoDiario
+                 (@@map "inlab_*_diario" — agregados por dia, FK cargaId onDelete Cascade + hospitalId sin FK, @@index([hospitalId, fecha]); tiempos con histograma Int[] de buckets fijos; actividad con porHora Int[24])
+InlabMapeo       (@@map "inlab_mapeos" — hospitalId @unique, mapeo columnas JSON)
+InlabTarifa      (@@map "inlab_tarifas" — hospital, consumible ("*" = resto), precio Decimal(12,4), moneda, vigencias)
+InlabShare       (@@map "inlab_shares" — token @unique, hospital, desde/hasta?, incluirFacturacion, expiraEn, revocado, vistas)
 ```
 
 **Enums clave:** EstadoProyecto (5), EstadoModulo (5), TipoFase (11), TipoFavorito (2), TipoIncidencia (2), CategoriaIncidencia (10), PrioridadIncidencia (4), EstadoIncidencia (6), TipoEventoIncidencia (11), TipoRelacionIncidencia (3: DUPLICADA|RELACIONADA|CAUSA_RAIZ)
@@ -249,6 +263,15 @@ Oportunidad      (DESACTIVADO)
 - GET/POST/DELETE `/api/incidencias/respuestas-rapidas`: plantillas de respuesta. ADMIN para POST/DELETE.
 - GET/POST/DELETE `/api/incidencias/[id]/relaciones`: vincular incidencias. POST valida auto-relacion y duplicados (incluyendo inversos, 409). DELETE solo autor o ADMIN. Normaliza origen+destino en GET.
 - GET `/api/incidencias/stats`: acepta `?desde=&hasta=`. Devuelve KPIs globales, porCategoria/porPrioridad/porTipo, tecnicos[] con { total, resueltas, slaRate, horasTotales }. Cache private 60s. SLA usando `fechaResolucion` (NO `resolvedAt`).
+- **Inteligencia InLab** (`/api/inlab/*`, roles en `lib/inlab/roles.ts`: ver = todos; tarifas/facturacion = ADMIN|VENTAS; IDOR zona via `lib/inlab/access.ts`):
+  - GET `/api/inlab/hospitales`: `{ todos (accesibles), conDatos (cobertura desde/hasta/dias/cargas), puedeFacturacion }`.
+  - GET `/api/inlab/datos?hospitalIds=a,b&desde=&hasta=`: agregados del rango en formato compacto `InlabPayload` (diccionarios + tuplas, `lib/inlab/types.ts`). Max 20 hospitales.
+  - GET `/api/inlab/benchmark?desde=&hasta=`: totales, dias, eventos y P50/P90 del ciclo por hospital accesible con datos.
+  - POST `/api/inlab/cargas/check` `{ hospitalId, hash, dias[] }` → `{ duplicado, diasSolapados, rangosSolapados, diasNuevos, cargasAfectadas }`.
+  - POST `/api/inlab/cargas` `{ hospitalId, modo, meta, mapeo, opciones, guardarMapeo?, payload }`: solo AGREGADOS (nunca filas crudas). Limite 25 MB (content-length + texto), Zod + `validarIndicesPayload`, transaccion Serializable (solapes comprobados dentro), 409 si solapa con modo NUEVA. Rate limit 10/min.
+  - GET `/api/inlab/cargas?hospitalIds=`, DELETE `/api/inlab/cargas/[id]` (autor o ADMIN; cascade de agregados).
+  - GET/PUT `/api/inlab/mapeos/[hospitalId]`; GET/PUT `/api/inlab/tarifas` (PUT reemplaza la tabla del hospital en transaccion).
+  - GET/POST `/api/inlab/shares`, DELETE `/api/inlab/shares/[id]` (revoca). Publico: GET `/api/share/inlab/[token]` (rate limit 30/min, sin tarifas salvo `incluirFacturacion`, cuenta vistas).
 - equipoResponsable enum: SERVICIO_TECNICO | APLICACIONES | COMERCIAL | MARKETING | PROYECTOS (5 equipos, NO "AMBOS")
 - KPIs lista: usar `totales` (fetch sin filtros) para contadores globales; `items` solo para la lista filtrada.
 - Lista incidencias: ordenacion client-side (fecha/SLA/hospital/titulo). Agrupacion por prioridad collapsible. Drawer lateral para detalle rapido. QuickAssign inline desde lista.
@@ -290,7 +313,8 @@ Oportunidad      (DESACTIVADO)
 **Metricas incidencias:** /incidencias/stats — KPIs globales (total/abiertas/en-progreso/resueltas/SLA%), distribucion por categoria/prioridad/tipo HW-SW (donut chart SVG), tabla tecnico con tasa resolucion, cumplimiento SLA y horas trabajadas. Filtro periodo 7/30/90/todo dias. Accesible via boton "Metricas" en header incidencias.
 **Dynamic imports:** ComentariosPanel en TabInfo (next/dynamic, ssr:false). QRCode en TabResumen (import() dinamico en useEffect). @dnd-kit ya existia.
 **Calidad:** Lighthouse 100/100/96/100, Playwright E2E 18 tests, dark mode completo, Sentry.
-**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin protegidos en middleware Edge. /share/ exento (publico por diseno).
+**Inteligencia InLab (modulo real de datos):** boton "+ Cargar fichero" (PageHeader + accion FAB `fab:inlab-cargar`) abre un asistente: hospital (por zona) → CSV/TSV/TXT (delimitador ; , 	 | y UTF-8/latin1 autodetectados) → previsualizacion → emparejar columnas con 12 campos canonicos (autodeteccion por alias en `lib/inlab/mapping.ts`, mapeo guardado por hospital) → procesado en el navegador por streaming en Web Worker (progreso, cancelar, SHA-256 incremental; ~25 MB/s) → revision (avisos, bloqueo si una dimension tiene demasiados valores distintos = posible PII) → deteccion de recarga por hash y de dias solapados (sustituir / solo dias nuevos / cancelar). Solo se suben agregados diarios. Dashboard: selector multi-hospital, presets 30d/90d/12m/todo/personalizado limitados a la cobertura, filtros por clic (area, consumible, puesto) + prioridad que se propagan a todas las vistas; tabs Resumen ejecutivo (KPIs con tendencia vs periodo anterior), Consumo & demanda (por consumible/area/puesto, heatmap dia×hora, evolucion + prevision lineal 4 semanas), Flujo & tiempos (P50/P90 por tramo, area y urgencia con histogramas combinables, cuellos de botella), Incidencias & calidad (eventos del propio fichero: reimpresiones, rechazos, anulaciones, errores impresora; tasa por 1.000), Comparar hospitales (normalizado por dia/cama), Modelo comercial (tarifas con vigencia, consumo × tarifa, export Excel/CSV), Cargas & cobertura (historico, huecos, borrar). Compartir: enlace publico `/share/inlab/[token]` por hospital y periodo (caducidad, revocable, opcion facturacion) + vista imprimible/PDF. La antigua pagina estatica GULLA sigue accesible como "Demostracion". CSV sintetico en `docs/inlab/`. Pendiente del fichero real: ver `src/lib/inlab/README.md`.
+**Seguridad:** CSP (sin unsafe-eval), HSTS, IDOR, rate limiting ~50 rutas, Zod validation. /notas /actividad /incidencias /comparador /checkin /inlab protegidos en middleware Edge. /share/ exento (publico por diseno).
 **Rendimiento:** SWR usePerfil() compartido, connection pool max:20, 15 indices DB, Redis rate-limit/presence/menciones (rate-limit con fallback in-memory automatico si Redis no esta configurado). @dnd-kit, ComentariosPanel, QRCode = dynamic imports (no en bundle inicial).
 **Sprint 20 — auditoria y hardening (completo):** 3 auditorias paralelas (seguridad API, logica de negocio/Prisma, UX/consistencia) sobre todo el codebase, 16 hallazgos, todos corregidos. IDOR de zona en score de hospitales y relaciones de incidencias, limite de tamano en fotos de eventos, rate-limit en `oportunidades`, Zod en `recordatorios`, fecha UTC en `incidencias/stats`, `DELETE usuario` con actividad (409 en vez de 500), transacciones en `aplicar-plantilla` y en relaciones/pausas SLA de incidencias (evita race conditions y lost updates), `confirm()` en 4 acciones de borrado de proyectos que no lo tenian, colores de marca hardcodeados consolidados en `brand.ts` (11 `error.tsx`, `TabResumen.tsx`, `admin/zonas`), mapeo tipo→color unificado (`TIPO_RESULTADO_COLOR`). Rate limiting migrado a Redis real (`checkRateLimit`/`checkRateLimitByKey` async, ~150 call-sites actualizados, fallback in-memory si Redis no esta configurado). `PageHeader` unificado en 12 paginas adicionales (ampliado con `icon`/`iconColor` opcionales); excepciones deliberadas documentadas (mapa, incidencias/stats, perfil, paginas de detalle, pipeline CRM desactivado). `onDelete: Restrict` explicito en `Incidencia.hospital`/`RegistroLlamada.hospital`. Detalle completo en `AUDITORIA-SPRINT20.md`.
 **Sprint 21 — backlog completo:** modo compacto en lista de proyectos (toggle localStorage `proyectos_compacto`, fila slim vs. card). Copiar fases/tareas/hitos entre proyectos (`POST /api/proyectos/[id]/copiar-desde`, transaccion, preserva timeline relativo de hitos, modal con buscador). Filtros guardados DB-backed (modelo `FiltroGuardado`, `@@unique([usuarioId, entidad, nombre])`, CRUD en `/api/filtros-guardados`, UI en `/incidencias`). Agenda semanal `/agenda` (vista Lun-Vie, `GET /api/agenda?desde=&hasta=` agrega visitas+tareas+recordatorios del usuario, navegacion por semana). Calendario de incidencias `/incidencias/calendario` (clona el patron de `visitas/calendario`, dots por peor estado SLA del dia: VENCIDO/EN_RIESGO/OK/RESUELTA). Notificacion automatica de cambio de estado (bloque nuevo en `/api/notificaciones` leyendo `EventoIncidencia` tipo `CAMBIO_ESTADO`, sin modelo nuevo). Recurrencia automatica (al crear incidencia, busca resuelta/cerrada mismo hospital+categoria+equipo en 30 dias, auto-vincula `IncidenciaRelacion` tipo `RELACIONADA` + evento + toast). Escalado automatico (`GET /api/cron/escalar-incidencias`, protegido por `CRON_SECRET`, marca evento `ESCALADO` en CRITICAs sin asignar >4h, idempotente; la notificacion a ADMIN se sirve del mismo bloque de `/api/notificaciones`). **Pendiente de configuracion manual**: `CRON_SECRET` en Railway + un cron externo (Railway no tiene cron nativo) que llame a `/api/cron/escalar-incidencias` cada 15-30 min.
