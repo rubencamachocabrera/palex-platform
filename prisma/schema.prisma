@@ -1173,6 +1173,8 @@ model InlabShare {
   desde              DateTime? @db.Date
   hasta              DateTime? @db.Date
   incluirFacturacion Boolean   @default(false) @map("incluir_facturacion")
+  // Work areas incluidas (vacío = todas, también las que aparezcan en cargas futuras)
+  areas              String[]  @default([])
   expiraEn           DateTime? @map("expira_en")
   revocado           Boolean   @default(false)
   vistas             Int       @default(0)

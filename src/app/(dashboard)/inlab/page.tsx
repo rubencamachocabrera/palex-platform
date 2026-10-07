@@ -322,7 +322,7 @@ export default function InlabPage() {
       )}
 
       {wizard && <UploadWizard onCerrar={() => setWizard(false)} hospitales={info?.todos ?? []} hospitalInicial={unico} onCompletado={onCompletado} />}
-      {unico && rango && <ShareModal abierto={share} onCerrar={() => setShare(false)} hospitalId={unico} hospitalNombre={nombre(unico)} rango={rango} puedeFacturacion={!!info?.puedeFacturacion} />}
+      {unico && rango && <ShareModal abierto={share} onCerrar={() => setShare(false)} hospitalId={unico} hospitalNombre={nombre(unico)} rango={rango} puedeFacturacion={!!info?.puedeFacturacion} ds={ds} areasIniciales={filtrosEf.areas} />}
       {informe && ds && rango && (
         <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-50 px-4 py-6 dark:bg-slate-950 sm:px-6">
           <InformeInlab

@@ -2,58 +2,58 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { InformeInlab } from "@/components/inlab/InformeInlab"
+import { BrandLockup } from "@/components/ui/BrandLockup"
 import { NexusLoader } from "@/components/ui/Skeleton"
-import { decodificar, type Tarifa } from "@/lib/inlab/analytics"
+import { IconLock } from "@/components/ui/Icons"
+import { decodificar } from "@/lib/inlab/analytics"
 import type { InlabPayload } from "@/lib/inlab/types"
+import { InformePublico, type DatosInformePublico } from "@/components/inlab/share/InformePublico"
+import s from "@/components/inlab/share/share.module.css"
 
-interface Respuesta {
-  hospital: { nombre: string; ciudad: string | null; provincia: string | null; camas: number | null }
-  desde: string
-  hasta: string
-  dataset: InlabPayload
-  tarifas: Tarifa[]
-  incluirFacturacion: boolean
-}
+type Respuesta = DatosInformePublico & { dataset: InlabPayload }
 
-// /share/inlab/[token] — informe InLab público de solo lectura (sin auth; exento en middleware)
+// /share/inlab/[token] — informe InLab público, interactivo y de solo lectura (sin auth; exento en middleware)
 export default function ShareInlabPage() {
   const { token } = useParams<{ token: string }>()
   const [data, setData] = useState<Respuesta | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ texto: string; motivo?: string } | null>(null)
 
   useEffect(() => {
+    let vivo = true
     fetch(`/api/share/inlab/${encodeURIComponent(token)}`)
       .then(async r => {
         const d = await r.json().catch(() => null)
-        if (!r.ok) { setError(d?.error ?? "No se pudo cargar el informe"); return }
+        if (!vivo) return
+        if (!r.ok) { setError({ texto: d?.error ?? "No se pudo cargar el informe", motivo: d?.motivo }); return }
         setData(d)
       })
-      .catch(() => setError("No se pudo cargar el informe"))
+      .catch(() => { if (vivo) setError({ texto: "No se pudo cargar el informe. Comprueba tu conexión." }) })
+    return () => { vivo = false }
   }, [token])
 
   const ds = useMemo(() => (data ? decodificar(data.dataset) : null), [data])
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-extrabold text-gray-900 dark:text-white">Informe no disponible</p>
-          <p className="mt-2 text-sm text-gray-500">{error}</p>
+      <main className={`${s.ink} relative flex min-h-screen items-center justify-center px-6 py-12`}>
+        <span className={s.aurora} style={{ width: 480, height: 480, left: "-15%", top: "-20%", background: "#00A99D" }} />
+        <div className={`${s.rise} max-w-sm text-center`}>
+          <div className="flex justify-center"><BrandLockup size="lg" /></div>
+          <span className="mx-auto mt-10 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[.07] text-teal-200"><IconLock size={24} /></span>
+          <h1 className="mt-5 text-xl font-extrabold tracking-[-.02em] text-white">{error.motivo ? "Este informe ya no está disponible" : "Informe no disponible"}</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{error.texto}</p>
+          {error.motivo && <p className="mt-4 text-xs leading-5 text-slate-400">Pide un enlace nuevo a tu contacto de Palex Medical.</p>}
         </div>
       </main>
     )
   }
-  if (!data || !ds) return <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><NexusLoader label="Cargando informe" /></main>
+  if (!data || !ds) {
+    return <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)]"><NexusLoader label="Preparando el informe" /></main>
+  }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 dark:bg-slate-950 sm:px-6 sm:py-10">
-      <InformeInlab
-        hospital={{ nombre: data.hospital.nombre, ciudad: data.hospital.ciudad }}
-        rango={{ desde: data.desde, hasta: data.hasta }}
-        ds={ds}
-        tarifas={data.incluirFacturacion ? data.tarifas : null}
-      />
-    </main>
+    <div className="min-h-screen bg-[var(--page-bg)] pb-10">
+      <InformePublico datos={data} ds={ds} />
+    </div>
   )
 }
