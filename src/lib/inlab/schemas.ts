@@ -16,7 +16,7 @@ const nat = z.number().int().min(0)
 const filas = (n: number) => z.array(z.array(num).min(n)).max(LIMITES.maxFilasPorTabla)
 
 export const InlabPayloadSchema = z.object({
-  v: z.literal(1),
+  v: z.literal(2, { error: "Formato de agregados antiguo: recarga la página e intenta de nuevo la carga." }),
   dic: z.object({ areas: dic, puestos: dic, consumibles: dic, impresoras: dic, eventos: dic }),
   dias: z.array(dia).min(1).max(LIMITES.maxDias),
   consumo: filas(6),

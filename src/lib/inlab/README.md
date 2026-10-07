@@ -38,7 +38,7 @@ suele indicar que se ha emparejado una columna de texto libre o con nombres.
 | `csv.ts` | Detección de codificación/delimitador, parser incremental RFC 4180, previsualización |
 | `dates.ts` | Parseo de fechas (ISO rápido, DMY/MDY), utilidades de días `YYYY-MM-DD` |
 | `aggregate.ts` | `InlabAggregator`: fila → acumuladores; `build()` → `InlabPayload` + avisos |
-| `histogram.ts` | Buckets fijos de minutos para percentiles combinables (¡no cambiar sin migrar!) |
+| `histogram.ts` | Buckets fijos de minutos para percentiles combinables (v2: 5 s hasta 2 min, 15 s hasta 10, 30 s hasta 30…; las filas v1 se re-reparten al leer). ¡No cambiar sin migrar! |
 | `process.ts` / `inlab.worker.ts` | Streaming del `File` + hash + parseo (Worker con respaldo en hilo principal) |
 | `types.ts` | Formato compacto `InlabPayload` y límites compartidos |
 | `schemas.ts` | Zod (re-exportado en `@/lib/schemas`) + validación de índices |
@@ -47,6 +47,7 @@ suele indicar que se ha emparejado una columna de texto libre o con nombres.
 | `queries.ts` | Reconstrucción del payload, cobertura y benchmark |
 | `analytics.ts` | KPIs, series, desgloses, previsión, facturación (puro, cliente) |
 
+Verificación estadística reproducible (sin datos reales): `npx tsx docs/inlab/verificar-estadistica.ts`.
 Ejemplo sintético y generador: `docs/inlab/ejemplo-inlab-sintetico.csv`,
 `docs/inlab/generar-csv-sintetico.mjs` (sirve también para pruebas de rendimiento:
 ~226 MB / 1,5 M filas se procesan en ~9 s en Node).
