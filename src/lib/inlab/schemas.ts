@@ -81,6 +81,8 @@ export const InlabShareCreate = z.object({
   desde: dia.optional().nullable(),
   hasta: dia.optional().nullable(),
   incluirFacturacion: z.boolean().optional(),
+  /** Work areas incluidas; vacío/ausente = todas */
+  areas: z.array(z.string().trim().min(1).max(LIMITES.maxTextoDimension)).max(500).optional(),
   expiraDias: z.number().int().min(1).max(365).optional().nullable(),
 })
 
