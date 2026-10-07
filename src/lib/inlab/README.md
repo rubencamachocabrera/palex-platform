@@ -19,7 +19,8 @@ InlabPayload (types.ts) — solo totales diarios, diccionarios de texto corto
   │  POST /api/inlab/cargas        (Zod + índices + IDOR zona + transacción)
   ▼
 PostgreSQL: inlab_cargas + inlab_{consumo,puesto,actividad,tiempo,evento}_diario
-  │  GET /api/inlab/datos  → mismo formato compacto
+  │  GET /api/inlab/datos  → mismo formato compacto (sin rango = toda la cobertura; caché + ETag)
+  │  cliente: SWR (una vez por selección) → recorte.ts por periodo
   ▼
 analytics.ts (cliente) → components/inlab/Vistas.tsx
 ```
@@ -44,7 +45,9 @@ suele indicar que se ha emparejado una columna de texto libre o con nombres.
 | `schemas.ts` | Zod (re-exportado en `@/lib/schemas`) + validación de índices |
 | `access.ts` / `roles.ts` | Roles y acceso por zona (IDOR) |
 | `persist.ts` | Inserción transaccional, sustituir/omitir días solapados |
-| `queries.ts` | Reconstrucción del payload, cobertura y benchmark |
+| `queries.ts` | Reconstrucción del payload (histogramas dispersos en SQL), cobertura, huella de cargas y benchmark |
+| `cache-datos.ts` | Caché en memoria + ETag de `/api/inlab/datos` (clave por huella de cargas) |
+| `recorte.ts` | `recortar(ds, ventana)`: el cliente pide toda la cobertura una vez y deriva cada periodo |
 | `analytics.ts` | KPIs, series, desgloses, previsión, facturación (puro, cliente) |
 
 Verificación estadística reproducible (sin datos reales): `npx tsx docs/inlab/verificar-estadistica.ts`.

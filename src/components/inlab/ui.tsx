@@ -1,7 +1,58 @@
 "use client"
 
-import { CountUp } from "@/components/ui/CountUp"
+import { useEffect, useRef, useState } from "react"
 import { IconTrendingDown, IconTrendingUp } from "@/components/ui/Icons"
+
+const NUM = /-?\d+(?:,\d+)?/
+const aNumero = (s: string) => parseFloat(s.replace(",", "."))
+
+/**
+ * Cifra de KPI animada: al aparecer cuenta desde 0 (como CountUp) y, al cambiar un filtro,
+ * transita desde el valor anterior en vez de volver a 0. Solo anima la PRIMERA cifra si el
+ * texto que la rodea no cambia ("12,4 k" → "13,1 k"); si cambia la unidad ("58 min" →
+ * "1 h 5 min") salta directamente. El último fotograma es siempre el texto exacto recibido:
+ * la animación nunca altera la cifra final. Respeta prefers-reduced-motion.
+ */
+function ValorAnimado({ valor }: { valor: string }) {
+  const [anim, setAnim] = useState<string | null>(null)
+  const previo = useRef<string | null>(null)
+  useEffect(() => {
+    const desde = previo.current
+    previo.current = valor
+    let frame = 0
+    const m = NUM.exec(valor)
+    const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const pre = m ? valor.slice(0, m.index) : "", post = m ? valor.slice(m.index + m[0].length) : ""
+    let origen: number | null = desde === null ? 0 : null
+    if (desde !== null && m) {
+      const md = NUM.exec(desde)
+      if (md && desde.slice(0, md.index) === pre && desde.slice(md.index + md[0].length) === post) origen = aNumero(md[0])
+    }
+    const destino = m ? aNumero(m[0]) : NaN
+    if (!m || reducido || origen === null || !isFinite(destino) || origen === destino || (desde === null && destino === 0)) {
+      frame = requestAnimationFrame(() => setAnim(null))
+      return () => cancelAnimationFrame(frame)
+    }
+    const decimales = m[0].includes(",") ? m[0].split(",")[1].length : 0
+    const duracion = desde === null ? 900 : 600
+    const inicio = performance.now()
+    let terminado = false
+    const paso = (ahora: number) => {
+      const t = Math.min(1, (ahora - inicio) / duracion)
+      if (t >= 1) { terminado = true; setAnim(null); return }
+      const e = 1 - Math.pow(1 - t, 4) // ease-out-quart
+      setAnim(pre + (origen + (destino - origen) * e).toFixed(decimales).replace(".", ",") + post)
+      frame = requestAnimationFrame(paso)
+    }
+    frame = requestAnimationFrame(paso)
+    return () => {
+      cancelAnimationFrame(frame)
+      // Interrumpida antes de empezar a verse (StrictMode, <Activity> oculta): se repetirá
+      if (!terminado && performance.now() - inicio < 50) previo.current = desde
+    }
+  }, [valor])
+  return <span className="tabular-nums">{anim ?? valor}</span>
+}
 
 export function Panel({ eyebrow, titulo, texto, accion, children, className = "" }: {
   eyebrow?: string; titulo: string; texto?: React.ReactNode; accion?: React.ReactNode; children: React.ReactNode; className?: string
@@ -35,7 +86,7 @@ export function Kpi({ label, valor, detalle, delta, mejorSiBaja = false, icono, 
   const neutro = hayDelta && Math.abs(delta!) < 0.5
   // Se redondea a 1 decimal ANTES de elegir signo/flecha: evita "−0 %" o "+0 %" con flecha engañosa
   const redondeado = hayDelta ? Math.round(delta! * 10) / 10 : 0
-  // CountUp interpreta "62.073" como decimal: solo animamos cifras sin separador de miles
+  // "62.073" lleva separador de miles: no se anima (se mostraría como decimal a mitad de animación)
   const animable = !/\d\.\d{3}/.test(valor)
   return (
     <article className="stat-card relative overflow-hidden p-4 sm:p-5">
@@ -54,7 +105,7 @@ export function Kpi({ label, valor, detalle, delta, mejorSiBaja = false, icono, 
           </span>
         )}
       </div>
-      <p className="text-2xl font-extrabold leading-none tracking-[-0.04em] text-gray-900 dark:text-white sm:text-[28px]">{animable ? <CountUp value={valor} /> : valor}</p>
+      <p className="text-2xl font-extrabold leading-none tracking-[-0.04em] text-gray-900 dark:text-white sm:text-[28px]">{animable ? <ValorAnimado valor={valor} /> : valor}</p>
       <p className="kpi-label mt-2.5 text-gray-500 dark:text-slate-300">{label}</p>
       {detalle && <p className="mt-1 text-xs leading-relaxed text-gray-400">{detalle}</p>}
     </article>

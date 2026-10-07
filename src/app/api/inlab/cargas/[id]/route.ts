@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { logActividad } from "@/lib/log-actividad"
 import { requireInlabUser, puedeAccederHospital } from "@/lib/inlab/access"
+import { invalidarDatosInlab } from "@/lib/inlab/cache-datos"
 
 // DELETE /api/inlab/cargas/[id] — elimina la carga y sus agregados (cascade). Solo autor o ADMIN.
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (user.role !== "ADMIN" && carga.usuarioId !== user.id) return NextResponse.json({ error: "Solo el autor de la carga o un administrador pueden eliminarla" }, { status: 403 })
 
     await db.inlabCarga.delete({ where: { id } })
+    invalidarDatosInlab(carga.hospitalId)
     await logActividad(user.id, "ELIMINAR", "InlabCarga", id, carga.fichero)
     return NextResponse.json({ ok: true })
   } catch (err) {
