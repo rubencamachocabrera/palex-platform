@@ -350,7 +350,7 @@ export function HeatmapSemana({ m, max, formato = (v: number) => fmtN(v, 1) }: {
                     onMouseLeave={() => setHover(null)}
                     className={`h-5 rounded-[3px] ${activo ? "ring-2 ring-slate-700 dark:ring-white" : ""}`}
                     style={{ background: v > 0 ? `rgba(0, 169, 157, ${0.08 + a * 0.92})` : "var(--heat-empty, rgba(148,163,184,.12))" }}
-                    title={`${DOW[d]} ${h}:00 — ${formato(v)} registros/día`}
+                    title={`${DOW[d]} ${h}:00 — ${formato(v)} tubos y etiquetas de media`}
                   />
                 )
               })}
@@ -358,7 +358,7 @@ export function HeatmapSemana({ m, max, formato = (v: number) => fmtN(v, 1) }: {
           ))}
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400">
-          <span>{hover ? <><strong className="text-gray-700 dark:text-gray-200">{DOW[hover.d]} · {hover.h}:00–{hover.h + 1}:00</strong> · {formato(m[hover.d][hover.h])} registros de media</> : "Pasa el cursor por una celda para ver el detalle"}</span>
+          <span>{hover ? <><strong className="text-gray-700 dark:text-gray-200">{DOW[hover.d]} · {hover.h}:00–{hover.h + 1}:00</strong> · {formato(m[hover.d][hover.h])} tubos y etiquetas de media</> : "Pasa el cursor por una celda para ver el detalle"}</span>
           <span className="flex items-center gap-1">Menos<span className="h-2 w-16 rounded-full" style={{ background: "linear-gradient(90deg, rgba(0,169,157,.08), rgba(0,169,157,1))" }} />Más</span>
         </div>
       </div>
@@ -406,8 +406,11 @@ export function Donut({ items, centro, subcentro, tamano = 160 }: { items: { lab
 
 // ─── Barras de rango P50–P90 (tiempos) ───────────────────────────────────────
 
-export function RangoTiempos({ items, onSelect, seleccionado }: {
-  items: { clave: string; p50: number | null; p90: number | null; n: number }[]; onSelect?: (c: string | null, item: string) => void; seleccionado?: string | readonly string[] | null
+export function RangoTiempos({ items, onSelect, seleccionado, unidad = "peticiones" }: {
+  /** `label`: nombre visible (si no, `clave`); `aviso`: advertencia corta (validaciones sospechosas) */
+  items: { clave: string; label?: string; aviso?: string | null; p50: number | null; p90: number | null; n: number }[]; onSelect?: (c: string | null, item: string) => void; seleccionado?: string | readonly string[] | null
+  /** qué cuentan las mediciones (peticiones o tubos) */
+  unidad?: string
 }) {
   const max = Math.max(1, ...items.map(i => i.p90 ?? 0))
   if (items.length === 0) return <p className="py-6 text-center text-xs text-gray-400">Sin tiempos calculables en el periodo</p>
@@ -422,11 +425,14 @@ export function RangoTiempos({ items, onSelect, seleccionado }: {
             key={it.clave}
             {...(onSelect ? { type: "button" as const, onClick: () => onSelect(activo ? null : it.clave, it.clave), "aria-pressed": activo } : {})}
             className={`block w-full rounded-lg px-2 py-1 text-left transition-opacity ${onSelect ? "hover:bg-slate-50 dark:hover:bg-slate-800/60" : ""} ${activo ? "bg-indigo-50/70 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:ring-indigo-800" : ""} ${atenuado ? "opacity-45" : ""}`}
-            title={`${it.clave}: mediana ${fmtMin(it.p50)}, P90 ${fmtMin(it.p90)} (${fmtN(it.n)} mediciones)`}
+            title={`${it.label ?? it.clave}: la mitad en menos de ${fmtMin(it.p50)}; 9 de cada 10 en menos de ${fmtMin(it.p90)} (${fmtN(it.n)} ${unidad})${it.aviso ? `. ${it.aviso}` : ""}`}
           >
             <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-              <span className="truncate font-bold text-gray-700 dark:text-gray-200">{it.clave}</span>
-              <span className="shrink-0 tabular-nums text-gray-500 dark:text-slate-300"><strong className="text-gray-900 dark:text-white">{fmtMin(it.p50)}</strong> · P90 {fmtMin(it.p90)}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate font-bold text-gray-700 dark:text-gray-200">{it.label ?? it.clave}</span>
+                {it.aviso && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9.5px] font-extrabold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">{it.aviso}</span>}
+              </span>
+              <span className="shrink-0 tabular-nums text-gray-500 dark:text-slate-300"><strong className="text-gray-900 dark:text-white">{fmtMin(it.p50)}</strong> · 9/10 &lt; {fmtMin(it.p90)}</span>
             </div>
             <div className="relative h-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70">
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${((it.p90 ?? 0) / max) * 100}%`, background: "rgba(99,102,241,.28)" }} />
@@ -435,9 +441,9 @@ export function RangoTiempos({ items, onSelect, seleccionado }: {
           </Comp>
         )
       })}
-      <div className="flex items-center gap-4 px-2 pt-1 text-[10px] text-gray-400">
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full" style={{ background: "#6366F1" }} />Mediana</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full" style={{ background: "rgba(99,102,241,.28)" }} />Hasta P90</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 pt-1 text-[10px] text-gray-400">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full" style={{ background: "#6366F1" }} />La mitad tarda menos de (mediana)</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full" style={{ background: "rgba(99,102,241,.28)" }} />9 de cada 10 tardan menos de (P90)</span>
       </div>
     </div>
   )

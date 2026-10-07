@@ -10,17 +10,20 @@
  *    cobertura distinta, media por día de la semana, tasa con filtro de urgencia,
  *    formato de minutos, facturación con cambio de tarifa y error de percentiles en
  *    distribuciones de duraciones muy cortas.
- * Sale con código 1 si algo no cuadra. Auditoría Sprint 25b (AGENTS.md §7).
+ * 3. Sprint 26 (contenido): «Peticiones» = pedidos distintos en series, áreas y días de la
+ *    semana; validaciones sospechosamente rápidas (extracción < VALIDACION_RAPIDA.umbralMin)
+ *    contadas EXACTAS frente a las filas, mediana sin ellas y tendencia neutra.
+ * Sale con código 1 si algo no cuadra. Auditoría Sprint 25b / 26 (AGENTS.md §7).
  */
 import { readFileSync } from "node:fs"
 import { InlabAggregator } from "../../src/lib/inlab/aggregate"
 import { CsvStreamParser } from "../../src/lib/inlab/csv"
 import { CABECERAS_PLANAS, MAPEO_PLANO } from "../../src/lib/inlab/mapping"
 import {
-  decodificar, facturacion, FILTROS_VACIOS, kpis, porDiaSemana, tendencias, tiemposPor, tiemposPorTramo, totalImporte,
-  type Filtros, type Rango,
+  decodificar, facturacion, FILTROS_VACIOS, kpis, porArea, porDiaSemana, serieVolumen, tendencias, tendenciaTiempo, tiemposPor,
+  tiemposPorTramo, totalImporte, validacionesRapidas, VALIDACION_RAPIDA, type Filtros, type Rango,
 } from "../../src/lib/inlab/analytics"
-import { bucketIndex, emptyHist, percentile } from "../../src/lib/inlab/histogram"
+import { bucketIndex, cuentaBajo, emptyHist, esLimiteBucket, percentile } from "../../src/lib/inlab/histogram"
 import { fmtMin } from "../../src/components/inlab/charts"
 
 let fallos = 0
@@ -80,12 +83,26 @@ for (const area of [null, ...ds.areas]) for (const urg of ["todas", "urgente", "
     const s = [...v].sort((a, b) => a - b), k = (s.length - 1) * 0.5
     return h >= s[Math.max(0, Math.floor(k) - 1)] && h <= s[Math.min(s.length - 1, Math.ceil(k) + 1)]
   }
+  // Validaciones sospechosamente rápidas: recuento exacto (el umbral es un límite de bucket)
+  const vr = validacionesRapidas(ds, rango, f).total
+  const rapidasRef = ext.filter(x => x < VALIDACION_RAPIDA.umbralMin).length
+  ok(Math.abs(vr.rapidas - rapidasRef) < 1e-9 && vr.n === ext.length, `${tag} validaciones < ${VALIDACION_RAPIDA.umbralMin} min ${vr.rapidas} = ${rapidasRef} de ${ext.length}`)
+  const sinRapidas = ext.filter(x => x >= VALIDACION_RAPIDA.umbralMin)
+  if (sinRapidas.length >= 30) ok(cerca(vr.p50SinRapidas, exacto(sinRapidas, 0.5), 0.15), `${tag} mediana sin validaciones rápidas ${vr.p50SinRapidas?.toFixed(2)} ≈ ${exacto(sinRapidas, 0.5)?.toFixed(2)}`)
   ok(valido(e.p50, ext), `${tag} EXTRACCION mediana ${e.p50?.toFixed(2)} ≈ ${exacto(ext, 0.5)?.toFixed(2)} (n=${ext.length})`)
   ok(valido(t.p50, tubo), `${tag} TUBO mediana ${t.p50?.toFixed(2)} ≈ ${exacto(tubo, 0.5)?.toFixed(2)} (n=${tubo.length})`)
   if (!area && urg === "todas") {
-    const porArea = tiemposPor(ds, rango, f, "TUBO", "area")
-    ok(porArea.reduce((s, x) => s + x.n, 0) === t.n, "TUBO: la suma por área = total")
+    const porAreaT = tiemposPor(ds, rango, f, "TUBO", "area")
+    ok(porAreaT.reduce((s, x) => s + x.n, 0) === t.n, "TUBO: la suma por área = total")
+    // Peticiones: la serie, el desglose por área y los días de la semana suman los pedidos distintos
+    const pedidos = new Set(sel.map(r => r[I.PedidoId])).size
+    ok(serieVolumen(ds, rango, f, "peticiones").reduce((s, p) => s + (p.v ?? 0), 0) === pedidos, `serie de peticiones suma ${pedidos} pedidos distintos`)
+    ok(porArea(ds, rango, f).reduce((s, a) => s + (a.peticiones ?? 0), 0) === pedidos, "peticiones por área suman los pedidos distintos")
+    ok(serieVolumen(ds, rango, f, "unidades").reduce((s, p) => s + (p.v ?? 0), 0) === sel.length, "serie de tubos y etiquetas suma los tubos")
+    const vrA = validacionesRapidas(ds, rango, f, true)
+    ok(Math.abs(vrA.areas.reduce((s, a) => s + a.rapidas, 0) - vrA.total.rapidas) < 1e-9, "validaciones rápidas: la suma por área = total")
   }
+  if (urg !== "todas") ok(kpis(ds, rango, f).ordenes === null, `${tag} sin peticiones con filtro de prioridad (no hay desglose)`)
 }
 
 // ─── 2. Casos sintéticos ─────────────────────────────────────────────────────
@@ -144,6 +161,26 @@ function dataset(rows: string[][]) {
   ]
   const k = kpis(dataset(rows), { desde: "2026-05-04", hasta: "2026-05-04" }, { ...FILTROS_VACIOS, urgencia: "urgente" })
   ok(k.tasaEventos === 100, `tasa con filtro urgente = 1 evento / 10 registros = ${k.tasaEventos} ‰`)
+}
+
+// Sprint 26: validaciones sospechosamente rápidas
+ok(esLimiteBucket(VALIDACION_RAPIDA.umbralMin), `el umbral (${VALIDACION_RAPIDA.umbralMin} min) es un límite de bucket: recuento exacto`)
+{
+  const h = emptyHist()
+  for (const x of [0.2, 0.5, 0.95, 1, 1.5, 3, 6]) h[bucketIndex(x)]++
+  ok(cuentaBajo(h, 1) === 3, `cuentaBajo(<1 min) = 3 (${cuentaBajo(h, 1)})`)
+  // Petición por petición: 3 pedidos validados a los 20 s y 7 a los 5 min → 30 % rápidas, aviso
+  const rows = [
+    ...Array.from({ length: 3 }, (_, i) => fila({ TuboId: `r${i}`, PedidoId: `r${i}`, Area: "URGENCIAS", FechaNumeracion: "2026-05-04 09:00:00", FechaImpresion: "2026-05-04 09:00:00", FechaValidacionPedido: "2026-05-04 09:00:20" })),
+    ...Array.from({ length: 7 }, (_, i) => fila({ TuboId: `n${i}`, PedidoId: `n${i}`, Area: "EXTRACCIONES", FechaNumeracion: "2026-05-04 09:00:00", FechaImpresion: "2026-05-04 09:00:00", FechaValidacionPedido: "2026-05-04 09:05:00" })),
+  ]
+  const v = validacionesRapidas(dataset(rows), { desde: "2026-05-04", hasta: "2026-05-04" }, FILTROS_VACIOS)
+  ok(v.total.rapidas === 3 && v.total.pct === 30 && v.total.nivel === "pocosDatos", `3 de 10 peticiones en < 1 min = ${v.total.pct} % (n < ${VALIDACION_RAPIDA.nMin}: pocos datos)`)
+  const urg = v.areas.find(a => a.clave === "URGENCIAS")!
+  ok(urg.pct === 100 && urg.p50SinRapidas === null, "URGENCIAS: 100 % rápidas, sin mediana restante")
+  ok(tendenciaTiempo(0.3, v.total, null).neutra, "una mediana < 1 min nunca se pinta como mejora")
+  ok(tendenciaTiempo(5, { ...v.total, nivel: "aviso", pct: 12 }, { ...v.total, nivel: "aviso", pct: 8 }).neutra, "si suben las validaciones rápidas, la bajada del tiempo es neutra")
+  ok(!tendenciaTiempo(5, { ...v.total, nivel: "ok", pct: 2 }, { ...v.total, nivel: "ok", pct: 2 }).neutra, "sin validaciones rápidas, la tendencia sí se valora")
 }
 
 // Formato de minutos

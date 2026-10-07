@@ -127,6 +127,41 @@ export function percentile(hist: ArrayLike<number>, p: number, max?: number | nu
   return acota(BUCKET_EDGES[BUCKET_EDGES.length - 1])
 }
 
+/**
+ * Nº de observaciones por debajo de `umbral` minutos. Exacto si `umbral` es un límite de
+ * bucket (los buckets son [límite anterior, límite)); si no, interpola linealmente dentro
+ * del bucket que lo contiene. `max` (máximo observado) acota el bucket abierto/ancho.
+ */
+export function cuentaBajo(hist: ArrayLike<number>, umbral: number, max?: number | null): number {
+  let acc = 0
+  for (let i = 0; i < hist.length; i++) {
+    const c = hist[i] || 0
+    if (!c) continue
+    const lo = i === 0 ? 0 : BUCKET_EDGES[i - 1]
+    if (lo >= umbral) break
+    let hi = i < BUCKET_EDGES.length ? BUCKET_EDGES[i] : Infinity
+    if (max !== undefined && max !== null && max >= lo && max < hi) hi = Math.max(max, lo)
+    if (hi <= umbral) acc += c
+    else if (isFinite(hi) && hi > lo) acc += (c * (umbral - lo)) / (hi - lo)
+  }
+  return acc
+}
+
+/** Copia del histograma sin las observaciones por debajo de `umbral` (exacto si es un límite de bucket). */
+export function recortarBajo(hist: ArrayLike<number>, umbral: number): number[] {
+  const out = emptyHist()
+  for (let i = 0; i < Math.min(hist.length, N_BUCKETS); i++) {
+    const c = hist[i] || 0
+    if (!c) continue
+    const lo = i === 0 ? 0 : BUCKET_EDGES[i - 1], hi = i < BUCKET_EDGES.length ? BUCKET_EDGES[i] : Infinity
+    out[i] = hi <= umbral ? 0 : lo >= umbral || !isFinite(hi) ? c : (c * (hi - umbral)) / (hi - lo)
+  }
+  return out
+}
+
+/** ¿`min` es exactamente un límite de bucket? (umbrales exactos) */
+export const esLimiteBucket = (min: number) => BUCKET_EDGES.some(e => Math.abs(e - min) < 1e-12)
+
 /** Codificación dispersa [idx, count, idx, count…] para reducir el payload. */
 export function toSparse(hist: ArrayLike<number>): number[] {
   const out: number[] = []

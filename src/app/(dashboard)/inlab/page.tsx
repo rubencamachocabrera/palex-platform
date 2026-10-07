@@ -184,7 +184,7 @@ export default function InlabPage() {
   const unico = seleccion.length === 1 ? seleccion[0] : null
   const tabs = TABS.filter(t => !t.facturacion || info?.puedeFacturacion)
   const activos = [
-    filtros.consumible && { k: "consumible" as const, label: `Consumible: ${filtros.consumible}` },
+    filtros.consumible && { k: "consumible" as const, label: `Tubo o etiqueta: ${filtros.consumible}` },
     filtros.puesto && { k: "puesto" as const, label: `Puesto: ${filtros.puesto}` },
   ].filter(Boolean) as { k: "consumible" | "puesto"; label: string }[]
 

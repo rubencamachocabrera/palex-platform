@@ -3,7 +3,7 @@
  * Todas las funciones son puras: dataset decodificado + rango + filtros → vista.
  */
 import { addDias, diaSemana, diffDias, inicioSemana } from "./dates"
-import { addHist, emptyHist, fromSparse, percentile } from "./histogram"
+import { addHist, cuentaBajo, emptyHist, fromSparse, percentile, recortarBajo } from "./histogram"
 import { EVENTO_CATEGORIAS, type EventoCategoria } from "./mapping"
 import { TRAMOS, type InlabPayload, type Tramo } from "./types"
 
@@ -152,6 +152,8 @@ export function comparacion(ds: Dataset, r: Rango): Comparacion {
 export interface Tendencias {
   cmp: Comparacion
   /** Variaciones en % (null = no mostrar). Los volúmenes se comparan por día con datos. */
+  /** Peticiones (pedidos distintos); null si no hay dato o el filtro no lo permite */
+  peticiones: number | null
   registros: number | null
   unidades: number | null
   eventos: number | null
@@ -167,10 +169,11 @@ export interface Tendencias {
  */
 export function tendencias(ds: Dataset, r: Rango, f: Filtros): Tendencias {
   const { cmp, k, kp } = kpisComparables(ds, r, f)
-  if (!kp) return { cmp, registros: null, unidades: null, eventos: null, tasaEventos: null, p50Total: null }
+  if (!kp) return { cmp, peticiones: null, registros: null, unidades: null, eventos: null, tasaEventos: null, p50Total: null }
   // kp ya está escalado a los días con datos del periodo actual: delta de totales = delta por día
   return {
     cmp,
+    peticiones: delta(k.ordenes, kp.ordenes),
     registros: delta(k.registros, kp.registros),
     unidades: delta(k.unidades, kp.unidades),
     eventos: delta(k.eventos, kp.eventos),
@@ -206,9 +209,20 @@ export function kpisComparables(ds: Dataset, r: Rango, f: Filtros): { cmp: Compa
 export interface Kpis {
   /** Días con datos cargados en el rango (de cualquier área: un día sin actividad en el área filtrada es un 0 real). */
   dias: number
+  /** Filas de la exportación = tubos y etiquetas (en InLab una fila por tubo/etiqueta). */
   registros: number
+  /**
+   * Tubos y etiquetas (suma de la columna de cantidad si la exportación la trae; en InLab no
+   * existe y vale lo mismo que `registros`). En pantalla se llama SIEMPRE «Tubos y etiquetas».
+   */
   unidades: number
+  /** Tubos y etiquetas de peticiones urgentes. */
   urgentes: number
+  /**
+   * PETICIONES: pedidos distintos (idOrden), cada uno contado una vez en el día de su primer
+   * tubo. null si la exportación no trae nº de pedido o hay filtro de prioridad/consumible
+   * (el payload no desglosa pedidos por esas dimensiones).
+   */
   ordenes: number | null
   eventos: number
   /**
@@ -303,17 +317,43 @@ function ejeTemporal(r: Rango, g: "dia" | "semana"): string[] {
   return out
 }
 
-/** Serie de registros (consumo filtrado). Los días sin datos quedan como null (huecos, no ceros). */
-export function serieVolumen(ds: Dataset, r: Rango, f: Filtros, campo: "registros" | "unidades" = "registros"): Punto[] {
+/** Qué se cuenta en una serie o desglose de volumen. */
+export type Medida = "peticiones" | "unidades" | "registros"
+
+/**
+ * ¿Se pueden contar PETICIONES con estos filtros? Las peticiones (pedidos distintos) solo
+ * están por día × área en "actividad": no hay desglose por prioridad ni por consumible.
+ */
+export function peticionesDisponibles(ds: Dataset, f: Filtros): boolean {
+  return !f.consumible && f.urgencia === "todas" && ds.actividad.some(a => a.ordenes !== null)
+}
+
+/** Suma por clave(día) de la medida pedida respetando filtros. */
+function acumularMedida(ds: Dataset, r: Rango, f: Filtros, medida: Medida, clave: (d: string) => string, acc: Map<string, number>) {
+  if (medida === "peticiones") {
+    for (const a of ds.actividad) {
+      if (!enRango(a.d, r) || !okArea(a.area, f) || a.ordenes === null) continue
+      const k = clave(a.d); acc.set(k, (acc.get(k) ?? 0) + a.ordenes)
+    }
+    return
+  }
+  for (const c of ds.consumo) {
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    const k = clave(c.d); acc.set(k, (acc.get(k) ?? 0) + c[medida])
+  }
+}
+
+/**
+ * Serie de volumen: peticiones (pedidos distintos, en el día de su primer tubo) o tubos y
+ * etiquetas (consumo filtrado). Los días sin datos quedan como null (huecos, no ceros).
+ * "peticiones" ignora urgencia/consumible: comprobar antes `peticionesDisponibles()`.
+ */
+export function serieVolumen(ds: Dataset, r: Rango, f: Filtros, campo: Medida = "registros"): Punto[] {
   const g = granularidad(r)
   const eje = ejeTemporal(r, g)
   const acc = new Map<string, number>()
   const conDatos = new Set(ds.dias)
-  for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
-    const k = g === "semana" ? inicioSemana(c.d) : c.d
-    acc.set(k, (acc.get(k) ?? 0) + c[campo])
-  }
+  acumularMedida(ds, r, f, campo, d => (g === "semana" ? inicioSemana(d) : d), acc)
   return eje.map(x => {
     const v = acc.get(x)
     if (v !== undefined) return { x, v }
@@ -330,14 +370,13 @@ export function serieVolumen(ds: Dataset, r: Rango, f: Filtros, campo: "registro
  * Antes se admitían semanas con ≥5 días escaladas ×7/días; como los días que faltan
  * suelen ser fines de semana (poco volumen), eso inflaba las semanas incompletas.
  */
-export function prevision(ds: Dataset, r: Rango, f: Filtros): { semanas: Punto[]; pendiente: number } | null {
+export function prevision(ds: Dataset, r: Rango, f: Filtros, medida: Medida = "registros"): { semanas: Punto[]; pendiente: number } | null {
   const sem = new Map<string, { v: number; dias: number }>()
   const diasCon = new Set(ds.dias.filter(d => enRango(d, r)))
   for (const d of diasCon) { const k = inicioSemana(d); const s = sem.get(k) ?? { v: 0, dias: 0 }; s.dias++; sem.set(k, s) }
-  for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
-    const s = sem.get(inicioSemana(c.d)); if (s) s.v += c.registros
-  }
+  const porSemana = new Map<string, number>()
+  acumularMedida(ds, r, f, medida, inicioSemana, porSemana)
+  for (const [k, v] of porSemana) { const s = sem.get(k); if (s) s.v += v }
   const completas = [...sem.entries()].filter(([, s]) => s.dias === 7).sort(([a], [b]) => a.localeCompare(b)).slice(-12)
   if (completas.length < 4) return null
   const ys = completas.map(([, s]) => s.v)
@@ -355,7 +394,17 @@ export function prevision(ds: Dataset, r: Rango, f: Filtros): { semanas: Punto[]
 
 // ─── Desgloses ───────────────────────────────────────────────────────────────
 
-export interface Desglose { clave: string; registros: number; unidades: number; urgentes: number; eventos?: number }
+export interface Desglose {
+  clave: string
+  /** filas = tubos y etiquetas */
+  registros: number
+  /** tubos y etiquetas (cantidad si la hay; en InLab = registros) */
+  unidades: number
+  urgentes: number
+  eventos?: number
+  /** peticiones (pedidos distintos); solo en porArea y si `peticionesDisponibles()` */
+  peticiones?: number | null
+}
 
 export function porConsumible(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
   const m = new Map<string, Desglose>()
@@ -379,6 +428,14 @@ export function porArea(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
   for (const e of ds.eventos) {
     if (!enRango(e.d, r)) continue
     const x = m.get(e.area); if (x) x.eventos = (x.eventos ?? 0) + e.cantidad
+  }
+  if (peticionesDisponibles(ds, f)) {
+    for (const x of m.values()) x.peticiones = 0
+    for (const a of ds.actividad) {
+      if (!enRango(a.d, r) || a.ordenes === null) continue
+      const x = m.get(a.area); if (x) x.peticiones = (x.peticiones ?? 0) + a.ordenes
+    }
+    return [...m.values()].sort((a, b) => (b.peticiones ?? 0) - (a.peticiones ?? 0) || b.registros - a.registros)
   }
   return [...m.values()].sort((a, b) => b.registros - a.registros)
 }
@@ -425,13 +482,12 @@ export function heatmapSemanaHora(ds: Dataset, r: Rango, f: Filtros): { m: numbe
  * Media de registros por día de la semana (por día cargado). Sale de "consumo", así que
  * respeta urgencia y consumible (antes salía del mapa de calor y los ignoraba).
  */
-export function porDiaSemana(ds: Dataset, r: Rango, f: Filtros): number[] {
+export function porDiaSemana(ds: Dataset, r: Rango, f: Filtros, medida: Medida = "registros"): number[] {
   const suma = new Array(7).fill(0)
   const diasPorDow = diasCargadosPorDow(ds, r)
-  for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
-    suma[diaSemana(c.d)] += c.registros
-  }
+  const porDia = new Map<string, number>()
+  acumularMedida(ds, r, f, medida, d => d, porDia)
+  for (const [d, v] of porDia) suma[diaSemana(d)] += v
   return suma.map((v, i) => (diasPorDow[i] ? v / diasPorDow[i] : 0))
 }
 
@@ -483,6 +539,113 @@ export function serieMediana(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo): {
     p50: eje.map(x => ({ x, v: v(x, 0.5) })),
     p90: eje.map(x => ({ x, v: v(x, 0.9) })),
   }
+}
+
+// ─── Validaciones sospechosamente rápidas ────────────────────────────────────
+
+/**
+ * Umbrales de la detección de "validaciones sospechosamente rápidas" (ÚNICO sitio donde
+ * se configuran; la interfaz y el script de verificación los leen de aquí).
+ *
+ * Circuito correcto en InLab: llegada del paciente → numeración e impresión de etiquetas →
+ * extracción → validación. El tramo EXTRACCION (numeración → validación, por petición)
+ * incluye llamar al paciente, identificarle, pinchar, llenar y etiquetar los tubos y
+ * validar. Si dura menos de `umbralMin`, no ha habido extracción entre medias: se han
+ * generado etiquetas, dispensado y validado "en bloque" o de oficio, sin ver al paciente.
+ *
+ * - umbralMin = 1 min: en 1 min no cabe una extracción real. En Gómez Ulla (EXTRACCIONES,
+ *   oct-2025 → ago-2026) la distribución es bimodal: el 15,8 % de las peticiones se valida en
+ *   < 1 min, solo un 3,6 % más entre 1 y 2 min, y el circuito real arranca a partir de ~2,5 min
+ *   (mediana 5,5 min). 1 min separa las dos poblaciones sin marcar extracciones rápidas
+ *   legítimas, y es un límite exacto de los buckets del histograma (histogram.ts), así que
+ *   la fracción bajo el umbral es exacta, no interpolada. Si se cambia, usar un límite de
+ *   bucket (múltiplo de 5 s por debajo de 2 min) para conservar la exactitud.
+ * - pctAviso = 5 %: alguna validación aislada sin circuito puede ocurrir (paciente ya en el
+ *   box, corrección); más de 1 de cada 20 peticiones indica una práctica, no un accidente.
+ * - pctSinCircuito = 50 %: si la mayoría se valida en < 1 min, el tiempo del área NO mide la
+ *   extracción (URGENCIAS 91 %, plantas 54–88 % en Gómez Ulla): no debe compararse ni leerse
+ *   como rapidez.
+ * - nMin = 30 peticiones: por debajo, el porcentaje no es fiable (no se marca el área).
+ * - puntosSubida = 1 punto: si el % de validaciones rápidas sube al menos esto frente al
+ *   periodo anterior, una bajada del tiempo no se pinta como mejora.
+ */
+export const VALIDACION_RAPIDA = {
+  umbralMin: 1,
+  pctAviso: 5,
+  pctSinCircuito: 50,
+  nMin: 30,
+  puntosSubida: 1,
+} as const
+
+/** "ok" · "aviso" (≥ pctAviso) · "sinCircuito" (≥ pctSinCircuito) · "pocosDatos" (< nMin) */
+export type NivelValidacion = "ok" | "aviso" | "sinCircuito" | "pocosDatos"
+
+export interface ValidacionRapida {
+  /** área (o "" para el total) */
+  clave: string
+  /** peticiones con tiempo de extracción medido */
+  n: number
+  /** peticiones validadas en menos de VALIDACION_RAPIDA.umbralMin */
+  rapidas: number
+  /** % de rápidas sobre n (null si n = 0) */
+  pct: number | null
+  nivel: NivelValidacion
+  /** mediana del tramo extracción */
+  p50: number | null
+  /** mediana sin contar las validaciones rápidas (tiempo del circuito que sí se hizo) */
+  p50SinRapidas: number | null
+}
+
+function evaluarValidacion(clave: string, h: number[], n: number, max: number): ValidacionRapida {
+  const U = VALIDACION_RAPIDA
+  const total = h.reduce((s, x) => s + x, 0)
+  const rapidas = total ? cuentaBajo(h, U.umbralMin, max) : 0
+  const pct = total ? (rapidas / total) * 100 : null
+  const resto = recortarBajo(h, U.umbralMin)
+  const hayResto = resto.some(x => x > 0)
+  const nivel: NivelValidacion = n < U.nMin || pct === null ? "pocosDatos" : pct >= U.pctSinCircuito ? "sinCircuito" : pct >= U.pctAviso ? "aviso" : "ok"
+  return { clave, n, rapidas, pct, nivel, p50: n ? percentile(h, 0.5, max) : null, p50SinRapidas: hayResto ? percentile(resto, 0.5, max) : null }
+}
+
+/**
+ * Peticiones con extracción (numeración → validación) por debajo del umbral, en total y por
+ * área. Respeta rango y prioridad; el total respeta las áreas seleccionadas y, con
+ * `todasLasAreas`, el desglose incluye también las no seleccionadas (para el selector).
+ */
+export function validacionesRapidas(ds: Dataset, r: Rango, f: Filtros, todasLasAreas = false): { total: ValidacionRapida; areas: ValidacionRapida[] } {
+  const ht = emptyHist(); let nt = 0, mt = 0
+  const m = new Map<string, { h: number[]; n: number; max: number }>()
+  for (const x of ds.tiempos) {
+    if (x.tramo !== "EXTRACCION" || !enRango(x.d, r) || !okUrg(x.urg, f)) continue
+    const sel = okArea(x.area, f)
+    if (sel) { addHist(ht, x.hist); nt += x.n; if (x.max > mt) mt = x.max }
+    if (!sel && !todasLasAreas) continue
+    const acc = m.get(x.area) ?? { h: emptyHist(), n: 0, max: 0 }
+    addHist(acc.h, x.hist); acc.n += x.n; if (x.max > acc.max) acc.max = x.max
+    m.set(x.area, acc)
+  }
+  return {
+    total: evaluarValidacion("", ht, nt, mt),
+    areas: [...m.entries()].map(([k, a]) => evaluarValidacion(k, a.h, a.n, a.max)).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1)),
+  }
+}
+
+/** ¿Hay que avisar? (aviso o sin circuito) */
+export const esSospechosa = (v: ValidacionRapida | null | undefined) => !!v && (v.nivel === "aviso" || v.nivel === "sinCircuito")
+
+/**
+ * ¿Una variación del tiempo puede pintarse como mejora/empeoramiento? No, si la mediana
+ * está por debajo del umbral (no es un tiempo de extracción real), si la mayoría de
+ * peticiones se valida sin circuito, o si el % de validaciones rápidas ha subido frente al
+ * periodo anterior (la bajada del tiempo podría deberse a eso).
+ */
+export function tendenciaTiempo(p50: number | null, actual: ValidacionRapida, previo: ValidacionRapida | null): { neutra: boolean; motivo: string | null } {
+  const U = VALIDACION_RAPIDA
+  if (p50 !== null && p50 < U.umbralMin) return { neutra: true, motivo: `La mediana está por debajo de ${U.umbralMin} min: no corresponde a una extracción real.` }
+  if (actual.nivel === "sinCircuito") return { neutra: true, motivo: "La mayoría de las peticiones se valida sin pasar por el circuito de extracción." }
+  if (previo && previo.pct !== null && actual.pct !== null && actual.pct - previo.pct >= U.puntosSubida)
+    return { neutra: true, motivo: `Han subido las validaciones en menos de ${U.umbralMin} min (del ${previo.pct.toFixed(1).replace(".", ",")} % al ${actual.pct.toFixed(1).replace(".", ",")} %): la bajada del tiempo puede deberse a eso.` }
+  return { neutra: false, motivo: null }
 }
 
 // ─── Eventos ─────────────────────────────────────────────────────────────────

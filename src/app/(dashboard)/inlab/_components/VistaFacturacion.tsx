@@ -56,10 +56,10 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
 
   async function exportar(formato: "xlsx" | "csv") {
     const lineas = facturacion(ds, rango, filtros, tarifas ?? [])
-    const filas = lineas.map(l => ({ Mes: l.mes, Consumible: l.consumible, Unidades: l.unidades, "Precio unitario": l.precio ?? "", Importe: l.importe === null ? "" : Math.round(l.importe * 100) / 100 }))
+    const filas = lineas.map(l => ({ Mes: l.mes, "Tipo de tubo o etiqueta": l.consumible, "Tubos y etiquetas": l.unidades, "Precio por tubo o etiqueta": l.precio ?? "", Importe: l.importe === null ? "" : Math.round(l.importe * 100) / 100 }))
     const nombre = `facturacion-inlab_${hospitalNombre.replace(/[^\w-]+/g, "_").slice(0, 40)}_${rango.desde}_${rango.hasta}`
     if (formato === "csv") {
-      const cab = Object.keys(filas[0] ?? { Mes: "", Consumible: "", Unidades: "", "Precio unitario": "", Importe: "" })
+      const cab = Object.keys(filas[0] ?? { Mes: "", "Tipo de tubo o etiqueta": "", "Tubos y etiquetas": "", "Precio por tubo o etiqueta": "", Importe: "" })
       const esc = (v: unknown) => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s }
       const csv = "﻿" + [cab.join(";"), ...filas.map(f => cab.map(c => esc(typeof f[c as keyof typeof f] === "number" ? String(f[c as keyof typeof f]).replace(".", ",") : f[c as keyof typeof f])).join(";"))].join("\r\n")
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
@@ -69,7 +69,7 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
     const XLSX = await import("xlsx")
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), "Facturación")
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((tarifas ?? []).map(t => ({ Consumible: t.consumible, Precio: t.precio, Moneda: t.moneda, Unidad: t.unidad ?? "", "Vigente desde": t.vigenteDesde ?? "", "Vigente hasta": t.vigenteHasta ?? "" }))), "Tarifas")
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((tarifas ?? []).map(t => ({ "Tipo de tubo o etiqueta": t.consumible, Precio: t.precio, Moneda: t.moneda, "Se cobra por": t.unidad ?? "", "Vigente desde": t.vigenteDesde ?? "", "Vigente hasta": t.vigenteHasta ?? "" }))), "Tarifas")
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Hospital", hospitalNombre], ["Desde", rango.desde], ["Hasta", rango.hasta], ["Filtros", [filtros.areas.length ? `Áreas: ${filtros.areas.join(", ")}` : null, filtros.consumible, filtros.urgencia !== "todas" ? filtros.urgencia : null].filter(Boolean).join(", ") || "ninguno"], ["Generado", new Date().toLocaleString("es-ES")], ["Fuente", "Agregados de exportaciones InLab (Palex)"]]), "Info")
     XLSX.writeFile(wb, `${nombre}.xlsx`)
   }
@@ -81,7 +81,7 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
       <Panel
         eyebrow="Modelo comercial"
         titulo={`Consumo facturable · ${hospitalNombre}`}
-        texto="Consumo observado × tarifa vigente el día del consumo. Respeta los filtros activos."
+        texto="Tubos y etiquetas impresos × precio vigente el día en que se imprimieron. Respeta los filtros activos."
         accion={<div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => void exportar("xlsx")} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800"><IconDownload size={14} />Excel</button>
           <button type="button" onClick={() => void exportar("csv")} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800"><IconDownload size={14} />CSV</button>
@@ -93,7 +93,7 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
       <Panel
         eyebrow="Configuración del cliente"
         titulo="Tarifas"
-        texto="Precio por unidad de consumible. «*» aplica a cualquier consumible sin tarifa propia. Las vigencias permiten cambios de precio sin alterar el histórico."
+        texto="Precio por cada tubo o etiqueta de ese tipo. «*» se aplica a cualquier tipo sin tarifa propia. Las fechas de vigencia permiten cambiar precios sin alterar el histórico."
         accion={!editando ? <button type="button" onClick={() => { setCopia(tarifas); setEditando(true) }} className="min-h-[40px] rounded-xl px-4 text-xs font-bold text-white" style={{ backgroundColor: TEAL }}>Editar tarifas</button> : undefined}
       >
         {!editando ? (
@@ -107,15 +107,15 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-xs">
                 <thead className="text-left text-[10px] uppercase tracking-wider text-gray-400">
-                  <tr><th scope="col" className="py-1.5 pr-2">Consumible</th><th scope="col" className="px-2 py-1.5">Precio</th><th scope="col" className="px-2 py-1.5">Moneda</th><th scope="col" className="px-2 py-1.5">Unidad</th><th scope="col" className="px-2 py-1.5">Desde</th><th scope="col" className="px-2 py-1.5">Hasta</th><th scope="col"><span className="sr-only">Acciones</span></th></tr>
+                  <tr><th scope="col" className="py-1.5 pr-2">Tipo de tubo o etiqueta</th><th scope="col" className="px-2 py-1.5">Precio</th><th scope="col" className="px-2 py-1.5">Moneda</th><th scope="col" className="px-2 py-1.5">Se cobra por</th><th scope="col" className="px-2 py-1.5">Desde</th><th scope="col" className="px-2 py-1.5">Hasta</th><th scope="col"><span className="sr-only">Acciones</span></th></tr>
                 </thead>
                 <tbody>
                   {tarifas.map(t => (
                     <tr key={t._k}>
-                      <td className="py-1 pr-2"><input aria-label="Consumible" list="inlab-consumibles" value={t.consumible} onChange={e => actualizar(t._k, { consumible: e.target.value })} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
+                      <td className="py-1 pr-2"><input aria-label="Tipo de tubo o etiqueta" list="inlab-consumibles" value={t.consumible} onChange={e => actualizar(t._k, { consumible: e.target.value })} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
                       <td className="px-2 py-1"><input aria-label="Precio" type="number" min={0} step="0.0001" value={t.precio} onChange={e => actualizar(t._k, { precio: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-2 tabular-nums dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
                       <td className="px-2 py-1"><input aria-label="Moneda" maxLength={3} value={t.moneda} onChange={e => actualizar(t._k, { moneda: e.target.value.toUpperCase() })} className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
-                      <td className="px-2 py-1"><input aria-label="Unidad" value={t.unidad ?? ""} placeholder="unidad" onChange={e => actualizar(t._k, { unidad: e.target.value })} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
+                      <td className="px-2 py-1"><input aria-label="Se cobra por" value={t.unidad ?? ""} placeholder="tubo, etiqueta…" onChange={e => actualizar(t._k, { unidad: e.target.value })} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
                       <td className="px-2 py-1"><input aria-label="Vigente desde" type="date" value={t.vigenteDesde ?? ""} onChange={e => actualizar(t._k, { vigenteDesde: e.target.value || null })} className="rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
                       <td className="px-2 py-1"><input aria-label="Vigente hasta" type="date" value={t.vigenteHasta ?? ""} onChange={e => actualizar(t._k, { vigenteHasta: e.target.value || null })} className="rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></td>
                       <td className="py-1 pl-2"><button type="button" aria-label={`Quitar tarifa ${t.consumible}`} onClick={() => setTarifas(ts => ts?.filter(x => x._k !== t._k) ?? null)} className="rounded-lg p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"><IconTrash size={14} /></button></td>
@@ -127,7 +127,7 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => setTarifas(ts => [...(ts ?? []), { _k: nuevaClave(), consumible: "", precio: 0, moneda: "EUR", unidad: null }])} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200"><IconPlus size={14} />Añadir tarifa</button>
-              {sinTarifa.length > 0 && <button type="button" onClick={() => setTarifas(ts => [...(ts ?? []), ...sinTarifa.map(c => ({ _k: nuevaClave(), consumible: c, precio: 0, moneda: "EUR", unidad: null }))])} className="min-h-[40px] rounded-xl px-3 text-xs font-bold text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-950/30">Añadir los {sinTarifa.length} consumibles del periodo</button>}
+              {sinTarifa.length > 0 && <button type="button" onClick={() => setTarifas(ts => [...(ts ?? []), ...sinTarifa.map(c => ({ _k: nuevaClave(), consumible: c, precio: 0, moneda: "EUR", unidad: null }))])} className="min-h-[40px] rounded-xl px-3 text-xs font-bold text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-950/30">Añadir los {sinTarifa.length} tipos de tubo o etiqueta del periodo</button>}
               <span className="flex-1" />
               <button type="button" onClick={() => { if (copia) setTarifas(copia); setEditando(false) }} className="min-h-[40px] rounded-xl px-4 text-xs font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800">Cancelar</button>
               <button type="button" disabled={guardando} onClick={() => void guardar()} className="min-h-[40px] rounded-xl px-4 text-xs font-bold text-white disabled:opacity-50" style={{ backgroundColor: TEAL }}>{guardando ? "Guardando…" : "Guardar tarifas"}</button>

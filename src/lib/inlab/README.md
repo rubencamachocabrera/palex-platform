@@ -75,6 +75,12 @@ Semántica (ver `mapping.ts` y `types.ts`):
   reimpresiones (cuenta n-1). Incidencias de extracción = `Cfg_Lab_Incidences`.
 - Los datos de nivel pedido se cuentan una vez por pedido (`idOrden`).
 
+Lenguaje de la interfaz (Sprint 26): **Peticiones** = pedidos distintos (`actividad.ordenes`;
+no hay desglose por prioridad ni por tipo de tubo, ver `peticionesDisponibles()`) y **Tubos y
+etiquetas** = campo `unidades` (en InLab = filas). Nunca «registros» ni «unidades» en pantalla.
+Validaciones sospechosamente rápidas (extracción < 1 min, sin ver al paciente): umbrales en
+`VALIDACION_RAPIDA` (`analytics.ts`), recuento exacto con `cuentaBajo()` (`histogram.ts`).
+
 Pendiente de confirmar con el equipo de InLab: significado de `LabOrders.State`
 (0, 1, 2, 4, 5, 7, 9). El log de impresión (`LogsPrint`) solo guarda ~1 semana, por
 eso aún no se usa para errores de impresora.
