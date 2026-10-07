@@ -56,6 +56,9 @@ function useContextActions(pathname: string, router: ReturnType<typeof useRouter
   if (pathname === "/notas") return [
     { label: "Nueva nota", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nueva-nota") } },
   ]
+  if (pathname === "/inlab") return [
+    { label: "Cargar fichero InLab", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:inlab-cargar") } },
+  ]
   // Rutas sin acciones específicas
   return []
 }

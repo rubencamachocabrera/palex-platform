@@ -1,112 +1,317 @@
 "use client"
 
-import { useMemo, useState } from "react"
+/**
+ * Inteligencia InLab — dashboard sobre agregados cargados desde exportaciones InLab.
+ * Ver src/lib/inlab/README.md para el flujo completo y la adaptación al CSV real.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { Skeleton, SkeletonKPI } from "@/components/ui/Skeleton"
 import {
-  IconActivity, IconAlertTriangle, IconBuilding, IconCalendar, IconCheck,
-  IconCheckCircle, IconClock, IconDownload, IconDroplet, IconFileText,
-  IconMicroscope, IconRefreshCw, IconServer, IconSettings, IconShieldAlert,
-  IconTrendingUp,
+  IconBuilding, IconCalendar, IconCheck, IconChevronDown, IconMicroscope, IconMonitorShare, IconPlus, IconPrint, IconRefreshCw, IconX,
 } from "@/components/ui/Icons"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { usePerfil } from "@/hooks/usePerfil"
+import { useFabAction } from "@/hooks/useFabAction"
+import { INLAB_ROLES_VER } from "@/lib/inlab/roles"
+import { decodificar, FILTROS_VACIOS, periodoAnterior, type Filtros, type Rango, type Urgencia } from "@/lib/inlab/analytics"
+import { addDias } from "@/lib/inlab/dates"
+import type { InlabPayload } from "@/lib/inlab/types"
+import { fmtDia } from "@/components/inlab/charts"
+import { Segmentado } from "@/components/inlab/ui"
+import { VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
+import { UploadWizard, type HospitalOpcion } from "./_components/UploadWizard"
+import { VistaCargas } from "./_components/VistaCargas"
+import { VistaComparar } from "./_components/VistaComparar"
+import { VistaFacturacion } from "./_components/VistaFacturacion"
+import { ShareModal } from "./_components/ShareModal"
 
-type Tab = "resumen" | "consumo" | "tiempos" | "calidad" | "modelo"
-type Preset = "completo" | "90d" | "personalizado"
-type ConsumibleTipo = "Todos" | "Tubos" | "Etiquetas"
-type DateRange = { desde: string; hasta: string }
+const DemoGulla = dynamic(() => import("./_demo/DemoGulla").then(m => m.DemoGulla), { ssr: false, loading: () => <Skeleton className="h-96 w-full" /> })
+const InformeInlab = dynamic(() => import("@/components/inlab/InformeInlab").then(m => m.InformeInlab), { ssr: false })
 
-const SOURCE_RANGE: DateRange = { desde: "2025-10-14", hasta: "2026-08-26" }
-const LAST_90_DAYS: DateRange = { desde: "2026-05-29", hasta: "2026-08-26" }
+type Tab = "resumen" | "consumo" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
+type Preset = "30d" | "90d" | "12m" | "todo" | "custom"
 
-const TABS: { key: Tab; label: string; color: string }[] = [
-  { key: "resumen", label: "Dashboard ejecutivo", color: TEAL },
+interface Cobertura { hospitalId: string; desde: string; hasta: string; dias: number; cargas: number; ultimaCarga: string | null }
+interface InfoHospitales { todos: (HospitalOpcion & { camas: number | null })[]; conDatos: Cobertura[]; puedeFacturacion: boolean }
+
+const TABS: { key: Tab; label: string; color: string; facturacion?: boolean }[] = [
+  { key: "resumen", label: "Resumen ejecutivo", color: TEAL },
   { key: "consumo", label: "Consumo & demanda", color: ORANGE },
   { key: "tiempos", label: "Flujo & tiempos", color: "#6366f1" },
-  { key: "calidad", label: "Calidad & cobertura", color: "#10b981" },
-  { key: "modelo", label: "Modelo comercial", color: "#0f766e" },
+  { key: "calidad", label: "Incidencias & calidad", color: "#E11D48" },
+  { key: "comparar", label: "Comparar hospitales", color: "#0EA5E9" },
+  { key: "facturacion", label: "Modelo comercial", color: "#0f766e", facturacion: true },
+  { key: "cargas", label: "Cargas & cobertura", color: "#64748b" },
 ]
 
-const CONSUMIBLES = [
-  { nombre: "Etiqueta de extracción", unidades: 133770, color: "#64748b", tipo: "Etiquetas" },
-  { nombre: "Tubo rojo · Suero", unidades: 49081, color: "#BD1A15", tipo: "Tubos" },
-  { nombre: "Tubo malva · EDTA", unidades: 41070, color: "#765C98", tipo: "Tubos" },
-  { nombre: "Etiqueta general", unidades: 17144, color: "#94a3b8", tipo: "Etiquetas" },
-  { nombre: "Tubo · Coagulación", unidades: 16217, color: "#10AADE", tipo: "Tubos" },
-  { nombre: "Etiqueta micro", unidades: 8662, color: "#cbd5e1", tipo: "Etiquetas" },
-  { nombre: "Tubo · Inmunología", unidades: 6499, color: "#38bdf8", tipo: "Tubos" },
-  { nombre: "Tubo · Serología", unidades: 4194, color: "#E5B45A", tipo: "Tubos" },
-  { nombre: "Etiqueta de orina", unidades: 2166, color: "#e2e8f0", tipo: "Etiquetas" },
-  { nombre: "Tubo verde · HLIT", unidades: 1357, color: "#1E4C30", tipo: "Tubos" },
-  { nombre: "Etiqueta especial", unidades: 640, color: "#94a3b8", tipo: "Etiquetas" },
-] as const
+const LS_KEY = "inlab_seleccion"
 
-const fmt = (value: number) => new Intl.NumberFormat("es-ES").format(value)
-const percent = (value: number) => value.toLocaleString("es-ES", { maximumFractionDigits: 1 }) + " %"
-const humanDate = (date: string) => new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${date}T12:00:00`))
-
-function Progress({ value, color = TEAL, size = "h-2" }: { value: number; color?: string; size?: string }) {
-  return <div className={`${size} overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700`}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(value, 100))}%`, background: color }} /></div>
-}
-
-function Status({ children, color = TEAL }: { children: React.ReactNode; color?: string }) {
-  return <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold" style={{ color, background: `${color}14` }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />{children}</span>
-}
-
-function SectionTitle({ eyebrow, title, copy, action }: { eyebrow?: string; title: string; copy?: string; action?: React.ReactNode }) {
-  return <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div>{eyebrow && <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[.16em] text-teal-700 dark:text-teal-400">{eyebrow}</p>}<h2 className="text-base font-extrabold tracking-[-0.01em] text-gray-900 dark:text-white">{title}</h2>{copy && <p className="mt-1 max-w-2xl text-xs leading-5 text-gray-400">{copy}</p>}</div>{action}</div>
-}
-
-function Metric({ label, value, detail, color, icon, source = "GULLA" }: { label: string; value: string; detail: string; color: string; icon: React.ReactNode; source?: string }) {
-  return <article className="card card-hover relative overflow-hidden p-4 sm:p-5"><span className="absolute inset-x-0 top-0 h-1" style={{ background: color }} /><div className="mb-5 flex items-start justify-between"><span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ color, background: `${color}16` }}>{icon}</span><span className="rounded-full bg-slate-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-[.1em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">{source}</span></div><p className="text-2xl font-extrabold leading-none tracking-[-0.04em] text-gray-900 dark:text-white sm:text-3xl">{value}</p><p className="mt-2 text-sm font-bold text-gray-700 dark:text-gray-200">{label}</p><p className="mt-1 text-xs leading-relaxed text-gray-400">{detail}</p></article>
-}
-
-function FilterBar({ range, setRange, preset, setPreset }: { range: DateRange; setRange: (range: DateRange) => void; preset: Preset; setPreset: (preset: Preset) => void }) {
-  const setRangePreset = (next: Preset) => {
-    setPreset(next)
-    if (next === "completo") setRange(SOURCE_RANGE)
-    if (next === "90d") setRange(LAST_90_DAYS)
-  }
-  const isComplete = range.desde === SOURCE_RANGE.desde && range.hasta === SOURCE_RANGE.hasta
-  return <section className="inlab-filter mb-6 rounded-2xl border border-slate-200/80 bg-white/85 p-3 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/85"><div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"><div className="flex items-center gap-2 border-b border-slate-100 pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-3 dark:border-slate-700"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300"><IconBuilding size={16} /></span><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-gray-400">Cliente / fuente</p><select aria-label="Seleccionar fuente InLab" className="max-w-[270px] bg-transparent text-xs font-extrabold text-gray-800 outline-none dark:text-white" defaultValue="gulla"><option value="gulla">InLabDB GULLA · Test</option><option value="new" disabled>Añadir cliente al conectar una fuente</option></select></div></div><div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-700" role="group" aria-label="Periodo rápido">{([ ["completo", "Toda la fuente"], ["90d", "Últimos 90 días"], ["personalizado", "Personalizado"] ] as const).map(([key, label]) => <button key={key} onClick={() => setRangePreset(key)} className="rounded-lg px-3 py-2 text-[11px] font-bold transition-all" style={preset === key ? { color: TEAL, background: "white", boxShadow: "0 1px 4px rgba(15,23,42,.12)" } : { color: "#64748b" }}>{label}</button>)}</div></div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800"><span className="text-[10px] font-bold text-gray-400">Desde</span><input aria-label="Fecha de inicio" type="date" min={SOURCE_RANGE.desde} max={range.hasta} value={range.desde} onChange={event => { setPreset("personalizado"); setRange({ ...range, desde: event.target.value }) }} className="bg-transparent font-semibold text-gray-700 outline-none dark:text-slate-200" /></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800"><span className="text-[10px] font-bold text-gray-400">Hasta</span><input aria-label="Fecha de fin" type="date" min={range.desde} max={SOURCE_RANGE.hasta} value={range.hasta} onChange={event => { setPreset("personalizado"); setRange({ ...range, hasta: event.target.value }) }} className="bg-transparent font-semibold text-gray-700 outline-none dark:text-slate-200" /></label>{!isComplete && <button onClick={() => setRangePreset("completo")} className="inline-flex items-center gap-1.5 px-2 py-2 text-[11px] font-bold text-teal-700 hover:text-teal-800 dark:text-teal-300"><IconRefreshCw size={13} />Restablecer</button>}</div></div><div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 text-[11px] text-gray-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700"><span className="inline-flex items-center gap-1.5"><IconCalendar size={13} className="text-teal-600" /><strong className="font-bold text-gray-700 dark:text-gray-200">Rango seleccionado:</strong> {humanDate(range.desde)} — {humanDate(range.hasta)}</span><Status color={isComplete ? "#10b981" : ORANGE}>{isComplete ? "Agregado validado" : "Filtro preparado para ingestión"}</Status></div>{!isComplete && <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:bg-amber-950/25 dark:text-amber-200">El perfil GULLA actual contiene agregados validados de la fuente completa. La selección de fechas ya forma parte del modelo de análisis; mostrará resultados por período al importar los hechos fechados.</p>}</section>
-}
-
-function CoverageTimeline() {
-  return <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/45"><div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-extrabold text-gray-800 dark:text-white">Ventana real de la fuente</p><p className="mt-1 text-[11px] text-gray-400">Cobertura temporal conocida antes de segmentar resultados.</p></div><Status>Fuente perfilada</Status></div><div className="relative mt-7"><div className="absolute left-0 right-0 top-1.5 h-1 rounded-full bg-slate-200 dark:bg-slate-700" /><div className="absolute left-0 right-0 top-1.5 h-1 rounded-full bg-teal-400" /><div className="relative flex justify-between"><div><span className="block h-4 w-4 rounded-full border-4 border-white bg-teal-500 shadow-sm dark:border-slate-800" /><p className="mt-2 text-[10px] font-bold text-gray-700 dark:text-gray-200">14 oct. 2025</p><p className="text-[10px] text-gray-400">Muestras</p></div><div className="text-center"><span className="mx-auto block h-4 w-4 rounded-full border-4 border-white bg-indigo-500 shadow-sm dark:border-slate-800" /><p className="mt-2 text-[10px] font-bold text-gray-700 dark:text-gray-200">05 nov. 2025</p><p className="text-[10px] text-gray-400">Órdenes</p></div><div className="text-right"><span className="ml-auto block h-4 w-4 rounded-full border-4 border-white bg-teal-500 shadow-sm dark:border-slate-800" /><p className="mt-2 text-[10px] font-bold text-gray-700 dark:text-gray-200">26 ago. 2026</p><p className="text-[10px] text-gray-400">Último hito</p></div></div></div></div>
-}
-
-function Resumen() {
-  return <div className="space-y-5"><div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"><Metric label="Órdenes" value="62.073" detail="100 % con creación disponible" color={TEAL} icon={<IconFileText size={20} />} /><Metric label="Pruebas" value="1,84 M" detail="99,98 % resueltas contra catálogo" color="#6366f1" icon={<IconMicroscope size={20} />} /><Metric label="Recipientes" value="280.800" detail="Tubos y etiquetas realmente generados" color={ORANGE} icon={<IconDroplet size={20} />} /><Metric label="Validación" value="95,5 %" detail="59.276 órdenes con hito final" color="#10b981" icon={<IconCheckCircle size={20} />} /></div><section className="relative overflow-hidden rounded-2xl bg-[#102a43] p-5 text-white shadow-[0_20px_60px_-30px_rgba(15,42,67,.9)] sm:p-7"><div className="absolute -right-10 -top-16 h-64 w-64 rounded-full border border-teal-300/20" /><div className="absolute bottom-0 right-20 h-32 w-32 rounded-full bg-orange-400/10 blur-2xl" /><div className="relative grid gap-5 lg:grid-cols-[1.2fr_.8fr]"><div><div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-300/15 text-teal-200"><IconActivity size={21} /></span><div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-teal-200">Inteligencia operativa</p><h2 className="mt-1 text-xl font-extrabold tracking-[-.02em]">Una lectura única de demanda, consumo y flujo</h2></div></div><p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">GULLA ya aporta una base clínica-operativa sólida. La plataforma conserva el origen de cada métrica para convertir la actividad del laboratorio en decisiones comerciales y de servicio, sin exponer información identificativa de pacientes.</p></div><div className="grid grid-cols-2 gap-3"><div className="rounded-xl border border-white/10 bg-white/[.06] p-4"><p className="text-2xl font-extrabold text-white">99,98 %</p><p className="mt-1 text-[11px] font-semibold text-slate-300">pruebas con correspondencia</p></div><div className="rounded-xl border border-white/10 bg-white/[.06] p-4"><p className="text-2xl font-extrabold text-white">1,91</p><p className="mt-1 text-[11px] font-semibold text-slate-300">tubos físicos / orden</p></div><div className="col-span-2 flex items-center gap-2 rounded-xl border border-teal-300/20 bg-teal-400/10 px-4 py-3 text-[11px] font-bold text-teal-100"><IconShieldAlert size={16} />Datos agregados, gobernados y sin PII en la interfaz</div></div></div></section><div className="grid gap-5 lg:grid-cols-[1.2fr_.8fr]"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Disponibilidad de datos" title="Antes de interpretar, medimos la cobertura" copy="La analítica no mezcla hitos comparables con registros incompletos." /><CoverageTimeline /></section><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Prioridades" title="Siguientes decisiones de valor" /><div className="space-y-3">{[["Consumo", "Vincular SKU Palex y formato de venta a cada recipiente.", ORANGE, <IconDroplet key="consumo" size={16} />], ["Tiempos", "Conectar la cola para medir espera y atención por extracción.", "#6366f1", <IconClock key="tiempos" size={16} />], ["Excepciones", "Resolver 446 códigos sin correspondencia antes de automatizar reglas.", "#ef4444", <IconAlertTriangle key="excepciones" size={16} />]].map(([label, copy, color, icon]) => <div className="flex gap-3 rounded-xl border border-slate-100 p-3 dark:border-slate-700" key={label as string}><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ color: color as string, background: `${color}16` }}>{icon as React.ReactNode}</span><p className="text-xs leading-5 text-gray-500 dark:text-slate-300"><strong className="block text-gray-800 dark:text-white">{label as string}</strong>{copy as string}</p></div>)}</div></section></div></div>
-}
-
-function Consumo() {
-  const [type, setType] = useState<ConsumibleTipo>("Todos")
-  const items = useMemo(() => CONSUMIBLES.filter(item => type === "Todos" || item.tipo === type), [type])
-  const total = items.reduce((sum, item) => sum + item.unidades, 0)
-  const max = Math.max(...items.map(item => item.unidades))
-  return <div className="space-y-5"><div className="grid gap-3 sm:grid-cols-3"><Metric label="Tubos físicos" value="118.418" detail="Recipientes de extracción observados" color={ORANGE} icon={<IconDroplet size={20} />} /><Metric label="Etiquetas" value="162.382" detail="Separadas del consumo físico" color="#64748b" icon={<IconFileText size={20} />} /><Metric label="Intensidad" value="1,91" detail="Tubos físicos por orden" color={TEAL} icon={<IconTrendingUp size={20} />} /></div><div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Uso observado" title="Consumo por tipo de recipiente" copy="Fuente: LabOrder_Specimens. El dato observado no se confunde con previsión ni con venta facturada." action={<div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Filtrar tipo de consumible">{(["Todos", "Tubos", "Etiquetas"] as const).map(option => <button key={option} onClick={() => setType(option)} className="rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold transition-all" style={type === option ? { color: TEAL, background: "white", boxShadow: "0 1px 3px rgba(15,23,42,.12)" } : { color: "#64748b" }}>{option}</button>)}</div>} /><p className="mb-4 text-xs font-bold text-gray-500 dark:text-slate-300">{fmt(total)} <span className="font-normal text-gray-400">registros en la selección</span></p><div className="space-y-3.5">{items.map(item => <div key={item.nombre}><div className="mb-1.5 flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: item.color }} /><span className="truncate text-xs font-bold text-gray-700 dark:text-gray-200">{item.nombre}</span></div><span className="text-xs font-extrabold tabular-nums text-gray-800 dark:text-white">{fmt(item.unidades)}</span></div><Progress value={(item.unidades / max) * 100} color={item.color} /></div>)}</div></section><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Comparador comercial" title="Cuatro fuentes, una decisión" copy="Cada capa conserva su propia trazabilidad." /><div className="space-y-3">{[["Actividad clínica", "1,84 M pruebas", "Disponible", TEAL], ["Consumo observado", "280.800 recipientes", "Disponible", ORANGE], ["Consumo teórico", "Reglas test → tubo", "Pendiente", "#94a3b8"], ["Ventas Palex", "SKU, cajas y factura", "Pendiente", "#94a3b8"]].map(([label, detail, state, color], index) => <div className="flex items-center gap-3" key={label as string}><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold" style={{ color: color as string, background: `${color}17` }}>{index + 1}</span><div className="min-w-0 flex-1"><p className="text-xs font-bold text-gray-700 dark:text-gray-200">{label as string}</p><p className="text-[11px] text-gray-400">{detail as string}</p></div><Status color={state === "Disponible" ? "#10b981" : "#94a3b8"}>{state as string}</Status></div>)}</div><div className="mt-5 rounded-xl border border-orange-100 bg-orange-50/70 p-4 dark:border-orange-900/40 dark:bg-orange-950/20"><p className="text-xs font-extrabold text-orange-900 dark:text-orange-200">Regla esencial</p><p className="mt-1 text-[11px] leading-5 text-orange-800/80 dark:text-orange-100/80">Una prueba no equivale a un tubo. La comparación comercial solo se habilita cuando cliente, producto, unidad de venta y vigencia están configurados.</p></div></section></div></div>
-}
-
-function Tiempos() {
-  const steps = [["Orden creada", "62.073", 100, "Hito base disponible", TEAL], ["Llegada", "29.900", 48.2, "Cobertura parcial", "#6366f1"], ["Dispensación", "32.036", 51.6, "Flujo compatible con extracciones", ORANGE], ["Validación", "59.276", 95.5, "Candidato para ciclo clínico", "#10b981"]] as const
-  return <div className="space-y-5"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Funnel operativo" title="Hitos disponibles y su cobertura" copy="Cada indicador declara el porcentaje de órdenes en el que su hito existe; nunca se presentan tiempos sobre una base que no los soporta." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{steps.map(([label, value, coverage, detail, color]) => <article className="rounded-xl border border-slate-100 p-4 dark:border-slate-700" key={label}><span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ color, background: `${color}16` }}><IconClock size={16} /></span><p className="mt-4 text-xl font-extrabold tabular-nums text-gray-900 dark:text-white">{value}</p><p className="mt-1 text-xs font-bold text-gray-700 dark:text-gray-200">{label}</p><p className="mt-1 min-h-8 text-[11px] leading-4 text-gray-400">{detail}</p><div className="mt-3"><Progress value={coverage} color={color} /><p className="mt-1.5 text-[10px] font-bold text-gray-400">{percent(coverage)} de cobertura</p></div></article>)}</div></section><div className="grid gap-5 lg:grid-cols-2"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Tiempo calculable" title="Ciclos que ya tienen ambos extremos" copy="La plataforma espera el cálculo sobre hechos normalizados para mostrar mediana, P75, P90 y outliers; no inventa una media." /><div className="space-y-3"><div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-emerald-900 dark:text-emerald-200">Creación → validación</p><p className="mt-1 text-xs text-emerald-800/80 dark:text-emerald-100/80">59.276 órdenes con extremos disponibles.</p></div><Status color="#10b981">Candidato</Status></div></div><div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-indigo-900 dark:text-indigo-200">Llegada → dispensación</p><p className="mt-1 text-xs text-indigo-800/80 dark:text-indigo-100/80">23.576 órdenes con ambos hitos.</p></div><Status color="#6366f1">Candidato</Status></div></div></div></section><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Colas de extracción" title="Diseñado para el segundo origen" copy="El análisis de espera solo se activa en áreas configuradas como Extracciones." /><ol className="relative ml-2 space-y-4 border-l border-dashed border-indigo-200 pl-6 dark:border-indigo-800">{[["Llegada al centro", "Marca de entrada en cola"], ["Atención en mostrador", "Inicio de recepción"], ["Dispensación validada", "Fin de mostrador"], ["Llamada al box", "Inicio de espera clínica"], ["Fin de extracción", "Salida del paciente"]].map(([title, copy], index) => <li className="relative" key={title}><span className="absolute -left-[33px] top-0 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-extrabold text-white">{index + 1}</span><p className="text-xs font-extrabold text-gray-800 dark:text-white">{title}</p><p className="mt-0.5 text-[11px] text-gray-400">{copy}</p></li>)}</ol><p className="mt-5 rounded-lg bg-slate-50 p-3 text-[11px] leading-5 text-slate-500 dark:bg-slate-800 dark:text-slate-300">Plantas y otras áreas se excluyen por defecto para evitar comparar flujos clínicamente distintos.</p></section></div></div>
-}
-
-function Calidad() {
-  const metrics = [["Código principal", 990790, 53.79, TEAL], ["Alias", 850892, 46.19, "#6366f1"], ["Sin correspondencia", 446, 0.02, ORANGE]] as const
-  return <div className="space-y-5"><div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Normalización" title="Correspondencia de pruebas con catálogo" copy="Prioridad controlada: código principal, alias único y cola de excepciones. Las uniones ambiguas no se duplican." /><div className="grid items-center gap-6 sm:grid-cols-[180px_1fr]"><div className="relative mx-auto h-40 w-40 rounded-full" style={{ background: `conic-gradient(${TEAL} 0% 53.79%, #6366f1 53.79% 99.98%, ${ORANGE} 99.98% 100%)` }}><div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white dark:bg-slate-800"><span className="text-xl font-extrabold text-gray-900 dark:text-white">99,98 %</span><span className="mt-1 text-[9px] font-extrabold uppercase tracking-wide text-gray-400">resuelto</span></div></div><div className="space-y-4">{metrics.map(([label, value, ratio, color]) => <div key={label}><div className="mb-1.5 flex items-center justify-between gap-3"><span className="text-xs font-bold text-gray-700 dark:text-gray-200">{label}</span><span className="text-xs font-extrabold text-gray-800 dark:text-white">{fmt(value)} <span className="font-medium text-gray-400">· {ratio.toLocaleString("es-ES", { minimumFractionDigits: 2 })} %</span></span></div><Progress value={ratio} color={color} /></div>)}</div></div></section><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Integridad" title="Controles de la fuente" /><div className="space-y-3">{[["Órdenes con paciente existente", "62.073 / 62.073", "100 %", "#10b981"], ["Pruebas con orden existente", "1.840.971 / 1.842.128", "99,94 %", "#10b981"], ["Pruebas sin orden", "1.157", "Revisar", ORANGE], ["Códigos sin correspondencia", "446", "En cola", "#ef4444"]].map(([label, value, state, color]) => <div className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 dark:border-slate-700" key={label as string}><span className="h-2.5 w-2.5 rounded-full" style={{ background: color as string }} /><div className="min-w-0 flex-1"><p className="text-xs font-bold text-gray-700 dark:text-gray-200">{label as string}</p><p className="mt-0.5 text-[11px] text-gray-400">{value as string}</p></div><Status color={color as string}>{state as string}</Status></div>)}</div></section></div><section className="rounded-2xl border border-orange-100 bg-orange-50/65 p-5 dark:border-orange-900/40 dark:bg-orange-950/20"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white"><IconAlertTriangle size={18} /></span><div><p className="text-sm font-extrabold text-orange-900 dark:text-orange-200">La calidad es una función del producto, no una nota al pie</p><p className="mt-1 max-w-3xl text-xs leading-5 text-orange-800/80 dark:text-orange-100/80">La cola de excepciones se versionará por cliente, con responsable, fecha de vigencia y regla aplicada. Así se podrá corregir el catálogo sin cambiar el histórico ni alterar los cálculos ya publicados.</p></div></div></section></div>
-}
-
-function Modelo() {
-  const steps = [["1", "Conectar", "Perfil de origen, lectura segura y agregación sin PII.", <IconServer key="conectar" size={18} />, TEAL], ["2", "Normalizar", "Catálogo de pruebas, tubos y equivalencias versionadas.", <IconSettings key="normalizar" size={18} />, "#6366f1"], ["3", "Comparar", "Consumo observado, teórico y ventas Palex por período.", <IconTrendingUp key="comparar" size={18} />, ORANGE], ["4", "Actuar", "Alertas, previsión y recomendaciones verificables.", <IconCheck key="actuar" size={18} />, "#10b981"]] as const
-  return <div className="space-y-5"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Arquitectura de valor" title="Del dato de laboratorio a una decisión comercial trazable" copy="El módulo está concebido como un producto multi-cliente, no como una consulta aislada a GULLA." /><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{steps.map(([number, title, copy, icon, color]) => <article className="relative rounded-xl border border-slate-100 p-4 dark:border-slate-700" key={number}><span className="absolute right-3 top-3 text-[10px] font-extrabold text-gray-300">{number}</span><span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ color, background: `${color}16` }}>{icon}</span><p className="mt-4 text-sm font-extrabold text-gray-800 dark:text-white">{title}</p><p className="mt-1 text-xs leading-5 text-gray-400">{copy}</p></article>)}</div></section><div className="grid gap-5 lg:grid-cols-2"><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Configuración por cliente" title="Reglas que harán fiable la comparación" /><div className="space-y-3">{[["Producto Palex", "SKU, referencia, familia y unidad de venta"], ["Equivalencia", "Prueba → recipiente y recipiente → producto"], ["Vigencia", "Desde/hasta para respetar cambios de catálogo"], ["Áreas", "Marcar Extracciones y excluir circuitos no comparables"], ["Ventas", "Importe, unidades, abonos y fecha de factura"]].map(([title, copy]) => <div className="flex gap-3" key={title}><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-teal-500" /><p className="text-xs leading-5 text-gray-500 dark:text-slate-300"><strong className="text-gray-800 dark:text-white">{title}:</strong> {copy}</p></div>)}</div></section><section className="card p-5 sm:p-6"><SectionTitle eyebrow="Gobierno del dato" title="Principios no negociables" /><div className="space-y-3">{[["Sin PII", "La interfaz muestra agregados; no nombres, historias ni identificadores clínicos."], ["Fuente visible", "Cada KPI declara tabla, cobertura y regla de cálculo."], ["Sin falsa precisión", "Si un hito no tiene cobertura suficiente, se declara no disponible."], ["Trazabilidad", "Toda excepción y equivalencia queda versionada por cliente."]].map(([title, copy]) => <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800" key={title}><p className="text-xs font-extrabold text-gray-800 dark:text-white">{title}</p><p className="mt-1 text-[11px] leading-5 text-gray-500 dark:text-slate-300">{copy}</p></div>)}</div></section></div></div>
+function rangoPreset(p: Preset, cob: { desde: string; hasta: string }): Rango {
+  const n = p === "30d" ? 30 : p === "90d" ? 90 : p === "12m" ? 365 : 0
+  if (!n) return { desde: cob.desde, hasta: cob.hasta }
+  const desde = addDias(cob.hasta, -(n - 1))
+  return { desde: desde < cob.desde ? cob.desde : desde, hasta: cob.hasta }
 }
 
 export default function InlabPage() {
+  const { rol, isLoading: cargandoPerfil } = usePerfil()
+  const [info, setInfo] = useState<InfoHospitales | null>(null)
+  const [seleccion, setSeleccion] = useState<string[]>([])
+  const [demo, setDemo] = useState(false)
+  const [preset, setPreset] = useState<Preset>("90d")
+  const [rangoCustom, setRango] = useState<Rango | null>(null)
+  const [respuesta, setRespuesta] = useState<{ key: string; payload: InlabPayload | null; error: string | null } | null>(null)
+  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
   const [tab, setTab] = useState<Tab>("resumen")
-  const [preset, setPreset] = useState<Preset>("completo")
-  const [range, setRange] = useState<DateRange>(SOURCE_RANGE)
-  const { rol, isLoading } = usePerfil()
-  if (!isLoading && rol && rol !== "ADMIN" && rol !== "VENTAS") return <div className="py-24 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-slate-800"><IconMicroscope size={24} /></span><h1 className="mt-5 text-lg font-extrabold text-gray-900 dark:text-white">Acceso restringido</h1><p className="mt-2 text-sm text-gray-400">Inteligencia InLab está disponible para perfiles autorizados.</p></div>
-  return <div className="mx-auto max-w-7xl pb-10"><PageHeader title="Inteligencia InLab" icon={<IconMicroscope size={19} />} subtitle="Una plataforma para entender la actividad del laboratorio, optimizar consumos y convertir datos operativos en decisiones trazables." actions={<div className="hidden items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/80 px-3 py-2 text-xs font-bold text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300 sm:flex"><span className="h-2 w-2 animate-pulse rounded-full bg-teal-500" />Perfil GULLA · validado</div>} /><FilterBar range={range} setRange={setRange} preset={preset} setPreset={setPreset} /><div className="mb-6 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800/80" role="tablist" aria-label="Secciones de Inteligencia InLab"><div className="flex min-w-max gap-1">{TABS.map(item => <button key={item.key} role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)} className="relative rounded-xl px-4 py-2.5 text-xs font-extrabold transition-all" style={tab === item.key ? { color: item.color, background: `${item.color}12`, boxShadow: `inset 0 0 0 1px ${item.color}22` } : { color: "#64748b" }}><span className="relative z-10">{item.label}</span>{tab === item.key && <span className="absolute inset-x-4 bottom-1 h-0.5 rounded-full" style={{ background: item.color }} />}</button>)}</div></div>{tab === "resumen" && <Resumen />}{tab === "consumo" && <Consumo />}{tab === "tiempos" && <Tiempos />}{tab === "calidad" && <Calidad />}{tab === "modelo" && <Modelo />}<footer className="mt-7 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 text-[11px] leading-5 text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300"><span className="flex items-start gap-2"><IconShieldAlert size={15} className="mt-0.5 shrink-0 text-teal-600" />Perfil inicial construido con resultados agregados y validados de InLabDB GULLA. No se presentan datos identificativos de pacientes.</span><button className="inline-flex shrink-0 items-center gap-1.5 font-extrabold text-teal-700 hover:text-teal-800 dark:text-teal-300" onClick={() => window.print()}><IconDownload size={14} />Imprimir briefing</button></footer></div>
+  const [wizard, setWizard] = useState(false)
+  const [share, setShare] = useState(false)
+  const [informe, setInforme] = useState(false)
+  const [version, setVersion] = useState(0)
+  const [selectorAbierto, setSelectorAbierto] = useState(false)
+  const selectorRef = useRef<HTMLDivElement>(null)
+
+  useFabAction("fab:inlab-cargar", () => setWizard(true))
+
+  const cargarInfo = useCallback((preferido?: string) => fetch("/api/inlab/hospitales")
+    .then(r => (r.ok ? r.json() : { todos: [], conDatos: [], puedeFacturacion: false }))
+    .catch(() => ({ todos: [], conDatos: [], puedeFacturacion: false }))
+    .then((d: InfoHospitales) => {
+    setInfo(d)
+    const ids = new Set(d.conDatos.map(c => c.hospitalId))
+    setSeleccion(prev => {
+      if (preferido && ids.has(preferido)) return [preferido]
+      const validos = prev.filter(id => ids.has(id))
+      if (validos.length) return validos
+      let guardado: string[] = []
+      try { guardado = JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") } catch { /* sin storage */ }
+      const g = Array.isArray(guardado) ? guardado.filter(id => ids.has(id)) : []
+      if (g.length) return g
+      return d.conDatos[0] ? [d.conDatos[0].hospitalId] : []
+    })
+  }), [])
+
+  useEffect(() => { void cargarInfo() }, [cargarInfo])
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(seleccion)) } catch { /* sin storage */ } }, [seleccion])
+
+  // Cerrar selector al hacer clic fuera
+  useEffect(() => {
+    if (!selectorAbierto) return
+    const onDown = (e: MouseEvent) => { if (!selectorRef.current?.contains(e.target as Node)) setSelectorAbierto(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectorAbierto(false) }
+    document.addEventListener("mousedown", onDown); document.addEventListener("keydown", onKey)
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey) }
+  }, [selectorAbierto])
+
+  // Cobertura combinada de la selección
+  const cobertura = useMemo(() => {
+    const cs = (info?.conDatos ?? []).filter(c => seleccion.includes(c.hospitalId))
+    if (!cs.length) return null
+    return { desde: cs.reduce((m, c) => (c.desde < m ? c.desde : m), cs[0].desde), hasta: cs.reduce((m, c) => (c.hasta > m ? c.hasta : m), cs[0].hasta) }
+  }, [info, seleccion])
+
+  // Rango derivado: preset relativo al último día con datos, o personalizado recortado a la cobertura
+  const rango = useMemo<Rango | null>(() => {
+    if (!cobertura) return null
+    if (preset !== "custom" || !rangoCustom) return rangoPreset(preset, cobertura)
+    const desde = rangoCustom.desde < cobertura.desde || rangoCustom.desde > cobertura.hasta ? cobertura.desde : rangoCustom.desde
+    const hasta = rangoCustom.hasta > cobertura.hasta || rangoCustom.hasta < desde ? cobertura.hasta : rangoCustom.hasta
+    return { desde, hasta }
+  }, [cobertura, preset, rangoCustom])
+
+  // Datos: rango + periodo anterior (para tendencias)
+  const datosUrl = useMemo(() => {
+    if (!rango || seleccion.length === 0 || !cobertura) return null
+    const prev = periodoAnterior(rango)
+    const desde = prev.desde < cobertura.desde ? cobertura.desde : prev.desde
+    return `/api/inlab/datos?hospitalIds=${seleccion.join(",")}&desde=${desde}&hasta=${rango.hasta}`
+  }, [rango, seleccion, cobertura])
+  const datosKey = datosUrl ? `${datosUrl}#${version}` : null
+  useEffect(() => {
+    if (!datosUrl || !datosKey) return
+    let vivo = true
+    fetch(datosUrl)
+      .then(async r => {
+        const d = await r.json().catch(() => null)
+        if (vivo) setRespuesta(r.ok ? { key: datosKey, payload: d, error: null } : { key: datosKey, payload: null, error: d?.error ?? "No se pudieron cargar los datos" })
+      })
+      .catch(() => { if (vivo) setRespuesta({ key: datosKey, payload: null, error: "Error de red" }) })
+    return () => { vivo = false }
+  }, [datosUrl, datosKey])
+  // Mientras llega la respuesta nueva se mantiene la anterior (evita parpadeos)
+  const cargandoDatos = !!datosKey && respuesta?.key !== datosKey
+  const payload = datosKey ? respuesta?.payload ?? null : null
+  const errorDatos = datosKey && respuesta?.key === datosKey ? respuesta.error : null
+
+  const ds = useMemo(() => (payload ? decodificar(payload) : null), [payload])
+  // Días con datos para "Cargas & cobertura": toda la cobertura, no solo el rango
+  const [diasCobertura, setDiasCobertura] = useState<string[]>([])
+  useEffect(() => {
+    if (tab !== "cargas" || !cobertura || seleccion.length === 0) return
+    fetch(`/api/inlab/datos?hospitalIds=${seleccion.join(",")}&desde=${cobertura.desde}&hasta=${cobertura.hasta}`)
+      .then(r => (r.ok ? r.json() : null)).then(d => setDiasCobertura(Array.isArray(d?.dias) ? d.dias : [])).catch(() => {})
+  }, [tab, cobertura, seleccion, version])
+
+  const onFiltro = useCallback((p: Partial<Filtros>) => setFiltros(f => ({ ...f, ...p })), [])
+  const onCompletado = useCallback((hospitalId: string) => {
+    setDemo(false)
+    setVersion(v => v + 1)
+    void cargarInfo(hospitalId)
+  }, [cargarInfo])
+
+  const nombre = (id: string) => info?.todos.find(h => h.id === id)?.nombre ?? "Hospital"
+  const unico = seleccion.length === 1 ? seleccion[0] : null
+  const tabs = TABS.filter(t => !t.facturacion || info?.puedeFacturacion)
+  const activos = [
+    filtros.area && { k: "area" as const, label: `Área: ${filtros.area}` },
+    filtros.consumible && { k: "consumible" as const, label: `Consumible: ${filtros.consumible}` },
+    filtros.puesto && { k: "puesto" as const, label: `Puesto: ${filtros.puesto}` },
+  ].filter(Boolean) as { k: "area" | "consumible" | "puesto"; label: string }[]
+
+  if (!cargandoPerfil && rol && !(INLAB_ROLES_VER as readonly string[]).includes(rol)) {
+    return <div className="py-24 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-slate-800"><IconMicroscope size={24} /></span><h1 className="mt-5 text-lg font-extrabold text-gray-900 dark:text-white">Acceso restringido</h1><p className="mt-2 text-sm text-gray-400">Inteligencia InLab está disponible para perfiles autorizados.</p></div>
+  }
+
+  const hayDatos = (info?.conDatos.length ?? 0) > 0
+  const props = ds && rango ? { ds, rango, filtros, onFiltro } : null
+
+  return (
+    <div className="mx-auto max-w-7xl pb-10">
+      <PageHeader
+        title="Inteligencia InLab"
+        icon={<IconMicroscope size={19} />}
+        subtitle="Actividad, consumo, tiempos y calidad de la preanalítica de cada hospital a partir de las exportaciones de InLab."
+        actions={
+          <>
+            {unico && !demo && <button type="button" onClick={() => setShare(true)} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-gray-200 px-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"><IconMonitorShare size={16} /><span className="hidden sm:inline">Compartir</span></button>}
+            {ds && !demo && <button type="button" onClick={() => setInforme(true)} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-gray-200 px-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"><IconPrint size={16} /><span className="hidden sm:inline">Informe</span></button>}
+            <button type="button" onClick={() => setWizard(true)} className="btn-teal flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm" style={{ backgroundColor: TEAL }}><IconPlus size={16} />Cargar fichero</button>
+          </>
+        }
+      />
+
+      {/* Barra de filtros */}
+      {(hayDatos || demo) && (
+        <section className="mb-5 rounded-2xl border border-slate-200/80 bg-white/85 p-3 shadow-sm backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/85">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div ref={selectorRef} className="relative">
+              <button type="button" onClick={() => setSelectorAbierto(v => !v)} aria-expanded={selectorAbierto} aria-haspopup="listbox" className="flex min-h-[44px] w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left dark:border-slate-700 dark:bg-slate-800 xl:w-auto xl:min-w-[280px]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300"><IconBuilding size={16} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-extrabold uppercase tracking-[.12em] text-gray-400">Hospital{seleccion.length > 1 ? "es" : ""}</span>
+                  <span className="block truncate text-xs font-extrabold text-gray-800 dark:text-white">{demo ? "Demostración · GULLA (estático)" : seleccion.length === 0 ? "Selecciona" : seleccion.length === 1 ? nombre(seleccion[0]) : `${seleccion.length} hospitales (agregados)`}</span>
+                </span>
+                <IconChevronDown size={15} className="text-gray-400" />
+              </button>
+              {selectorAbierto && (
+                <div role="listbox" aria-multiselectable="true" className="absolute left-0 top-full z-30 mt-2 max-h-80 w-full min-w-[300px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  {(info?.conDatos ?? []).map(c => {
+                    const sel = !demo && seleccion.includes(c.hospitalId)
+                    return (
+                      <button key={c.hospitalId} type="button" role="option" aria-selected={sel}
+                        onClick={() => { setDemo(false); setSeleccion(s => (demo ? [c.hospitalId] : sel ? (s.length > 1 ? s.filter(x => x !== c.hospitalId) : s) : [...s, c.hospitalId])) }}
+                        className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${sel ? "border-teal-600 bg-teal-600 text-white" : "border-slate-300 dark:border-slate-600"}`}>{sel && <IconCheck size={11} />}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-bold text-gray-800 dark:text-white">{nombre(c.hospitalId)}</span>
+                          <span className="block text-[10px] text-gray-400">{fmtDia(c.desde)} – {fmtDia(c.hasta, { day: "2-digit", month: "short", year: "numeric" })} · {c.dias} días · {c.cargas} cargas</span>
+                        </span>
+                        <span role="button" tabIndex={0} title="Solo este" onClick={e => { e.stopPropagation(); setDemo(false); setSeleccion([c.hospitalId]); setSelectorAbierto(false) }} onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); setDemo(false); setSeleccion([c.hospitalId]); setSelectorAbierto(false) } }} className="rounded-md px-1.5 py-1 text-[10px] font-bold text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-950/30">solo</span>
+                      </button>
+                    )
+                  })}
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                  <button type="button" role="option" aria-selected={demo} onClick={() => { setDemo(true); setSelectorAbierto(false) }} className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-bold text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/20">
+                    <span className={`h-2 w-2 rounded-full ${demo ? "bg-amber-500" : "bg-amber-200"}`} />Demostración · GULLA (datos estáticos)
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {!demo && cobertura && rango && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <Segmentado etiqueta="Periodo rápido" valor={preset} onChange={setPreset} opciones={[{ value: "30d", label: "30 días" }, { value: "90d", label: "90 días" }, { value: "12m", label: "12 meses" }, { value: "todo", label: "Todo" }, { value: "custom", label: "Personalizado" }]} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex min-h-[40px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 text-xs dark:border-slate-700 dark:bg-slate-800"><span className="text-[10px] font-bold text-gray-400">Desde</span><input aria-label="Fecha de inicio" type="date" min={cobertura.desde} max={rango.hasta} value={rango.desde} onChange={e => { if (!e.target.value) return; setPreset("custom"); setRango({ ...rango, desde: e.target.value }) }} className="bg-transparent font-semibold text-gray-700 outline-none dark:text-slate-200" /></label>
+                  <label className="flex min-h-[40px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 text-xs dark:border-slate-700 dark:bg-slate-800"><span className="text-[10px] font-bold text-gray-400">Hasta</span><input aria-label="Fecha de fin" type="date" min={rango.desde} max={cobertura.hasta} value={rango.hasta} onChange={e => { if (!e.target.value) return; setPreset("custom"); setRango({ ...rango, hasta: e.target.value }) }} className="bg-transparent font-semibold text-gray-700 outline-none dark:text-slate-200" /></label>
+                </div>
+              </div>
+            )}
+          </div>
+          {!demo && rango && (
+            <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                <span className="inline-flex items-center gap-1.5"><IconCalendar size={13} className="text-teal-600" /><strong className="font-bold text-gray-700 dark:text-gray-200">{fmtDia(rango.desde, { day: "2-digit", month: "short", year: "numeric" })} — {fmtDia(rango.hasta, { day: "2-digit", month: "short", year: "numeric" })}</strong></span>
+                {activos.map(a => (
+                  <button key={a.k} type="button" onClick={() => onFiltro({ [a.k]: null })} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-bold text-teal-800 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-200" aria-label={`Quitar filtro ${a.label}`}>{a.label}<IconX size={11} /></button>
+                ))}
+                {activos.length > 0 && <button type="button" onClick={() => setFiltros(f => ({ ...FILTROS_VACIOS, urgencia: f.urgencia }))} className="inline-flex items-center gap-1 font-bold text-teal-700 dark:text-teal-300"><IconRefreshCw size={12} />Limpiar</button>}
+                {cargandoDatos && <span className="text-gray-400">Actualizando…</span>}
+              </div>
+              <Segmentado<Urgencia> etiqueta="Prioridad" valor={filtros.urgencia} onChange={u => onFiltro({ urgencia: u })} opciones={[{ value: "todas", label: "Todas" }, { value: "urgente", label: "Urgentes" }, { value: "normal", label: "Normales" }]} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Contenido */}
+      {info === null ? (
+        <div className="space-y-4"><div className="grid grid-cols-2 gap-4 xl:grid-cols-4"><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></div><Skeleton className="h-72 w-full" /></div>
+      ) : demo ? (
+        <DemoGulla />
+      ) : !hayDatos ? (
+        <div className="card p-6 sm:p-10">
+          <EmptyState
+            icon={<span className="kpi-icon-tile flex h-16 w-16 items-center justify-center rounded-2xl text-white"><IconMicroscope size={28} /></span>}
+            title="Carga el primer fichero con +"
+            description="Exporta los datos de InLab de un hospital (CSV) y cárgalos aquí. El fichero se procesa en tu navegador y solo se guardan totales diarios agregados, sin datos de pacientes."
+            action={{ label: "Cargar exportación InLab", onClick: () => setWizard(true) }}
+          />
+          <div className="mt-6 text-center">
+            <button type="button" onClick={() => setDemo(true)} className="text-xs font-bold text-teal-700 underline-offset-4 hover:underline dark:text-teal-300">Ver la demostración con datos estáticos de GULLA</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mb-5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800/80" role="tablist" aria-label="Secciones de Inteligencia InLab">
+            <div className="flex min-w-max gap-1">
+              {tabs.map(t => (
+                <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)} className="relative min-h-[40px] rounded-xl px-4 py-2.5 text-xs font-extrabold transition-all" style={tab === t.key ? { color: t.color, background: `${t.color}12`, boxShadow: `inset 0 0 0 1px ${t.color}22` } : { color: "#64748b" }}>
+                  <span className="relative z-10">{t.label}</span>
+                  {tab === t.key && <span className="absolute inset-x-4 bottom-1 h-0.5 rounded-full" style={{ background: t.color }} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {errorDatos && <p role="alert" className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{errorDatos}</p>}
+
+          {tab === "comparar" && rango ? <VistaComparar rango={rango} seleccionados={seleccion} />
+            : tab === "cargas" ? <VistaCargas hospitalIds={seleccion} cobertura={cobertura} diasConDatos={diasCobertura} version={version} onCambio={() => { setVersion(v => v + 1); void cargarInfo() }} />
+              : !props ? <div className="space-y-4"><div className="grid grid-cols-2 gap-4 xl:grid-cols-4"><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></div><Skeleton className="h-72 w-full" /></div>
+                : tab === "resumen" ? <VistaResumen {...props} />
+                  : tab === "consumo" ? <VistaConsumo {...props} />
+                    : tab === "tiempos" ? <VistaTiempos {...props} />
+                      : tab === "calidad" ? <VistaCalidad {...props} />
+                        : tab === "facturacion" ? <VistaFacturacion {...props} hospitalId={unico} hospitalNombre={unico ? nombre(unico) : ""} />
+                          : null}
+        </>
+      )}
+
+      {wizard && <UploadWizard onCerrar={() => setWizard(false)} hospitales={info?.todos ?? []} hospitalInicial={unico} onCompletado={onCompletado} />}
+      {unico && rango && <ShareModal abierto={share} onCerrar={() => setShare(false)} hospitalId={unico} hospitalNombre={nombre(unico)} rango={rango} puedeFacturacion={!!info?.puedeFacturacion} />}
+      {informe && ds && rango && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-50 px-4 py-6 dark:bg-slate-950 sm:px-6">
+          <InformeInlab
+            hospital={{ nombre: unico ? nombre(unico) : `${seleccion.length} hospitales: ${seleccion.map(nombre).join(", ")}`, ciudad: unico ? info?.todos.find(h => h.id === unico)?.ciudad : null }}
+            rango={rango}
+            ds={ds}
+            acciones={<button type="button" onClick={() => setInforme(false)} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"><IconX size={16} />Cerrar</button>}
+          />
+        </div>
+      )}
+    </div>
+  )
 }

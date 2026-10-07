@@ -253,3 +253,6 @@ export function parseBody<T>(schema: z.ZodType<T>, data: unknown):
   const msg = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(", ")
   return { success: false, error: msg }
 }
+
+// Inteligencia InLab — schemas del módulo (src/lib/inlab/schemas.ts)
+export * from "./inlab/schemas"

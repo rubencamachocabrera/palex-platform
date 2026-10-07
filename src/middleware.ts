@@ -26,6 +26,7 @@ const PROTECTED_PREFIXES = [
   "/comparador",
   "/checkin",
   "/agenda",
+  "/inlab",
 ]
 
 export default auth((req) => {

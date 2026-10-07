@@ -225,6 +225,9 @@ model Usuario {
   notasEquipo           NotaEquipo[]        @relation("NotasEquipo")
   checkins              CheckinHospital[]   @relation("CheckinsUsuario")
   relacionesCreadas     IncidenciaRelacion[] @relation("RelacionesCreadasPor")
+  // Inteligencia InLab
+  inlabCargas           InlabCarga[]         @relation("InlabCargasUsuario")
+  inlabShares           InlabShare[]         @relation("InlabSharesUsuario")
 
   @@map("usuarios")
 }
@@ -285,6 +288,11 @@ model Hospital {
   llamadas         RegistroLlamada[]
   incidencias      Incidencia[]
   checkins         CheckinHospital[] @relation("CheckinsHospital")
+  // Inteligencia InLab (agregados de exportaciones InLab)
+  inlabCargas      InlabCarga[]
+  inlabMapeo       InlabMapeo?
+  inlabTarifas     InlabTarifa[]
+  inlabShares      InlabShare[]
 
   @@index([zonaId])
   @@map("hospitales")
@@ -974,4 +982,205 @@ model IncidenciaRelacion {
   @@index([incidenciaId])
   @@index([relacionadaId])
   @@map("incidencias_relaciones")
+}
+
+// --- INTELIGENCIA INLAB ----------------------------------------------
+// Solo se guardan AGREGADOS calculados en el navegador a partir de la
+// exportación CSV de InLab (nunca filas crudas: pueden contener datos de
+// pacientes). Cada carga acumula histórico; los agregados diarios cuelgan
+// de la carga (onDelete Cascade) y repiten hospitalId (sin FK) para poder
+// consultar por hospital + rango de fechas con un único índice.
+// Ver src/lib/inlab/README.md.
+
+model InlabCarga {
+  id               String   @id @default(cuid())
+  hospitalId       String   @map("hospital_id")
+  usuarioId        String   @map("usuario_id")
+  fichero          String
+  tamanoBytes      Float    @default(0) @map("tamano_bytes")
+  hash             String
+  desde            DateTime @db.Date
+  hasta            DateTime @db.Date
+  filas            Int      @default(0)
+  filasValidas     Int      @default(0) @map("filas_validas")
+  filasDescartadas Int      @default(0) @map("filas_descartadas")
+  dias             Int      @default(0)
+  diasSustituidos  Int      @default(0) @map("dias_sustituidos")
+  diasOmitidos     Int      @default(0) @map("dias_omitidos")
+  modo             String   @default("NUEVA") // NUEVA | SUSTITUIR | OMITIR
+  estado           String   @default("COMPLETADA")
+  mapeo            Json?
+  opciones         Json?
+  avisos           Json?
+  creadoEn         DateTime @default(now()) @map("creado_en")
+
+  hospital  Hospital               @relation(fields: [hospitalId], references: [id])
+  usuario   Usuario                @relation("InlabCargasUsuario", fields: [usuarioId], references: [id])
+  consumo   InlabConsumoDiario[]
+  puestos   InlabPuestoDiario[]
+  actividad InlabActividadDiaria[]
+  tiempos   InlabTiempoDiario[]
+  eventos   InlabEventoDiario[]
+
+  @@index([hospitalId, creadoEn])
+  @@index([hospitalId, hash])
+  @@map("inlab_cargas")
+}
+
+// Consumo por día × área × consumible × urgencia
+model InlabConsumoDiario {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  consumible String   @default("")
+  urgente    Boolean  @default(false)
+  unidades   Int      @default(0)
+  registros  Int      @default(0)
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_consumo_diario")
+}
+
+// Actividad por día × área × puesto
+model InlabPuestoDiario {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  puesto     String   @default("")
+  registros  Int      @default(0)
+  unidades   Int      @default(0)
+  urgentes   Int      @default(0)
+  eventos    Int      @default(0)
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_puesto_diario")
+}
+
+// Actividad por día × área: totales, órdenes distintas y reparto por hora (24 valores)
+model InlabActividadDiaria {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  registros  Int      @default(0)
+  unidades   Int      @default(0)
+  urgentes   Int      @default(0)
+  ordenes    Int?
+  porHora    Int[]    @default([]) @map("por_hora")
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_actividad_diaria")
+}
+
+// Tiempos entre hitos por día × área × urgencia × tramo, con histograma de
+// buckets fijos (src/lib/inlab/histogram.ts) para calcular percentiles
+// sobre cualquier rango sumando histogramas.
+model InlabTiempoDiario {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  urgente    Boolean  @default(false)
+  tramo      String   @default("")
+  n          Int      @default(0)
+  sumaMin    Float    @default(0) @map("suma_min")
+  maxMin     Float    @default(0) @map("max_min")
+  histograma Int[]    @default([])
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_tiempo_diario")
+}
+
+// Eventos/incidencias del propio fichero InLab (reimpresiones, rechazos...)
+model InlabEventoDiario {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  puesto     String   @default("")
+  impresora  String   @default("")
+  tipo       String   @default("OTRO")
+  detalle    String   @default("")
+  cantidad   Int      @default(0)
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_evento_diario")
+}
+
+// Emparejamiento de columnas guardado por hospital (cabecera CSV → campo canónico)
+model InlabMapeo {
+  id         String   @id @default(cuid())
+  hospitalId String   @unique @map("hospital_id")
+  mapeo      Json
+  opciones   Json?
+  usuarioId  String?  @map("usuario_id")
+  creadoEn   DateTime @default(now()) @map("creado_en")
+  editadoEn  DateTime @updatedAt @map("editado_en")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@map("inlab_mapeos")
+}
+
+// Tarifas de facturación por hospital y consumible ("*" = resto de consumibles)
+model InlabTarifa {
+  id           String    @id @default(cuid())
+  hospitalId   String    @map("hospital_id")
+  consumible   String
+  precio       Decimal   @default(0) @db.Decimal(12, 4)
+  moneda       String    @default("EUR")
+  unidad       String?
+  vigenteDesde DateTime? @map("vigente_desde") @db.Date
+  vigenteHasta DateTime? @map("vigente_hasta") @db.Date
+  creadoEn     DateTime  @default(now()) @map("creado_en")
+  editadoEn    DateTime  @updatedAt @map("editado_en")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@map("inlab_tarifas")
+}
+
+// Enlace público de solo lectura (/share/inlab/[token]) por hospital y periodo
+model InlabShare {
+  id                 String    @id @default(cuid())
+  token              String    @unique
+  hospitalId         String    @map("hospital_id")
+  creadoPorId        String    @map("creado_por_id")
+  desde              DateTime? @db.Date
+  hasta              DateTime? @db.Date
+  incluirFacturacion Boolean   @default(false) @map("incluir_facturacion")
+  expiraEn           DateTime? @map("expira_en")
+  revocado           Boolean   @default(false)
+  vistas             Int       @default(0)
+  ultimaVista        DateTime? @map("ultima_vista")
+  creadoEn           DateTime  @default(now()) @map("creado_en")
+
+  hospital  Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  creadoPor Usuario  @relation("InlabSharesUsuario", fields: [creadoPorId], references: [id])
+
+  @@index([hospitalId])
+  @@map("inlab_shares")
 }
