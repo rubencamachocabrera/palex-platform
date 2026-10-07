@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { guardSeccion } from "@/lib/config-app"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { logActividad } from "@/lib/log-actividad"
@@ -128,6 +129,8 @@ export async function POST(req: NextRequest) {
 
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    const off = await guardSeccion("incidencias")
+    if (off) return off
 
     const body = await req.json()
     const parsed = parseBody(IncidenciaCreate, body)

@@ -11,7 +11,7 @@ import {
 
 // ---- tipos ----
 
-interface Config { id: number; crmActivo: boolean; incidenciasActivo: boolean; scoringConfig?: ScoringConfig | null }
+interface Config { id: number; crmActivo: boolean; incidenciasActivo: boolean; analiticaActivo: boolean; scoringConfig?: ScoringConfig | null }
 interface ModuloItem { id: string; nombre: string; activo: boolean; _count?: { proyectos: number } }
 
 const NIVEL_LABEL: Record<string, string> = { alto: "Alto", medio: "Medio", info: "Info" }
@@ -858,7 +858,7 @@ export default function ConfiguracionPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function toggleModule(key: "crmActivo" | "incidenciasActivo", valor: boolean) {
+  async function toggleModule(key: "crmActivo" | "incidenciasActivo" | "analiticaActivo", valor: boolean) {
     if (!config) return
     setSaving(true)
     try {
@@ -869,7 +869,9 @@ export default function ConfiguracionPage() {
       })
       if (!r.ok) throw new Error()
       setConfig(prev => prev ? { ...prev, [key]: valor } : prev)
-      const label = key === "crmActivo" ? "CRM" : "Incidencias"
+      // Sidebar / FAB escuchan este evento para refrescar los modulos sin recargar
+      window.dispatchEvent(new CustomEvent("palex:config-updated"))
+      const label = key === "crmActivo" ? "CRM" : key === "incidenciasActivo" ? "Soporte (Incidencias)" : "Analítica"
       success(valor ? `${label} activado correctamente` : `${label} desactivado correctamente`)
     } catch {
       toastError("Error al guardar la configuración")
@@ -905,8 +907,8 @@ export default function ConfiguracionPage() {
               }
             />
             <ModuleCard
-              title="Módulo Incidencias — Helpdesk"
-              description="Gestión de incidencias de hardware y software. Registro de eventos, llamadas y comunicaciones con clientes."
+              title="Soporte (Incidencias) — Helpdesk"
+              description="Sección «Soporte» del menú: gestión de incidencias de hardware y software, calendario SLA, métricas, widget SLA del dashboard y avisos de incidencias."
               activo={config?.incidenciasActivo ?? true}
               onToggle={(v) => toggleModule("incidenciasActivo", v)}
               saving={saving}
@@ -917,9 +919,22 @@ export default function ConfiguracionPage() {
                 </svg>
               }
             />
+            <ModuleCard
+              title="Analítica (Inteligencia InLab y Comparador)"
+              description="Sección «Analítica» del menú: Inteligencia InLab y comparador de periodos."
+              activo={config?.analiticaActivo ?? true}
+              onToggle={(v) => toggleModule("analiticaActivo", v)}
+              saving={saving}
+              icon={
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              }
+            />
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
               <p className="font-medium text-gray-700 mb-1">Sobre los módulos</p>
-              <p>Los módulos desactivados dejan de aparecer en la barra lateral y sus rutas redirigen al dashboard. Los datos no se eliminan.</p>
+              <p>Los módulos desactivados dejan de aparecer en la barra lateral y sus páginas muestran un aviso de sección desactivada. Los datos no se eliminan.</p>
             </div>
           </div>
         )}

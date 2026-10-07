@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { guardSeccion } from "@/lib/config-app"
 
 function rangoAnterior(desde: Date, hasta: Date) {
   const ms = hasta.getTime() - desde.getTime()
@@ -15,6 +16,8 @@ export async function GET(req: NextRequest) {
     if (rl) return rl
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    const off = await guardSeccion("analitica")
+    if (off) return off
 
     const diasParam = parseInt(req.nextUrl.searchParams.get("periodo") ?? "30")
     const dias = [30, 90, 365].includes(diasParam) ? diasParam : 30

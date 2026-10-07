@@ -84,9 +84,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ### Plantillas de visita
 Existe sistema de plantillas para pre-rellenar visitas. NO implementar "duplicar visita".
 
-### Incidencias / Helpdesk
-Activable/desactivable desde admin/configuracion (ConfigApp.incidenciasActivo).
-Sidebar lo muestra/oculta automaticamente. Los datos persisten al desactivar.
+### Incidencias / Helpdesk — seccion "Soporte"
+Activable/desactivable desde admin/configuracion (toggle "Soporte (Incidencias)", `ConfigApp.incidenciasActivo`).
+Desactivado: Sidebar oculta el grupo "Soporte" (cache `palex_incidencias_activo`), `/incidencias/**` muestra "Seccion desactivada por el administrador" (`incidencias/layout.tsx`), no se renderiza `SlaAlertasWidget`, el FAB oculta "Nueva incidencia", `/api/notificaciones` omite los avisos de incidencias, el cron de escalado no actua, y `POST /api/incidencias` + `GET /api/incidencias/stats` devuelven 403. El resto de GET de incidencias sigue respondiendo (share de hardware, etc.). Los datos persisten.
+
+### Analitica — seccion "Analitica"
+Activable/desactivable desde admin/configuracion (toggle "Analitica (Inteligencia InLab y Comparador)", `ConfigApp.analiticaActivo`).
+Desactivado: Sidebar oculta `/inlab` y `/comparador` (flag `analiticaOnly` en grupo para PROYECTOS/TECNICO/VENTAS y en item para ADMIN, cuyo grupo conserva "Transporte de muestras"; cache `palex_analitica_activo`), `/inlab` y `/comparador` muestran "Seccion desactivada" (layouts), y `GET /api/stats/comparador` devuelve 403. `/inlab` usa datos estaticos (sin API propia); `/api/modulos-inlab` NO se bloquea (lo usan proyectos y admin). Los datos persisten.
+
+Helpers: `lib/config-app.ts` (`getConfigApp()`, `seccionActiva()`, `guardSeccion()` → 403), `hooks/useConfigApp.ts` (SWR cliente), `components/ui/SeccionDesactivada.tsx`. Al cambiar un toggle, admin/configuracion emite `palex:config-updated` y Sidebar/FAB se refrescan sin recargar.
 
 ---
 
@@ -203,7 +209,7 @@ Incidencia       (codigo, titulo, tipo HW/SW, categoria, prioridad, estado, SLA,
 EventoIncidencia (tipo 11 enum, descripcion, duracion?, privado, fotos JSON?, editadoPor?, editadoEn?, incidencia, autor)
 RespuestaRapidaIncidencia (texto, categoria?, orden, activo) @@map("respuestas_rapidas_incidencia")
 IncidenciaRelacion (tipo TipoRelacionIncidencia, incidenciaId, relacionadaId, creadoPorId, @@unique[incidenciaId+relacionadaId]) @@map("incidencias_relaciones")
-LogActividad, ConfigApp (crmActivo, incidenciasActivo), PlantillaVisita, ModuloInlab
+LogActividad, ConfigApp (crmActivo, incidenciasActivo @map("incidencias_activo"), analiticaActivo @map("analitica_activo") — todos Boolean @default(true), scoringConfig), PlantillaVisita, ModuloInlab
 NotaEquipo (texto, autorId, mencionIds JSON, fijada, creadoEn) @@map("notas_equipo") — notas del equipo accesibles a todos los roles
 Oportunidad      (DESACTIVADO)
 ```
@@ -228,6 +234,8 @@ Oportunidad      (DESACTIVADO)
 - Validacion: Zod schemas centralizados en `schemas.ts`, usar `parseBody()`.
 - Comentarios POST aceptan `mencionIds` array.
 - `/api/perfil`: devuelve `{ rol, onboardingCompletado, calendarToken }` — usar `d?.rol`.
+- `/api/config`: GET (autenticado) devuelve la fila ConfigApp `{ crmActivo, incidenciasActivo, analiticaActivo, scoringConfig }`. PATCH solo ADMIN; whitelist de toggles que exige booleanos reales (400 si no), `scoringConfig` objeto.
+- Secciones desactivables: `guardSeccion("incidencias" | "analitica")` de `lib/config-app.ts` devuelve 403 si la seccion esta off. Aplicado en `GET /api/stats/comparador`, `GET /api/incidencias/stats` y `POST /api/incidencias`. No usar en APIs compartidas con otras secciones.
 - GET `/api/hospitales/[id]/score`: devuelve `{ total, label, color, breakdown: { visitas, proyectos, hardware, seguimiento, penalizacion } }`. Cache 120s. Calcula dinámicamente — visitas 60d (30pts), proyectos activos (30pts), HW instalado (20pts), llamadas 30d (20pts), penalización criticas abiertas (-15pts max).
 - GET `/api/hospitales/score?ids=`: batch scores para hasta 50 hospitales, devuelve `{ [id]: { total, color, label } }`.
 - GET `/api/usuarios/menciones`: Redis cache 60s por query (`menciones:${q}`), fallback in-memory.
@@ -249,6 +257,7 @@ Oportunidad      (DESACTIVADO)
 
 ## 7. Funcionalidades implementadas (resumen)
 
+**Secciones desactivables (Admin → Configuracion):** toggles "Soporte (Incidencias)" (`incidenciasActivo`) y "Analitica (Inteligencia InLab y Comparador)" (`analiticaActivo`), ademas de CRM. Ocultan menu/FAB/widgets, muestran estado "Seccion desactivada por el administrador" al entrar por URL y bloquean (403) las APIs exclusivas de la seccion. Sin borrar datos. Ver seccion 3.
 **Auth:** Login split-screen, middleware edge, roles, JWT 7d con revocacion <5min, brute-force 5/min.
 **Hospitales:** Lista paginada, detalle con KPIs/contactos/timeline/QR, favoritos DB, grupos hospitalarios.
 **Visitas:** Formulario 13 secciones, calendario mensual, PDF, offline IndexedDB, firma digital, edicion colaborativa con presencia, tags, plantillas.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { seccionActiva } from "@/lib/config-app"
 
 export async function GET(_req: NextRequest) {
   try {
@@ -22,6 +23,8 @@ export async function GET(_req: NextRequest) {
     const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     const hace4h = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+    // Si el modulo de incidencias esta desactivado no se generan avisos de incidencias
+    const incidenciasOn = await seccionActiva("incidencias")
 
     const [opsInactivas, visitasBorrador, fasesRetrasadas, proyectosPorVencer, tareasRetrasadas, mencionesRecientes, recordatoriosPendientes, recordatoriosAsignadosNuevos, hwGarantiaVencida, hwMantenimientoVencido, incidenciasCambioEstado, incidenciasCriticasSinAsignar] = await Promise.all([
       db.oportunidad.findMany({
@@ -163,7 +166,7 @@ export async function GET(_req: NextRequest) {
           })
         : Promise.resolve([]),
       // Incidencias: cambio de estado reciente, dirigido a reportador o asignado (no al autor del cambio)
-      db.eventoIncidencia.findMany({
+      !incidenciasOn ? Promise.resolve([]) : db.eventoIncidencia.findMany({
         where: {
           tipo: "CAMBIO_ESTADO",
           autorId: { not: userId },
@@ -178,7 +181,7 @@ export async function GET(_req: NextRequest) {
         take: 10,
       }),
       // Incidencias: CRITICA sin asignar >4h (ADMIN only) — alimenta el escalado automatico
-      rol === "ADMIN"
+      rol === "ADMIN" && incidenciasOn
         ? db.incidencia.findMany({
             where: {
               prioridad: "CRITICA",
