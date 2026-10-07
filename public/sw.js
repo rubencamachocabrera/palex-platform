@@ -1,7 +1,9 @@
 // Palex Medical — Service Worker
 // Cache-first para assets estáticos, Network-first para APIs y navegación
 
-const CACHE_VERSION = 'palex-v2';
+// v3: purga las respuestas RSC (?_rsc=) que v2 guardaba con cache-first y que,
+// tras un deploy, forzaban una recarga completa en cada navegación.
+const CACHE_VERSION = 'palex-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
@@ -52,11 +54,26 @@ self.addEventListener('fetch', (event) => {
   // Auth de NextAuth: nunca interceptar (tokens CSRF, sesion)
   if (url.pathname.startsWith('/api/auth/')) return;
 
+  // Navegación de cliente de Next (payload RSC, prefetch, Server Actions): NUNCA
+  // interceptar. Antes caían en cacheFirst: la respuesta de la primera visita se
+  // servía para siempre (datos viejos) y, tras un deploy, su buildId no coincidía
+  // con el cliente → Next hacía navegación MPA (recarga completa, el sidebar
+  // volvía arriba y se repetían las animaciones de entrada).
+  if (
+    url.searchParams.has('_rsc') ||
+    request.headers.get('RSC') === '1' ||
+    request.headers.has('Next-Router-Prefetch') ||
+    request.headers.has('Next-Action')
+  ) return;
+
   // API routes → Network-first, fallback a caché solo en GET
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstAPI(request));
     return;
   }
+
+  // Fuera de /api solo se cachean GET (Cache API no admite otros métodos)
+  if (request.method !== 'GET') return;
 
   // Next.js internals (_next/static) → Network-first (hash en URL = inmutable, pero
   // cache-first rompe deploys cuando el HTML nuevo referencia hashes nuevos)

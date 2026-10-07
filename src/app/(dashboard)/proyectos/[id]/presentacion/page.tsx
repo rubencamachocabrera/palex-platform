@@ -311,7 +311,7 @@ export default function PresentacionPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-gray-950 flex items-center justify-center">
+      <div className="fixed inset-0 z-[9999] bg-gray-950 flex items-center justify-center">
         <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: TEAL, borderTopColor: "transparent" }} />
       </div>
     )
@@ -319,7 +319,7 @@ export default function PresentacionPage() {
 
   if (!pp) {
     return (
-      <div className="fixed inset-0 bg-gray-950 flex items-center justify-center">
+      <div className="fixed inset-0 z-[9999] bg-gray-950 flex items-center justify-center">
         <p className="text-white/40">Proyecto no encontrado</p>
       </div>
     )

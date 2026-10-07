@@ -869,6 +869,8 @@ export default function ConfiguracionPage() {
       })
       if (!r.ok) throw new Error()
       setConfig(prev => prev ? { ...prev, [key]: valor } : prev)
+      // El sidebar escucha este evento para mostrar/ocultar el módulo al instante
+      window.dispatchEvent(new CustomEvent("palex:config", { detail: { [key]: valor } }))
       const label = key === "crmActivo" ? "CRM" : "Incidencias"
       success(valor ? `${label} activado correctamente` : `${label} desactivado correctamente`)
     } catch {

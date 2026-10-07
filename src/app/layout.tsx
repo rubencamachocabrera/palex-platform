@@ -39,6 +39,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      // Next 16: sin este atributo, el scroll-behavior:smooth de globals.css anima
+      // también el salto a arriba de cada navegación (sensación de "recarga").
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

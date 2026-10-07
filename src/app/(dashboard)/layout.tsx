@@ -1,6 +1,7 @@
 // Layout del dashboard — protegido, con sidebar y topbar
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { db } from "@/lib/db"
 import { Sidebar } from "@/components/Sidebar"
 import { TopBar } from "@/components/TopBar"
 import { ToastProvider } from "@/components/Toast"
@@ -21,12 +22,24 @@ export default async function DashboardLayout({
   const session = await auth()
   if (!session?.user) redirect("/login")
 
+  // Módulos activos leídos en servidor: el sidebar se hidrata con el mismo HTML
+  // (antes leía localStorage en el primer render → desajuste de hidratación).
+  // El layout no se re-ejecuta en navegaciones de cliente, solo en cargas completas.
+  const config = await db.configApp
+    .findUnique({ where: { id: 1 }, select: { crmActivo: true, incidenciasActivo: true } })
+    .catch(() => null)
+
   return (
     <KeyboardShortcutsProvider>
       <ToastProvider>
         <OnboardingWizard />
         <div className="app-shell flex h-screen bg-page overflow-hidden">
-          <Sidebar nombre={session.user.name ?? "Usuario"} rol={session.user.role} />
+          <Sidebar
+            nombre={session.user.name ?? "Usuario"}
+            rol={session.user.role}
+            crmActivo={config?.crmActivo ?? false}
+            incidenciasActivo={config?.incidenciasActivo ?? true}
+          />
           <div className="app-workspace flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
             <main id="main-content" className="app-main flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-6 lg:pb-8">
