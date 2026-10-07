@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import { TEAL } from "@/lib/brand"
 import { useToast } from "@/components/Toast"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from "@dnd-kit/core"
@@ -157,6 +158,7 @@ export function TabTareas({ pp, onUpdate }: { pp: Proyecto; onUpdate: (p: Proyec
   const [filtro, setFiltro] = useState<Filtro>("TODAS")
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set())
   const [addingTo, setAddingTo] = useState<"ROOT" | string | null>(null)
+  useFabAction("fab:nueva-tarea", () => setAddingTo("ROOT"))
   const [qForm, setQForm] = useState({ titulo: "", prioridad: "MEDIA", fechaVencimiento: "", asignadoAId: "" })
   const [guardando, setGuardando] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)

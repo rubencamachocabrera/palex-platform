@@ -229,11 +229,12 @@ html.theme-transitioning * {
 .dark ::selection { background: rgba(46,230,214,0.30); color: inherit; }
 
 /* ═══ Shell de aplicacion ════════════════════════════════════════════════════ */
-.app-shell {
-  background: var(--page-bg);
-  position: relative;
-  isolation: isolate;
-}
+/* Sin isolation/z-index en el shell: los modales (z-50, dentro de <main>) deben
+   competir en el contexto raiz con topbar, FAB, dock y avisos. El fondo de pagina
+   vive en <body> y las capas decorativas usan z-index:-1 sobre el lienzo. */
+body:has(.app-shell) { background: var(--page-bg); }
+.app-shell,
+.dark .app-shell.bg-page { background: transparent !important; }
 
 /* Aurora: dos masas de luz de marca que derivan muy despacio detras de todo */
 .app-shell::before,
@@ -270,15 +271,12 @@ html.theme-transitioning * {
   to   { transform: translate3d(10rem, -5rem, 0) scale(0.92); }
 }
 
-.app-workspace {
-  position: relative;
-  isolation: isolate;
-}
+.app-workspace { position: relative; }
 /* Rejilla de puntos tecnica, desvanecida hacia abajo */
 .app-workspace::before {
   content: "";
   position: absolute;
-  z-index: 0;
+  z-index: -1;
   inset: 0;
   pointer-events: none;
   background-image: radial-gradient(rgba(11, 32, 54, 0.11) 1px, transparent 1.2px);
@@ -291,7 +289,7 @@ html.theme-transitioning * {
   background-image: radial-gradient(rgba(148, 197, 255, 0.12) 1px, transparent 1.2px);
   opacity: 0.5;
 }
-.app-workspace > * { position: relative; z-index: 1; }
+.app-workspace > * { position: relative; }
 
 .app-main { background: transparent; }
 .dark .app-main { background: transparent !important; }
@@ -1474,3 +1472,439 @@ button:not([disabled]):active { transform: scale(0.97); }
 /* Relleno de la "P" del estado colapsado (no usar bg-white: el override dark la oscurece) */
 .brand-mark-fill { background: #ffffff; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEXUS 2 — capa de controles, menus, carga e indicadores
+   Selectores sobre patrones Tailwind ya presentes en toda la app: unifica el
+   comportamiento visual de ~200 inputs, 76 selects, 24 tablas y 30 modales
+   sin reescribir cada pagina.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Campos de formulario ────────────────────────────────────────────────── */
+.app-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), textarea, select) {
+  caret-color: var(--teal);
+  transition: border-color 160ms ease, box-shadow 200ms ease, background-color 160ms ease;
+}
+@media (hover: hover) {
+  .app-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select):not(:focus):not(:disabled):hover {
+    border-color: rgba(0, 169, 157, 0.38);
+  }
+}
+.app-main :is(input, textarea)::placeholder { color: #94a3b8; opacity: 1; }
+.app-main :is(input, textarea, select):disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* iOS: evita el zoom automatico al enfocar campos con texto < 16px */
+@media (max-width: 640px) {
+  .app-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) { font-size: 16px; }
+}
+
+/* Select con chevron propio (los nativos de Windows rompen la estetica) */
+.app-main select:not([multiple]):not([size]):not(.bg-transparent),
+.modal-surface select:not([multiple]):not([size]) {
+  -webkit-appearance: none;
+          appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 14px 14px;
+  padding-right: 2.2rem;
+}
+.dark .app-main select:not([multiple]):not([size]):not(.bg-transparent),
+.dark .modal-surface select:not([multiple]):not([size]) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+/* Checkbox, radio y range con color de marca */
+input[type="checkbox"], input[type="radio"], input[type="range"], progress { accent-color: var(--teal); }
+
+/* Selectores de fecha/hora */
+.dark ::-webkit-calendar-picker-indicator { filter: invert(0.75); }
+::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.7; transition: opacity 150ms ease; }
+::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Autorrelleno del navegador coherente con el tema */
+.dark input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 100px var(--surface-2) inset !important;
+  -webkit-text-fill-color: #e6eef6 !important;
+}
+
+/* Subida de archivos */
+.app-main input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: inherit;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.app-main input[type="file"]::file-selector-button:hover { border-color: var(--teal); }
+
+/* ─── Botones ─────────────────────────────────────────────────────────────── */
+button:disabled, button[aria-disabled="true"] { cursor: not-allowed; }
+.app-main button:disabled { filter: saturate(0.55); box-shadow: none !important; }
+
+/* Secundarios (borde + fondo claro): elevacion y filo teal al pasar */
+@media (hover: hover) {
+  .app-main :is(button, a).border:is(.bg-white, [class*="hover:bg-gray-50"]):not(:disabled):not(.rounded-full):hover {
+    border-color: rgba(0, 169, 157, 0.35) !important;
+    box-shadow: inset 0 1px var(--edge-light), var(--el-2);
+    transform: translateY(-1px);
+  }
+}
+
+/* Controles segmentados (lista/kanban, vistas, filtros rapidos) */
+.app-main :is(.bg-gray-100, .bg-slate-100):is(.p-1, .p-0\.5):is(.rounded-lg, .rounded-xl) {
+  box-shadow: inset 0 1px 2px rgba(11, 32, 54, 0.06), inset 0 0 0 1px var(--hairline);
+}
+.app-main :is(.bg-gray-100, .bg-slate-100):is(.p-1, .p-0\.5) > button.bg-white {
+  box-shadow: inset 0 1px var(--edge-light), 0 1px 2px rgba(11, 32, 54, 0.08), 0 0 0 1px var(--hairline), 0 4px 12px -6px rgba(0, 169, 157, 0.45);
+}
+.dark .app-main :is(.bg-gray-100, .bg-slate-100):is(.p-1, .p-0\.5) > button.bg-white {
+  background-color: var(--surface-3) !important;
+}
+
+/* ─── Badges / pills de estado ────────────────────────────────────────────── */
+.app-main span.rounded-full:is([class*="text-[10px]"], [class*="text-[11px]"], .text-xs):is([class*="px-"]) {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Tablas ──────────────────────────────────────────────────────────────── */
+.app-main thead tr {
+  background-image: linear-gradient(180deg, rgba(0, 169, 157, 0.045), transparent);
+}
+.app-main thead th { font-weight: 600; white-space: nowrap; }
+@media (hover: hover) {
+  .app-main tbody tr:hover { background-color: rgba(0, 169, 157, 0.035); }
+  .dark .app-main tbody tr:hover { background-color: rgba(46, 230, 214, 0.04); }
+}
+
+/* ─── kbd ─────────────────────────────────────────────────────────────────── */
+kbd {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  border-radius: 6px;
+  box-shadow: inset 0 -1px 0 rgba(11, 32, 54, 0.14);
+}
+
+/* ─── Modales, drawers y overlays ─────────────────────────────────────────── */
+.fixed.inset-0:is(.bg-black\/20, .bg-black\/25, .bg-black\/30, .bg-black\/40, .bg-black\/50, .bg-black\/60) {
+  animation: overlayIn 220ms ease-out both;
+}
+.fixed.inset-0.flex > :is(.bg-white, [role="dialog"]):is(.rounded-xl, .rounded-2xl, .rounded-3xl):not(.modal-surface) {
+  border: 1px solid var(--hairline-strong);
+  box-shadow: inset 0 1px var(--edge-light), var(--el-4);
+  animation: modalIn 320ms var(--ease-out-expo) both;
+}
+.fixed.inset-y-0.right-0:is(.bg-white, [role="dialog"]) {
+  border-left: 1px solid var(--hairline-strong);
+  box-shadow: -30px 0 60px -30px rgba(11, 32, 54, 0.45);
+  animation: drawerIn 380ms var(--ease-out-expo) both;
+}
+@keyframes drawerIn {
+  from { opacity: 0.4; transform: translateX(48px); }
+  to   { opacity: 1;   transform: none; }
+}
+
+/* Menus desplegables dentro de las paginas */
+.app-main .absolute.bg-white.shadow-lg:is(.rounded-lg, .rounded-xl, .rounded-2xl),
+.app-main .absolute.bg-white.shadow-xl:is(.rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-color: var(--hairline-strong) !important;
+  box-shadow: inset 0 1px var(--edge-light), var(--el-4) !important;
+  animation: slideDownFade 220ms var(--ease-out-expo) both;
+}
+
+/* ─── Carga ───────────────────────────────────────────────────────────────── */
+/* Spinners existentes: halo de energia */
+.animate-spin.rounded-full:is(.border-2, .border-\[3px\], .border-4) {
+  filter: drop-shadow(0 0 4px rgba(0, 169, 157, 0.45));
+}
+
+/* Barras de progreso: destello que recorre la parte rellena */
+.progress-bar-anim { position: relative; overflow: hidden; }
+.progress-bar-anim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: barSheen 2.8s 1.2s ease-in-out infinite;
+}
+@keyframes barSheen {
+  0%, 55% { transform: translateX(-100%); }
+  100%    { transform: translateX(100%); }
+}
+
+/* NexusLoader */
+.nexus-loader { display: inline-flex; align-items: center; gap: 10px; }
+.nexus-loader-orbit {
+  position: relative;
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(0, 169, 157, 0.18);
+  border-top-color: var(--teal);
+  border-right-color: var(--teal-glow);
+  animation: nxSpin 900ms linear infinite;
+  filter: drop-shadow(0 0 5px rgba(46, 230, 214, 0.55));
+}
+.nexus-loader-core {
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: var(--orange);
+  box-shadow: 0 0 8px rgba(247, 148, 29, 0.85);
+}
+.nexus-loader-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.nexus-loader-label::after { content: "…"; animation: blinkDots 1.2s steps(1) infinite; }
+@keyframes blinkDots { 50% { opacity: 0.2; } }
+@keyframes nxSpin { to { transform: rotate(360deg); } }
+
+/* ─── Actividad de red global ─────────────────────────────────────────────── */
+.net-activity {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 61;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+.net-activity.is-busy { opacity: 1; }
+.net-activity-beam {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, var(--teal), var(--teal-glow), var(--orange), transparent);
+  box-shadow: 0 0 12px rgba(46, 230, 214, 0.8);
+  animation: beamSweep 1.15s var(--ease-out-expo) infinite;
+}
+@keyframes beamSweep {
+  from { left: -40%; }
+  to   { left: 100%; }
+}
+/* La topbar "respira" mientras hay datos en vuelo */
+html[data-busy] .topbar-shell::before {
+  background: linear-gradient(90deg, transparent, var(--teal-glow), var(--orange), transparent);
+  background-size: 200% 100%;
+  animation: busyEdge 1.2s linear infinite;
+  opacity: 1;
+}
+@keyframes busyEdge {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+html[data-busy] .app-main { cursor: progress; }
+
+/* ─── Pill offline ────────────────────────────────────────────────────────── */
+.offline-pill {
+  color: #b45309;
+  background: rgba(247, 148, 29, 0.10);
+  box-shadow: inset 0 0 0 1px rgba(247, 148, 29, 0.35);
+}
+.dark .offline-pill { color: #fbbf72; background: rgba(247, 148, 29, 0.12); }
+
+/* ─── Tooltip del sidebar colapsado ───────────────────────────────────────── */
+.sidebar-nav-link[aria-label]:hover { transform: none; } /* sin transform: el tooltip es fixed */
+.sidebar-tooltip {
+  position: fixed;
+  z-index: 70;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e2edf7;
+  background: rgba(7, 22, 38, 0.95);
+  border: 1px solid rgba(148, 197, 255, 0.14);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(46, 230, 214, 0.08);
+  pointer-events: none;
+  animation: tipIn 160ms var(--ease-out-expo) both;
+}
+.sidebar-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -5px; top: 50%;
+  width: 8px; height: 8px;
+  background: rgba(7, 22, 38, 0.95);
+  border-left: 1px solid rgba(148, 197, 255, 0.14);
+  border-bottom: 1px solid rgba(148, 197, 255, 0.14);
+  transform: translateY(-50%) rotate(45deg);
+}
+.sidebar-tooltip-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fff;
+}
+@keyframes tipIn {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to   { opacity: 1; transform: translate(0, -50%); }
+}
+
+/* ─── FAB de acciones rapidas ─────────────────────────────────────────────── */
+.nx-fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  z-index: 41;
+  width: 56px; height: 56px;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  background: linear-gradient(145deg, #13d1c3, var(--teal) 55%, var(--teal-dark));
+  box-shadow: inset 0 1px rgba(255,255,255,0.35), 0 14px 30px -10px rgba(0, 169, 157, 0.8);
+  transition: transform 260ms var(--ease-spring), box-shadow 220ms ease, border-radius 260ms var(--ease-out-expo), background 220ms ease;
+}
+@media (min-width: 768px) { .nx-fab { bottom: 28px; right: 28px; } }
+@media (hover: hover) {
+  .nx-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: inset 0 1px rgba(255,255,255,0.4), 0 18px 38px -10px rgba(0, 169, 157, 0.95); }
+}
+.nx-fab:active { transform: scale(0.94); }
+.nx-fab-icon { display: inline-flex; transition: transform 320ms var(--ease-spring); }
+.nx-fab.is-open {
+  border-radius: 999px;
+  background: linear-gradient(145deg, #1b3350, var(--ink-800));
+  box-shadow: inset 0 1px rgba(255,255,255,0.12), 0 14px 30px -10px rgba(2, 12, 24, 0.7);
+}
+.nx-fab.is-open::before { opacity: 0.35; }
+.nx-fab.is-open .nx-fab-plus { transform: rotate(135deg); }
+
+.nx-fab-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(4, 13, 24, 0.28);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: overlayIn 200ms ease-out both;
+}
+
+.nx-fab-menu {
+  position: fixed;
+  right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 164px);
+  z-index: 40;
+  width: min(280px, calc(100vw - 40px));
+  padding: 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--hairline-strong);
+  box-shadow: inset 0 1px var(--edge-light), var(--el-4);
+  transform-origin: bottom right;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 280ms var(--ease-out-expo), visibility 0s linear 280ms;
+}
+@media (min-width: 768px) { .nx-fab-menu { right: 28px; bottom: 96px; } }
+.dark .nx-fab-menu { background: rgba(12, 26, 45, 0.92); }
+.nx-fab-menu.is-open { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
+.nx-fab-menu-title {
+  padding: 6px 10px 8px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.nx-fab-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: background-color 150ms ease, opacity 220ms ease, transform 260ms var(--ease-out-expo);
+}
+.nx-fab-menu.is-open .nx-fab-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i, 0) * 40ms + 60ms);
+}
+.nx-fab-item:hover, .nx-fab-item:focus-visible { background: rgba(0, 169, 157, 0.08); }
+.nx-fab-item-icon {
+  width: 36px; height: 36px;
+  border-radius: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  background: linear-gradient(145deg, #1b3350, var(--ink-800));
+  box-shadow: inset 0 1px rgba(255,255,255,0.14), 0 6px 14px -6px rgba(2, 12, 24, 0.6);
+  flex-shrink: 0;
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+.nx-fab-item:hover .nx-fab-item-icon {
+  background: linear-gradient(145deg, #13d1c3, var(--teal) 55%, var(--teal-dark));
+  box-shadow: inset 0 1px rgba(255,255,255,0.3), 0 8px 18px -8px rgba(0, 169, 157, 0.8);
+}
+.nx-fab-item-arrow { opacity: 0.35; transition: transform 200ms var(--ease-out-expo), opacity 200ms ease; }
+.nx-fab-item:hover .nx-fab-item-arrow { opacity: 0.9; transform: translateX(2px); }
+
+/* ─── Accesibilidad: menos transparencia si el usuario lo pide ────────────── */
+@media (prefers-reduced-transparency: reduce) {
+  .topbar-shell, .nexus-popover, .nexus-toast, .nx-fab-menu, .filter-surface, .page-header-content, .bottom-nav-container {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--surface) !important;
+  }
+}
+
+/* Pills con fondo pastel inline (STATUS_COLORS, TIPO_RESULTADO_COLOR…): en oscuro se
+   invierte la luminancia conservando el tono → fondo tintado oscuro + texto claro. */
+.dark :is(.app-main, .nexus-popover) :is(span, button).rounded-full:is([class*="text-[10px]"], [class*="text-[11px]"], .text-xs)[style*="background-color: rgb(2"],
+.dark :is(.app-main, .nexus-popover) :is(span, button).rounded-full:is([class*="text-[10px]"], [class*="text-[11px]"], .text-xs)[style*="background-color:#f" i],
+.dark :is(.app-main, .nexus-popover) :is(span, button).rounded-full:is([class*="text-[10px]"], [class*="text-[11px]"], .text-xs)[style*="background-color:#e" i] {
+  filter: invert(1) hue-rotate(180deg) saturate(1.3);
+}
+
+/* ─── Fill-mode seguro ─────────────────────────────────────────────────────────
+   Con fill-mode both/forwards Chrome conserva el valor final INTERPOLADO
+   (translateY(0), blur(0)), no "none": eso crea un bloque contenedor y recorta los
+   modales/overlays fixed de dentro de la pagina. backwards aplica el fotograma
+   inicial durante el retardo y, al terminar, no deja ningun transform/filter. */
+.page-content > *,
+main > *,
+.page-header-content,
+.dashboard-kpi,
+.stat-card::before,
+.stagger-grid > *,
+.stagger-list > *,
+.stagger-nav > *,
+.number-reveal,
+.modal-surface,
+.command-palette,
+.fixed.inset-0.flex > *,
+.fixed.inset-y-0.right-0,
+.slide-down,
+.slide-up,
+.scale-in,
+.fade-in,
+.pop-in,
+.toast-in {
+  animation-fill-mode: backwards !important;
+}

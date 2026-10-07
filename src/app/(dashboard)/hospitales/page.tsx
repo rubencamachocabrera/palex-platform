@@ -10,6 +10,8 @@ import { IconHospital, IconBuilding, IconMicroscope, IconActivity, IconGraduatio
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 
+import { useFabAction } from "@/hooks/useFabAction"
+import { useRouter } from "next/navigation"
 function SkeletonHospitalRow() {
   return (
     <div className="flex items-center gap-3 px-4 py-4">
@@ -118,6 +120,11 @@ export default function HospitalesPage() {
   const { ids: favoritos, toggle: toggleFavorito } = useFavoritos("HOSPITAL")
   const { rol } = usePerfil()
   const esAdmin = rol === "ADMIN"
+  const router = useRouter()
+  useFabAction("fab:nuevo-hospital", () => {
+    if (esAdmin) router.push("/admin/hospitales?nuevo=1")
+    else toastError("Solo un administrador puede dar de alta hospitales")
+  })
 
   const PAGE_SIZE = 200
 

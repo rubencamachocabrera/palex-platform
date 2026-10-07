@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import Link from "next/link"
 import { TEAL, TEAL_LIGHT, TEAL_DARK } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -282,6 +283,14 @@ export default function LlamadasPage() {
 
   // Quick-create form
   const [formOpen, setFormOpen] = useState(true)
+  useFabAction("fab:nueva-llamada", () => {
+    setFormOpen(true)
+    setTimeout(() => {
+      const form = document.getElementById("llamada-quick-form")
+      form?.scrollIntoView({ behavior: "smooth", block: "start" })
+      form?.querySelector<HTMLElement>("input, select, textarea, button")?.focus({ preventScroll: true })
+    }, 60)
+  })
   const [formHospitalId, setFormHospitalId] = useState("")
   const [formContactoId, setFormContactoId] = useState("")
   const [formAsunto, setFormAsunto] = useState("")
@@ -562,7 +571,7 @@ export default function LlamadasPage() {
       {formOpen && (
         <div className="mb-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${TEAL}, ${TEAL_DARK})` }} />
-          <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+          <form id="llamada-quick-form" onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 scroll-mt-24">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: TEAL + "18", color: TEAL }}>
                 <IconPhone size={14} />

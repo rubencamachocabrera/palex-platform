@@ -361,6 +361,7 @@ function NavLink({
   item: NavItem; active: boolean; collapsed?: boolean; badge?: number; onClick?: () => void
 }) {
   const [hover, setHover] = useState(false)
+  const [tipY, setTipY] = useState<number | null>(null)
   const Icon = Icons[item.icon]
 
   const bg    = active ? ABG  : hover ? HBG  : "transparent"
@@ -370,7 +371,8 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onClick}
-      title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      aria-current={active ? "page" : undefined}
       className={`sidebar-nav-link relative flex items-center rounded-xl text-sm font-medium transition-colors duration-150 overflow-hidden${active ? " sidebar-nav-link-active" : ""}`}
       style={{
         gap: collapsed ? 0 : 10,
@@ -379,9 +381,29 @@ function NavLink({
         backgroundColor: bg,
         color,
       }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={e => {
+        setHover(true)
+        if (collapsed) {
+          const r = e.currentTarget.getBoundingClientRect()
+          setTipY(r.top + r.height / 2)
+        }
+      }}
+      onMouseLeave={() => { setHover(false); setTipY(null) }}
+      onFocus={e => {
+        if (collapsed) {
+          const r = e.currentTarget.getBoundingClientRect()
+          setTipY(r.top + r.height / 2)
+        }
+      }}
+      onBlur={() => setTipY(null)}
     >
+      {/* Tooltip (solo colapsado): fixed para escapar del overflow del aside */}
+      {collapsed && tipY !== null && (
+        <span className="sidebar-tooltip" style={{ top: tipY, left: 72 }} role="tooltip">
+          {item.label}
+          {badge != null && badge > 0 && <span className="sidebar-tooltip-badge">{badge > 9 ? "9+" : badge}</span>}
+        </span>
+      )}
       {/* Barra de acento izquierda */}
       {active && (
         <span

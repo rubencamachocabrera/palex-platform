@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useMemo } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL } from "@/lib/brand"
@@ -119,6 +120,7 @@ export default function VisitasPage() {
 
   // Modal quick-create
   const [mostrarModal, setMostrarModal] = useState(false)
+  useFabAction("fab:nueva-visita", () => setMostrarModal(true))
   const [hospitalesLista, setHospitalesLista] = useState<Hospital[]>([])
   const [hospitalId, setHospitalId] = useState("")
   const [busqHosp, setBusqHosp] = useState("")

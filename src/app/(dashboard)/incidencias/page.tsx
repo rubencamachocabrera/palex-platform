@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import Link from "next/link"
 import { TEAL, ORANGE, STATUS_COLORS } from "@/lib/brand"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -179,6 +180,7 @@ export default function IncidenciasPage() {
 
   // Create modal
   const [showModal, setShowModal] = useState(false)
+  useFabAction("fab:nueva-incidencia", () => setShowModal(true))
   const [hospitales, setHospitales] = useState<Hospital[]>([])
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [form, setForm] = useState({

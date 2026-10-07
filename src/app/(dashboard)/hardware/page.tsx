@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 import { exportarCSV } from "@/lib/csv"
@@ -1925,6 +1926,7 @@ function MaterialesTab({ unidades, onUpdated, onDeleted, onCreated, catalogo, se
   const [tiposModal,   setTiposModal]   = useState(false)
   const [tiposLocal,   setTiposLocal]   = useState<HardwareTipo[]>(tipos)
   const [nuevaUnidad,  setNuevaUnidad]  = useState(false)
+  useFabAction("fab:nueva-unidad-hw", () => setNuevaUnidad(true))
   const [editUnitGlobal, setEditUnitGlobal] = useState<HardwareUnidad|null>(null)
   const [assignUnitGlobal, setAssignUnitGlobal] = useState<HardwareUnidad|null>(null)
 
@@ -2550,6 +2552,7 @@ const TABS = [
 
 export default function HardwarePage() {
   const [tab, setTab] = useState("resumen")
+  useFabAction("fab:nueva-unidad-hw", () => setTab("materiales"), { consume: false })
   const { rol } = usePerfil()
   const [unidades, setUnidades] = useState<HardwareUnidad[]>([])
   const [catalogo, setCatalogo] = useState<HardwareCatalogo[]>([])

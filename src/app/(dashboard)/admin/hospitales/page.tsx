@@ -135,6 +135,16 @@ export default function HospitalesAdminPage() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  // Alta directa desde el FAB de /hospitales (?nuevo=1)
+  const nuevoPendiente = useRef(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("nuevo") === "1")
+  useEffect(() => {
+    if (!nuevoPendiente.current || zonas.length === 0) return
+    nuevoPendiente.current = false
+    window.history.replaceState(null, "", window.location.pathname)
+    abrirCrear()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zonas.length])
+
   useEffect(() => {
     if (!modalOpen) return
     const t = setTimeout(() => nombreRef.current?.focus(), 80)

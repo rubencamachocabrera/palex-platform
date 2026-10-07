@@ -9,6 +9,7 @@ import {
   IconShieldAlert,
 } from "@/components/ui/Icons"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { CountUp } from "@/components/ui/CountUp"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { AlertasPanel } from "@/components/AlertasPanel"
 import { SlaAlertasWidget } from "@/components/SlaAlertasWidget"
@@ -96,7 +97,7 @@ function KpiCard({ label, value, sub, icon, trend }: {
           </span>
         )}
       </div>
-      <p className="number-reveal text-[30px] leading-none font-extrabold tracking-[-0.04em] text-gray-900 tabular-nums">{value}</p>
+      <p className="number-reveal text-[30px] leading-none font-extrabold tracking-[-0.04em] text-gray-900 tabular-nums"><CountUp value={value} /></p>
       <p className="kpi-label text-gray-500 mt-2.5">{label}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>

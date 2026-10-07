@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
@@ -184,6 +185,7 @@ export default function HospitalDetailPage() {
 
   // Llamada rápida
   const [showLlamada, setShowLlamada] = useState(false)
+  useFabAction("fab:llamada", () => setShowLlamada(true))
 
   const modalNuevaVisitaRef = useModalA11y(showNuevaVisita, () => setShowNuevaVisita(false))
   const modalLlamadaRef = useModalA11y(showLlamada, () => setShowLlamada(false))
@@ -233,6 +235,8 @@ export default function HospitalDetailPage() {
     const t = setInterval(update, 60000)
     return () => clearInterval(t)
   }, [checkinActivo])
+
+  useFabAction("fab:checkin", () => { if (!checkinActivo) hacerCheckin() })
 
   async function hacerCheckin() {
     setCheckinLoading(true)

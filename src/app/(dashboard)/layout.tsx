@@ -11,6 +11,7 @@ import { OnboardingWizard } from "@/components/OnboardingWizard"
 import { NotificationManager } from "@/components/NotificationManager"
 import { QuickActionsFAB } from "@/components/QuickActionsFAB"
 import { InteractionLayer } from "@/components/InteractionLayer"
+import { ActivityIndicator } from "@/components/ActivityIndicator"
 
 export default async function DashboardLayout({
   children,
@@ -37,6 +38,7 @@ export default async function DashboardLayout({
         <QuickActionsFAB />
         <NotificationManager />
         <InteractionLayer />
+        <ActivityIndicator />
       </ToastProvider>
     </KeyboardShortcutsProvider>
   )

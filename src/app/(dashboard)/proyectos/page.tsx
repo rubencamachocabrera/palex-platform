@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { TEAL, ORANGE } from "@/lib/brand"
@@ -255,6 +256,7 @@ export default function ProyectosPage() {
   const [vista, setVista] = useState<"lista" | "kanban">("lista")
   const [compacto, setCompacto] = useState(false)
   const [mostrarModal, setMostrarModal] = useState(false)
+  useFabAction("fab:nuevo-proyecto", () => setMostrarModal(true))
   const [totalCount, setTotalCount] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)

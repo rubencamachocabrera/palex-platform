@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useFabAction } from "@/hooks/useFabAction"
 import { TEAL } from "@/lib/brand"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -213,6 +214,7 @@ export default function RecordatoriosPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"todos" | "para-mi">("todos")
   const [showForm, setShowForm] = useState(false)
+  useFabAction("fab:nuevo-recordatorio", () => setShowForm(true))
   const [showCompletados, setShowCompletados] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)

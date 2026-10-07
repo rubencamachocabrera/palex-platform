@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { TEAL, TEAL_DARK } from "@/lib/brand"
+import { TEAL } from "@/lib/brand"
+import { dispatchFabAction } from "@/hooks/useFabAction"
 
 // ─── Actions por contexto ─────────────────────────────────────────────────────
 interface Action {
@@ -18,42 +19,42 @@ function useContextActions(pathname: string, router: ReturnType<typeof useRouter
     const id = pathname.split("/")[2]
     return [
       { label: "Nueva visita", icon: <IcoPlusDoc />, href: `/visitas?hospitalId=${id}` },
-      { label: "Check-in", icon: <IcoCheckin />, color: TEAL, onClick: () => { window.dispatchEvent(new CustomEvent("fab:checkin", { detail: { hospitalId: id } })) } },
-      { label: "Nueva llamada", icon: <IcoPhone />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:llamada", { detail: { hospitalId: id } })) } },
+      { label: "Check-in", icon: <IcoCheckin />, color: TEAL, onClick: () => { dispatchFabAction("fab:checkin", { hospitalId: id }) } },
+      { label: "Nueva llamada", icon: <IcoPhone />, onClick: () => { dispatchFabAction("fab:llamada", { hospitalId: id }) } },
       { label: "Nueva incidencia", icon: <IcoAlert />, href: `/incidencias?hospitalId=${id}` },
     ]
   }
   if (pathname === "/hospitales") return [
-    { label: "Nuevo hospital", icon: <IcoBuilding />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nuevo-hospital")) } },
+    { label: "Nuevo hospital", icon: <IcoBuilding />, onClick: () => { dispatchFabAction("fab:nuevo-hospital") } },
     { label: "Ver mapa", icon: <IcoMap />, href: "/mapa" },
   ]
   if (pathname.startsWith("/visitas")) return [
-    { label: "Nueva visita", icon: <IcoPlusDoc />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-visita")) } },
+    { label: "Nueva visita", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nueva-visita") } },
     { label: "Ver calendario", icon: <IcoCalendar />, href: "/visitas/calendario" },
   ]
   if (pathname.startsWith("/proyectos/") && pathname.split("/").length > 2) {
     return [
-      { label: "Nueva tarea", icon: <IcoPlusDoc />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-tarea")) } },
+      { label: "Nueva tarea", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nueva-tarea") } },
       { label: "Presentación", icon: <IcoSlides />, href: `${pathname}/presentacion` },
     ]
   }
   if (pathname === "/proyectos") return [
-    { label: "Nuevo proyecto", icon: <IcoPlusDoc />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nuevo-proyecto")) } },
+    { label: "Nuevo proyecto", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nuevo-proyecto") } },
   ]
   if (pathname === "/incidencias") return [
-    { label: "Nueva incidencia", icon: <IcoAlert />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-incidencia")) } },
+    { label: "Nueva incidencia", icon: <IcoAlert />, onClick: () => { dispatchFabAction("fab:nueva-incidencia") } },
   ]
   if (pathname === "/llamadas") return [
-    { label: "Registrar llamada", icon: <IcoPhone />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-llamada")) } },
+    { label: "Registrar llamada", icon: <IcoPhone />, onClick: () => { dispatchFabAction("fab:nueva-llamada") } },
   ]
   if (pathname === "/hardware") return [
-    { label: "Nueva unidad", icon: <IcoChip />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-unidad-hw")) } },
+    { label: "Nueva unidad", icon: <IcoChip />, onClick: () => { dispatchFabAction("fab:nueva-unidad-hw") } },
   ]
   if (pathname === "/recordatorios") return [
-    { label: "Nuevo recordatorio", icon: <IcoPlusDoc />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nuevo-recordatorio")) } },
+    { label: "Nuevo recordatorio", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nuevo-recordatorio") } },
   ]
   if (pathname === "/notas") return [
-    { label: "Nueva nota", icon: <IcoPlusDoc />, onClick: () => { window.dispatchEvent(new CustomEvent("fab:nueva-nota")) } },
+    { label: "Nueva nota", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nueva-nota") } },
   ]
   // Rutas sin acciones específicas
   return []
@@ -97,21 +98,10 @@ export function QuickActionsFAB() {
       <button
         onClick={() => handleAction(actions[0])}
         aria-label={actions[0].label}
-        className="quick-fab"
-        style={{
-          position: "fixed", bottom: 88, right: 20,
-          width: 56, height: 56, borderRadius: "50%",
-          background: `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`, color: "#fff",
-          border: "1px solid rgba(255,255,255,0.3)",
-          boxShadow: "0 10px 28px rgba(0,169,157,0.36)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", zIndex: 40,
-          transition: "transform 0.15s, box-shadow 0.15s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.07)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 14px 32px rgba(0,169,157,0.48)" }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 10px 28px rgba(0,169,157,0.36)" }}
+        title={actions[0].label}
+        className="quick-fab nx-fab"
       >
-        {actions[0].icon}
+        <span className="nx-fab-icon">{actions[0].icon}</span>
       </button>
     )
   }
@@ -119,59 +109,33 @@ export function QuickActionsFAB() {
   return (
     <>
       {/* Backdrop */}
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 39, background: "rgba(0,0,0,0.18)", backdropFilter: "blur(2px)" }}
-        />
-      )}
+      {open && <div className="nx-fab-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
 
-      {/* Acciones expandidas */}
-      <div style={{
-        position: "fixed", bottom: 152, right: 20, zIndex: 40,
-        display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end",
-        pointerEvents: open ? "auto" : "none",
-      }}>
+      {/* Menú de acciones: panel de cristal tipo command menu */}
+      <div
+        className={`nx-fab-menu${open ? " is-open" : ""}`}
+        role="menu"
+        aria-label="Acciones rápidas"
+        aria-hidden={!open}
+      >
+        <p className="nx-fab-menu-title">Acciones rápidas</p>
         {actions.map((action, i) => (
-          <div
+          <button
             key={action.label}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              opacity: open ? 1 : 0,
-              transform: open ? "translateY(0) scale(1)" : "translateY(12px) scale(0.9)",
-              transition: `opacity 0.18s ${i * 0.04}s, transform 0.18s ${i * 0.04}s`,
-              pointerEvents: open ? "auto" : "none",
-            }}
+            role="menuitem"
+            tabIndex={open ? 0 : -1}
+            onClick={() => handleAction(action)}
+            className="quick-fab-action nx-fab-item"
+            style={{ "--i": i } as React.CSSProperties}
           >
-            <span className="quick-fab-label" style={{
-              background: "rgba(15,23,42,0.88)", color: "#f8fafc",
-              padding: "5px 12px", borderRadius: 8,
-              fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              backdropFilter: "blur(6px)",
-            }}>
-              {action.label}
-            </span>
-            <button
-              onClick={() => handleAction(action)}
-              aria-label={action.label}
-              className="quick-fab-action"
-              style={{
-                width: 48, height: 48, borderRadius: "50%",
-                background: action.color ?? "#1e3a5c",
-                color: "#fff", border: "1px solid rgba(255,255,255,0.28)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "0 8px 18px rgba(15,23,42,0.2)",
-                flexShrink: 0,
-                transition: "transform 0.12s",
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.1)" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)" }}
-            >
+            <span className="nx-fab-item-icon" style={action.color ? { background: action.color } : undefined}>
               {action.icon}
-            </button>
-          </div>
+            </span>
+            <span className="flex-1 text-left">{action.label}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="nx-fab-item-arrow" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         ))}
       </div>
 
@@ -180,20 +144,10 @@ export function QuickActionsFAB() {
         onClick={() => setOpen(o => !o)}
         aria-label={open ? "Cerrar menú de acciones" : "Abrir acciones rápidas"}
         aria-expanded={open}
-        className="quick-fab"
-        style={{
-          position: "fixed", bottom: 88, right: 20,
-          width: 56, height: 56, borderRadius: "50%",
-          background: open ? "#374151" : `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`,
-          color: "#fff", border: "1px solid rgba(255,255,255,0.3)",
-          boxShadow: open ? "0 10px 28px rgba(15,23,42,0.3)" : "0 10px 28px rgba(0,169,157,0.36)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", zIndex: 40,
-          transition: "background 0.2s, box-shadow 0.2s, transform 0.2s",
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
-        }}
+        aria-haspopup="menu"
+        className={`quick-fab nx-fab${open ? " is-open" : ""}`}
       >
-        <IcoPlus />
+        <span className="nx-fab-icon nx-fab-plus"><IcoPlus /></span>
       </button>
     </>
   )

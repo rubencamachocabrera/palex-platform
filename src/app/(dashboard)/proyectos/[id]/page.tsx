@@ -9,6 +9,7 @@ import { useToast } from "@/components/Toast"
 import { TagSelector } from "@/components/TagSelector"
 import { PLANTILLAS_PROYECTO } from "@/lib/project-templates"
 import { useModalA11y } from "@/hooks/useModalA11y"
+import { useFabAction } from "@/hooks/useFabAction"
 import {
   type Proyecto, type Tab,
   TABS, ESTADO_LABEL, ESTADO_COLOR, PRIORIDAD, fmtFecha,
@@ -42,6 +43,7 @@ export default function ProyectoDetalle() {
   function changeTab(t: Tab) {
     setTab(t)
   }
+  useFabAction("fab:nueva-tarea", () => setTab("Tareas"), { consume: false })
 
   const [creandoV, setCreandoV] = useState(false)
   const [showNuevaVisitaModal, setShowNuevaVisitaModal] = useState(false)

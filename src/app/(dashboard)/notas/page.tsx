@@ -10,6 +10,7 @@ import { MentionInput, extractMentionIds } from "@/components/MentionInput"
 import { MentionText } from "@/components/MentionText"
 import { useModalA11y } from "@/hooks/useModalA11y"
 
+import { useFabAction } from "@/hooks/useFabAction"
 interface Autor { id: string; nombre: string; rol: string }
 interface Nota {
   id: string
@@ -140,6 +141,11 @@ function NotaCard({
 }
 
 export default function NotasPage() {
+  useFabAction("fab:nueva-nota", () => {
+    const box = document.getElementById("nota-composer")
+    box?.scrollIntoView({ behavior: "smooth", block: "start" })
+    box?.querySelector<HTMLElement>("textarea, input")?.focus({ preventScroll: true })
+  })
   const { perfil } = usePerfil()
   const { success, error: toastError } = useToast()
 
@@ -241,7 +247,7 @@ export default function NotasPage() {
       />
 
       {/* Composer */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 mb-6">
+      <div id="nota-composer" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 mb-6 scroll-mt-24">
         <MentionInput
           value={texto}
           onChange={setTexto}

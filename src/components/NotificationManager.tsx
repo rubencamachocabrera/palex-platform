@@ -198,15 +198,14 @@ export function NotificationManager() {
 
   return (
     <div
-      className="fixed bottom-20 md:bottom-6 right-4 z-35 max-w-xs w-full animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+168px)] md:bottom-6 right-3 md:right-24 z-[38] max-w-xs w-[calc(100%-1.5rem)] animate-in toast-in duration-400"
       style={{ zIndex: 35 }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4">
+      <div className="nexus-toast rounded-2xl p-4">
         <div className="flex items-start gap-3">
           {/* Bell icon */}
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "#f0fdfa", color: TEAL }}
+            className="kpi-icon-tile w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white"
           >
             <IconBell size={20} />
           </div>

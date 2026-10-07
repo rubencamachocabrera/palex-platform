@@ -1,238 +1,269 @@
-# Graph Report - .  (2026-08-20)
+# Graph Report - palex-platform  (2026-10-07)
 
 ## Corpus Check
-- 18 files · ~306,989 words
+- 327 files · ~312,435 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2205 nodes · 4059 edges · 215 communities (137 shown, 78 thin omitted)
-- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 265 edges (avg confidence: 0.78)
+- 2557 nodes · 4623 edges · 241 communities (158 shown, 83 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 279 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
+## Graph Freshness
+- Built from commit: `44ba9986`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
+
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Hardware|Hardware]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_Hospitales|Hospitales]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_ROADMAP-TERMOGRAFIA|ROADMAP-TERMOGRAFIA.md]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Tests E2E|Tests E2E]]
-- [[_COMMUNITY_Skill graphify|Skill graphify]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_Incidencias|Incidencias]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_Hospitales|Hospitales]]
-- [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Dashboard|Dashboard]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Llamadas|Llamadas]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_palex-platform|palex-platform]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_Ventas  CRM (desactivado)|Ventas / CRM (desactivado)]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Hospitales|Hospitales]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Proyectos|Proyectos]]
-- [[_COMMUNITY_perfil|perfil]]
-- [[_COMMUNITY_Incidencias|Incidencias]]
-- [[_COMMUNITY_Comparador de periodos|Comparador de periodos]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_Recordatorios|Recordatorios]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_token|[token]]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_actividad|actividad]]
-- [[_COMMUNITY_public|public]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_id|[id]]]
-- [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_Incidencias|Incidencias]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Dashboard|Dashboard]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Agenda|Agenda]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Datos (mockup)|Datos (mockup)]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_AUDITORIA-SPRINT20|AUDITORIA-SPRINT20.md]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Admin|Admin]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_public|public]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_INFORME_EJECUTIVO.html|INFORME_EJECUTIVO.html]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_AGENTS-ARCHIVE|AGENTS-ARCHIVE.md]]
-- [[_COMMUNITY_app|app]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Librerias  utilidades|Librerias / utilidades]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_src|src]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Visitas|Visitas]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_Config Claude Code|Config Claude Code]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Componentes UI|Componentes UI]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_types|types]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_types|types]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_Config Claude Code|Config Claude Code]]
-- [[_COMMUNITY_Skill UIUX Pro Max|Skill UI/UX Pro Max]]
-- [[_COMMUNITY_Transporte (mockup)|Transporte (mockup)]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_src|src]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_token|[token]]]
-- [[_COMMUNITY_token|[token]]]
-- [[_COMMUNITY_Prisma  DB|Prisma / DB]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_AGENTS-ARCHIVE|AGENTS-ARCHIVE.md]]
-- [[_COMMUNITY_Hooks|Hooks]]
-- [[_COMMUNITY_Config Claude Code|Config Claude Code]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_API routes|API routes]]
-- [[_COMMUNITY_public|public]]
-- [[_COMMUNITY_AGENTS-ARCHIVE.md Sprint 11 — UX y funcionalidad|AGENTS-ARCHIVE.md: Sprint 11 — UX y funcionalidad]]
-- [[_COMMUNITY_AGENTS-ARCHIVE.md Sprint 18 (archive) — Heatmap, Alertas HW, Firma digital, Llamadas|AGENTS-ARCHIVE.md: Sprint 18 (archive) — Heatmap, Alertas HW, Firma digital, Llamadas]]
-- [[_COMMUNITY_API routes GET apiauth...nextauth (NextAuth handler re-export)|API routes: GET /api/auth/[...nextauth] (NextAuth handler re-export)]]
-- [[_COMMUNITY_API routes POST apiauth...nextauth (NextAuth handler re-export)|API routes: POST /api/auth/[...nextauth] (NextAuth handler re-export)]]
-- [[_COMMUNITY_API routes GET apiconfig|API routes: GET /api/config]]
-- [[_COMMUNITY_API routes PATCH apiconfig (ADMIN)|API routes: PATCH /api/config (ADMIN)]]
-- [[_COMMUNITY_API routes DELETE apicontactosid (ADMIN)|API routes: DELETE /api/contactos/[id] (ADMIN)]]
-- [[_COMMUNITY_API routes GET apicronescalar-incidencias (timingSafeEqual)|API routes: GET /api/cron/escalar-incidencias (timingSafeEqual)]]
-- [[_COMMUNITY_Dashboard DashboardLoading|Dashboard: DashboardLoading]]
-- [[_COMMUNITY_Tests E2E Navegacion movil test suite|Tests E2E: Navegacion movil test suite]]
-- [[_COMMUNITY_API routes GET apifavoritos|API routes: GET /api/favoritos]]
-- [[_COMMUNITY_API routes GET apifiltros-guardados|API routes: GET /api/filtros-guardados]]
-- [[_COMMUNITY_API routes GET apigeocode (proxy Nominatim OSM)|API routes: GET /api/geocode (proxy Nominatim OSM)]]
-- [[_COMMUNITY_API routes PATCH apihardwareid (ADMIN)|API routes: PATCH /api/hardware/[id] (ADMIN)]]
-- [[_COMMUNITY_Admin MaterialDrawer|Admin: MaterialDrawer]]
-- [[_COMMUNITY_API routes POST apihardware (ADMIN)|API routes: POST /api/hardware (ADMIN)]]
-- [[_COMMUNITY_API routes GET apihardwaretipos|API routes: GET /api/hardware/tipos]]
-- [[_COMMUNITY_API routes PATCH apihardwaretiposid (ADMIN)|API routes: PATCH /api/hardware/tipos/[id] (ADMIN)]]
-- [[_COMMUNITY_API routes POST apihardwaretipos (ADMIN)|API routes: POST /api/hardware/tipos (ADMIN)]]
-- [[_COMMUNITY_API routes DELETE apihardwareunidadesid (ADMIN)|API routes: DELETE /api/hardware/unidades/[id] (ADMIN)]]
-- [[_COMMUNITY_API routes GET apihealth|API routes: GET /api/health]]
-- [[_COMMUNITY_Hospitales HospitalDetalleLoading|Hospitales: HospitalDetalleLoading]]
-- [[_COMMUNITY_API routes GET apihospitalesid|API routes: GET /api/hospitales/[id]]]
-- [[_COMMUNITY_Librerias  utilidades Brand color tokens (TEALORANGE)|Librerias / utilidades: Brand color tokens (TEAL/ORANGE)]]
-- [[_COMMUNITY_Librerias  utilidades Palex offline IndexedDB wrapper (drafts + sync-queue)|Librerias / utilidades: Palex offline IndexedDB wrapper (drafts + sync-queue)]]
-- [[_COMMUNITY_Librerias  utilidades PLANTILLAS_PROYECTO (4 plantillas hardcoded)|Librerias / utilidades: PLANTILLAS_PROYECTO (4 plantillas hardcoded)]]
-- [[_COMMUNITY_API routes PATCH apimodulos-inlabid|API routes: PATCH /api/modulos-inlab/[id]]]
-- [[_COMMUNITY_API routes { GET, POST }|API routes: { GET, POST }]]
-- [[_COMMUNITY_API routes DELETE apinotasid|API routes: DELETE /api/notas/[id]]]
-- [[_COMMUNITY_API routes DELETE apioportunidadesid|API routes: DELETE /api/oportunidades/[id]]]
-- [[_COMMUNITY_sentry.client.config.ts Sentry client init|sentry.client.config.ts: Sentry client init]]
-- [[_COMMUNITY_sentry.edge.config.ts Sentry edge init|sentry.edge.config.ts: Sentry edge init]]
-- [[_COMMUNITY_sentry.server.config.ts Sentry server init|sentry.server.config.ts: Sentry server init]]
-- [[_COMMUNITY_API routes DELETE apiplantillasid|API routes: DELETE /api/plantillas/[id]]]
-- [[_COMMUNITY_API routes DELETE apiproyectosidadjuntosadjuntoId|API routes: DELETE /api/proyectos/[id]/adjuntos/[adjuntoId]]]
-- [[_COMMUNITY_API routes GET apiproyectosidcomentarios|API routes: GET /api/proyectos/[id]/comentarios]]
-- [[_COMMUNITY_API routes DELETE apiproyectosidentradasentradaId|API routes: DELETE /api/proyectos/[id]/entradas/[entradaId]]]
-- [[_COMMUNITY_API routes GET apiproyectosidentradas|API routes: GET /api/proyectos/[id]/entradas]]
-- [[_COMMUNITY_Proyectos ProyectoError|Proyectos: ProyectoError]]
-- [[_COMMUNITY_API routes DELETE apiproyectosidhitoshitoId|API routes: DELETE /api/proyectos/[id]/hitos/[hitoId]]]
-- [[_COMMUNITY_API routes DELETE apiproyectosidmodulosmoduloId|API routes: DELETE /api/proyectos/[id]/modulos/[moduloId]]]
-- [[_COMMUNITY_API routes GET apiproyectosidmodulos|API routes: GET /api/proyectos/[id]/modulos]]
-- [[_COMMUNITY_public sw.js activate listener|public: sw.js activate listener]]
-- [[_COMMUNITY_public sw.js fetch listener|public: sw.js fetch listener]]
-- [[_COMMUNITY_public sw.js sync listener|public: sw.js sync listener]]
-- [[_COMMUNITY_Skill UIUX Pro Max DesignSystemGenerator._load_reasoning|Skill UI/UX Pro Max: DesignSystemGenerator._load_reasoning]]
-- [[_COMMUNITY_API routes GET apistatscomparador|API routes: GET /api/stats/comparador]]
-- [[_COMMUNITY_API routes POST apivisitasidcomentarios|API routes: POST /api/visitas/[id]/comentarios]]
-- [[_COMMUNITY_API routes DELETE apivisitasid|API routes: DELETE /api/visitas/[id]]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
+- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
+- [[_COMMUNITY_Community 56|Community 56]]
+- [[_COMMUNITY_Community 57|Community 57]]
+- [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
+- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
+- [[_COMMUNITY_Community 64|Community 64]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
+- [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
+- [[_COMMUNITY_Community 71|Community 71]]
+- [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
+- [[_COMMUNITY_Community 74|Community 74]]
+- [[_COMMUNITY_Community 75|Community 75]]
+- [[_COMMUNITY_Community 76|Community 76]]
+- [[_COMMUNITY_Community 77|Community 77]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 79|Community 79]]
+- [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
+- [[_COMMUNITY_Community 82|Community 82]]
+- [[_COMMUNITY_Community 83|Community 83]]
+- [[_COMMUNITY_Community 84|Community 84]]
+- [[_COMMUNITY_Community 85|Community 85]]
+- [[_COMMUNITY_Community 86|Community 86]]
+- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 89|Community 89]]
+- [[_COMMUNITY_Community 90|Community 90]]
+- [[_COMMUNITY_Community 91|Community 91]]
+- [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 93|Community 93]]
+- [[_COMMUNITY_Community 94|Community 94]]
+- [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 96|Community 96]]
+- [[_COMMUNITY_Community 97|Community 97]]
+- [[_COMMUNITY_Community 98|Community 98]]
+- [[_COMMUNITY_Community 99|Community 99]]
+- [[_COMMUNITY_Community 100|Community 100]]
+- [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
+- [[_COMMUNITY_Community 104|Community 104]]
+- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Community 106|Community 106]]
+- [[_COMMUNITY_Community 107|Community 107]]
+- [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
+- [[_COMMUNITY_Community 110|Community 110]]
+- [[_COMMUNITY_Community 111|Community 111]]
+- [[_COMMUNITY_Community 112|Community 112]]
+- [[_COMMUNITY_Community 113|Community 113]]
+- [[_COMMUNITY_Community 114|Community 114]]
+- [[_COMMUNITY_Community 115|Community 115]]
+- [[_COMMUNITY_Community 116|Community 116]]
+- [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
+- [[_COMMUNITY_Community 119|Community 119]]
+- [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
+- [[_COMMUNITY_Community 122|Community 122]]
+- [[_COMMUNITY_Community 123|Community 123]]
+- [[_COMMUNITY_Community 124|Community 124]]
+- [[_COMMUNITY_Community 125|Community 125]]
+- [[_COMMUNITY_Community 126|Community 126]]
+- [[_COMMUNITY_Community 127|Community 127]]
+- [[_COMMUNITY_Community 128|Community 128]]
+- [[_COMMUNITY_Community 129|Community 129]]
+- [[_COMMUNITY_Community 130|Community 130]]
+- [[_COMMUNITY_Community 131|Community 131]]
+- [[_COMMUNITY_Community 132|Community 132]]
+- [[_COMMUNITY_Community 133|Community 133]]
+- [[_COMMUNITY_Community 135|Community 135]]
+- [[_COMMUNITY_Community 136|Community 136]]
+- [[_COMMUNITY_Community 137|Community 137]]
+- [[_COMMUNITY_Community 138|Community 138]]
+- [[_COMMUNITY_Community 139|Community 139]]
+- [[_COMMUNITY_Community 141|Community 141]]
+- [[_COMMUNITY_Community 142|Community 142]]
+- [[_COMMUNITY_Community 143|Community 143]]
+- [[_COMMUNITY_Community 144|Community 144]]
+- [[_COMMUNITY_Community 145|Community 145]]
+- [[_COMMUNITY_Community 146|Community 146]]
+- [[_COMMUNITY_Community 147|Community 147]]
+- [[_COMMUNITY_Community 148|Community 148]]
+- [[_COMMUNITY_Community 149|Community 149]]
+- [[_COMMUNITY_Community 150|Community 150]]
+- [[_COMMUNITY_Community 151|Community 151]]
+- [[_COMMUNITY_Community 152|Community 152]]
+- [[_COMMUNITY_Community 153|Community 153]]
+- [[_COMMUNITY_Community 154|Community 154]]
+- [[_COMMUNITY_Community 155|Community 155]]
+- [[_COMMUNITY_Community 156|Community 156]]
+- [[_COMMUNITY_Community 157|Community 157]]
+- [[_COMMUNITY_Community 158|Community 158]]
+- [[_COMMUNITY_Community 159|Community 159]]
+- [[_COMMUNITY_Community 160|Community 160]]
+- [[_COMMUNITY_Community 161|Community 161]]
+- [[_COMMUNITY_Community 162|Community 162]]
+- [[_COMMUNITY_Community 167|Community 167]]
+- [[_COMMUNITY_Community 171|Community 171]]
+- [[_COMMUNITY_Community 172|Community 172]]
+- [[_COMMUNITY_Community 173|Community 173]]
+- [[_COMMUNITY_Community 174|Community 174]]
+- [[_COMMUNITY_Community 175|Community 175]]
+- [[_COMMUNITY_Community 176|Community 176]]
+- [[_COMMUNITY_Community 177|Community 177]]
+- [[_COMMUNITY_Community 178|Community 178]]
+- [[_COMMUNITY_Community 179|Community 179]]
+- [[_COMMUNITY_Community 180|Community 180]]
+- [[_COMMUNITY_Community 181|Community 181]]
+- [[_COMMUNITY_Community 182|Community 182]]
+- [[_COMMUNITY_Community 183|Community 183]]
+- [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
+- [[_COMMUNITY_Community 190|Community 190]]
+- [[_COMMUNITY_Community 191|Community 191]]
+- [[_COMMUNITY_Community 192|Community 192]]
+- [[_COMMUNITY_Community 193|Community 193]]
+- [[_COMMUNITY_Community 194|Community 194]]
+- [[_COMMUNITY_Community 195|Community 195]]
+- [[_COMMUNITY_Community 196|Community 196]]
+- [[_COMMUNITY_Community 199|Community 199]]
+- [[_COMMUNITY_Community 200|Community 200]]
+- [[_COMMUNITY_Community 201|Community 201]]
+- [[_COMMUNITY_Community 202|Community 202]]
+- [[_COMMUNITY_Community 203|Community 203]]
+- [[_COMMUNITY_Community 204|Community 204]]
+- [[_COMMUNITY_Community 205|Community 205]]
+- [[_COMMUNITY_Community 206|Community 206]]
+- [[_COMMUNITY_Community 207|Community 207]]
+- [[_COMMUNITY_Community 208|Community 208]]
+- [[_COMMUNITY_Community 209|Community 209]]
+- [[_COMMUNITY_Community 210|Community 210]]
+- [[_COMMUNITY_Community 212|Community 212]]
+- [[_COMMUNITY_Community 213|Community 213]]
+- [[_COMMUNITY_Community 214|Community 214]]
+- [[_COMMUNITY_Community 215|Community 215]]
+- [[_COMMUNITY_Community 216|Community 216]]
+- [[_COMMUNITY_Community 217|Community 217]]
+- [[_COMMUNITY_Community 218|Community 218]]
+- [[_COMMUNITY_Community 219|Community 219]]
+- [[_COMMUNITY_Community 220|Community 220]]
+- [[_COMMUNITY_Community 221|Community 221]]
+- [[_COMMUNITY_Community 222|Community 222]]
+- [[_COMMUNITY_Community 223|Community 223]]
+- [[_COMMUNITY_Community 224|Community 224]]
+- [[_COMMUNITY_Community 225|Community 225]]
+- [[_COMMUNITY_Community 226|Community 226]]
+- [[_COMMUNITY_Community 227|Community 227]]
+- [[_COMMUNITY_Community 228|Community 228]]
+- [[_COMMUNITY_Community 229|Community 229]]
+- [[_COMMUNITY_Community 230|Community 230]]
+- [[_COMMUNITY_Community 231|Community 231]]
+- [[_COMMUNITY_Community 232|Community 232]]
+- [[_COMMUNITY_Community 233|Community 233]]
+- [[_COMMUNITY_Community 234|Community 234]]
+- [[_COMMUNITY_Community 235|Community 235]]
+- [[_COMMUNITY_Community 236|Community 236]]
+- [[_COMMUNITY_Community 237|Community 237]]
+- [[_COMMUNITY_Community 238|Community 238]]
+- [[_COMMUNITY_Community 239|Community 239]]
+- [[_COMMUNITY_Community 240|Community 240]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `checkRateLimit()` - 246 edges
+1. `checkRateLimit()` - 253 edges
 2. `db (Prisma client singleton, adapter-pg)` - 106 edges
 3. `NextAuth server instance (auth/handlers/signIn/signOut)` - 101 edges
-4. `useToast()` - 63 edges
+4. `useToast()` - 64 edges
 5. `parseBody()` - 52 edges
-6. `usePerfil()` - 33 edges
-7. `useModalA11y()` - 29 edges
+6. `usePerfil()` - 37 edges
+7. `useModalA11y()` - 31 edges
 8. `types.ts (datos)` - 27 edges
-9. `PageHeader()` - 24 edges
-10. `logActividad()` - 22 edges
+9. `PageHeader()` - 25 edges
+10. `useFabAction()` - 24 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Documento Tecnico HTML (export imprimible)` --semantically_similar_to--> `Documento Tecnico — Plataforma de Gestion de Proyectos Hospitalarios`  [INFERRED] [semantically similar]
   TECHNICAL-DOC.html → TECHNICAL.md
 - `InLab Palex Medical — Informe Ejecutivo (client-facing HTML report)` --semantically_similar_to--> `InLab Map v1.0 — Hospital Central de la Defensa Gomez Ulla`  [INFERRED] [semantically similar]
   INFORME_EJECUTIVO.html → InLab_Gomez_Ulla_v1.0.html
-- `visitas/[id] code-split refactor` --conceptually_related_to--> `VisitaPage()`  [EXTRACTED]
-  AGENTS.md → src/app/(dashboard)/visitas/[id]/page.tsx
 - `DesignSystemGenerator._multi_domain_search` --calls--> `search()`  [EXTRACTED]
   .claude/skills/ui-ux-pro-max/scripts/design_system.py → C:/Users/ruben/Desktop/PALEXAPP/palex-platform/.claude/skills/ui-ux-pro-max/scripts/core.py
+- `PersonCombobox()` --semantically_similar_to--> `TabTareas()`  [INFERRED] [semantically similar]
+  src/app/(dashboard)/recordatorios/page.tsx → src/app/(dashboard)/proyectos/[id]/tabs/TabTareas.tsx
 - `TransporteMapaLeaflet()` --conceptually_related_to--> `TabDashboard`  [AMBIGUOUS]
   src/app/(dashboard)/transporte/_components/MapaLeaflet.tsx → src/app/(dashboard)/datos/_components/TabDashboard.tsx
 
@@ -283,499 +314,583 @@
 - **visitas/[id] code-split module (types+helpers+_components)** — id_page_visitapage, id_types_formreducer, id_helpers_calcprogress, _components_vistaresumen_vistaresumen [EXTRACTED 0.95]
 - **DELETE 500->409 SQLSTATE 23001 fix across hospitales/usuarios** — id_route_delete_hospital, id_route_delete_usuario, sqlstate_23001_bugfix [EXTRACTED 0.95]
 
-## Communities (215 total, 78 thin omitted)
+## Communities (241 total, 83 thin omitted)
 
-### Community 0 - "API routes"
+### Community 0 - "Community 0"
 Cohesion: 0.04
-Nodes (68): GET(), POST(), DELETE(), GET(), POST /api/hospitales/[id]/contactos, GET(), POST(), PATCH() (+60 more)
+Nodes (70): GET(), POST(), DELETE(), GET(), POST /api/hospitales/[id]/contactos, GET(), POST(), PATCH() (+62 more)
 
-### Community 1 - "API routes"
+### Community 1 - "Community 1"
 Cohesion: 0.05
-Nodes (48): DELETE(), GET(), GET(), POST(), DELETE(), GET(), GET(), POST() (+40 more)
+Nodes (52): DELETE(), GET(), GET(), POST(), DELETE(), GET(), GET(), POST() (+44 more)
 
-### Community 2 - "Componentes UI"
+### Community 2 - "Community 2"
 Cohesion: 0.06
 Nodes (47): ALL_TIPOS, CATEGORIAS, dateGroupLabel(), EQUIPOS, ESTADOS, Evento, formatDate(), getEstadoStyle() (+39 more)
 
-### Community 3 - "Transporte (mockup)"
+### Community 3 - "Community 3"
+Cohesion: 0.18
+Nodes (11): getIncidencias() (transporte), getRutas(), generarIncidenciasTransporte(), generarRutas(), RUTAS_DEF (rutas hardcoded zona Sur Córdoba), KpiMini, TabIncidencias (transporte), TabMapa (transporte) (+3 more)
+
+### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (40): getAlertas() (transporte), getIncidencias() (transporte), getRutas(), getTendencias(), diasDesde(), Etapa, ETAPA_COLOR, ETAPA_LABEL (+32 more)
+Nodes (16): AlertasTab(), AsignarUnidadModal(), CAT_FORM_EMPTY, CatTiposModal(), HardwareCatalogo, HardwareUnidad, HW_ESTADO, MatSortKey (+8 more)
 
-### Community 4 - "Hardware"
-Cohesion: 0.05
-Nodes (23): AlertasTab(), AsignarUnidadModal(), CAT_FORM_EMPTY, CatTiposModal(), diasDesde(), EditUnidadDrawer(), fmtAntiguedad(), HardwareCatalogo (+15 more)
-
-### Community 5 - "API routes"
-Cohesion: 0.07
-Nodes (20): GET(), GET(), PATCH(), GET(), GET(), GET(), Params, NextAuth server instance (auth/handlers/signIn/signOut) (+12 more)
-
-### Community 6 - "API routes"
+### Community 5 - "Community 5"
 Cohesion: 0.08
-Nodes (31): POST(), POST(), POST(), canAccessVisita(), DELETE /api/incidencias/[id], generarCodigo(), GET(), POST() (+23 more)
+Nodes (24): GET(), GET(), PATCH(), GET(), GET(), GET(), NextAuth server instance (auth/handlers/signIn/signOut), authConfig (Edge-compatible NextAuth config) (+16 more)
 
-### Community 7 - "Datos (mockup)"
-Cohesion: 0.10
-Nodes (39): getConsumoMensual(), getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria(), getIndicadores(), CAUSAS, DESCS (+31 more)
-
-### Community 8 - "Hospitales"
+### Community 6 - "Community 6"
 Cohesion: 0.06
-Nodes (14): AuthLayout(), CalendarioError(), DashboardError(), ModuleError(), Props, HardwareError(), Props, HospitalError() (+6 more)
+Nodes (37): POST(), POST(), POST(), canAccessVisita(), DELETE /api/incidencias/[id], generarCodigo(), GET(), POST() (+29 more)
 
-### Community 9 - "Librerias / utilidades"
-Cohesion: 0.08
-Nodes (30): Config, ConfiguracionPage(), ModuloItem, NIVEL_COLOR, NIVEL_LABEL, PlantillasSection(), REGLA_LABEL, ScoringSection() (+22 more)
+### Community 7 - "Community 7"
+Cohesion: 0.10
+Nodes (36): getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria(), getIndicadores(), CAUSAS, DESCS, ESTADOS_LIST (+28 more)
 
-### Community 10 - "Proyectos"
-Cohesion: 0.11
-Nodes (30): Toast, ToastContext, ToastContextValue, ToastItem(), ToastProvider(), ToastType, useToast(), ProyectoDetalle() (+22 more)
+### Community 8 - "Community 8"
+Cohesion: 0.05
+Nodes (18): AuthLayout(), LINKS, NODES, CalendarioError(), DashboardError(), ModuleError(), Props, HardwareError() (+10 more)
 
-### Community 11 - "Admin"
-Cohesion: 0.07
-Nodes (18): CatalogoCard(), CatalogoItem, CatalogoTab(), COLORES_PRESET, ESTADO_INFO, FORM_EMPTY, ringStyle, TiposModal() (+10 more)
-
-### Community 12 - "Proyectos"
+### Community 9 - "Community 9"
 Cohesion: 0.09
-Nodes (29): Adjunto, ContactoPivot, EntradaTimeline, ESTADO_COLOR, ESTADO_LABEL, Fase, FASE_ESTADO_COLOR, fmtFecha() (+21 more)
+Nodes (28): Config, ConfiguracionPage(), ModuloItem, NIVEL_COLOR, NIVEL_LABEL, PlantillasSection(), REGLA_LABEL, ScoringSection() (+20 more)
 
-### Community 13 - "Librerias / utilidades"
-Cohesion: 0.13
-Nodes (28): geistSans, metadata, RootLayout(), viewport, OfflineIndicator(), ServiceWorkerRegistrar(), Ctx, Theme (+20 more)
+### Community 10 - "Community 10"
+Cohesion: 0.12
+Nodes (30): useToast(), ModulosInlabSection(), TiposModal(), UnidadesModal(), useModalA11y(), HospitalesAdminPage(), ProyectoDetalle(), Proyecto (+22 more)
 
-### Community 14 - "ROADMAP-TERMOGRAFIA.md"
+### Community 11 - "Community 11"
+Cohesion: 0.07
+Nodes (12): CatalogoCard(), CatalogoItem, CatalogoTab(), COLORES_PRESET, ESTADO_INFO, FORM_EMPTY, ringStyle, UnidadItem (+4 more)
+
+### Community 12 - "Community 12"
+Cohesion: 0.10
+Nodes (35): Adjunto, Contacto, ContactoPivot, EntradaTimeline, Fase, FASE_ESTADO_COLOR, fmtFecha(), HardwareCatalogo (+27 more)
+
+### Community 13 - "Community 13"
+Cohesion: 0.32
+Nodes (16): SaveStatus, UseOfflineSyncOptions, clearSyncQueue(), deleteDraft(), DraftVisita, enqueueSync(), getAllDrafts(), getDraft() (+8 more)
+
+### Community 14 - "Community 14"
 Cohesion: 0.09
 Nodes (30): Anti-Patterns: neon colors, motion-heavy, AI gradients, emojis-as-icons, Pre-Delivery Checklist (contraste, focus, responsive, reduced-motion), Component Specs: buttons, cards, inputs, modals, Design System Master File (Palex Platform), Color Palette: medical teal (#0891B2) + health green (#22C55E), Typography: Figtree (heading) + Noto Sans (body), robots.txt (SEO / crawler rules), Arquitectura propuesta: federar read-only (no migrar de golpe) (+22 more)
 
-### Community 15 - "Componentes UI"
-Cohesion: 0.11
-Nodes (18): Comentario, ComentariosPanel(), Props, extractMentionIds(), MentionInput(), Props, ROL_COLORS, Usuario (+10 more)
+### Community 15 - "Community 15"
+Cohesion: 0.12
+Nodes (16): Comentario, ComentariosPanel(), Props, extractMentionIds(), MentionInput(), Props, ROL_COLORS, Usuario (+8 more)
 
-### Community 16 - "Tests E2E"
+### Community 16 - "Community 16"
 Cohesion: 0.09
 Nodes (22): e2e auth.setup.ts "authenticate" setup project, Hospitales test suite, Login test suite, Navegacion y layout test suite, Pipeline CRM test suite, Proyectos test suite, Visitas test suite, eslintConfig (+14 more)
 
-### Community 17 - "Skill graphify"
-Cohesion: 0.09
-Nodes (27): graphify slash-command trigger (.claude/CLAUDE.md), graphify add <url> ingestion, graphify export neo4j / neo4j-push, graphify SVG/GraphML export, graphify export wiki (--wiki flag), extraction-spec.md subagent prompt template, github-and-merge.md clone/merge flow, hooks.md post-commit hook and CLAUDE.md integration (+19 more)
+### Community 17 - "Community 17"
+Cohesion: 0.27
+Nodes (10): graphify slash-command trigger (.claude/CLAUDE.md), graphify add <url> ingestion, github-and-merge.md clone/merge flow, hooks.md post-commit hook and CLAUDE.md integration, query.md BFS/DFS traversal, path, explain, graphify fast-path query (existing graph.json), graphify full extraction pipeline, transcribe.md video/audio Whisper transcription (+2 more)
 
-### Community 18 - "Librerias / utilidades"
-Cohesion: 0.11
-Nodes (21): canAccessVisita(), NotaPatch, Credentials authorize() callback, checkRateLimitByKey(), lastCleanup, maybePurge(), memIncrement(), memStore (+13 more)
-
-### Community 19 - "Incidencias"
-Cohesion: 0.09
-Nodes (25): CalendarioIncidenciasPage, slaEstadoDe() / slaRestanteMs(), slaInfo(), CATEGORIAS, EQUIPOS, EQUIPOS_MAP, ESTADOS, fmtMin() (+17 more)
-
-### Community 20 - "API routes"
-Cohesion: 0.10
-Nodes (15): cerrarSesion(), GET(), getOrCreateConfig(), PATCH(), activeCache, { auth, handlers, signIn, signOut }, getClientIp(), ModulosReplace (+7 more)
-
-### Community 21 - "Admin"
-Cohesion: 0.09
-Nodes (18): ModuleError(), Props, AdminLayout(), AdminLoading(), CargaData, CargaTrabajoPage(), diasEnMes(), MESES (+10 more)
-
-### Community 22 - "Datos (mockup)"
+### Community 18 - "Community 18"
 Cohesion: 0.12
-Nodes (18): calcR2(), EJE_CONFIG, EjeX, Props, ScatterPlot(), PAGE_SIZES, Props, SortDir (+10 more)
+Nodes (17): GET(), rangoAnterior(), checkRateLimitByKey(), lastCleanup, maybePurge(), memIncrement(), memStore, RateLimitEntry (+9 more)
 
-### Community 23 - "Hospitales"
+### Community 19 - "Community 19"
+Cohesion: 0.09
+Nodes (25): CalendarioIncidenciasPage, slaEstadoDe() / slaRestanteMs(), IncidenciaDetallePage, slaInfo(), CATEGORIAS, EQUIPOS, EQUIPOS_MAP, ESTADOS (+17 more)
+
+### Community 20 - "Community 20"
+Cohesion: 0.09
+Nodes (16): cerrarSesion(), distanciaKm(), GET(), GET(), NotaPatch, activeCache, { auth, handlers, signIn, signOut }, getClientIp() (+8 more)
+
+### Community 21 - "Community 21"
+Cohesion: 0.17
+Nodes (8): CargaData, CargaTrabajoPage(), diasEnMes(), MESES, ROL_COLOR, ROL_LABEL, UsuarioCarga, Perfil
+
+### Community 22 - "Community 22"
+Cohesion: 0.06
+Nodes (29): AreaChart(), TuboKey, DIAS, MESES, Props, Props, Props, TuboKey (+21 more)
+
+### Community 23 - "Community 23"
 Cohesion: 0.09
 Nodes (21): CentroGrupo, Contacto, CONTACTO_EMPTY, FaseResumen, fechaRel(), Hospital, HospitalDetailPage(), PROY_ESTADO_COLOR (+13 more)
 
-### Community 24 - "package.json"
+### Community 24 - "Community 24"
 Cohesion: 0.08
 Nodes (24): dependencies, @auth/prisma-adapter, bcryptjs, @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, next, next-auth (+16 more)
 
-### Community 25 - "Admin"
+### Community 25 - "Community 25"
 Cohesion: 0.09
 Nodes (10): IconProps, isRol(), Rol, ROL_CONFIG, RolConfig, ROLES, RolPill(), RolPillProps (+2 more)
 
-### Community 26 - "Visitas"
-Cohesion: 0.11
-Nodes (19): FotosSeccion(), SaveIndicator(), SectionNav(), ComentariosPanel, PrintView, SignaturePad, VistaResumen, VoiceNotes (+11 more)
-
-### Community 27 - "Dashboard"
+### Community 26 - "Community 26"
 Cohesion: 0.09
-Nodes (12): ESTADO_COLOR, ESTADO_LABEL, ESTADO_MOD_COLOR, ESTADO_MOD_LABEL, ETAPA_BAR_COLOR, ETAPA_COLOR, ETAPA_LABEL, MESES (+4 more)
+Nodes (36): CampoField(), FotosSeccion(), SaveIndicator(), SECTION_ICON, SectionNav(), TagSelector(), useOfflineSync(), exportarJSON() (+28 more)
 
-### Community 28 - "Componentes UI"
-Cohesion: 0.17
-Nodes (7): cn(), Skeleton(), SkeletonCard(), SkeletonFormSection(), SkeletonKPI(), SkeletonProps, SkeletonRow()
+### Community 27 - "Community 27"
+Cohesion: 0.06
+Nodes (26): delta(), AlertaItem, AlertasPanel(), IncSla, PRIO_COLOR, SlaAlertasWidget(), agruparPorMes(), agruparPrevisionPorMes() (+18 more)
 
-### Community 29 - "API routes"
-Cohesion: 0.12
-Nodes (11): GET(), rangoAnterior(), GET(), secretsMatch(), globalForPrisma, computeHospitalScore(), HospitalScore, GET() (+3 more)
+### Community 28 - "Community 28"
+Cohesion: 0.19
+Nodes (8): VisitaLoading(), cn(), Skeleton(), SkeletonCard(), SkeletonFormSection(), SkeletonKPI(), SkeletonProps, SkeletonRow()
 
-### Community 30 - "Llamadas"
-Cohesion: 0.10
-Nodes (13): QuickActionsFAB, HospitalDetailPage, IncidenciaDetallePage, Contacto, FILTROS_FECHA, formatDuration(), Hospital, Llamada (+5 more)
+### Community 29 - "Community 29"
+Cohesion: 0.13
+Nodes (12): GET(), getOrCreateConfig(), PATCH(), GET(), secretsMatch(), globalForPrisma, computeHospitalScore(), HospitalScore (+4 more)
 
-### Community 31 - "Datos (mockup)"
-Cohesion: 0.23
-Nodes (16): TabAlertas, TabAnalitica(), TabCorrelaciones(), TabDashboard, TabExplorador(), TabIA(), TabIncidencias (datos), TabIndicadores() (+8 more)
+### Community 30 - "Community 30"
+Cohesion: 0.11
+Nodes (9): Contacto, FILTROS_FECHA, formatDuration(), Hospital, Llamada, RESULTADOS, IconChevronDown(), IconPhone() (+1 more)
 
-### Community 32 - "palex-platform"
+### Community 31 - "Community 31"
+Cohesion: 0.14
+Nodes (25): DonutChart(), ForecastChart(), TabAlertas, TabAnalitica(), calcR2(), EJE_CONFIG, EjeX, ScatterPlot() (+17 more)
+
+### Community 32 - "Community 32"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
-### Community 33 - "Componentes UI"
-Cohesion: 0.13
-Nodes (14): distanciaKm(), GET(), geoDist(), getCoords(), HospitalMapa, nearestNeighbor(), TIPO_LABELS, ZONE_PALETTE (+6 more)
+### Community 33 - "Community 33"
+Cohesion: 0.17
+Nodes (13): geoDist(), getCoords(), HospitalMapa, MapaLeaflet(), nearestNeighbor(), TIPO_LABELS, ZONE_PALETTE, CoordHospital (+5 more)
 
-### Community 34 - "Transporte (mockup)"
-Cohesion: 0.12
-Nodes (16): ESTADO_PARADA_COLOR, ESTADO_PARADA_LABEL, ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, TransporteMapaLeaflet(), DESCS_INC, ESTADOS_INC, GRAVEDADES (+8 more)
+### Community 34 - "Community 34"
+Cohesion: 0.22
+Nodes (7): ESTADO_PARADA_COLOR, ESTADO_PARADA_LABEL, ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, TransporteMapaLeaflet(), LABORATORIO, EstadoParada
 
-### Community 35 - "Proyectos"
+### Community 35 - "Community 35"
 Cohesion: 0.10
 Nodes (11): KpiCard (transporte dashboard), ESTADO_COLOR, ESTADO_LABEL, ESTADOS, FaseResumen, Hospital, KanbanView, KpiCard() (+3 more)
 
-### Community 36 - "Admin"
-Cohesion: 0.12
-Nodes (14): ModulosInlabSection(), HospitalesAdminPage(), ModulosInlabPage(), adapter, db, main(), adapter, db (+6 more)
+### Community 36 - "Community 36"
+Cohesion: 0.15
+Nodes (8): Modulo, fmt, fmtHora, LiveStamp(), BreadcrumbItem, PageHeader(), PageHeaderProps, Zona
 
-### Community 37 - "Proyectos"
-Cohesion: 0.12
-Nodes (11): Hito, Tarea, ESTADO_FASE, ESTADO_PROY, fmtFecha(), PRIORIDAD_COLOR, progreso(), SlideKPIs() (+3 more)
+### Community 37 - "Community 37"
+Cohesion: 0.24
+Nodes (7): ESTADO_FASE, ESTADO_PROY, fmtFecha(), PRIORIDAD_COLOR, progreso(), SlideKPIs(), SlidePortada()
 
-### Community 38 - "Ventas / CRM (desactivado)"
-Cohesion: 0.14
-Nodes (19): PipelineLoading, DraggableCard(), DroppableColumn(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, fmtEuros() (+11 more)
+### Community 38 - "Community 38"
+Cohesion: 0.13
+Nodes (20): PipelineLoading, DraggableCard(), DroppableColumn(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, fmtEuros() (+12 more)
 
-### Community 39 - "Visitas"
-Cohesion: 0.16
-Nodes (18): CampoField, CheckPills, RadioPills, RatingField, FotosSeccion, InlineFieldEditor, SaveIndicator, SECTION_ICON (+10 more)
+### Community 39 - "Community 39"
+Cohesion: 0.15
+Nodes (16): CampoField, CheckPills, RadioPills, RatingField, FotosSeccion, SaveIndicator, SECTION_ICON, SectionNav (+8 more)
 
-### Community 40 - "Skill UI/UX Pro Max"
+### Community 40 - "Community 40"
 Cohesion: 0.19
 Nodes (18): bool, _detect_page_type(), format_ascii_box(), format_markdown(), format_master_md(), format_page_override_md(), generate_design_system(), _generate_intelligent_overrides() (+10 more)
 
-### Community 41 - "Componentes UI"
+### Community 41 - "Community 41"
 Cohesion: 0.11
 Nodes (4): ADMIN_STEPS, FINAL_STEP, GENERAL_STEPS, Step
 
-### Community 42 - "Hospitales"
-Cohesion: 0.12
-Nodes (12): TipoFavorito, useFavoritos(), HospitalesPage(), TIPO_ICON, Vista, Hospital, TIPO_LABELS, IconActivity() (+4 more)
+### Community 42 - "Community 42"
+Cohesion: 0.13
+Nodes (10): TipoFavorito, useFavoritos(), TIPO_ICON, Vista, Hospital, TIPO_LABELS, IconActivity(), IconBuilding() (+2 more)
 
-### Community 43 - "Proyectos"
+### Community 43 - "Community 43"
 Cohesion: 0.13
 Nodes (13): PROY_ESTADO_COLOR / PROY_ESTADO_LABEL maps, CardContent(), ESTADO_COLOR, ESTADO_LABEL, estadoEfectivo(), ESTADOS, FaseResumen, fmtFecha() (+5 more)
 
-### Community 44 - "API routes"
+### Community 44 - "Community 44"
 Cohesion: 0.13
 Nodes (15): GET(), GET /api/incidencias/[id], PATCH /api/incidencias/[id], GET(), DELETE(), GET(), POST(), PostSchema (+7 more)
 
-### Community 45 - "Proyectos"
-Cohesion: 0.12
-Nodes (16): TabAdjuntos, TabCockpit, TabContactos, TabInfo, TabMateriales, TabModulos, TabResumen, TabTareas (+8 more)
+### Community 45 - "Community 45"
+Cohesion: 0.10
+Nodes (16): GeolocationCheckin(), Toast, ToastContext, ToastContextValue, ToastItem(), ToastType, TabAdjuntos, TabCockpit (+8 more)
 
-### Community 46 - "perfil"
+### Community 46 - "Community 46"
 Cohesion: 0.12
 Nodes (5): avatarColor(), ConfigApp, PerfilData, PerfilPage(), ROL_CONFIG
 
-### Community 47 - "Incidencias"
+### Community 47 - "Community 47"
 Cohesion: 0.15
 Nodes (11): CalendarioIncidenciasPage(), Incidencia, SLA_COLOR, SlaEstado, slaEstadoDe(), slaRestanteMs(), DIAS_SEMANA, diasEnMes() (+3 more)
 
-### Community 48 - "Comparador de periodos"
+### Community 48 - "Community 48"
 Cohesion: 0.15
 Nodes (10): ComparadorData, ComparadorPage(), DeltaBadge(), fmtNum(), MetricCard(), PERIODOS, PeriodStats, Sparkline() (+2 more)
 
-### Community 49 - "Datos (mockup)"
-Cohesion: 0.13
-Nodes (9): AreaChart(), DonutChart(), ForecastChart(), TuboKey, Props, TuboKey, DonutChart(), ResumenTab() (+1 more)
+### Community 49 - "Community 49"
+Cohesion: 0.05
+Nodes (41): 1. Accessibility (CRITICAL), 2. Touch & Interaction (CRITICAL), 3. Performance (HIGH), 4. Layout & Responsive (HIGH), 5. Typography & Color (MEDIUM), 6. Animation (MEDIUM), 7. Style Selection (MEDIUM), 8. Charts & Data (LOW) (+33 more)
 
-### Community 50 - "Recordatorios"
-Cohesion: 0.12
-Nodes (6): isHoy(), isVencido(), PersonCombobox(), Recordatorio, RecordatoriosPage(), UsuarioMini
+### Community 50 - "Community 50"
+Cohesion: 0.11
+Nodes (7): dispatchFabAction(), PendingWindow, isHoy(), isVencido(), PersonCombobox(), Recordatorio, UsuarioMini
 
-### Community 51 - "Skill UI/UX Pro Max"
+### Community 51 - "Community 51"
 Cohesion: 0.16
 Nodes (9): DesignSystemGenerator, Select best matching result based on priority keywords., Extract results list from search result dict., Generate complete design system recommendation., Generates design system recommendations from aggregated searches., Load reasoning rules from CSV., Execute searches across multiple domains., Find matching reasoning rule for a category. (+1 more)
 
-### Community 52 - "[token]"
+### Community 52 - "Community 52"
 Cohesion: 0.12
 Nodes (15): ShareData, ContactoShare, ESTADO_COLOR, ESTADO_LABEL, FASE_COLOR, FaseShare, fmt(), HitoShare (+7 more)
 
-### Community 53 - "Visitas"
+### Community 53 - "Community 53"
 Cohesion: 0.15
 Nodes (9): CalendarioPage(), ESTADO_COLOR, ESTADO_LABEL, Visita, DIAS_SEMANA, diasEnMes(), fechaKey(), MESES (+1 more)
 
-### Community 54 - "Transporte (mockup)"
-Cohesion: 0.15
-Nodes (11): TendenciaChart(), TabTendencias(), LecturaTemperatura, ParadaRuta, PERIODOS_TRANSPORTE, TabKeyTransporte, TendenciaPunto, EstadoIncidencia (+3 more)
+### Community 54 - "Community 54"
+Cohesion: 0.07
+Nodes (24): TempChart(), TendenciaChart(), ESTADO_COLOR, ESTADO_LABEL, TabFlota(), TIPO_LABEL, ESTADO_LABEL, GRAVEDAD_COLOR (+16 more)
 
-### Community 55 - "Componentes UI"
-Cohesion: 0.15
-Nodes (12): FormSection, ESTADO_LABEL, Foto, FotosMap, PrintView(), PrintViewProps, VisitaData, SignaturePad() (+4 more)
+### Community 55 - "Community 55"
+Cohesion: 0.12
+Nodes (23): InlineFieldEditor, VistaResumen, InlineFieldEditor(), calcProgress(), fmtResumenValue(), shouldShowField(), ESTADO_COLOR, FotosMap (+15 more)
 
-### Community 56 - "Componentes UI"
+### Community 56 - "Community 56"
 Cohesion: 0.14
 Nodes (4): Action, QuickActionsFAB(), useContextActions(), Icons SVG library
 
-### Community 57 - "Transporte (mockup)"
-Cohesion: 0.14
-Nodes (11): SEV_COLOR, SEV_LABEL, TIPO_LABEL, TabMapa(), TransporteMapaLeaflet, getRutas(), generarRutas(), Nevera (+3 more)
+### Community 57 - "Community 57"
+Cohesion: 0.07
+Nodes (39): SEV_COLOR, SEV_LABEL, TIPO_LABEL, ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, TabMapa(), TransporteMapaLeaflet, getKpis() (+31 more)
 
-### Community 58 - "Transporte (mockup)"
-Cohesion: 0.23
-Nodes (14): getKpis(), getLecturasTemperatura(), getNeveras(), getTendencias(), generarAlertasTransporte(), generarIncidenciasTransporte(), generarKpis(), generarLecturasTemperatura() (+6 more)
+### Community 58 - "Community 58"
+Cohesion: 0.06
+Nodes (33): 10. Resumen semanal ADMIN (esfuerzo medio), 11. Ruta optimizada mapa (esfuerzo alto), 12. Check-in/Check-out hospitales (esfuerzo medio), 1. Plantillas de proyecto inteligentes (PRIORIDAD ALTA — esfuerzo bajo), 2. Panel de notas del equipo (PRIORIDAD ALTA — esfuerzo bajo), 3. Timeline global de actividad (PRIORIDAD ALTA — esfuerzo bajo), 4. Scoring de hospitales (PRIORIDAD ALTA — esfuerzo bajo), 5. Briefing matutino automatico (PRIORIDAD ALTA — esfuerzo medio) (+25 more)
 
-### Community 59 - "Admin"
+### Community 59 - "Community 59"
 Cohesion: 0.19
 Nodes (9): FORM_EMPTY, TIPO_COLOR, TIPO_LABELS_FULL, Zona, exportarCSV(), exportarExcel(), exportarExcelSimple(), Hospital (+1 more)
 
-### Community 60 - "Visitas"
-Cohesion: 0.14
-Nodes (9): IconSearch(), ESTADO, Hospital, Orden, ProyectoMini, TagRef, TIPO_CONFIG, Visita (+1 more)
+### Community 60 - "Community 60"
+Cohesion: 0.10
+Nodes (15): TagItem, TagPills(), TagSelectorProps, abrirModal() (nueva visita quick-create), crearVisita(), ESTADO, fechaRelativa(), Hospital (+7 more)
 
-### Community 61 - "actividad"
+### Community 61 - "Community 61"
 Cohesion: 0.17
 Nodes (9): ACCION_CFG, ActividadPage(), ALL_ENTIDADES, DayGroup, ENTIDAD_CFG, ENTIDAD_ICONS, groupByDay(), LogEntry (+1 more)
 
-### Community 62 - "public"
+### Community 62 - "Community 62"
 Cohesion: 0.15
 Nodes (12): background_color, categories, description, display, icons, lang, name, orientation (+4 more)
 
-### Community 63 - "Componentes UI"
-Cohesion: 0.15
-Nodes (3): Accion, ACCIONES_BASE, TIPO_RESULTADO_COLOR
+### Community 63 - "Community 63"
+Cohesion: 0.13
+Nodes (7): Accion, ACCIONES_BASE, CommandPalette(), KeyboardShortcutsProvider(), useKeyboardShortcuts(), TIPO_RESULTADO_COLOR, TIPO_RESULTADO_COLOR (busqueda global)
 
-### Community 64 - "Componentes UI"
-Cohesion: 0.17
-Nodes (4): useTheme(), Notificacion, Resultado, TopBar()
+### Community 64 - "Community 64"
+Cohesion: 0.12
+Nodes (10): BottomNav(), NavTab, tabs, OfflineIndicator(), useSidebarToggle(), useTheme(), Notificacion, Resultado (+2 more)
 
-### Community 65 - "[id]"
+### Community 65 - "Community 65"
 Cohesion: 0.18
 Nodes (9): garantiaStatus(), HardwarePassportPage(), INC_ESTADO_COLOR, PRIO_COLOR, PRIO_LABEL, Unidad, ESTADO_COLOR, ESTADO_LABEL (+1 more)
 
-### Community 66 - "package.json"
+### Community 66 - "Community 66"
 Cohesion: 0.15
 Nodes (13): scripts, build, db:generate, db:migrate, db:push, db:seed, db:seed-modulos, db:studio (+5 more)
 
-### Community 67 - "Skill UI/UX Pro Max"
+### Community 67 - "Community 67"
 Cohesion: 0.24
 Nodes (11): detect_domain(), _load_csv(), Load CSV and return list of dicts, Core search function using BM25, Auto-detect the most relevant domain from query, Main search function with auto-domain detection, Search stack-specific guidelines, search() (+3 more)
 
-### Community 68 - "Componentes UI"
-Cohesion: 0.17
-Nodes (9): Icons, NAV_GROUPS, NAV_GROUPS_ADMIN, NAV_GROUPS_PROYECTOS, NAV_GROUPS_VENTAS, NavGroup, NavItem, Props (+1 more)
+### Community 68 - "Community 68"
+Cohesion: 0.12
+Nodes (15): Icons, NAV_GROUPS, NAV_GROUPS_ADMIN, NAV_GROUPS_PROYECTOS, NAV_GROUPS_VENTAS, NavGroup, NavItem, Props (+7 more)
 
-### Community 69 - "Componentes UI"
-Cohesion: 0.24
-Nodes (7): BottomNav(), NavTab, tabs, OnboardingWizard(), PageTransition(), Sidebar(), useSidebarToggle()
+### Community 69 - "Community 69"
+Cohesion: 0.06
+Nodes (30): 10. Patrones y convenciones de codigo, 11. Nomenclatura hardware Palex, 12. Deploy a produccion, 13. Reglas del asistente, 1. Stack tecnico (NO cambiar sin justificacion), 2. Reglas criticas — romper esto causa bugs en produccion, 3. Modulos desactivados, 4. Estructura de ficheros (+22 more)
 
-### Community 70 - "Datos (mockup)"
-Cohesion: 0.18
-Nodes (9): ESTADO_ORDER, GRAV_COLOR, GRAV_ORDER, Props, SortDir, SortKey, TIPO_COLOR, TipoIncidencia (+1 more)
+### Community 70 - "Community 70"
+Cohesion: 0.08
+Nodes (16): CONSUMIBLES, ConsumibleTipo, Consumo(), DateRange, FilterBar(), fmt(), humanDate(), LAST_90_DAYS (+8 more)
 
-### Community 71 - "package.json"
+### Community 71 - "Community 71"
 Cohesion: 0.18
 Nodes (11): devDependencies, dotenv, eslint, eslint-config-next, @playwright/test, @types/bcryptjs, @types/node, @types/pg (+3 more)
 
-### Community 72 - "Incidencias"
+### Community 72 - "Community 72"
 Cohesion: 0.18
 Nodes (6): CAT_LABEL, PERIODO_OPTIONS, PRIO_COLOR, PRIO_LABEL, StatsData, TecnicoStat
 
-### Community 73 - "Componentes UI"
-Cohesion: 0.24
-Nodes (10): Geolocation check-in feature, checkinCercano, GeolocationCheckin, getPosicion, COORDS_POR_CIUDAD, getCoords, distanciaKm (Haversine), GET /api/hospitales/cercano (+2 more)
+### Community 73 - "Community 73"
+Cohesion: 0.18
+Nodes (14): Geolocation check-in feature, Sprint 23 summary, checkinCercano, GeolocationCheckin, getPosicion, COORDS_POR_CIUDAD, getCoords, DELETE /api/hospitales/[id] (+6 more)
 
-### Community 74 - "Dashboard"
-Cohesion: 0.33
-Nodes (10): delta(), agruparPorMes(), agruparPrevisionPorMes(), calcTrend(), DashboardAdmin(), DashboardPage(), DashboardProyectos(), DashboardVentas() (+2 more)
+### Community 74 - "Community 74"
+Cohesion: 0.12
+Nodes (16): Additional Forbidden Patterns, Anti-Patterns (Do NOT Use), Buttons, Cards, Color Palette, Component Specs, Design System Master File, Global Rules (+8 more)
 
-### Community 75 - "Transporte (mockup)"
-Cohesion: 0.22
-Nodes (7): TempChart(), ESTADO_COLOR, ESTADO_LABEL, TabFlota(), TIPO_LABEL, EstadoNevera, TipoSensorNevera
+### Community 75 - "Community 75"
+Cohesion: 0.13
+Nodes (15): 7.10 Busqueda y navegacion, 7.11 Modo campo movil, 7.12 Onboarding, 7.13 Notificaciones, 7.14 Calendario iCal, 7.1 Hospitales, 7.2 Visitas tecnicas, 7.3 Proyectos (+7 more)
 
-### Community 76 - "Datos (mockup)"
+### Community 76 - "Community 76"
 Cohesion: 0.20
 Nodes (7): EQUIPOS, ESTADO_EQUIPO, EstadoEquipo, Props, SEV_CONFIG, TipoAlerta, TIPO_ICON
 
-### Community 77 - "Librerias / utilidades"
-Cohesion: 0.36
-Nodes (8): getActiveUsers(), heartbeat(), lastCleanup, leave(), maybePurge(), memStore, PresenceEntry, POST()
+### Community 77 - "Community 77"
+Cohesion: 0.21
+Nodes (14): Credentials authorize() callback, getActiveUsers(), heartbeat(), lastCleanup, leave(), maybePurge(), memStore, PresenceEntry (+6 more)
 
-### Community 78 - "Componentes UI"
-Cohesion: 0.20
-Nodes (4): EmptyStateAction, EmptyStateProps, IconType, ILLUSTRATIONS
+### Community 78 - "Community 78"
+Cohesion: 0.09
+Nodes (16): AgendaPage(), DIAS_SEMANA, fechaKey(), fmtISO(), Item, TIPO_META, ACCION_ICON, ENTIDAD_LABEL (+8 more)
 
-### Community 79 - "Agenda"
-Cohesion: 0.28
-Nodes (7): AgendaPage(), DIAS_SEMANA, fechaKey(), fmtISO(), Item, TIPO_META, EmptyState()
+### Community 79 - "Community 79"
+Cohesion: 0.21
+Nodes (10): geistMono, geistSans, metadata, RootLayout(), viewport, ServiceWorkerRegistrar(), Ctx, Theme (+2 more)
 
-### Community 80 - "Visitas"
-Cohesion: 0.25
-Nodes (6): InlineFieldEditor(), SECTION_ICON, FormField, IconArrowLeft(), IconArrowRight(), IconClipboard()
+### Community 80 - "Community 80"
+Cohesion: 0.17
+Nodes (11): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, PowerShell 5.1: Vertical scrolling stops working (+3 more)
 
-### Community 81 - "Transporte (mockup)"
-Cohesion: 0.22
-Nodes (6): ESTADO_LABEL, GRAVEDAD_COLOR, TIPO_LABEL, IncidenciaTransporte, TipoIncidenciaTransporte, ESTADO_COLOR
+### Community 81 - "Community 81"
+Cohesion: 0.18
+Nodes (6): fmtFechaInput(), ComentariosPanel, TabInfo(), TabTareas(), TAREA_PRIO, TareasQFProps
 
-### Community 82 - "Skill UI/UX Pro Max"
+### Community 82 - "Community 82"
 Cohesion: 0.28
 Nodes (5): BM25, Lowercase, split, remove punctuation, filter short words, Build BM25 index from documents, Score all documents against query, BM25 ranking algorithm for text search
 
-### Community 83 - "Visitas"
-Cohesion: 0.32
-Nodes (8): Sprint 23 summary, visitas/[id] code-split refactor, useReducer form-state pattern, DELETE /api/hospitales/[id], DELETE /api/usuarios/[id], formReducer(), FormState, SQLSTATE 23001 vs 23503 FK fix
+### Community 83 - "Community 83"
+Cohesion: 0.17
+Nodes (11): 12. Rendimiento, 13. Estado actual y deuda tecnica, 14. Comandos de desarrollo, 5. Sistema de autenticacion y roles, Backlog (no priorizado), Completado (sprints 1-18 + hardening corporativo), Deuda tecnica activa, Documento Tecnico — Plataforma de Gestion de Proyectos Hospitalarios (+3 more)
 
-### Community 85 - "Datos (mockup)"
-Cohesion: 0.25
-Nodes (3): DIAS, MESES, Props
+### Community 84 - "Community 84"
+Cohesion: 0.11
+Nodes (10): ActivityIndicator(), NetWindow, InteractionLayer(), SELECTOR, NotificationManager(), NotifItem, OnboardingWizard(), PageTransition() (+2 more)
 
-### Community 86 - "Transporte (mockup)"
-Cohesion: 0.25
-Nodes (4): ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, AlertaTransporte, KpiResumen
+### Community 85 - "Community 85"
+Cohesion: 0.18
+Nodes (10): 1. Que es el proyecto, 2. Stack tecnico, 3. Estructura de archivos clave, 4. Roles del sistema, 5. Base de datos — Prisma 7, 6. API Routes principales, 7. URL routing — CRITICO, 8. UI/UX — Reglas criticas (+2 more)
 
-### Community 87 - "Librerias / utilidades"
-Cohesion: 0.32
-Nodes (7): FORM_SCHEMA (13+2 secciones de visita), getSections(), computeHospitalScore(), DEFAULT_SCORING_CONFIG / getScoringConfig(), analizarVisita(), calcularScore(), detectarRiesgos()
+### Community 86 - "Community 86"
+Cohesion: 0.31
+Nodes (11): QuickActionsFAB, HardwarePage(), useFabAction(), usePerfil(), HospitalDetailPage, HospitalesPage(), InlabPage(), LlamadasPage() (+3 more)
 
-### Community 88 - "package.json"
+### Community 87 - "Community 87"
+Cohesion: 0.38
+Nodes (6): FORM_SCHEMA (13+2 secciones de visita), getSections(), DEFAULT_SCORING_CONFIG / getScoringConfig(), analizarVisita(), calcularScore(), detectarRiesgos()
+
+### Community 88 - "Community 88"
 Cohesion: 0.25
 Nodes (7): engines, node, name, prisma, seed, private, version
 
-### Community 89 - "AUDITORIA-SPRINT20.md"
+### Community 89 - "Community 89"
 Cohesion: 0.29
 Nodes (7): Roadmap corporativo Fases 1-9 (seguridad/BD/Redis/paginacion/Zod/code-splitting/JWT), Auditoria profunda — Sprint 20 (2026-07-09), Hardcoded TEAL/ORANGE hex consolidated into brand.ts imports, IDOR sin filtro de zona en score/relaciones de incidencias, PageHeader migrated into 12 additional pages, checkRateLimit/checkRateLimitByKey migrated to real Redis (async), $transaction Serializable added to relaciones POST + SLA-pause PATCH
 
-### Community 90 - "Visitas"
-Cohesion: 0.29
-Nodes (3): CampoField(), IconCheck(), IconStar()
+### Community 91 - "Community 91"
+Cohesion: 0.20
+Nodes (7): getTendencias(), ResumenCard, TabTendencias (transporte), TransportePage(), TabKeyTransporte (type), UnauthorizedPage(), VentasLayout()
 
-### Community 91 - "API routes"
-Cohesion: 0.29
-Nodes (6): RecordatorioCreate, DELETE /api/recordatorios/[id], PATCH /api/recordatorios/[id], GET(), POST(), SELECT
+### Community 92 - "Community 92"
+Cohesion: 0.20
+Nodes (10): Step 0 - GitHub repos and multi-path merge (only if a URL or several paths), Step 1 - Ensure graphify is installed, Step 2.5 - Video and audio (only if video files detected), Step 2 - Detect files, Step 4 - Build graph, cluster, analyze, generate outputs, Step 5 - Label communities, Step 6 - Generate Obsidian vault (opt-in) + HTML, Step 9 - Save manifest, update cost tracker, clean up, and report (+2 more)
 
-### Community 92 - "Admin"
-Cohesion: 0.33
-Nodes (5): ACCION_ICON, ENTIDAD_LABEL, fechaRel(), fmtFecha(), LogEntry
-
-### Community 93 - "API routes"
+### Community 93 - "Community 93"
 Cohesion: 0.29
 Nodes (6): NotaPatch Zod schema, PATCH /api/notas/[id], GET(), NotaCreate, NotaCreate Zod schema, POST()
 
-### Community 95 - "Componentes UI"
-Cohesion: 0.53
-Nodes (4): CommandPalette(), KeyboardShortcutsProvider(), useKeyboardShortcuts(), TIPO_RESULTADO_COLOR (busqueda global)
+### Community 95 - "Community 95"
+Cohesion: 0.24
+Nodes (9): diasDesde(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, HistorialEntry, Oportunidad, PipelineFichaPage() (+1 more)
 
-### Community 96 - "Componentes UI"
-Cohesion: 0.33
-Nodes (3): IncSla, PRIO_COLOR, SlaAlertasWidget()
+### Community 96 - "Community 96"
+Cohesion: 0.22
+Nodes (7): getAlertas() (transporte), generarAlertasTransporte(), generarLecturasTemperatura(), generarNeveras(), seededRand(), AlertaTransporte (interface), Nevera (interface)
 
-### Community 97 - "INFORME_EJECUTIVO.html"
+### Community 97 - "Community 97"
 Cohesion: 0.40
 Nodes (6): CONTEXT.md — compact project snapshot (post-audit, junio 2026), InLab Palex Medical — Informe Ejecutivo (client-facing HTML report), InLab Map v1.0 — Hospital Central de la Defensa Gomez Ulla, InLab (commercial name of palex-platform), Palex Medical (client organization), README.md — default create-next-app boilerplate
 
-### Community 98 - "API routes"
+### Community 98 - "Community 98"
 Cohesion: 0.53
 Nodes (4): GET(), icalEscape(), toICalDate(), toICalDateTime()
 
-### Community 99 - "Skill UI/UX Pro Max"
+### Community 99 - "Community 99"
 Cohesion: 0.33
 Nodes (6): DesignSystemGenerator._apply_reasoning, DesignSystemGenerator._extract_results, DesignSystemGenerator._find_reasoning_rule, DesignSystemGenerator.generate, DesignSystemGenerator._multi_domain_search, DesignSystemGenerator._select_best_match
 
-### Community 100 - "AGENTS-ARCHIVE.md"
+### Community 100 - "Community 100"
 Cohesion: 0.40
 Nodes (5): Ideas de features — Sesion junio 2026 (12 propuestas priorizadas), Sprint 15 (archive) — Tags, Menciones y Grupos, Sprint 16 (archive) — Modo campo, Onboarding, Recordatorios, Sprint 17 (archive) — Favoritos, Equipo, Excel, Notificaciones, iCal, escalar-incidencias.yml GitHub Actions cron
 
-### Community 101 - "app"
+### Community 101 - "Community 101"
 Cohesion: 0.40
 Nodes (3): ErrorPageProps, GlobalError(), GlobalError()
 
-### Community 103 - "Componentes UI"
-Cohesion: 0.40
-Nodes (4): TagItem, TagPills(), TagSelector(), TagSelectorProps
+### Community 102 - "Community 102"
+Cohesion: 0.22
+Nodes (9): graphify export neo4j / neo4j-push, graphify SVG/GraphML export, graphify export wiki (--wiki flag), graphify MCP stdio server (--mcp), Step 4 - build graph, cluster, analyze, generate outputs, Step 5 - label communities with plain-language names, Step 6 - Obsidian vault (opt-in) + HTML graph export, Step 9 - save manifest, update cost tracker, cleanup (+1 more)
 
-### Community 104 - "Librerias / utilidades"
-Cohesion: 0.50
-Nodes (4): FieldType, FORM_SCHEMA, getSections(), initFormData()
+### Community 103 - "Community 103"
+Cohesion: 0.22
+Nodes (9): 4. Modelo de datos, Diagrama de relaciones, Entidades de negocio, Entidades de proyecto, Enums (15 totales), Hardware, Indices de base de datos (15), Modelos principales (27 tablas) (+1 more)
 
-### Community 105 - "API routes"
+### Community 104 - "Community 104"
+Cohesion: 0.25
+Nodes (6): ModuleError(), Props, ModuleError(), Props, ModuleError(), Props
+
+### Community 105 - "Community 105"
 Cohesion: 0.40
 Nodes (4): GET /api/oportunidades/[id], PATCH /api/oportunidades/[id], GET(), POST()
 
-### Community 106 - "API routes"
+### Community 106 - "Community 106"
 Cohesion: 0.40
 Nodes (4): GET /api/plantillas/[id], PATCH /api/plantillas/[id], GET(), POST()
 
-### Community 107 - "API routes"
+### Community 107 - "Community 107"
 Cohesion: 0.60
 Nodes (5): DELETE /api/proyectos/[id]/share, POST /api/proyectos/[id]/share, GET /api/share/hardware/[id] (pasaporte HW publico), GET /api/share/proyecto/[token] (proyecto publico), GET /api/share/[token] (mapa publico)
 
-### Community 109 - "API routes"
+### Community 109 - "Community 109"
 Cohesion: 0.40
 Nodes (4): DELETE /api/tags/[id], PATCH /api/tags/[id], GET(), POST()
 
-### Community 110 - "API routes"
+### Community 110 - "Community 110"
 Cohesion: 0.50
 Nodes (5): GET /api/visitas/estadisticas, DELETE /api/visitas/[id]/comentarios/[comentarioId], GET /api/visitas/[id]/comentarios, GET /api/visitas/[id], PATCH /api/visitas/[id]
 
-### Community 111 - "Visitas"
-Cohesion: 0.40
-Nodes (4): abrirModal() (nueva visita quick-create), crearVisita(), fechaRelativa(), VisitasPage()
+### Community 111 - "Community 111"
+Cohesion: 0.25
+Nodes (7): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
-### Community 112 - "Componentes UI"
-Cohesion: 0.40
-Nodes (4): AudioNota, RecordState, VoiceNotes(), VoiceNotesProps
+### Community 112 - "Community 112"
+Cohesion: 0.25
+Nodes (7): Arquitectura propuesta (resumen), Idea central, Preguntas abiertas (resolver antes de planificar implementación), Próximo paso, Quick wins independientes (no bloqueados por lo anterior), Roadmap — Cadena de frío / termografía como core del negocio, Roadmap por fases
 
-### Community 113 - "Config Claude Code"
+### Community 113 - "Community 113"
 Cohesion: 0.50
 Nodes (3): hooks, PreToolUse, SessionStart
 
-### Community 114 - "API routes"
+### Community 114 - "Community 114"
 Cohesion: 0.50
 Nodes (4): GET /api/checkin, PATCH /api/checkin/[id] (check-out), POST /api/checkin (check-in, transaccion Serializable), POST /api/favoritos (toggle create/delete)
 
-### Community 116 - "API routes"
+### Community 115 - "Community 115"
+Cohesion: 0.29
+Nodes (5): ModuleError(), Props, AdminLayout(), AdminLoading(), EquipoPage()
+
+### Community 116 - "Community 116"
 Cohesion: 0.50
 Nodes (4): GET /api/hardware/unidades, PATCH /api/hardware/unidades/[id] (valida ESTADOS_VALIDOS), POST /api/hardware/unidades (ADMIN|PROYECTOS, single+bulk, valida ESTADOS_VALIDOS), PUT /api/hardware/unidades (ADMIN|PROYECTOS, bulk assign)
 
-### Community 117 - "types"
+### Community 117 - "Community 117"
 Cohesion: 0.50
 Nodes (4): NextAuth JWT type extension (role), NextAuth Session type extension, NextAuth User type extension (role), tsconfig @/* path alias
 
-### Community 118 - "API routes"
+### Community 118 - "Community 118"
 Cohesion: 0.50
 Nodes (4): POST /api/proyectos/[id]/aplicar-plantilla, POST /api/proyectos/[id]/copiar-desde, PATCH /api/proyectos/[id]/hitos/[hitoId], POST /api/proyectos/[id]/hitos
 
-### Community 119 - "types"
+### Community 119 - "Community 119"
 Cohesion: 0.50
 Nodes (3): JWT, Session, User
 
-### Community 120 - "Skill UI/UX Pro Max"
+### Community 120 - "Community 120"
 Cohesion: 0.50
 Nodes (4): search.py --design-system command, --persist Master + page-overrides pattern, UI/UX Pre-Delivery Checklist, UI/UX Pro Max design intelligence skill
 
-### Community 121 - "API routes"
+### Community 121 - "Community 121"
 Cohesion: 0.50
 Nodes (3): GET /api/usuarios/menciones, GET(), POST()
 
-### Community 124 - "Transporte (mockup)"
+### Community 124 - "Community 124"
 Cohesion: 0.67
 Nodes (3): getKpis() (transporte), generarKpis() (transporte), KpiResumen (interface, transporte)
 
-### Community 125 - "API routes"
+### Community 125 - "Community 125"
 Cohesion: 0.67
 Nodes (3): DELETE /api/hardware/docs/[docId] (ADMIN), GET /api/hardware/docs/[docId] (descarga base64), POST /api/hardware/[id]/docs (ADMIN)
 
-### Community 126 - "API routes"
+### Community 126 - "Community 126"
 Cohesion: 0.67
 Nodes (3): GET /api/hardware (catalogo + stock), GET /api/hardware/[id]/docs, GET /api/hardware/[id]
 
-### Community 127 - "src"
+### Community 127 - "Community 127"
 Cohesion: 0.67
 Nodes (3): register(), sentry.edge.config module, sentry.server.config module
 
-### Community 128 - "API routes"
+### Community 128 - "Community 128"
 Cohesion: 0.67
 Nodes (3): DELETE /api/modulos-inlab/[id], GET /api/modulos-inlab, POST /api/modulos-inlab
 
-### Community 129 - "[token]"
+### Community 129 - "Community 129"
 Cohesion: 0.67
 Nodes (3): HardwarePassportPage, ShareProyectoPage, ShareMapaPage
+
+### Community 215 - "Community 215"
+Cohesion: 0.29
+Nodes (7): extraction-spec.md subagent prompt template, graphify confidence_score rubric (EXTRACTED/INFERRED/AMBIGUOUS), graphify node ID normalization rule, Part B - parallel semantic-extraction subagents, Step 1 - detect/install graphify Python interpreter, Step 2 - detect corpus files, Step 3 - extract entities and relationships (AST + semantic)
+
+### Community 216 - "Community 216"
+Cohesion: 0.29
+Nodes (7): 6. API REST, Endpoints (~50 rutas), Hospitales, Otros, Proyectos, Seguridad de APIs, Visitas
+
+### Community 217 - "Community 217"
+Cohesion: 0.33
+Nodes (5): Auditoria profunda — Sprint 20 (2026-07-09), Logica de negocio / Prisma, Prioridad de ejecucion aplicada este sprint, Seguridad API, UX / consistencia frontend
+
+### Community 218 - "Community 218"
+Cohesion: 0.40
+Nodes (5): EditUnidadDrawer(), InstalacionesTab(), MaterialesTab(), ModelCard(), fmtEuros()
+
+### Community 219 - "Community 219"
+Cohesion: 0.40
+Nodes (5): 1. Vision general, Para quien, Que es, URL de produccion, Uso privado
+
+### Community 220 - "Community 220"
+Cohesion: 0.40
+Nodes (5): 3. Arquitectura, Estructura de directorios, Flujo de una peticion, Grafo de dependencias (Graphify), Patron general
+
+### Community 221 - "Community 221"
+Cohesion: 0.40
+Nodes (5): 9. Infraestructura, Base de datos, Deploy (Railway), PWA, Redis (Upstash)
+
+### Community 222 - "Community 222"
+Cohesion: 0.50
+Nodes (3): For /graphify add, For --watch, graphify reference: add a URL and watch a folder
+
+### Community 223 - "Community 223"
+Cohesion: 0.50
+Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify reference: commit hook and native CLAUDE.md integration
+
+### Community 224 - "Community 224"
+Cohesion: 0.50
+Nodes (3): For /graphify explain, For /graphify path, graphify reference: query, path, explain
+
+### Community 225 - "Community 225"
+Cohesion: 0.50
+Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
+
+### Community 226 - "Community 226"
+Cohesion: 0.50
+Nodes (3): Deploy on Vercel, Getting Started, Learn More
+
+### Community 227 - "Community 227"
+Cohesion: 0.83
+Nodes (3): canAccessVisita(), GET(), POST()
+
+### Community 228 - "Community 228"
+Cohesion: 0.50
+Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
+
+### Community 229 - "Community 229"
+Cohesion: 0.50
+Nodes (3): adapter, db, MODULOS
+
+### Community 230 - "Community 230"
+Cohesion: 0.50
+Nodes (4): 10. Seguridad, Headers HTTP (next.config.ts), Protecciones, Sentry
+
+### Community 231 - "Community 231"
+Cohesion: 0.50
+Nodes (4): 11. Testing y calidad, Accesibilidad, Lighthouse (ultima auditoria), Playwright E2E
+
+### Community 232 - "Community 232"
+Cohesion: 0.50
+Nodes (4): 2. Stack tecnico, Dependencias clave, Dependencias de desarrollo, Tecnologias principales
+
+### Community 233 - "Community 233"
+Cohesion: 0.50
+Nodes (4): 8. Frontend — Componentes y patrones, Componentes clave, Hooks custom, Patrones de UI
 
 ## Ambiguous Edges - Review These
 - `IncidenciasPage()` → `QuickActionsFAB`  [AMBIGUOUS]
@@ -800,9 +915,9 @@ Nodes (3): HardwarePassportPage, ShareProyectoPage, ShareMapaPage
   design-system/palex-platform/MASTER.md · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **721 isolated node(s):** `SessionStart`, `PreToolUse`, `allow`, `bool`, `{ auth }` (+716 more)
+- **940 isolated node(s):** `SessionStart`, `PreToolUse`, `allow`, `bool`, `{ auth }` (+935 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **78 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **83 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
