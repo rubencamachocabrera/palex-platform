@@ -49,18 +49,60 @@ export function decodificar(p: InlabPayload): Dataset {
 export type Urgencia = "todas" | "urgente" | "normal"
 
 export interface Filtros {
-  area: string | null
+  /** Work areas seleccionadas; vacío = todas */
+  areas: string[]
   consumible: string | null
   puesto: string | null
   urgencia: Urgencia
 }
 
-export const FILTROS_VACIOS: Filtros = { area: null, consumible: null, puesto: null, urgencia: "todas" }
+export const FILTROS_VACIOS: Filtros = { areas: [], consumible: null, puesto: null, urgencia: "todas" }
 
 export interface Rango { desde: string; hasta: string }
 
 const enRango = (d: string, r: Rango) => d >= r.desde && d <= r.hasta
 const okUrg = (urg: boolean, f: Filtros) => f.urgencia === "todas" || (f.urgencia === "urgente") === urg
+const okArea = (area: string, f: Filtros) => f.areas.length === 0 || f.areas.includes(area)
+
+// ─── Work areas ──────────────────────────────────────────────────────────────
+
+/** Añade o quita un área de la selección. Si quedan todas seleccionadas se normaliza a [] (= todas). */
+export function alternarArea(sel: string[], area: string, todas: string[]): string[] {
+  const next = sel.length === 0 ? [area] : sel.includes(area) ? sel.filter(a => a !== area) : [...sel, area]
+  return next.length >= todas.length && todas.every(a => next.includes(a)) ? [] : next
+}
+
+/** Nombre legible de un código de área de InLab (PLANTA8 → Planta 8, EXTRACCIONES → Extracciones). */
+export function etiquetaArea(area: string): string {
+  const m = /^PLANTA\s*(\d+)$/i.exec(area.trim())
+  if (m) return `Planta ${m[1]}`
+  if (area === area.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(area)) return area.charAt(0) + area.slice(1).toLowerCase()
+  return area
+}
+
+export type GrupoArea = "Extracciones" | "Urgencias" | "Plantas" | "Laboratorio" | "Otras"
+/** Agrupa las áreas para los atajos del selector. */
+export function grupoArea(area: string): GrupoArea {
+  const n = area.toUpperCase()
+  if (n.includes("EXTRAC")) return "Extracciones"
+  if (n.includes("URGEN")) return "Urgencias"
+  if (n.startsWith("PLANTA") || n.startsWith("PL-")) return "Plantas"
+  if (n.includes("LAB")) return "Laboratorio"
+  return "Otras"
+}
+
+/** Volumen por área en el rango (ignora el filtro de áreas: sirve para el selector). */
+export function volumenPorArea(ds: Dataset, r: Rango, f: Filtros): Map<string, { registros: number; ordenes: number }> {
+  const m = new Map<string, { registros: number; ordenes: number }>()
+  for (const a of ds.actividad) {
+    if (!enRango(a.d, r)) continue
+    const x = m.get(a.area) ?? { registros: 0, ordenes: 0 }
+    x.registros += f.urgencia === "todas" ? a.registros : f.urgencia === "urgente" ? a.urgentes : a.registros - a.urgentes
+    x.ordenes += a.ordenes ?? 0
+    m.set(a.area, x)
+  }
+  return m
+}
 
 /** Periodo inmediatamente anterior de la misma duración. */
 export function periodoAnterior(r: Rango): Rango {
@@ -90,25 +132,25 @@ export function kpis(ds: Dataset, r: Rango, f: Filtros): Kpis {
   let registros = 0, unidades = 0, urgentes = 0, eventos = 0, ordenes = 0, hayOrdenes = false
   const dias = new Set<string>()
   for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || (f.area && c.area !== f.area) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     registros += c.registros; unidades += c.unidades
     if (c.urg) urgentes += c.registros
     dias.add(c.d)
   }
   if (!f.consumible && f.urgencia === "todas") {
     for (const a of ds.actividad) {
-      if (!enRango(a.d, r) || (f.area && a.area !== f.area)) continue
+      if (!enRango(a.d, r) || !okArea(a.area, f)) continue
       if (a.ordenes !== null) { ordenes += a.ordenes; hayOrdenes = true }
     }
   }
   for (const e of ds.eventos) {
-    if (!enRango(e.d, r) || (f.area && e.area !== f.area) || (f.puesto && e.puesto !== f.puesto)) continue
+    if (!enRango(e.d, r) || !okArea(e.area, f) || (f.puesto && e.puesto !== f.puesto)) continue
     eventos += e.cantidad
   }
   const h = emptyHist()
   let n = 0
   for (const t of ds.tiempos) {
-    if (t.tramo !== "TOTAL" || !enRango(t.d, r) || (f.area && t.area !== f.area) || !okUrg(t.urg, f)) continue
+    if (t.tramo !== "TOTAL" || !enRango(t.d, r) || !okArea(t.area, f) || !okUrg(t.urg, f)) continue
     addHist(h, t.hist); n += t.n
   }
   return {
@@ -148,7 +190,7 @@ export function serieVolumen(ds: Dataset, r: Rango, f: Filtros, campo: "registro
   const acc = new Map<string, number>()
   const conDatos = new Set(ds.dias)
   for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || (f.area && c.area !== f.area) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     const k = g === "semana" ? inicioSemana(c.d) : c.d
     acc.set(k, (acc.get(k) ?? 0) + c[campo])
   }
@@ -171,7 +213,7 @@ export function prevision(ds: Dataset, r: Rango, f: Filtros): { semanas: Punto[]
   const diasCon = new Set(ds.dias.filter(d => enRango(d, r)))
   for (const d of diasCon) { const k = inicioSemana(d); const s = sem.get(k) ?? { v: 0, dias: 0 }; s.dias++; sem.set(k, s) }
   for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || (f.area && c.area !== f.area) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     const s = sem.get(inicioSemana(c.d)); if (s) s.v += c.registros
   }
   const completas = [...sem.entries()].filter(([, s]) => s.dias >= 5).sort(([a], [b]) => a.localeCompare(b)).slice(-12)
@@ -196,7 +238,7 @@ export interface Desglose { clave: string; registros: number; unidades: number; 
 export function porConsumible(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
   const m = new Map<string, Desglose>()
   for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || (f.area && c.area !== f.area) || !okUrg(c.urg, f)) continue
+    if (!enRango(c.d, r) || !okArea(c.area, f) || !okUrg(c.urg, f)) continue
     const x = m.get(c.consumible) ?? { clave: c.consumible, registros: 0, unidades: 0, urgentes: 0 }
     x.registros += c.registros; x.unidades += c.unidades; if (c.urg) x.urgentes += c.registros
     m.set(c.consumible, x)
@@ -222,7 +264,7 @@ export function porArea(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
 export function porPuesto(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
   const m = new Map<string, Desglose>()
   for (const p of ds.puestos) {
-    if (!enRango(p.d, r) || (f.area && p.area !== f.area)) continue
+    if (!enRango(p.d, r) || !okArea(p.area, f)) continue
     const k = p.puesto
     const x = m.get(k) ?? { clave: k, registros: 0, unidades: 0, urgentes: 0, eventos: 0 }
     x.registros += p.registros; x.unidades += p.unidades; x.urgentes += p.urgentes; x.eventos = (x.eventos ?? 0) + p.eventos
@@ -237,7 +279,7 @@ export function heatmapSemanaHora(ds: Dataset, r: Rango, f: Filtros): { m: numbe
   const diasPorDow = new Array(7).fill(0)
   const vistos = new Set<string>()
   for (const a of ds.actividad) {
-    if (!enRango(a.d, r) || (f.area && a.area !== f.area)) continue
+    if (!enRango(a.d, r) || !okArea(a.area, f)) continue
     const dow = diaSemana(a.d)
     if (!vistos.has(a.d)) { vistos.add(a.d); diasPorDow[dow]++ }
     for (let h = 0; h < 24; h++) suma[dow][h] += a.porHora[h] ?? 0
@@ -265,7 +307,7 @@ export function tiemposPorTramo(ds: Dataset, r: Rango, f: Filtros): StatTiempo[]
   return TRAMOS.map(t => {
     const h = emptyHist(); let n = 0, s = 0
     for (const x of ds.tiempos) {
-      if (x.tramo !== t || !enRango(x.d, r) || (f.area && x.area !== f.area) || !okUrg(x.urg, f)) continue
+      if (x.tramo !== t || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
       addHist(h, x.hist); n += x.n; s += x.suma
     }
     return stat(t, n, s, h)
@@ -276,7 +318,7 @@ export function tiemposPorTramo(ds: Dataset, r: Rango, f: Filtros): StatTiempo[]
 export function tiemposPor(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo, dim: "area" | "urgencia"): StatTiempo[] {
   const m = new Map<string, { h: number[]; n: number; s: number }>()
   for (const x of ds.tiempos) {
-    if (x.tramo !== tramo || !enRango(x.d, r) || (f.area && x.area !== f.area) || !okUrg(x.urg, f)) continue
+    if (x.tramo !== tramo || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
     const k = dim === "area" ? x.area : x.urg ? "Urgente" : "Normal"
     const acc = m.get(k) ?? { h: emptyHist(), n: 0, s: 0 }
     addHist(acc.h, x.hist); acc.n += x.n; acc.s += x.suma
@@ -291,7 +333,7 @@ export function serieMediana(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo): {
   const eje = ejeTemporal(r, g)
   const m = new Map<string, number[]>()
   for (const x of ds.tiempos) {
-    if (x.tramo !== tramo || !enRango(x.d, r) || (f.area && x.area !== f.area) || !okUrg(x.urg, f)) continue
+    if (x.tramo !== tramo || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
     const k = g === "semana" ? inicioSemana(x.d) : x.d
     let h = m.get(k); if (!h) { h = emptyHist(); m.set(k, h) }
     addHist(h, x.hist)
@@ -307,7 +349,7 @@ export function serieMediana(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo): {
 export function eventosPor(ds: Dataset, r: Rango, f: Filtros, dim: "tipo" | "impresora" | "puesto" | "area" | "detalle"): { clave: string; cantidad: number }[] {
   const m = new Map<string, number>()
   for (const e of ds.eventos) {
-    if (!enRango(e.d, r) || (f.area && e.area !== f.area) || (f.puesto && e.puesto !== f.puesto)) continue
+    if (!enRango(e.d, r) || !okArea(e.area, f) || (f.puesto && e.puesto !== f.puesto)) continue
     const k = dim === "tipo" ? e.tipo : (e[dim] || "—")
     m.set(k, (m.get(k) ?? 0) + e.cantidad)
   }
@@ -321,11 +363,11 @@ export function serieTasaEventos(ds: Dataset, r: Rango, f: Filtros): Punto[] {
   const ev = new Map<string, number>(), vol = new Map<string, number>()
   const key = (d: string) => (g === "semana" ? inicioSemana(d) : d)
   for (const e of ds.eventos) {
-    if (!enRango(e.d, r) || (f.area && e.area !== f.area) || (f.puesto && e.puesto !== f.puesto)) continue
+    if (!enRango(e.d, r) || !okArea(e.area, f) || (f.puesto && e.puesto !== f.puesto)) continue
     ev.set(key(e.d), (ev.get(key(e.d)) ?? 0) + e.cantidad)
   }
   for (const a of ds.actividad) {
-    if (!enRango(a.d, r) || (f.area && a.area !== f.area)) continue
+    if (!enRango(a.d, r) || !okArea(a.area, f)) continue
     vol.set(key(a.d), (vol.get(key(a.d)) ?? 0) + a.registros)
   }
   return eje.map(x => { const v = vol.get(x); return { x, v: v ? ((ev.get(x) ?? 0) / v) * 1000 : null } })
@@ -346,7 +388,7 @@ function tarifaPara(tarifas: Tarifa[], consumible: string, dia: string): Tarifa 
 export function facturacion(ds: Dataset, r: Rango, f: Filtros, tarifas: Tarifa[]): LineaFactura[] {
   const m = new Map<string, LineaFactura>()
   for (const c of ds.consumo) {
-    if (!enRango(c.d, r) || (f.area && c.area !== f.area) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     const mes = c.d.slice(0, 7)
     const t = tarifaPara(tarifas, c.consumible, c.d)
     const k = `${mes}|${c.consumible}`

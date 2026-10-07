@@ -12,7 +12,7 @@ import {
 import {
   delta, eventosPor, granularidad, facturacion, heatmapSemanaHora, kpis, periodoAnterior, porArea, porConsumible, porDiaSemana,
   porPuesto, prevision, serieMediana, serieTasaEventos, serieVolumen, tiemposPor, tiemposPorTramo,
-  type Dataset, type Filtros, type Rango, type Tarifa,
+  type Dataset, type Filtros, type Rango, type Tarifa, alternarArea, etiquetaArea,
 } from "@/lib/inlab/analytics"
 import { EVENTO_LABEL, type EventoCategoria } from "@/lib/inlab/mapping"
 import { TRAMO_LABEL, TRAMOS, type Tramo } from "@/lib/inlab/types"
@@ -128,7 +128,7 @@ export function VistaConsumo({ ds, rango, filtros, onFiltro }: VistaProps) {
           <BarList items={cons.map(c => ({ clave: c.clave, valor: c[medida], color: colorConsumible(c.clave, ds.consumibles), sub: c.urgentes ? `${fmtN(pct(c.urgentes, c.registros), 1)} % urgente` : undefined }))} seleccionado={filtros.consumible} onSelect={onFiltro ? v => onFiltro({ consumible: v }) : undefined} />
         </Panel>
         <Panel eyebrow="Dónde" titulo="Por área de trabajo" texto="Clic para filtrar por área.">
-          <BarList items={areas.map((a, i) => ({ clave: a.clave, valor: a[medida], color: SERIE[i % SERIE.length] }))} seleccionado={filtros.area} onSelect={onFiltro ? v => onFiltro({ area: v, puesto: null }) : undefined} />
+          <BarList items={areas.map((a, i) => ({ clave: a.clave, valor: a[medida], color: SERIE[i % SERIE.length] }))} seleccionado={filtros.areas} onSelect={onFiltro ? (_v, item) => onFiltro({ areas: alternarArea(filtros.areas, item, ds.areas), puesto: null }) : undefined} />
         </Panel>
       </div>
 
@@ -161,7 +161,7 @@ export function VistaConsumo({ ds, rango, filtros, onFiltro }: VistaProps) {
       </div>
 
       {puestos.length > 0 && (
-        <Panel eyebrow="Puestos" titulo={`Actividad por puesto${filtros.area ? ` · ${filtros.area}` : ""}`} texto="Clic para ver solo las incidencias de ese puesto.">
+        <Panel eyebrow="Puestos" titulo={`Actividad por puesto${filtros.areas.length ? ` · ${filtros.areas.map(etiquetaArea).join(", ")}` : ""}`} texto="Clic para ver solo las incidencias de ese puesto.">
           <BarList items={puestos.map(p => ({ clave: p.clave, valor: p.registros, color: TEAL, sub: `${fmtN(p.unidades)} uds · ${fmtN(p.eventos ?? 0)} incidencias` }))} seleccionado={filtros.puesto} onSelect={onFiltro ? v => onFiltro({ puesto: v }) : undefined} limite={10} />
         </Panel>
       )}
@@ -214,7 +214,7 @@ export function VistaTiempos({ ds, rango, filtros, onFiltro }: VistaProps) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel eyebrow="Por área" titulo={TRAMO_LABEL[tramo]} texto="Mediana y P90 por área (ordenado por P90). Clic para filtrar.">
-          <RangoTiempos items={porAreaT} seleccionado={filtros.area} onSelect={onFiltro ? v => onFiltro({ area: v, puesto: null }) : undefined} />
+          <RangoTiempos items={porAreaT} seleccionado={filtros.areas} onSelect={onFiltro ? (_v, item) => onFiltro({ areas: alternarArea(filtros.areas, item, ds.areas), puesto: null }) : undefined} />
         </Panel>
         <Panel eyebrow="Por urgencia" titulo="Urgente frente a normal" texto="Clic para filtrar por prioridad.">
           <RangoTiempos items={porUrg} seleccionado={filtros.urgencia === "urgente" ? "Urgente" : filtros.urgencia === "normal" ? "Normal" : null} onSelect={onFiltro ? v => onFiltro({ urgencia: v === "Urgente" ? "urgente" : v === "Normal" ? "normal" : "todas" }) : undefined} />

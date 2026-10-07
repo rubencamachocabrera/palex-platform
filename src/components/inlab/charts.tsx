@@ -209,10 +209,14 @@ export function Leyenda({ items }: { items: { nombre: string; color: string; dis
 
 // ─── Lista de barras horizontales (clicable para filtrar) ────────────────────
 
+/** Selección simple (string) o múltiple (lista de claves, p. ej. work areas). */
+const esActivo = (sel: string | readonly string[] | null | undefined, clave: string) => (Array.isArray(sel) ? sel.includes(clave) : sel === clave)
+const haySeleccion = (sel: string | readonly string[] | null | undefined) => (Array.isArray(sel) ? sel.length > 0 : !!sel)
+
 export interface ItemBarra { clave: string; label?: string; valor: number; sub?: string; color?: string }
 
 export function BarList({ items, seleccionado, onSelect, formato = fmtN, max: maxProp, limite = 12, etiquetaAccion = "Filtrar por" }: {
-  items: ItemBarra[]; seleccionado?: string | null; onSelect?: (clave: string | null) => void
+  items: ItemBarra[]; seleccionado?: string | readonly string[] | null; onSelect?: (clave: string | null, item: string) => void
   formato?: (v: number) => string; max?: number; limite?: number; etiquetaAccion?: string
 }) {
   const [todos, setTodos] = useState(false)
@@ -223,8 +227,8 @@ export function BarList({ items, seleccionado, onSelect, formato = fmtN, max: ma
   return (
     <div className="space-y-1">
       {visibles.map(it => {
-        const activo = seleccionado === it.clave
-        const atenuado = !!seleccionado && !activo
+        const activo = esActivo(seleccionado, it.clave)
+        const atenuado = haySeleccion(seleccionado) && !activo
         const contenido = (
           <>
             <div className="mb-1 flex items-center justify-between gap-3">
@@ -247,7 +251,7 @@ export function BarList({ items, seleccionado, onSelect, formato = fmtN, max: ma
           <button
             key={it.clave}
             type="button"
-            onClick={() => onSelect(activo ? null : it.clave)}
+            onClick={() => onSelect(activo ? null : it.clave, it.clave)}
             aria-pressed={activo}
             title={`${activo ? "Quitar filtro" : etiquetaAccion}: ${it.label ?? it.clave}`}
             className={`block w-full rounded-lg px-2 py-1.5 text-left transition-all hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-500 dark:hover:bg-slate-800/60 ${activo ? "bg-teal-50/70 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:ring-teal-800" : ""} ${atenuado ? "opacity-45" : ""}`}
@@ -394,20 +398,21 @@ export function Donut({ items, centro, subcentro, tamano = 160 }: { items: { lab
 // ─── Barras de rango P50–P90 (tiempos) ───────────────────────────────────────
 
 export function RangoTiempos({ items, onSelect, seleccionado }: {
-  items: { clave: string; p50: number | null; p90: number | null; n: number }[]; onSelect?: (c: string | null) => void; seleccionado?: string | null
+  items: { clave: string; p50: number | null; p90: number | null; n: number }[]; onSelect?: (c: string | null, item: string) => void; seleccionado?: string | readonly string[] | null
 }) {
   const max = Math.max(1, ...items.map(i => i.p90 ?? 0))
   if (items.length === 0) return <p className="py-6 text-center text-xs text-gray-400">Sin tiempos calculables en el periodo</p>
   return (
     <div className="space-y-2.5">
       {items.map(it => {
-        const activo = seleccionado === it.clave
+        const activo = esActivo(seleccionado, it.clave)
+        const atenuado = haySeleccion(seleccionado) && !activo
         const Comp = onSelect ? "button" : "div"
         return (
           <Comp
             key={it.clave}
-            {...(onSelect ? { type: "button" as const, onClick: () => onSelect(activo ? null : it.clave), "aria-pressed": activo } : {})}
-            className={`block w-full rounded-lg px-2 py-1 text-left ${onSelect ? "hover:bg-slate-50 dark:hover:bg-slate-800/60" : ""} ${activo ? "bg-indigo-50/70 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:ring-indigo-800" : ""}`}
+            {...(onSelect ? { type: "button" as const, onClick: () => onSelect(activo ? null : it.clave, it.clave), "aria-pressed": activo } : {})}
+            className={`block w-full rounded-lg px-2 py-1 text-left transition-opacity ${onSelect ? "hover:bg-slate-50 dark:hover:bg-slate-800/60" : ""} ${activo ? "bg-indigo-50/70 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:ring-indigo-800" : ""} ${atenuado ? "opacity-45" : ""}`}
             title={`${it.clave}: mediana ${fmtMin(it.p50)}, P90 ${fmtMin(it.p90)} (${fmtN(it.n)} mediciones)`}
           >
             <div className="mb-1 flex items-center justify-between gap-3 text-xs">

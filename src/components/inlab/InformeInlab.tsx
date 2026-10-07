@@ -23,17 +23,19 @@ export const PRINT_CSS = `
   .inlab-print .card, .inlab-print .stat-card, .inlab-print section { break-inside: avoid; box-shadow: none !important; }
 }`
 
-export function InformeInlab({ hospital, rango, ds, tarifas, interactivo = true, acciones }: {
+export function InformeInlab({ hospital, rango, ds, tarifas, interactivo = true, acciones, filtrosIniciales }: {
   hospital: { nombre: string; ciudad?: string | null }
   rango: Rango
   ds: Dataset
   tarifas?: Tarifa[] | null
   interactivo?: boolean
   acciones?: React.ReactNode
+  /** Filtros con los que se abre (p. ej. las work areas seleccionadas en el dashboard) */
+  filtrosIniciales?: Filtros
 }) {
-  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
+  const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales ?? FILTROS_VACIOS)
   const onFiltro = interactivo ? (p: Partial<Filtros>) => setFiltros(f => ({ ...f, ...p })) : undefined
-  const activos = [filtros.area && `Área: ${filtros.area}`, filtros.consumible && `Consumible: ${filtros.consumible}`, filtros.puesto && `Puesto: ${filtros.puesto}`, filtros.urgencia !== "todas" && `Prioridad: ${filtros.urgencia}`].filter(Boolean) as string[]
+  const activos = [filtros.areas.length > 0 && `Áreas: ${filtros.areas.join(", ")}`, filtros.consumible && `Consumible: ${filtros.consumible}`, filtros.puesto && `Puesto: ${filtros.puesto}`, filtros.urgencia !== "todas" && `Prioridad: ${filtros.urgencia}`].filter(Boolean) as string[]
   const props = { ds, rango, filtros, onFiltro }
 
   return (

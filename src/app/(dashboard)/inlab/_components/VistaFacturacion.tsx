@@ -70,7 +70,7 @@ export function VistaFacturacion({ ds, rango, filtros, hospitalId, hospitalNombr
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), "Facturación")
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((tarifas ?? []).map(t => ({ Consumible: t.consumible, Precio: t.precio, Moneda: t.moneda, Unidad: t.unidad ?? "", "Vigente desde": t.vigenteDesde ?? "", "Vigente hasta": t.vigenteHasta ?? "" }))), "Tarifas")
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Hospital", hospitalNombre], ["Desde", rango.desde], ["Hasta", rango.hasta], ["Filtros", [filtros.area, filtros.consumible, filtros.urgencia !== "todas" ? filtros.urgencia : null].filter(Boolean).join(", ") || "ninguno"], ["Generado", new Date().toLocaleString("es-ES")], ["Fuente", "Agregados de exportaciones InLab (Palex)"]]), "Info")
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Hospital", hospitalNombre], ["Desde", rango.desde], ["Hasta", rango.hasta], ["Filtros", [filtros.areas.length ? `Áreas: ${filtros.areas.join(", ")}` : null, filtros.consumible, filtros.urgencia !== "todas" ? filtros.urgencia : null].filter(Boolean).join(", ") || "ninguno"], ["Generado", new Date().toLocaleString("es-ES")], ["Fuente", "Agregados de exportaciones InLab (Palex)"]]), "Info")
     XLSX.writeFile(wb, `${nombre}.xlsx`)
   }
 

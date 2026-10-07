@@ -21,6 +21,7 @@ import { addDias } from "@/lib/inlab/dates"
 import type { InlabPayload } from "@/lib/inlab/types"
 import { fmtDia } from "@/components/inlab/charts"
 import { Segmentado } from "@/components/inlab/ui"
+import { SelectorAreas } from "@/components/inlab/SelectorAreas"
 import { VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
 import { UploadWizard, type HospitalOpcion } from "./_components/UploadWizard"
 import { VistaCargas } from "./_components/VistaCargas"
@@ -65,6 +66,15 @@ export default function InlabPage() {
   const [rangoCustom, setRango] = useState<Rango | null>(null)
   const [respuesta, setRespuesta] = useState<{ key: string; payload: InlabPayload | null; error: string | null } | null>(null)
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
+  // Work areas recordadas por combinación de hospitales (se restauran al cambiar la selección)
+  const claveAreas = `inlab_areas:${[...seleccion].sort().join(",")}`
+  const [claveAreasPrev, setClaveAreasPrev] = useState(claveAreas)
+  if (claveAreasPrev !== claveAreas) {
+    setClaveAreasPrev(claveAreas)
+    let guardadas: string[] = []
+    try { const v = JSON.parse(localStorage.getItem(claveAreas) ?? "[]"); if (Array.isArray(v)) guardadas = v.filter((x): x is string => typeof x === "string") } catch { /* sin almacenamiento */ }
+    setFiltros(f => ({ ...f, areas: guardadas, puesto: null }))
+  }
   const [tab, setTab] = useState<Tab>("resumen")
   const [wizard, setWizard] = useState(false)
   const [share, setShare] = useState(false)
@@ -146,6 +156,12 @@ export default function InlabPage() {
   const errorDatos = datosKey && respuesta?.key === datosKey ? respuesta.error : null
 
   const ds = useMemo(() => (payload ? decodificar(payload) : null), [payload])
+  // Áreas efectivas: solo las que existen en los datos cargados (vacío = todas)
+  const filtrosEf = useMemo<Filtros>(() => {
+    if (!ds || filtros.areas.length === 0) return filtros
+    const areas = filtros.areas.filter(a => ds.areas.includes(a))
+    return areas.length === filtros.areas.length ? filtros : { ...filtros, areas }
+  }, [ds, filtros])
   // Días con datos para "Cargas & cobertura": toda la cobertura, no solo el rango
   const [diasCobertura, setDiasCobertura] = useState<string[]>([])
   useEffect(() => {
@@ -154,7 +170,10 @@ export default function InlabPage() {
       .then(r => (r.ok ? r.json() : null)).then(d => setDiasCobertura(Array.isArray(d?.dias) ? d.dias : [])).catch(() => {})
   }, [tab, cobertura, seleccion, version])
 
-  const onFiltro = useCallback((p: Partial<Filtros>) => setFiltros(f => ({ ...f, ...p })), [])
+  const onFiltro = useCallback((p: Partial<Filtros>) => {
+    setFiltros(f => ({ ...f, ...p }))
+    if (p.areas) { try { localStorage.setItem(claveAreas, JSON.stringify(p.areas)) } catch { /* sin almacenamiento */ } }
+  }, [claveAreas])
   const onCompletado = useCallback((hospitalId: string) => {
     setDemo(false)
     setVersion(v => v + 1)
@@ -165,17 +184,16 @@ export default function InlabPage() {
   const unico = seleccion.length === 1 ? seleccion[0] : null
   const tabs = TABS.filter(t => !t.facturacion || info?.puedeFacturacion)
   const activos = [
-    filtros.area && { k: "area" as const, label: `Área: ${filtros.area}` },
     filtros.consumible && { k: "consumible" as const, label: `Consumible: ${filtros.consumible}` },
     filtros.puesto && { k: "puesto" as const, label: `Puesto: ${filtros.puesto}` },
-  ].filter(Boolean) as { k: "area" | "consumible" | "puesto"; label: string }[]
+  ].filter(Boolean) as { k: "consumible" | "puesto"; label: string }[]
 
   if (!cargandoPerfil && rol && !(INLAB_ROLES_VER as readonly string[]).includes(rol)) {
     return <div className="py-24 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-slate-800"><IconMicroscope size={24} /></span><h1 className="mt-5 text-lg font-extrabold text-gray-900 dark:text-white">Acceso restringido</h1><p className="mt-2 text-sm text-gray-400">Inteligencia InLab está disponible para perfiles autorizados.</p></div>
   }
 
   const hayDatos = (info?.conDatos.length ?? 0) > 0
-  const props = ds && rango ? { ds, rango, filtros, onFiltro } : null
+  const props = ds && rango ? { ds, rango, filtros: filtrosEf, onFiltro } : null
 
   return (
     <div className="mx-auto max-w-7xl pb-10">
@@ -247,11 +265,14 @@ export default function InlabPage() {
                 {activos.map(a => (
                   <button key={a.k} type="button" onClick={() => onFiltro({ [a.k]: null })} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-bold text-teal-800 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-200" aria-label={`Quitar filtro ${a.label}`}>{a.label}<IconX size={11} /></button>
                 ))}
-                {activos.length > 0 && <button type="button" onClick={() => setFiltros(f => ({ ...FILTROS_VACIOS, urgencia: f.urgencia }))} className="inline-flex items-center gap-1 font-bold text-teal-700 dark:text-teal-300"><IconRefreshCw size={12} />Limpiar</button>}
+                {activos.length > 0 && <button type="button" onClick={() => setFiltros(f => ({ ...FILTROS_VACIOS, urgencia: f.urgencia, areas: f.areas }))} className="inline-flex items-center gap-1 font-bold text-teal-700 dark:text-teal-300"><IconRefreshCw size={12} />Limpiar</button>}
                 {cargandoDatos && <span className="text-gray-400">Actualizando…</span>}
               </div>
               <Segmentado<Urgencia> etiqueta="Prioridad" valor={filtros.urgencia} onChange={u => onFiltro({ urgencia: u })} opciones={[{ value: "todas", label: "Todas" }, { value: "urgente", label: "Urgentes" }, { value: "normal", label: "Normales" }]} />
             </div>
+          )}
+          {!demo && rango && ds && ds.areas.length > 0 && tab !== "comparar" && tab !== "cargas" && (
+            <SelectorAreas ds={ds} rango={rango} filtros={filtrosEf} onChange={areas => onFiltro({ areas, puesto: null })} />
           )}
         </section>
       )}
@@ -308,6 +329,7 @@ export default function InlabPage() {
             hospital={{ nombre: unico ? nombre(unico) : `${seleccion.length} hospitales: ${seleccion.map(nombre).join(", ")}`, ciudad: unico ? info?.todos.find(h => h.id === unico)?.ciudad : null }}
             rango={rango}
             ds={ds}
+            filtrosIniciales={filtrosEf}
             acciones={<button type="button" onClick={() => setInforme(false)} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"><IconX size={16} />Cerrar</button>}
           />
         </div>
