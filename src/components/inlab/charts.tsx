@@ -112,6 +112,8 @@ function TooltipBox({ x, y, ancho, children }: { x: number; y: number; ancho: nu
 
 export interface Serie { nombre: string; color: string; puntos: Punto[]; discontinua?: boolean; area?: boolean }
 
+const MARGEN_TC = { l: 44, r: 12, t: 12, b: 26 } as const
+
 export function TimeChart({ series, alto = 220, formato = fmtN, etiquetaX = (x: string) => fmtDia(x), vacio = "Sin datos en el periodo" }: {
   series: Serie[]; alto?: number; formato?: (v: number) => string; etiquetaX?: (x: string) => string; vacio?: string
 }) {
@@ -119,31 +121,45 @@ export function TimeChart({ series, alto = 220, formato = fmtN, etiquetaX = (x: 
   const [hover, setHover] = useState<number | null>(null)
   const xs = useMemo(() => [...new Set(series.flatMap(s => s.puntos.map(p => p.x)))].sort(), [series])
   const max = useMemo(() => Math.max(0, ...series.flatMap(s => s.puntos.map(p => p.v ?? 0))), [series])
-  const ticks = ticksBonitos(max)
+  const ticks = useMemo(() => ticksBonitos(max), [max])
   const yMax = ticks[ticks.length - 1] || 1
-  const m = { l: 44, r: 12, t: 12, b: 26 }
+  const m = MARGEN_TC
   const w = Math.max(ancho - m.l - m.r, 10), h = alto - m.t - m.b
   const X = (i: number) => m.l + (xs.length <= 1 ? w / 2 : (i / (xs.length - 1)) * w)
   const Y = (v: number) => m.t + h - (v / yMax) * h
-  const idx = new Map(xs.map((x, i) => [x, i]))
-  const hayDatos = series.some(s => s.puntos.some(p => p.v !== null && p.v !== 0))
+  const hayDatos = useMemo(() => series.some(s => s.puntos.some(p => p.v !== null && p.v !== 0)), [series])
 
-  const path = (s: Serie) => {
-    let d = "", abierto = false
-    for (const p of s.puntos) {
-      const i = idx.get(p.x)!
-      if (p.v === null) { abierto = false; continue }
-      d += `${abierto ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`
-      abierto = true
+  // Trazados memoizados: el hover re-renderiza el gráfico en cada movimiento del ratón y
+  // antes reconstruía todos los paths (cientos de puntos por serie) cada vez.
+  const trazados = useMemo(() => {
+    const idx = new Map(xs.map((x, i) => [x, i]))
+    const px = (i: number) => m.l + (xs.length <= 1 ? w / 2 : (i / (xs.length - 1)) * w)
+    const py = (v: number) => m.t + h - (v / yMax) * h
+    const path = (s: Serie) => {
+      let d = "", abierto = false
+      for (const p of s.puntos) {
+        const i = idx.get(p.x)!
+        if (p.v === null) { abierto = false; continue }
+        d += `${abierto ? "L" : "M"}${px(i).toFixed(1)},${py(p.v).toFixed(1)}`
+        abierto = true
+      }
+      return d
     }
-    return d
-  }
-  const areaPath = (s: Serie) => {
-    const pts = s.puntos.filter(p => p.v !== null)
-    if (pts.length < 2) return ""
-    const first = idx.get(pts[0].x)!, last = idx.get(pts[pts.length - 1].x)!
-    return `${path(s)}L${X(last).toFixed(1)},${Y(0)}L${X(first).toFixed(1)},${Y(0)}Z`
-  }
+    const areaPath = (s: Serie, linea: string) => {
+      const pts = s.puntos.filter(p => p.v !== null)
+      if (pts.length < 2) return ""
+      const first = idx.get(pts[0].x)!, last = idx.get(pts[pts.length - 1].x)!
+      return `${linea}L${px(last).toFixed(1)},${py(0)}L${px(first).toFixed(1)},${py(0)}Z`
+    }
+    return series.map(s => { const d = path(s); return { s, d, area: s.area ? areaPath(s, d) : "" } })
+  }, [series, xs, w, h, yMax, m])
+  // Firma de los DATOS (no de los píxeles): si cambian, la línea se vuelve a dibujar; un
+  // re-render con los mismos datos o un cambio de ancho no repite la animación.
+  const firma = useMemo(() => series.map(s => {
+    let n = 0, t = 0
+    for (const p of s.puntos) if (p.v !== null) { n++; t += p.v }
+    return `${s.nombre}:${s.puntos.length}:${s.puntos[0]?.x ?? ""}:${n}:${t}`
+  }).join("|"), [series])
   const nEtiquetas = Math.max(2, Math.min(7, Math.floor(w / 90)))
   const pasoEt = Math.max(1, Math.ceil(xs.length / nEtiquetas))
 
@@ -168,10 +184,14 @@ export function TimeChart({ series, alto = 220, formato = fmtN, etiquetaX = (x: 
           {xs.map((x, i) => i % pasoEt === 0 && (
             <text key={x} x={X(i)} y={alto - 8} textAnchor="middle" className="fill-slate-400 text-[10px]">{etiquetaX(x)}</text>
           ))}
-          {series.map(s => s.area && <path key={`a-${s.nombre}`} d={areaPath(s)} fill={s.color} opacity={0.1} />)}
-          {series.map(s => (
-            <path key={s.nombre} d={path(s)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={s.discontinua ? "5 5" : undefined} />
-          ))}
+          <g key={firma}>
+            {trazados.map(({ s, area }) => s.area && <path key={`a-${s.nombre}`} className="inlab-area" d={area} fill={s.color} opacity={0.1} />)}
+            {trazados.map(({ s, d }) => (
+              s.discontinua
+                ? <path key={s.nombre} className="inlab-area" d={d} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 5" />
+                : <path key={s.nombre} className="inlab-linea" pathLength={1} d={d} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            ))}
+          </g>
           {hover !== null && (
             <g>
               <line x1={X(hover)} x2={X(hover)} y1={m.t} y2={m.t + h} className="stroke-slate-300 dark:stroke-slate-600" strokeWidth={1} />
@@ -235,7 +255,7 @@ export function BarList({ items, seleccionado, onSelect, formato = fmtN, max: ma
   if (items.length === 0) return <p className="py-6 text-center text-xs text-gray-400">Sin datos en el periodo</p>
   return (
     <div className="space-y-1">
-      {visibles.map(it => {
+      {visibles.map((it, i) => {
         const activo = esActivo(seleccionado, it.clave)
         const atenuado = haySeleccion(seleccionado) && !activo
         const contenido = (
@@ -251,7 +271,7 @@ export function BarList({ items, seleccionado, onSelect, formato = fmtN, max: ma
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700/70">
-              <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(1, (it.valor / max) * 100)}%`, background: it.color ?? TEAL }} />
+              <div className="inlab-barra h-full rounded-full transition-[width] duration-500 ease-out" style={{ width: `${Math.max(1, (it.valor / max) * 100)}%`, background: it.color ?? TEAL, animationDelay: `${Math.min(i, 8) * 40}ms` }} />
             </div>
             {it.sub && <p className="mt-0.5 text-[10px] text-gray-400">{it.sub}</p>}
           </>
@@ -302,7 +322,7 @@ export function Columnas({ items, formato = fmtN, alto = 180, color = TEAL, resa
             return (
               <g key={it.label} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
                 <rect x={i * slot} y={m.t} width={slot} height={h} fill="transparent" />
-                <path className="chart-bar" d={barraRedondeada(x, m.t + h - bh, bw, bh)} fill={color} opacity={destacado || resaltar === undefined ? 1 : 0.55} />
+                <path className="chart-bar" d={barraRedondeada(x, m.t + h - bh, bw, bh)} fill={color} opacity={destacado || resaltar === undefined ? 1 : 0.55} style={{ animationDelay: `${Math.min(i, 12) * 35}ms`, transition: "opacity 150ms ease" }} />
                 {destacado && <text x={x + bw / 2} y={m.t + h - bh - 5} textAnchor="middle" className="fill-slate-600 text-[10px] font-bold tabular-nums dark:fill-slate-200">{formato(it.valor)}</text>}
                 <text x={i * slot + slot / 2} y={alto - 6} textAnchor="middle" className="fill-slate-400 text-[10px]">{it.label}</text>
               </g>
@@ -348,8 +368,8 @@ export function HeatmapSemana({ m, max, formato = (v: number) => fmtN(v, 1) }: {
                     key={h}
                     onMouseEnter={() => setHover({ d, h })}
                     onMouseLeave={() => setHover(null)}
-                    className={`h-5 rounded-[3px] ${activo ? "ring-2 ring-slate-700 dark:ring-white" : ""}`}
-                    style={{ background: v > 0 ? `rgba(0, 169, 157, ${0.08 + a * 0.92})` : "var(--heat-empty, rgba(148,163,184,.12))" }}
+                    className={`inlab-celda h-5 rounded-[3px] transition-[background-color] duration-300 ${activo ? "ring-2 ring-slate-700 dark:ring-white" : ""}`}
+                    style={{ background: v > 0 ? `rgba(0, 169, 157, ${0.08 + a * 0.92})` : "var(--heat-empty, rgba(148,163,184,.12))", animationDelay: `${h * 14 + d * 10}ms` }}
                     title={`${DOW[d]} ${h}:00 — ${formato(v)} tubos y etiquetas de media`}
                   />
                 )
@@ -375,7 +395,7 @@ export function Donut({ items, centro, subcentro, tamano = 160 }: { items: { lab
   const circ = 2 * Math.PI * r
   let acc = 0
   return (
-    <div className="relative mx-auto" style={{ width: tamano, height: tamano }}>
+    <div className="inlab-donut relative mx-auto" style={{ width: tamano, height: tamano }}>
       <svg width={tamano} height={tamano} role="img" aria-label={items.map(i => `${i.label}: ${i.valor}`).join(", ")}>
         <circle cx={c} cy={c} r={r} fill="none" className="stroke-slate-100 dark:stroke-slate-700" strokeWidth={sw} />
         {total > 0 && items.map((it, i) => {
@@ -389,7 +409,7 @@ export function Donut({ items, centro, subcentro, tamano = 160 }: { items: { lab
               strokeDasharray={`${len} ${circ - len}`} strokeDashoffset={-acc * circ}
               transform={`rotate(-90 ${c} ${c})`}
               onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
-              style={{ transition: "stroke-width 150ms ease" }}
+              style={{ transition: "stroke-width 150ms ease, stroke-dasharray 500ms cubic-bezier(.16,1,.3,1), stroke-dashoffset 500ms cubic-bezier(.16,1,.3,1)" }}
             />
           )
           acc += frac
@@ -435,8 +455,8 @@ export function RangoTiempos({ items, onSelect, seleccionado, unidad = "peticion
               <span className="shrink-0 tabular-nums text-gray-500 dark:text-slate-300"><strong className="text-gray-900 dark:text-white">{fmtMin(it.p50)}</strong> · 9/10 &lt; {fmtMin(it.p90)}</span>
             </div>
             <div className="relative h-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70">
-              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${((it.p90 ?? 0) / max) * 100}%`, background: "rgba(99,102,241,.28)" }} />
-              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${((it.p50 ?? 0) / max) * 100}%`, background: "#6366F1" }} />
+              <div className="inlab-barra absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out" style={{ width: `${((it.p90 ?? 0) / max) * 100}%`, background: "rgba(99,102,241,.28)" }} />
+              <div className="inlab-barra absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out" style={{ width: `${((it.p50 ?? 0) / max) * 100}%`, background: "#6366F1", animationDelay: "80ms" }} />
             </div>
           </Comp>
         )

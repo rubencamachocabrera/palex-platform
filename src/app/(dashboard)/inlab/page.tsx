@@ -4,11 +4,11 @@
  * Inteligencia InLab — dashboard sobre agregados cargados desde exportaciones InLab.
  * Ver src/lib/inlab/README.md para el flujo completo y la adaptación al CSV real.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Activity, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
+import useSWR, { preload } from "swr"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
-import { Skeleton, SkeletonKPI } from "@/components/ui/Skeleton"
 import {
   IconBuilding, IconCalendar, IconCheck, IconChevronDown, IconMicroscope, IconMonitorShare, IconPlus, IconPrint, IconRefreshCw, IconX,
 } from "@/components/ui/Icons"
@@ -16,9 +16,11 @@ import { TEAL, ORANGE } from "@/lib/brand"
 import { usePerfil } from "@/hooks/usePerfil"
 import { useFabAction } from "@/hooks/useFabAction"
 import { INLAB_ROLES_VER } from "@/lib/inlab/roles"
-import { decodificar, FILTROS_VACIOS, periodoAnterior, type Filtros, type Rango, type Urgencia } from "@/lib/inlab/analytics"
+import { decodificar, FILTROS_VACIOS, type Dataset, type Filtros, type Rango, type Urgencia } from "@/lib/inlab/analytics"
+import { recortar, ventanaDatos } from "@/lib/inlab/recorte"
 import { addDias } from "@/lib/inlab/dates"
 import type { InlabPayload } from "@/lib/inlab/types"
+import { EsqueletoVista } from "./_components/EsqueletoVista"
 import { fmtDia } from "@/components/inlab/charts"
 import { Segmentado } from "@/components/inlab/ui"
 import { SelectorAreas } from "@/components/inlab/SelectorAreas"
@@ -29,7 +31,7 @@ import { VistaComparar } from "./_components/VistaComparar"
 import { VistaFacturacion } from "./_components/VistaFacturacion"
 import { ShareModal } from "./_components/ShareModal"
 
-const DemoGulla = dynamic(() => import("./_demo/DemoGulla").then(m => m.DemoGulla), { ssr: false, loading: () => <Skeleton className="h-96 w-full" /> })
+const DemoGulla = dynamic(() => import("./_demo/DemoGulla").then(m => m.DemoGulla), { ssr: false, loading: () => <EsqueletoVista tipo="resumen" /> })
 const InformeInlab = dynamic(() => import("@/components/inlab/InformeInlab").then(m => m.InformeInlab), { ssr: false })
 
 type Tab = "resumen" | "consumo" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
@@ -57,6 +59,28 @@ function rangoPreset(p: Preset, cob: { desde: string; hasta: string }): Rango {
   return { desde: desde < cob.desde ? cob.desde : desde, hasta: cob.hasta }
 }
 
+// ─── Datos ───────────────────────────────────────────────────────────────────
+// Una petición por selección de hospitales con TODA su cobertura (~0,2 MB gzip para un año);
+// cambiar de periodo recorta en el cliente (`recortar`, <5 ms) en vez de volver al servidor.
+// SWR guarda el Dataset ya decodificado: volver a un hospital ya visto es instantáneo.
+
+const urlDatos = (ids: string[]) => `/api/inlab/datos?hospitalIds=${[...ids].sort().join(",")}`
+type ClaveDatos = readonly [string, number]
+
+async function fetcherDatos([url]: ClaveDatos): Promise<Dataset> {
+  const r = await fetch(url)
+  const d = await r.json().catch(() => null)
+  if (!r.ok) throw new Error(d?.error ?? "No se pudieron cargar los datos")
+  return decodificar(d as InlabPayload)
+}
+
+const OPCIONES_DATOS = { revalidateOnFocus: false, revalidateIfStale: false, keepPreviousData: true, dedupingInterval: 60_000 } as const
+
+const SIN_DIAS: string[] = []
+
+/** Vistas analíticas que se mantienen montadas al cambiar de pestaña (<Activity>). */
+const TABS_PERSISTENTES = new Set<Tab>(["resumen", "consumo", "tiempos", "calidad"])
+
 export default function InlabPage() {
   const { rol, isLoading: cargandoPerfil } = usePerfil()
   const [info, setInfo] = useState<InfoHospitales | null>(null)
@@ -64,7 +88,6 @@ export default function InlabPage() {
   const [demo, setDemo] = useState(false)
   const [preset, setPreset] = useState<Preset>("90d")
   const [rangoCustom, setRango] = useState<Rango | null>(null)
-  const [respuesta, setRespuesta] = useState<{ key: string; payload: InlabPayload | null; error: string | null } | null>(null)
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
   // Work areas recordadas por combinación de hospitales (se restauran al cambiar la selección)
   const claveAreas = `inlab_areas:${[...seleccion].sort().join(",")}`
@@ -76,6 +99,15 @@ export default function InlabPage() {
     setFiltros(f => ({ ...f, areas: guardadas, puesto: null }))
   }
   const [tab, setTab] = useState<Tab>("resumen")
+  // Pestañas analíticas ya abiertas: se quedan montadas (ocultas) para volver al instante
+  const [visitadas, setVisitadas] = useState<ReadonlySet<Tab>>(() => new Set<Tab>(["resumen"]))
+  // El contenido sigue a la pestaña con prioridad baja: la barra responde al momento y, si la
+  // vista es nueva, se monta sin bloquear (mientras, sigue visible la anterior)
+  const tabContenido = useDeferredValue(tab)
+  const cambiarTab = useCallback((t: Tab) => {
+    setTab(t)
+    if (TABS_PERSISTENTES.has(t)) setVisitadas(v => (v.has(t) ? v : new Set(v).add(t)))
+  }, [])
   const [wizard, setWizard] = useState(false)
   const [share, setShare] = useState(false)
   const [informe, setInforme] = useState(false)
@@ -103,7 +135,15 @@ export default function InlabPage() {
     })
   }), [])
 
-  useEffect(() => { void cargarInfo() }, [cargarInfo])
+  useEffect(() => {
+    // Precarga en paralelo con /api/inlab/hospitales: los datos de la última selección
+    // guardada empiezan a llegar sin esperar a la lista de hospitales (antes, en cascada)
+    try {
+      const g = JSON.parse(localStorage.getItem(LS_KEY) ?? "[]")
+      if (Array.isArray(g) && g.length && g.every(x => typeof x === "string")) void preload([urlDatos(g), 0] as ClaveDatos, fetcherDatos).catch(() => {})
+    } catch { /* sin storage */ }
+    void cargarInfo()
+  }, [cargarInfo])
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(seleccion)) } catch { /* sin storage */ } }, [seleccion])
 
   // Cerrar selector al hacer clic fuera
@@ -131,44 +171,30 @@ export default function InlabPage() {
     return { desde, hasta }
   }, [cobertura, preset, rangoCustom])
 
-  // Datos: rango + periodo anterior (para tendencias)
-  const datosUrl = useMemo(() => {
-    if (!rango || seleccion.length === 0 || !cobertura) return null
-    const prev = periodoAnterior(rango)
-    const desde = prev.desde < cobertura.desde ? cobertura.desde : prev.desde
-    return `/api/inlab/datos?hospitalIds=${seleccion.join(",")}&desde=${desde}&hasta=${rango.hasta}`
-  }, [rango, seleccion, cobertura])
-  const datosKey = datosUrl ? `${datosUrl}#${version}` : null
-  useEffect(() => {
-    if (!datosUrl || !datosKey) return
-    let vivo = true
-    fetch(datosUrl)
-      .then(async r => {
-        const d = await r.json().catch(() => null)
-        if (vivo) setRespuesta(r.ok ? { key: datosKey, payload: d, error: null } : { key: datosKey, payload: null, error: d?.error ?? "No se pudieron cargar los datos" })
-      })
-      .catch(() => { if (vivo) setRespuesta({ key: datosKey, payload: null, error: "Error de red" }) })
-    return () => { vivo = false }
-  }, [datosUrl, datosKey])
-  // Mientras llega la respuesta nueva se mantiene la anterior (evita parpadeos)
-  const cargandoDatos = !!datosKey && respuesta?.key !== datosKey
-  const payload = datosKey ? respuesta?.payload ?? null : null
-  const errorDatos = datosKey && respuesta?.key === datosKey ? respuesta.error : null
+  // Datos: toda la cobertura de la selección, una sola vez (SWR, clave + versión de cargas).
+  // Mientras llega una selección nueva se mantiene la anterior (keepPreviousData, sin parpadeos).
+  const claveDatos: ClaveDatos | null = seleccion.length > 0 && cobertura ? [urlDatos(seleccion), version] : null
+  const { data: dsCompleto, error: errorSwr, isLoading: cargandoDatos } = useSWR(claveDatos, fetcherDatos, OPCIONES_DATOS)
+  const errorDatos = errorSwr ? (errorSwr instanceof Error ? errorSwr.message : "Error de red") : null
 
-  const ds = useMemo(() => (payload ? decodificar(payload) : null), [payload])
+  // Ventana = rango + periodo anterior (tendencias). `recortar` da exactamente el Dataset que
+  // devolvía antes el servidor para esa ventana (incl. `areas`/`consumibles`), en milisegundos.
+  const ventana = rango && cobertura ? ventanaDatos(rango, cobertura) : null
+  const vDesde = ventana?.desde, vHasta = ventana?.hasta
+  const ds = useMemo(() => (dsCompleto && vDesde && vHasta ? recortar(dsCompleto, { desde: vDesde, hasta: vHasta }) : null), [dsCompleto, vDesde, vHasta])
   // Áreas efectivas: solo las que existen en los datos cargados (vacío = todas)
   const filtrosEf = useMemo<Filtros>(() => {
     if (!ds || filtros.areas.length === 0) return filtros
     const areas = filtros.areas.filter(a => ds.areas.includes(a))
     return areas.length === filtros.areas.length ? filtros : { ...filtros, areas }
   }, [ds, filtros])
-  // Días con datos para "Cargas & cobertura": toda la cobertura, no solo el rango
-  const [diasCobertura, setDiasCobertura] = useState<string[]>([])
-  useEffect(() => {
-    if (tab !== "cargas" || !cobertura || seleccion.length === 0) return
-    fetch(`/api/inlab/datos?hospitalIds=${seleccion.join(",")}&desde=${cobertura.desde}&hasta=${cobertura.hasta}`)
-      .then(r => (r.ok ? r.json() : null)).then(d => setDiasCobertura(Array.isArray(d?.dias) ? d.dias : [])).catch(() => {})
-  }, [tab, cobertura, seleccion, version])
+  // Las vistas reciben estos valores con prioridad baja (useDeferredValue): los controles
+  // (periodo, prioridad, áreas) responden al instante y el recálculo es interrumpible.
+  const vista = useMemo(() => (ds && rango ? { ds, rango, filtros: filtrosEf } : null), [ds, rango, filtrosEf])
+  const vistaDiferida = useDeferredValue(vista)
+  const recalculando = vista !== vistaDiferida || tab !== tabContenido
+  // Días con datos para "Cargas & cobertura": toda la cobertura (ya está en el Dataset completo)
+  const diasCobertura = dsCompleto?.dias ?? SIN_DIAS
 
   const onFiltro = useCallback((p: Partial<Filtros>) => {
     setFiltros(f => ({ ...f, ...p }))
@@ -193,7 +219,17 @@ export default function InlabPage() {
   }
 
   const hayDatos = (info?.conDatos.length ?? 0) > 0
-  const props = ds && rango ? { ds, rango, filtros: filtrosEf, onFiltro } : null
+  const props = vistaDiferida ? { ...vistaDiferida, onFiltro } : null
+  const renderVista = (t: Tab) => {
+    if (!props) return null
+    switch (t) {
+      case "resumen": return <VistaResumen {...props} />
+      case "consumo": return <VistaConsumo {...props} />
+      case "tiempos": return <VistaTiempos {...props} />
+      case "calidad": return <VistaCalidad {...props} />
+      default: return null
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl pb-10">
@@ -266,7 +302,7 @@ export default function InlabPage() {
                   <button key={a.k} type="button" onClick={() => onFiltro({ [a.k]: null })} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-bold text-teal-800 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-200" aria-label={`Quitar filtro ${a.label}`}>{a.label}<IconX size={11} /></button>
                 ))}
                 {activos.length > 0 && <button type="button" onClick={() => setFiltros(f => ({ ...FILTROS_VACIOS, urgencia: f.urgencia, areas: f.areas }))} className="inline-flex items-center gap-1 font-bold text-teal-700 dark:text-teal-300"><IconRefreshCw size={12} />Limpiar</button>}
-                {cargandoDatos && <span className="text-gray-400">Actualizando…</span>}
+                {(cargandoDatos || recalculando) && <span className="inlab-sync" role="status">{cargandoDatos ? "Actualizando…" : "Recalculando…"}</span>}
               </div>
               <Segmentado<Urgencia> etiqueta="Prioridad" valor={filtros.urgencia} onChange={u => onFiltro({ urgencia: u })} opciones={[{ value: "todas", label: "Todas" }, { value: "urgente", label: "Urgentes" }, { value: "normal", label: "Normales" }]} />
             </div>
@@ -279,7 +315,7 @@ export default function InlabPage() {
 
       {/* Contenido */}
       {info === null ? (
-        <div className="space-y-4"><div className="grid grid-cols-2 gap-4 xl:grid-cols-4"><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></div><Skeleton className="h-72 w-full" /></div>
+        <EsqueletoVista tipo="resumen" etiqueta="Conectando con InLab" />
       ) : demo ? (
         <DemoGulla />
       ) : !hayDatos ? (
@@ -299,7 +335,7 @@ export default function InlabPage() {
           <div className="mb-5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800/80" role="tablist" aria-label="Secciones de Inteligencia InLab">
             <div className="flex min-w-max gap-1">
               {tabs.map(t => (
-                <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)} className="relative min-h-[40px] rounded-xl px-4 py-2.5 text-xs font-extrabold transition-all" style={tab === t.key ? { color: t.color, background: `${t.color}12`, boxShadow: `inset 0 0 0 1px ${t.color}22` } : { color: "#64748b" }}>
+                <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => cambiarTab(t.key)}className="relative min-h-[40px] rounded-xl px-4 py-2.5 text-xs font-extrabold transition-all" style={tab === t.key ? { color: t.color, background: `${t.color}12`, boxShadow: `inset 0 0 0 1px ${t.color}22` } : { color: "#64748b" }}>
                   <span className="relative z-10">{t.label}</span>
                   {tab === t.key && <span className="absolute inset-x-4 bottom-1 h-0.5 rounded-full" style={{ background: t.color }} />}
                 </button>
@@ -309,15 +345,18 @@ export default function InlabPage() {
 
           {errorDatos && <p role="alert" className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{errorDatos}</p>}
 
-          {tab === "comparar" && rango ? <VistaComparar rango={rango} seleccionados={seleccion} />
-            : tab === "cargas" ? <VistaCargas hospitalIds={seleccion} cobertura={cobertura} diasConDatos={diasCobertura} version={version} onCambio={() => { setVersion(v => v + 1); void cargarInfo() }} />
-              : !props ? <div className="space-y-4"><div className="grid grid-cols-2 gap-4 xl:grid-cols-4"><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></div><Skeleton className="h-72 w-full" /></div>
-                : tab === "resumen" ? <VistaResumen {...props} />
-                  : tab === "consumo" ? <VistaConsumo {...props} />
-                    : tab === "tiempos" ? <VistaTiempos {...props} />
-                      : tab === "calidad" ? <VistaCalidad {...props} />
-                        : tab === "facturacion" ? <VistaFacturacion {...props} hospitalId={unico} hospitalNombre={unico ? nombre(unico) : ""} />
-                          : null}
+          <div className="inlab-contenido" data-recalculando={recalculando && !!props ? "true" : undefined} aria-busy={recalculando || cargandoDatos}>
+            {tabContenido === "comparar" && rango ? <VistaComparar rango={rango} seleccionados={seleccion} />
+              : tabContenido === "cargas" ? <VistaCargas hospitalIds={seleccion} cobertura={cobertura} diasConDatos={diasCobertura} version={version} onCambio={() => { setVersion(v => v + 1); void cargarInfo() }} />
+                : tabContenido === "facturacion" ? (props ? <VistaFacturacion {...props} hospitalId={unico} hospitalNombre={unico ? nombre(unico) : ""} /> : <EsqueletoVista tipo="facturacion" />)
+                  : !props ? (errorDatos ? null : <EsqueletoVista tipo={tabContenido} etiqueta="Cargando agregados" />)
+                    : null}
+            {/* Vistas analíticas: las ya abiertas siguen montadas y ocultas (<Activity>), con su
+                estado y sus cálculos memoizados; volver a ellas no recalcula ni re-pide nada */}
+            {props && [...visitadas].map(t => (
+              <Activity key={t} mode={t === tabContenido ? "visible" : "hidden"}>{renderVista(t)}</Activity>
+            ))}
+          </div>
         </>
       )}
 

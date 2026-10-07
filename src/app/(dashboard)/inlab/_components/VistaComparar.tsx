@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import useSWR from "swr"
 import { TEAL } from "@/lib/brand"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { BarList, fmtMin, fmtN } from "@/components/inlab/charts"
@@ -12,6 +13,9 @@ interface Fila {
   dias: number; registros: number; unidades: number; urgentes: number; ordenes: number | null; eventos: number
   p50Total: number | null; p90Total: number | null
 }
+
+const fetcherBenchmark = (url: string): Promise<Fila[]> =>
+  fetch(url).then(r => (r.ok ? r.json() : { filas: [] })).then(d => (Array.isArray(d?.filas) ? d.filas : [])).catch(() => [])
 
 type Metrica = "volumenDia" | "tubosDia" | "porCama" | "urgentes" | "tasa" | "p50"
 
@@ -40,18 +44,10 @@ function valor(f: Fila, m: Metrica): number | null {
 const formato = (m: Metrica) => (v: number) => m === "p50" ? fmtMin(v) : m === "urgentes" ? `${fmtN(v, 1)} %` : m === "porCama" || m === "tasa" ? fmtN(v, 2) : fmtN(v)
 
 export function VistaComparar({ rango, seleccionados }: { rango: Rango; seleccionados: string[] }) {
-  const [resp, setResp] = useState<{ key: string; filas: Fila[] } | null>(null)
   const [metrica, setMetrica] = useState<Metrica>("volumenDia")
-  const key = `${rango.desde}_${rango.hasta}`
-  const filas = resp?.key === key ? resp.filas : null
-
-  useEffect(() => {
-    let vivo = true
-    fetch(`/api/inlab/benchmark?desde=${rango.desde}&hasta=${rango.hasta}`).then(r => (r.ok ? r.json() : { filas: [] }))
-      .then(d => { if (vivo) setResp({ key: `${rango.desde}_${rango.hasta}`, filas: Array.isArray(d?.filas) ? d.filas : [] }) })
-      .catch(() => { if (vivo) setResp({ key: `${rango.desde}_${rango.hasta}`, filas: [] }) })
-    return () => { vivo = false }
-  }, [rango.desde, rango.hasta])
+  // SWR: volver a la pestaña o a un periodo ya visto no repite la petición
+  const { data } = useSWR(`/api/inlab/benchmark?desde=${rango.desde}&hasta=${rango.hasta}`, fetcherBenchmark, { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 })
+  const filas = data ?? null
 
   const ordenadas = useMemo(() => (filas ?? [])
     .map(f => ({ f, v: valor(f, metrica) }))

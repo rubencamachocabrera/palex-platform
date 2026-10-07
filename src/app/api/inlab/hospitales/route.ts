@@ -12,17 +12,24 @@ export async function GET(req: NextRequest) {
     const user = await requireInlabUser()
     if (user instanceof NextResponse) return user
 
-    const todos = await db.hospital.findMany({
-      where: whereHospitalesAccesibles(user),
-      select: { id: true, nombre: true, ciudad: true, camas: true },
-      orderBy: { nombre: "asc" },
-      take: 1000,
-    })
-    const conDatos = await coberturaHospitales(todos.map(h => h.id))
+    // Lista accesible y cobertura de TODOS los hospitales con datos en paralelo (un viaje a la
+    // BD menos); la cobertura se filtra después a los accesibles.
+    const t0 = performance.now()
+    const [todos, cobertura] = await Promise.all([
+      db.hospital.findMany({
+        where: whereHospitalesAccesibles(user),
+        select: { id: true, nombre: true, ciudad: true, camas: true },
+        orderBy: { nombre: "asc" },
+        take: 1000,
+      }),
+      coberturaHospitales(null),
+    ])
+    const accesibles = new Set(todos.map(h => h.id))
+    const conDatos = cobertura.filter(c => accesibles.has(c.hospitalId))
 
     return NextResponse.json(
       { todos, conDatos, puedeFacturacion: puedeFacturacion(user) },
-      { headers: { "Cache-Control": "private, no-store" } },
+      { headers: { "Cache-Control": "private, no-store", "Server-Timing": `db;dur=${(performance.now() - t0).toFixed(1)}` } },
     )
   } catch (err) {
     console.error("[GET inlab/hospitales]", err)

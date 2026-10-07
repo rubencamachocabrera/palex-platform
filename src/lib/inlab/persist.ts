@@ -8,6 +8,7 @@ import { dateToDia, diaToDate } from "./dates"
 import { EVENTO_CATEGORIAS, type Mapeo } from "./mapping"
 import { fromSparse } from "./histogram"
 import { TRAMOS, type InlabPayload } from "./types"
+import { invalidarDatosInlab } from "./cache-datos"
 
 const CHUNK = 5000
 
@@ -61,6 +62,7 @@ export async function persistirCarga(input: PersistirInput) {
   const fechaDe = p.dias.map(diaToDate)
   const D = p.dic
 
+  // La caché de /api/inlab/datos ya caduca por huella de cargas; esto solo libera memoria al momento
   return db.$transaction(async tx => {
     // Comprobación de solapes dentro de la transacción (evita carreras entre dos cargas simultáneas)
     const solapados = await diasYaCargados(hospitalId, p.dias, tx)
@@ -145,4 +147,5 @@ export async function persistirCarga(input: PersistirInput) {
 
     return { id: carga.id, dias: diasFinales.length, diasSustituidos: input.modo === "SUSTITUIR" ? solapados.length : 0, diasOmitidos: omitir.size }
   }, { timeout: 120_000, maxWait: 10_000, isolationLevel: "Serializable" })
+    .finally(() => invalidarDatosInlab(hospitalId))
 }

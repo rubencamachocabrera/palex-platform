@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import useSWR from "swr"
 import { useToast } from "@/components/Toast"
 import { TEAL } from "@/lib/brand"
 import { IconAlertTriangle, IconCalendar, IconFileText, IconTrash } from "@/components/ui/Icons"
@@ -17,7 +18,10 @@ interface Carga {
   modo: string; estado: string; avisos: string[] | null; creadoEn: string; usuario: { nombre: string }; hospital: { nombre: string }; puedeBorrar: boolean
 }
 
-const ESTADO: Record<string, { label: string; cls: string }> = {
+const fetcherCargas = ([url]: [string, number]): Promise<Carga[]> =>
+  fetch(url).then(r => (r.ok ? r.json() : [])).then(d => (Array.isArray(d) ? d : [])).catch(() => [])
+
+const ESTADO:Record<string, { label: string; cls: string }> = {
   COMPLETADA: { label: "Activa", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
   PARCIAL: { label: "Parcialmente sustituida", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
   SUSTITUIDA: { label: "Sustituida", cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" },
@@ -31,14 +35,10 @@ export function VistaCargas({ hospitalIds, cobertura, diasConDatos, version, onC
   onCambio: () => void
 }) {
   const toast = useToast()
-  const [cargas, setCargas] = useState<Carga[] | null>(null)
   const [abierta, setAbierta] = useState<string | null>(null)
-
-  const cargar = useCallback(() => {
-    if (hospitalIds.length === 0) return
-    fetch(`/api/inlab/cargas?hospitalIds=${hospitalIds.join(",")}`).then(r => (r.ok ? r.json() : [])).then(d => setCargas(Array.isArray(d) ? d : [])).catch(() => setCargas([]))
-  }, [hospitalIds])
-  useEffect(() => { cargar() }, [cargar, version])
+  // SWR (clave con `version`): volver a la pestaña no repite la petición; tras cargar/borrar sí
+  const { data } = useSWR(hospitalIds.length ? [`/api/inlab/cargas?hospitalIds=${hospitalIds.join(",")}`, version] : null, fetcherCargas, { revalidateOnFocus: false, revalidateIfStale: false })
+  const cargas = data ?? null
 
   const sinDatos = useMemo(() => (cobertura ? huecos(diasConDatos, cobertura) : []), [cobertura, diasConDatos])
   const rangosHueco = useMemo(() => rangosContiguos(sinDatos), [sinDatos])
