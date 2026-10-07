@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { TEAL } from "@/lib/brand"
 import { dispatchFabAction } from "@/hooks/useFabAction"
+import { useConfigApp } from "@/hooks/useConfigApp"
 
 // ─── Actions por contexto ─────────────────────────────────────────────────────
 interface Action {
@@ -14,14 +15,14 @@ interface Action {
   color?: string
 }
 
-function useContextActions(pathname: string, router: ReturnType<typeof useRouter>): Action[] {
+function useContextActions(pathname: string, router: ReturnType<typeof useRouter>, incidenciasActivo: boolean): Action[] {
   if (pathname.startsWith("/hospitales/") && pathname.split("/").length > 2) {
     const id = pathname.split("/")[2]
     return [
       { label: "Nueva visita", icon: <IcoPlusDoc />, href: `/visitas?hospitalId=${id}` },
       { label: "Check-in", icon: <IcoCheckin />, color: TEAL, onClick: () => { dispatchFabAction("fab:checkin", { hospitalId: id }) } },
       { label: "Nueva llamada", icon: <IcoPhone />, onClick: () => { dispatchFabAction("fab:llamada", { hospitalId: id }) } },
-      { label: "Nueva incidencia", icon: <IcoAlert />, href: `/incidencias?hospitalId=${id}` },
+      ...(incidenciasActivo ? [{ label: "Nueva incidencia", icon: <IcoAlert />, href: `/incidencias?hospitalId=${id}` }] : []),
     ]
   }
   if (pathname === "/hospitales") return [
@@ -41,7 +42,7 @@ function useContextActions(pathname: string, router: ReturnType<typeof useRouter
   if (pathname === "/proyectos") return [
     { label: "Nuevo proyecto", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nuevo-proyecto") } },
   ]
-  if (pathname === "/incidencias") return [
+  if (pathname === "/incidencias" && incidenciasActivo) return [
     { label: "Nueva incidencia", icon: <IcoAlert />, onClick: () => { dispatchFabAction("fab:nueva-incidencia") } },
   ]
   if (pathname === "/llamadas") return [
@@ -67,7 +68,8 @@ export function QuickActionsFAB() {
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
 
-  const actions = useContextActions(pathname, router)
+  const { incidenciasActivo } = useConfigApp()
+  const actions = useContextActions(pathname, router, incidenciasActivo)
 
   // No mostrar si no hay acciones o en rutas de auth
   useEffect(() => {

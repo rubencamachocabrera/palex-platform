@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createHash, timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { seccionActiva } from "@/lib/config-app"
 
 function secretsMatch(recibido: string, esperado: string): boolean {
   const a = createHash("sha256").update(recibido).digest()
@@ -24,6 +25,11 @@ export async function GET(req: NextRequest) {
     const secretRecibido = req.headers.get("x-cron-secret") ?? req.nextUrl.searchParams.get("secret")
     if (!secretRecibido || !secretsMatch(secretRecibido, secretEsperado)) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    // Modulo desactivado: no escalar (el cron externo recibe 200 y sigue funcionando)
+    if (!(await seccionActiva("incidencias"))) {
+      return NextResponse.json({ escaladas: 0, ids: [], desactivado: true })
     }
 
     const hace4h = new Date(Date.now() - 4 * 60 * 60 * 1000)

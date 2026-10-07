@@ -210,8 +210,8 @@ const Icons: Record<string, () => React.ReactElement> = {
 }
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
-interface NavItem  { href: string; label: string; icon: keyof typeof Icons }
-interface NavGroup { label?: string; items: NavItem[]; crmOnly?: boolean; incidenciasOnly?: boolean }
+interface NavItem  { href: string; label: string; icon: keyof typeof Icons; analiticaOnly?: boolean }
+interface NavGroup { label?: string; items: NavItem[]; crmOnly?: boolean; incidenciasOnly?: boolean; analiticaOnly?: boolean }
 
 const NAV_GROUPS_ADMIN: NavGroup[] = [
   { items: [{ href: "/dashboard", label: "Dashboard", icon: "Dashboard" }] },
@@ -257,8 +257,8 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Analítica",
     items: [
-      { href: "/inlab",       label: "Inteligencia InLab",    icon: "Datos" },
-      { href: "/comparador",  label: "Comparador",             icon: "Comparador" },
+      { href: "/inlab",       label: "Inteligencia InLab",    icon: "Datos",      analiticaOnly: true },
+      { href: "/comparador",  label: "Comparador",             icon: "Comparador", analiticaOnly: true },
       { href: "/transporte",  label: "Transporte de muestras", icon: "Transporte" },
     ],
   },
@@ -296,6 +296,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
   },
   {
     label: "Analítica",
+    analiticaOnly: true,
     items: [
       { href: "/inlab",      label: "Inteligencia InLab",   icon: "Datos" },
       { href: "/comparador", label: "Comparador",            icon: "Comparador" },
@@ -338,6 +339,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
   },
   {
     label: "Analítica",
+    analiticaOnly: true,
     items: [
       { href: "/inlab",      label: "Inteligencia InLab",   icon: "Datos" },
       { href: "/comparador", label: "Comparador",            icon: "Comparador" },
@@ -500,6 +502,19 @@ function SidebarInner({
     try { return localStorage.getItem("palex_incidencias_activo") !== "false" }
     catch { return true }
   })
+  const [analiticaActivo, setAnaliticaActivo] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true
+    try { return localStorage.getItem("palex_analitica_activo") !== "false" }
+    catch { return true }
+  })
+  const [configVersion, setConfigVersion] = useState(0)
+
+  // admin/configuracion emite este evento al cambiar un toggle → refrescar sin navegar
+  useEffect(() => {
+    const h = () => setConfigVersion(v => v + 1)
+    window.addEventListener("palex:config-updated", h)
+    return () => window.removeEventListener("palex:config-updated", h)
+  }, [])
 
   useEffect(() => {
     fetch("/api/config")
@@ -508,14 +523,22 @@ function SidebarInner({
         if (d != null) {
           setCrmActivo(d.crmActivo)
           setIncidenciasActivo(d.incidenciasActivo ?? true)
+          setAnaliticaActivo(d.analiticaActivo ?? true)
           try {
             localStorage.setItem("palex_crm_activo", String(d.crmActivo))
             localStorage.setItem("palex_incidencias_activo", String(d.incidenciasActivo ?? true))
+            localStorage.setItem("palex_analitica_activo", String(d.analiticaActivo ?? true))
           } catch { /* */ }
         }
       })
       .catch(() => {})
-  }, [pathname])
+  }, [pathname, configVersion])
+
+  const visibleGroups = useMemo(() => groups
+    .filter(g => (!g.crmOnly || crmActivo) && (!g.incidenciasOnly || incidenciasActivo) && (!g.analiticaOnly || analiticaActivo))
+    .map(g => analiticaActivo ? g : { ...g, items: g.items.filter(i => !i.analiticaOnly) })
+    .filter(g => g.items.length > 0),
+  [groups, crmActivo, incidenciasActivo, analiticaActivo])
 
   useEffect(() => {
     fetch("/api/notificaciones")
@@ -588,7 +611,7 @@ function SidebarInner({
         className="flex-1 space-y-4"
         style={{ padding: collapsed ? "10px 6px" : "10px 8px", overflowY: "auto", overflowX: "hidden" }}
       >
-        {groups.filter(g => (!g.crmOnly || crmActivo) && (!g.incidenciasOnly || incidenciasActivo)).map((group, gi) => (
+        {visibleGroups.map((group, gi) => (
           <div key={gi}>
             {/* Label de grupo — siempre en DOM, opacidad */}
             {group.label && (

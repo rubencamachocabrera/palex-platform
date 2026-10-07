@@ -189,6 +189,7 @@ model ConfigApp {
   id                 Int     @id @default(1)
   crmActivo          Boolean @default(true)
   incidenciasActivo  Boolean @default(true) @map("incidencias_activo")
+  analiticaActivo    Boolean @default(true) @map("analitica_activo")
   scoringConfig      Json?
 
   @@map("config_app")

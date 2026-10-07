@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { guardSeccion } from "@/lib/config-app"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
@@ -10,6 +11,8 @@ export async function GET(req: NextRequest) {
 
     const session = await auth()
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    const off = await guardSeccion("incidencias")
+    if (off) return off
 
     const { searchParams } = req.nextUrl
     const desde = searchParams.get("desde")

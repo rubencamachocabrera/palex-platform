@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getConfigApp, seccionActiva } from "@/lib/config-app"
 import Link from "next/link"
 import { TEAL, ORANGE } from "@/lib/brand"
 
@@ -428,8 +429,9 @@ async function DashboardAdmin({ userId }: { userId: string }) {
   const inicioSeisM = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1)
   const en14dias = new Date(ahora.getTime() + 14 * 86400000)
 
-  const configApp = await db.configApp.findFirst()
+  const configApp = await getConfigApp().catch(() => null)
   const crmActivo = configApp?.crmActivo ?? true
+  const incidenciasActivo = configApp?.incidenciasActivo ?? true
 
   const [
     totalHospitales, totalUsuarios, visitasMes, visitasPrevMes, ultimasVisitas,
@@ -633,8 +635,8 @@ async function DashboardAdmin({ userId }: { userId: string }) {
         }
       </div>
 
-      {/* Widget SLA críticos */}
-      <SlaAlertasWidget />
+      {/* Widget SLA críticos (solo con el modulo de incidencias activo) */}
+      {incidenciasActivo && <SlaAlertasWidget />}
 
       {/* Alertas hardware */}
       {(hwGarantiaVencidaCount > 0 || hwMantenimientoVencidoCount > 0) && (
@@ -1058,6 +1060,7 @@ async function DashboardVentas({ userId, nombre }: { userId: string; nombre: str
 // ── Dashboard PROYECTOS / TECNICO ──────────────────────────────────────────────
 async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: string }) {
   const ahora = new Date()
+  const incidenciasActivo = await seccionActiva("incidencias")
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
   const inicioPrevMes = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
   const finPrevMes = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59)
@@ -1151,8 +1154,8 @@ async function DashboardProyectos({ userId, nombre }: { userId: string; nombre: 
 
       <FavoritosSection userId={userId} />
 
-      {/* Widget SLA críticos */}
-      <SlaAlertasWidget />
+      {/* Widget SLA críticos (solo con el modulo de incidencias activo) */}
+      {incidenciasActivo && <SlaAlertasWidget />}
 
       {hayMiDia && (
         <div className="mb-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
