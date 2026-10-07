@@ -1,22 +1,19 @@
 #!/usr/bin/env node
 /**
- * Genera una exportación InLab SINTÉTICA (sin datos reales) para probar el
- * asistente de carga de Inteligencia InLab.
+ * Genera una exportación InLab SINTÉTICA (sin datos reales) en el FORMATO PLANO
+ * de docs/inlab/exportacion-inlab.sql: una fila por tubo/etiqueta, separador ",",
+ * fechas ISO de SQL Server, UTF-8. Las distribuciones imitan Gómez Ulla
+ * (espera ~6 min, extracción ~4 min, ~23 % urgentes, ~6 % reimpresiones, ~6 % anulados).
  *
- *   node docs/inlab/generar-csv-sintetico.mjs [dias=30] [ordenesDia=100] [salida=docs/inlab/ejemplo-inlab-sintetico.csv] [desde=2026-06-01]
+ *   node docs/inlab/generar-csv-sintetico.mjs [dias=14] [pedidosDia=120] [salida=docs/inlab/ejemplo-inlab-sintetico.csv] [desde=2026-06-01]
  *
- * Ejemplos:
- *   node docs/inlab/generar-csv-sintetico.mjs                       → ~7.000 filas, < 1 MB (el ejemplo versionado)
- *   node docs/inlab/generar-csv-sintetico.mjs 365 3000 /tmp/big.csv → ~2,7 M filas, ~300 MB (prueba de rendimiento)
- *
- * Formato imitando una exportación MySQL: separador ";", fechas ISO, UTF-8,
- * una fila por recipiente/etiqueta impresa. Las columnas son SUPUESTAS: el
- * fichero real puede diferir (ver src/lib/inlab/README.md).
+ *   node docs/inlab/generar-csv-sintetico.mjs                         → ~6.000 filas (ejemplo versionado)
+ *   node docs/inlab/generar-csv-sintetico.mjs 365 3000 /tmp/big.csv   → ~5 M filas (prueba de rendimiento)
  */
 import { createWriteStream } from "node:fs"
 
-const [dias = "30", ordenesDia = "100", salida = "docs/inlab/ejemplo-inlab-sintetico.csv", desde = "2026-06-01"] = process.argv.slice(2)
-const N_DIAS = Number(dias), N_ORD = Number(ordenesDia)
+const [dias = "14", pedidosDia = "120", salida = "docs/inlab/ejemplo-inlab-sintetico.csv", desde = "2026-06-01"] = process.argv.slice(2)
+const N_DIAS = Number(dias), N_PED = Number(pedidosDia)
 
 // PRNG determinista (mulberry32) para que el ejemplo sea reproducible
 let seed = 20260601
@@ -26,54 +23,53 @@ const pesos = obj => { const tot = Object.values(obj).reduce((a, b) => a + b, 0)
 const logNormal = (mediana, dispersion) => Math.exp(Math.log(mediana) + dispersion * Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd()))
 
 const AREAS = {
-  "Extracciones": { peso: 60, puestos: ["MO-01", "MO-02", "MO-03", "BOX-1", "BOX-2", "BOX-3", "BOX-4", "BOX-5", "BOX-6"], impresoras: ["ZEBRA MO-1", "ZEBRA MO-2", "ZEBRA BOX-2", "BC-ROBO"], urg: 0.05, horas: [7, 8, 8, 8, 9, 9, 9, 10, 10, 11, 12, 13], domingo: 0, sabado: 0.3, petExt: 25, extRec: 35 },
-  "Urgencias": { peso: 22, puestos: ["URG-A", "URG-B", "URG-C", "URG-TRIAJE"], impresoras: ["ZEBRA-Urgencias", "ZEBRA-Triaje"], urg: 0.8, horas: Array.from({ length: 24 }, (_, h) => h).concat([10, 11, 12, 17, 18, 19, 20]), domingo: 0.9, sabado: 0.95, petExt: 12, extRec: 15 },
-  "Planta 3ª": { peso: 10, puestos: ["PL-3A", "PL-3B"], impresoras: ["ZEBRA Planta 3"], urg: 0.15, horas: [6, 6, 7, 7, 7, 8, 12, 16, 20], domingo: 0.7, sabado: 0.8, petExt: 90, extRec: 70 },
-  "Planta 4ª": { peso: 8, puestos: ["PL-4A", "PL-4B"], impresoras: ["ZEBRA Planta 4"], urg: 0.15, horas: [6, 6, 7, 7, 7, 8, 12, 16, 20], domingo: 0.7, sabado: 0.8, petExt: 110, extRec: 80 },
+  EXTRACCIONES: { peso: 70, puestos: ["A1", "A2", "B3", "B4", "C5", "C6", "A7", "A9"], impresora: "ZEBRA BOX-2", urg: 0.03, horas: [7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 11, 12, 13], llegada: true, domingo: 0, sabado: 0 },
+  URGENCIAS: { peso: 19, puestos: ["URG-A", "URG-B", "URG-C", "URG-D", "URG-TRIAJE"], impresora: "ZEBRA-URGENCIAS", urg: 0.8, horas: Array.from({ length: 24 }, (_, h) => h), llegada: false, domingo: 0.9, sabado: 0.95 },
+  PLANTA4: { peso: 4, puestos: ["PL-4A", "PL-4B"], impresora: "ZEBRA-PLANTA 4", urg: 0.6, horas: [6, 6, 7, 7, 12, 16, 20], llegada: false, domingo: 0.7, sabado: 0.8 },
+  PLANTA12: { peso: 4, puestos: ["PL-12A", "PL-12B"], impresora: "ZEBRA-PLANTA 12", urg: 0.5, horas: [6, 6, 7, 7, 12, 16, 20], llegada: false, domingo: 0.7, sabado: 0.8 },
+  PLANTA17: { peso: 3, puestos: ["PL-17A", "PL-17B"], impresora: "ZEBRA-PLANTA 17", urg: 0.33, horas: [6, 6, 7, 7, 12, 16, 20], llegada: false, domingo: 0.7, sabado: 0.8 },
 }
-const TUBOS = { "Tubo rojo · Suero": 34, "Tubo malva · EDTA": 28, "Tubo azul · Coagulación": 14, "Tubo verde · Heparina": 6, "Tubo negro · VSG": 4, "Tubo gris · Glucosa": 3, "Contenedor orina": 8, "Tubo · Serología": 3 }
+const TUBOS = { "ROJO SUERO": 18, "MALVA EDTA": 15, COAGULACION: 6, "ETIQUETAS 999": 6, "ETIQUETAS MICRO": 3, IMMUNOLOGIA: 2.3, SEROLOGIA: 1.5, "ETIQUETA ORINA": 0.8, "VERDE HLIT": 0.5 }
+const SECCION = { "ROJO SUERO": "Bioquimica", "MALVA EDTA": "Hematologia", COAGULACION: "Coagulacion", "ETIQUETAS 999": "Inmunologia", "ETIQUETAS MICRO": "Micro.", IMMUNOLOGIA: "Inmunologia", SEROLOGIA: "Serologia", "ETIQUETA ORINA": "Orina", "VERDE HLIT": "Bioquimica", "ETIQUETA EXTRAC.": "" }
+const INCIDENCIAS = ["NAYUNO", "DIFICIL", "PNEXT", "MAREO", "CIRCA"]
 
-const pad = n => String(n).padStart(2, "0")
-const fmt = ms => { const d = new Date(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}` }
+const pad = (n, l = 2) => String(n).padStart(l, "0")
+const fmt = ms => { if (ms == null) return ""; const d = new Date(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}.${pad(d.getUTCMilliseconds(), 3)}` }
 
 const out = createWriteStream(salida, { encoding: "utf8" })
-out.write("id_peticion;fecha_peticion;fecha_extraccion;fecha_recepcion;fecha_validacion;area_trabajo;puesto;tipo_tubo;cantidad;evento;prioridad;impresora\n")
+out.write("TuboId,PedidoId,Area,Puesto,Impresora,Consumible,Seccion,Prioridad,UnidadReceptora,EstadoPedido,EstadoTubo,Impresiones,IncidenciaPedido,IncidenciaTubo,FechaPeticion,FechaLlegada,FechaNumeracion,FechaImpresion,FechaValidacionTubo,FechaValidacionPedido,NumPruebasPedido\n")
 
-let filas = 0, ordenId = 100000
+let filas = 0, pedidoId = 100000, tuboId = 500000
 const inicio = Date.parse(`${desde}T00:00:00Z`)
 for (let d = 0; d < N_DIAS; d++) {
   const dia0 = inicio + d * 86400000
   const dow = new Date(dia0).getUTCDay()
-  // tendencia suave al alza + ruido diario
   const factorDia = (1 + d / N_DIAS * 0.08) * (0.9 + rnd() * 0.2)
-  for (let o = 0; o < N_ORD * factorDia; o++) {
-    const areaNombre = pesos(Object.fromEntries(Object.entries(AREAS).map(([k, v]) => [k, v.peso])))
-    const A = AREAS[areaNombre]
+  for (let o = 0; o < N_PED * factorDia; o++) {
+    const area = pesos(Object.fromEntries(Object.entries(AREAS).map(([k, v]) => [k, v.peso])))
+    const A = AREAS[area]
     if (dow === 0 && rnd() > A.domingo) continue
     if (dow === 6 && rnd() > A.sabado) continue
-    ordenId++
+    pedidoId++
     const urgente = rnd() < A.urg
-    const hora = pick(A.horas)
-    const pet = dia0 + hora * 3600000 + Math.floor(rnd() * 3600) * 1000
-    const ext = pet + Math.round(logNormal(urgente ? A.petExt * 0.5 : A.petExt, 0.6) * 60000)
-    const rec = ext + Math.round(logNormal(urgente ? A.extRec * 0.6 : A.extRec, 0.5) * 60000)
-    const val = rec + Math.round(logNormal(urgente ? 45 : 160, 0.7) * 60000)
-    const puesto = pick(A.puestos), impresora = pick(A.impresoras)
-    const nTubos = 1 + Math.floor(rnd() * 3.2)
-    const id = `PS${ordenId}`
-    const filaBase = (tubo, cant, evento, conRec = true, conVal = true, extMs = ext) =>
-      `${id};${fmt(pet)};${fmt(extMs)};${conRec ? fmt(rec) : ""};${conVal && rnd() > 0.04 ? fmt(val) : ""};${areaNombre};${puesto};${tubo};${cant};${evento};${urgente ? "URGENTE" : "NORMAL"};${impresora}\n`
-    // Etiqueta de extracción (una por orden)
-    out.write(filaBase("Etiqueta de extracción", 1, "")); filas++
-    for (let t = 0; t < nTubos; t++) {
-      const tubo = pesos(TUBOS)
-      const r = rnd()
-      let evento = ""
-      if (r < 0.015) evento = "REIMPRESION"
-      else if (r < 0.019) evento = pick(["RECHAZO_HEMOLIZADA", "RECHAZO_COAGULADA", "RECHAZO_INSUFICIENTE"])
-      else if (r < 0.021) evento = "ANULADA"
-      else if (r < 0.024) evento = pick(["ERROR_IMPRESORA_SIN_PAPEL", "ERROR_IMPRESORA_OFFLINE"])
-      out.write(filaBase(tubo, 1, evento, evento !== "ANULADA", !evento.startsWith("RECHAZO") && evento !== "ANULADA")); filas++
+    const num = dia0 + pick(A.horas) * 3600000 + Math.floor(rnd() * 3600) * 1000
+    const lle = A.llegada && rnd() < 0.85 ? num - Math.round(logNormal(6, 0.8) * 60000) : null
+    const val = rnd() < 0.95 ? num + Math.round(logNormal(urgente ? 2.5 : 3.8, 0.9) * 60000) : null
+    const puesto = pick(A.puestos)
+    const incPed = rnd() < 0.002 ? pick(INCIDENCIAS) : ""
+    const unidad = urgente ? "LABUHCD" : rnd() < 0.15 ? "LABMHCD" : "LABGHCD"
+    const pruebas = 2 + Math.floor(rnd() * 40)
+    const tubos = ["ETIQUETA EXTRAC.", "ETIQUETA EXTRAC."]
+    const nTubos = 1 + Math.floor(rnd() * 3.5)
+    for (let t = 0; t < nTubos; t++) tubos.push(pesos(TUBOS))
+    for (const tubo of tubos) {
+      tuboId++
+      const anulado = rnd() < 0.058
+      const imp = rnd() < 0.06 ? 2 + Math.floor(rnd() * rnd() * 4) : 1
+      const impMs = num + Math.floor(rnd() * 20) * 1000
+      const vt = anulado || val == null ? null : val + Math.floor(rnd() * 5) * 1000
+      out.write([tuboId, pedidoId, area, puesto, A.impresora, tubo, SECCION[tubo] ?? "", urgente ? 2 : 1, unidad, 5, anulado ? -1 : 5, imp, incPed, "", fmt(num), fmt(lle), fmt(num), fmt(impMs), fmt(vt), fmt(val), pruebas].join(",") + "\n")
+      filas++
     }
   }
 }

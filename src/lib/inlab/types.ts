@@ -9,14 +9,21 @@
  * el payload sea pequeño. NO contiene filas crudas ni identificadores de órdenes.
  */
 
-export const TRAMOS = ["PET_EXT", "EXT_REC", "REC_VAL", "TOTAL"] as const
+/**
+ * Tramos del flujo InLab (el índice viaja en el payload; el código se guarda en BD):
+ *   ESPERA     llegada del paciente → numeración del pedido   (por pedido)
+ *   EXTRACCION numeración → validación de la extracción       (por pedido)
+ *   TUBO       impresión del tubo → validación del tubo       (por tubo)
+ *   TOTAL      llegada (o numeración) → validación            (por pedido)
+ */
+export const TRAMOS = ["ESPERA", "EXTRACCION", "TUBO", "TOTAL"] as const
 export type Tramo = typeof TRAMOS[number]
 
 export const TRAMO_LABEL: Record<Tramo, string> = {
-  PET_EXT: "Petición → extracción",
-  EXT_REC: "Extracción → recepción",
-  REC_VAL: "Recepción → validación",
-  TOTAL: "Ciclo completo",
+  ESPERA: "Espera (llegada → numeración)",
+  EXTRACCION: "Extracción (numeración → validación)",
+  TUBO: "Tubo (impresión → validación)",
+  TOTAL: "Ciclo completo en extracciones",
 }
 
 export interface InlabDiccionario {

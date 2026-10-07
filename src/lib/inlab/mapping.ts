@@ -1,15 +1,16 @@
 /**
- * Inteligencia InLab — módulo de ADAPTACIÓN al fichero real.
+ * Inteligencia InLab — módulo de ADAPTACIÓN a la exportación real.
  *
- * Aquí vive todo lo que depende del formato de la exportación MySQL de InLab:
- *   1. Los campos canónicos que entiende el agregador (CAMPOS).
- *   2. Los alias de cabecera para autodetectar el emparejamiento (ALIAS_CABECERA).
- *   3. La normalización de valores: eventos/incidencias, prioridad urgente, áreas.
+ * InLab corre sobre SQL Server (tablas dbo.*). Se admiten dos formatos:
+ *   A) CSV plano generado con la consulta de docs/inlab/exportacion-inlab.sql
+ *      (una fila por tubo/etiqueta, cabeceras = CABECERAS_PLANAS). Se autodetecta.
+ *   B) Exportación completa de la BD (un CSV por tabla, dbo.*.csv): sqlserver.ts
+ *      la cruza en el navegador y produce exactamente las filas del formato A.
+ * Cualquier otro CSV se puede emparejar a mano en el asistente.
  *
- * Cuando llegue el CSV real, normalmente basta con:
- *   - añadir los nombres reales de columna a ALIAS_CABECERA,
- *   - ajustar ALIAS_EVENTO / EVENTO_NEUTRO / esUrgente() a los códigos reales,
- *   - revisar si hacen falta campos nuevos (ver README.md en esta carpeta).
+ * Semántica del flujo InLab (Gómez Ulla, verificado con la BD real):
+ *   llegada del paciente (ticket) → numeración/impresión de etiquetas → validación
+ *   de la extracción. Prioridad 1 = normal, 2 = urgente. Tubo State -1 = anulado.
  *
  * Este fichero se ejecuta en el navegador (y en el Web Worker): no importar nada de servidor.
  */
@@ -17,16 +18,22 @@
 export type CampoKey =
   | "idOrden"
   | "fechaPeticion"
-  | "fechaExtraccion"
-  | "fechaRecepcion"
+  | "fechaLlegada"
+  | "fechaNumeracion"
   | "fechaValidacion"
+  | "fechaImpresion"
+  | "fechaValidacionTubo"
   | "area"
   | "puesto"
+  | "impresora"
   | "consumible"
   | "cantidad"
-  | "evento"
   | "prioridad"
-  | "impresora"
+  | "impresiones"
+  | "estadoTubo"
+  | "incidenciaPedido"
+  | "incidenciaTubo"
+  | "evento"
 
 export type CampoTipo = "texto" | "fecha" | "numero"
 
@@ -36,49 +43,102 @@ export interface CampoDef {
   tipo: CampoTipo
   ayuda: string
   grupo: "Hitos" | "Dónde" | "Qué" | "Calidad"
+  /** true si el valor es del PEDIDO (se repite en cada tubo): se cuenta una vez por pedido */
+  nivelPedido?: boolean
 }
 
 export const CAMPOS: CampoDef[] = [
-  { key: "fechaPeticion",   label: "Petición",              tipo: "fecha",  grupo: "Hitos",   ayuda: "Fecha/hora de creación de la orden o petición." },
-  { key: "fechaExtraccion", label: "Extracción / impresión", tipo: "fecha", grupo: "Hitos",   ayuda: "Fecha/hora de extracción o de impresión de la etiqueta." },
-  { key: "fechaRecepcion",  label: "Recepción laboratorio", tipo: "fecha",  grupo: "Hitos",   ayuda: "Fecha/hora de llegada de la muestra al laboratorio." },
-  { key: "fechaValidacion", label: "Validación",            tipo: "fecha",  grupo: "Hitos",   ayuda: "Fecha/hora de validación o hito final (opcional)." },
-  { key: "area",            label: "Área de trabajo",       tipo: "texto",  grupo: "Dónde",   ayuda: "Extracciones, Urgencias, Planta, Laboratorio…" },
-  { key: "puesto",          label: "Puesto",                tipo: "texto",  grupo: "Dónde",   ayuda: "Mostrador, box o puesto concreto (MO-01, BOX-3…)." },
-  { key: "impresora",       label: "Impresora",             tipo: "texto",  grupo: "Dónde",   ayuda: "Zebra o BC Robo que imprimió la etiqueta." },
-  { key: "consumible",      label: "Consumible / tubo",     tipo: "texto",  grupo: "Qué",     ayuda: "Tipo de tubo o etiqueta (Suero, EDTA, Coagulación…)." },
-  { key: "cantidad",        label: "Cantidad",              tipo: "numero", grupo: "Qué",     ayuda: "Unidades de la fila. Si no se empareja, cada fila cuenta 1." },
-  { key: "prioridad",       label: "Prioridad",             tipo: "texto",  grupo: "Qué",     ayuda: "Urgente / normal (o rango de numeración urgente)." },
-  { key: "idOrden",         label: "Nº de orden",           tipo: "texto",  grupo: "Qué",     ayuda: "Solo para contar órdenes distintas en tu equipo. Nunca se envía." },
-  { key: "evento",          label: "Evento / incidencia",   tipo: "texto",  grupo: "Calidad", ayuda: "Reimpresión, rechazo, anulación, error de impresora…" },
+  { key: "fechaLlegada",        label: "Llegada del paciente",   tipo: "fecha",  grupo: "Hitos", nivelPedido: true, ayuda: "Hora de llegada / ticket en sala de espera (DateTimePatientArrived)." },
+  { key: "fechaNumeracion",     label: "Numeración del pedido",  tipo: "fecha",  grupo: "Hitos", nivelPedido: true, ayuda: "Hora en que se numera el pedido e imprimen etiquetas (DateLabOrderNumber)." },
+  { key: "fechaValidacion",     label: "Validación del pedido",  tipo: "fecha",  grupo: "Hitos", nivelPedido: true, ayuda: "Hora de validación de la extracción (DateTimeValidated)." },
+  { key: "fechaImpresion",      label: "Impresión del tubo",     tipo: "fecha",  grupo: "Hitos", ayuda: "Hora de impresión de cada tubo/etiqueta. Define el día de la fila." },
+  { key: "fechaValidacionTubo", label: "Validación del tubo",    tipo: "fecha",  grupo: "Hitos", ayuda: "Hora de validación de cada tubo (opcional)." },
+  { key: "fechaPeticion",       label: "Entrada de la petición", tipo: "fecha",  grupo: "Hitos", nivelPedido: true, ayuda: "Hora de recepción de la orden (HL7). Solo se usa si faltan las demás fechas." },
+  { key: "area",                label: "Área de trabajo",        tipo: "texto",  grupo: "Dónde", ayuda: "Extracciones, Urgencias, Plantas…" },
+  { key: "puesto",              label: "Puesto",                 tipo: "texto",  grupo: "Dónde", ayuda: "Mostrador o box (MO-01, BOX-3…)." },
+  { key: "impresora",           label: "Impresora",              tipo: "texto",  grupo: "Dónde", ayuda: "Zebra o BC Robo asociada al puesto." },
+  { key: "consumible",          label: "Consumible / tubo",      tipo: "texto",  grupo: "Qué",   ayuda: "Tipo de tubo o etiqueta (ROJO SUERO, MALVA EDTA, ETIQUETAS…)." },
+  { key: "cantidad",            label: "Cantidad",               tipo: "numero", grupo: "Qué",   ayuda: "Unidades de la fila. Si no se empareja, cada fila es 1 tubo." },
+  { key: "prioridad",           label: "Prioridad",              tipo: "texto",  grupo: "Qué",   ayuda: "InLab: 1 = normal, 2 = urgente (también admite texto Urgente/Normal)." },
+  { key: "idOrden",             label: "Nº de pedido",           tipo: "texto",  grupo: "Qué",   ayuda: "Identificador interno del pedido: cuenta pedidos y evita contar tiempos por tubo. Nunca se envía." },
+  { key: "impresiones",         label: "Nº de impresiones",      tipo: "numero", grupo: "Calidad", ayuda: "Veces que se imprimió el tubo (NumPrinted). Más de 1 = reimpresión." },
+  { key: "estadoTubo",          label: "Estado del tubo",        tipo: "texto",  grupo: "Calidad", ayuda: "InLab: 5 = válido, -1 = anulado." },
+  { key: "incidenciaTubo",      label: "Incidencia del tubo",    tipo: "texto",  grupo: "Calidad", ayuda: "Código de incidencia en el tubo (Cfg_Lab_Incidences)." },
+  { key: "incidenciaPedido",    label: "Incidencia del pedido",  tipo: "texto",  grupo: "Calidad", nivelPedido: true, ayuda: "Código de incidencia de extracción del pedido (no acude, no ayunas…)." },
+  { key: "evento",              label: "Otro evento",            tipo: "texto",  grupo: "Calidad", ayuda: "Columna genérica de eventos (reimpresión, rechazo, error de impresora…)." },
 ]
 
-export const CAMPOS_FECHA: CampoKey[] = ["fechaPeticion", "fechaExtraccion", "fechaRecepcion", "fechaValidacion"]
+export const CAMPOS_FECHA: CampoKey[] = ["fechaLlegada", "fechaNumeracion", "fechaValidacion", "fechaImpresion", "fechaValidacionTubo", "fechaPeticion"]
 
-/** Orden de preferencia para decidir a qué DÍA pertenece una fila. */
-export const PRIORIDAD_FECHA_REFERENCIA: CampoKey[] = ["fechaExtraccion", "fechaPeticion", "fechaRecepcion", "fechaValidacion"]
+/** Orden de preferencia para decidir a qué DÍA pertenece una fila (tubo). */
+export const PRIORIDAD_FECHA_REFERENCIA: CampoKey[] = ["fechaImpresion", "fechaNumeracion", "fechaLlegada", "fechaPeticion", "fechaValidacionTubo", "fechaValidacion"]
 
 /** Mapeo: campo canónico → nombre EXACTO de la cabecera del CSV (o null). */
 export type Mapeo = Partial<Record<CampoKey, string | null>>
 
 /**
- * Alias de cabecera (se comparan normalizados: minúsculas, sin acentos ni signos).
- * Incluye nombres en español y los típicos de tablas MySQL de InLab en inglés
- * (LabOrder, Specimens...). AÑADIR AQUÍ los nombres reales cuando llegue el fichero.
+ * Cabeceras del formato plano A (consulta docs/inlab/exportacion-inlab.sql) y de las
+ * filas que genera sqlserver.ts a partir de la exportación completa (formato B).
+ */
+export const CABECERAS_PLANAS = [
+  "TuboId", "PedidoId", "Area", "Puesto", "Impresora", "Consumible", "Seccion", "Prioridad",
+  "UnidadReceptora", "EstadoPedido", "EstadoTubo", "Impresiones", "IncidenciaPedido", "IncidenciaTubo",
+  "FechaPeticion", "FechaLlegada", "FechaNumeracion", "FechaImpresion", "FechaValidacionTubo", "FechaValidacionPedido",
+  "NumPruebasPedido",
+] as const
+
+/** Emparejamiento fijo del formato plano. */
+export const MAPEO_PLANO: Mapeo = {
+  idOrden: "PedidoId",
+  fechaPeticion: "FechaPeticion",
+  fechaLlegada: "FechaLlegada",
+  fechaNumeracion: "FechaNumeracion",
+  fechaValidacion: "FechaValidacionPedido",
+  fechaImpresion: "FechaImpresion",
+  fechaValidacionTubo: "FechaValidacionTubo",
+  area: "Area",
+  puesto: "Puesto",
+  impresora: "Impresora",
+  consumible: "Consumible",
+  cantidad: null,
+  prioridad: "Prioridad",
+  impresiones: "Impresiones",
+  estadoTubo: "EstadoTubo",
+  incidenciaPedido: "IncidenciaPedido",
+  incidenciaTubo: "IncidenciaTubo",
+  evento: null,
+}
+
+/** ¿Las cabeceras son las del formato plano? (todas las imprescindibles presentes) */
+export function esFormatoPlano(cabeceras: string[]): boolean {
+  const set = new Set(cabeceras.map(normalizar))
+  return ["pedidoid", "consumible", "fechaimpresion", "prioridad"].every(c => set.has(c))
+}
+
+/**
+ * Alias de cabecera (se comparan normalizados: minúsculas, sin acentos ni signos;
+ * ojo: "FechaPeticion" se normaliza a "fechapeticion"). Incluye las columnas de las
+ * tablas dbo.* de InLab por si se exporta una vista propia con esos nombres.
  */
 export const ALIAS_CABECERA: Record<CampoKey, string[]> = {
-  idOrden: ["id_orden", "orden", "num_orden", "n_orden", "norden", "peticion", "id_peticion", "num_peticion", "order_id", "orderid", "laborder_id", "laborderid", "order", "request_id", "requestid", "episodio", "accession", "accession_number"],
-  fechaPeticion: ["fecha_peticion", "fecha_orden", "fecha_creacion", "f_peticion", "creacion", "fecha_solicitud", "creation_date", "creationdate", "created_at", "createdat", "order_date", "orderdate", "request_date", "date_created"],
-  fechaExtraccion: ["fecha_extraccion", "fecha_impresion", "f_extraccion", "extraccion", "impresion", "fecha_etiqueta", "extraction_date", "extractiondate", "collection_date", "collected_at", "print_date", "printdate", "printed_at", "dispensacion", "fecha_dispensacion", "dispense_date"],
-  fechaRecepcion: ["fecha_recepcion", "f_recepcion", "recepcion", "fecha_llegada", "llegada", "reception_date", "receptiondate", "received_at", "receivedat", "arrival_date", "lab_reception"],
-  fechaValidacion: ["fecha_validacion", "f_validacion", "validacion", "fecha_fin", "validation_date", "validated_at", "validatedat", "completed_at", "fecha_cierre"],
-  area: ["area", "area_trabajo", "work_area", "workarea", "zona", "servicio", "unidad", "departamento", "department", "location", "ubicacion", "centro"],
-  puesto: ["puesto", "puesto_trabajo", "workstation", "work_station", "station", "terminal", "box", "mostrador", "estacion", "pc", "equipo"],
-  consumible: ["consumible", "tipo_tubo", "tubo", "recipiente", "tipo_recipiente", "contenedor", "specimen", "specimen_type", "specimentype", "container", "container_type", "tube", "tube_type", "etiqueta", "tipo_etiqueta", "label_type", "material", "producto"],
-  cantidad: ["cantidad", "unidades", "num", "numero", "n", "qty", "quantity", "count", "total", "copias", "copies", "num_etiquetas"],
-  evento: ["evento", "tipo_evento", "incidencia", "tipo_incidencia", "accion", "event", "event_type", "eventtype", "action", "status_event", "motivo", "causa", "estado_muestra", "estado"],
-  prioridad: ["prioridad", "urgente", "urgencia", "es_urgente", "priority", "urgent", "is_urgent", "stat", "tipo_peticion", "circuito"],
-  impresora: ["impresora", "printer", "printer_name", "nombre_impresora", "zebra", "dispositivo", "device", "etiquetadora", "bcrobo"],
+  idOrden: ["pedidoid", "pedido_id", "id_pedido", "laborderid", "laborder_id", "id_orden", "orden", "num_orden", "order_id", "orderid", "peticion", "id_peticion"],
+  fechaPeticion: ["fechapeticion", "fecha_peticion", "orderdate", "order_date", "orderdatecreated", "fecha_orden", "fecha_solicitud", "creation_date", "created_at"],
+  fechaLlegada: ["fechallegada", "fecha_llegada", "datetimepatientarrived", "patient_arrived", "llegada", "llegada_paciente", "hora_llegada", "arrival_date"],
+  fechaNumeracion: ["fechanumeracion", "fecha_numeracion", "datelabordernumber", "numeracion", "fecha_dispensacion", "datetimedispensated", "dispensacion"],
+  fechaValidacion: ["fechavalidacionpedido", "fecha_validacion_pedido", "fechavalidacion", "fecha_validacion", "datetimevalidated", "validacion", "validated_at"],
+  fechaImpresion: ["fechaimpresion", "fecha_impresion", "fecha_tubo", "datetimecreated", "impresion", "print_date", "printed_at", "fecha_etiqueta", "fecha_extraccion"],
+  fechaValidacionTubo: ["fechavalidaciontubo", "fecha_validacion_tubo", "validacion_tubo", "specimen_validated"],
+  area: ["area", "area_trabajo", "workarea", "work_area", "centerworkarea", "zona", "servicio"],
+  puesto: ["puesto", "puesto_trabajo", "workstation", "work_station", "aliasnamepc", "box", "mostrador", "terminal"],
+  impresora: ["impresora", "printer", "printer_name", "nombre_impresora", "etiquetadora"],
+  consumible: ["consumible", "tipo_tubo", "tubo", "specimencode", "specimen", "specimen_type", "tube", "tube_type", "contenedor", "recipiente", "etiqueta"],
+  cantidad: ["cantidad", "unidades", "qty", "quantity", "num_etiquetas"],
+  prioridad: ["prioridad", "priority", "urgente", "urgencia", "es_urgente", "urgent", "stat"],
+  impresiones: ["impresiones", "numprinted", "num_printed", "num_impresiones", "veces_impreso", "copias"],
+  estadoTubo: ["estadotubo", "estado_tubo", "specimen_state", "estado_muestra"],
+  incidenciaPedido: ["incidenciapedido", "incidencia_pedido", "order_incidence"],
+  incidenciaTubo: ["incidenciatubo", "incidencia_tubo", "incidencia", "codeincidence", "incidence"],
+  evento: ["evento", "tipo_evento", "event", "event_type", "accion", "motivo"],
 }
 
 /** Normaliza una cabecera o valor para comparar: minúsculas, sin acentos, solo [a-z0-9_]. */
@@ -93,11 +153,17 @@ export function normalizar(s: string): string {
 }
 
 /**
- * Autodetecta el emparejamiento a partir de las cabeceras.
- * 1º coincidencia exacta con un alias, 2º la cabecera contiene un alias (≥4 caracteres).
- * Una cabecera solo se asigna a un campo.
+ * Autodetecta el emparejamiento a partir de las cabeceras. El formato plano se
+ * reconoce entero; si no, 1º coincidencia exacta con un alias, 2º la cabecera
+ * contiene un alias (≥5 caracteres). Una cabecera solo se asigna a un campo.
  */
 export function autodetectarMapeo(cabeceras: string[]): Mapeo {
+  if (esFormatoPlano(cabeceras)) {
+    const porNorm = new Map(cabeceras.map(c => [normalizar(c), c]))
+    const out: Mapeo = {}
+    for (const [k, v] of Object.entries(MAPEO_PLANO) as [CampoKey, string | null][]) out[k] = v ? porNorm.get(normalizar(v)) ?? null : null
+    return out
+  }
   const norm = cabeceras.map(normalizar)
   const usadas = new Set<number>()
   const mapeo: Mapeo = {}
@@ -110,7 +176,7 @@ export function autodetectarMapeo(cabeceras: string[]): Mapeo {
   }
   for (const campo of CAMPOS) {
     if (mapeo[campo.key]) continue
-    const alias = ALIAS_CABECERA[campo.key].map(normalizar).filter(a => a.length >= 4)
+    const alias = ALIAS_CABECERA[campo.key].map(normalizar).filter(a => a.length >= 5)
     const idx = norm.findIndex((h, i) => !usadas.has(i) && alias.some(a => h.includes(a)))
     if (idx >= 0) asignar(campo.key, idx)
   }
@@ -119,7 +185,7 @@ export function autodetectarMapeo(cabeceras: string[]): Mapeo {
 
 /** Aplica un mapeo guardado solo con las cabeceras que existan en este fichero. */
 export function combinarMapeo(guardado: Mapeo | null | undefined, auto: Mapeo, cabeceras: string[]): Mapeo {
-  if (!guardado) return auto
+  if (!guardado || esFormatoPlano(cabeceras)) return auto
   const set = new Set(cabeceras)
   const out: Mapeo = { ...auto }
   for (const campo of CAMPOS) {
@@ -131,27 +197,29 @@ export function combinarMapeo(guardado: Mapeo | null | undefined, auto: Mapeo, c
 }
 
 export function validarMapeo(m: Mapeo): string | null {
-  if (!CAMPOS_FECHA.some(k => m[k])) return "Empareja al menos una columna de fecha (petición, extracción, recepción o validación)."
+  if (!CAMPOS_FECHA.some(k => m[k])) return "Empareja al menos una columna de fecha (impresión, numeración, llegada o validación)."
   return null
 }
 
 // ─── Normalización de valores ────────────────────────────────────────────────
 
-export const EVENTO_CATEGORIAS = ["REIMPRESION", "RECHAZO", "ANULACION", "ERROR_IMPRESORA", "OTRO"] as const
+/** Categorías de evento. Añadir SIEMPRE al final: el índice viaja en el payload. */
+export const EVENTO_CATEGORIAS = ["REIMPRESION", "RECHAZO", "ANULACION", "ERROR_IMPRESORA", "OTRO", "INCIDENCIA"] as const
 export type EventoCategoria = typeof EVENTO_CATEGORIAS[number]
 
 export const EVENTO_LABEL: Record<EventoCategoria, string> = {
   REIMPRESION: "Reimpresiones",
   RECHAZO: "Tubos rechazados",
-  ANULACION: "Anulaciones",
+  ANULACION: "Tubos anulados",
   ERROR_IMPRESORA: "Errores de impresora",
   OTRO: "Otros eventos",
+  INCIDENCIA: "Incidencias de extracción",
 }
 
-/** Valores de la columna "evento" que significan "fila normal, sin incidencia". AJUSTAR con el fichero real. */
-export const EVENTO_NEUTRO = /^(|-|0|ok|normal|n_a|na|null|none|ninguno|ninguna|sin_incidencia|impresion|impreso|printed|print|extraccion|extraido|recibido|received|validado|validated|correcto|completado|completed)$/
+/** Valores de la columna genérica "evento" que significan "fila normal, sin incidencia". */
+export const EVENTO_NEUTRO = /^(|-|0|5|ok|normal|n_a|na|null|none|ninguno|ninguna|sin_incidencia|impresion|impreso|printed|print|extraccion|extraido|recibido|received|validado|validated|correcto|completado|completed)$/
 
-/** Patrones (sobre el valor normalizado) para clasificar eventos. AJUSTAR con los códigos reales. */
+/** Patrones (sobre el valor normalizado) para clasificar eventos genéricos. */
 export const ALIAS_EVENTO: [EventoCategoria, RegExp][] = [
   ["REIMPRESION", /(reimp|re_imp|reprint|duplicad|copia)/],
   ["RECHAZO", /(rechaz|reject|hemoliz|coagulad|insuficiente|no_apta|invalida|muestra_mal)/],
@@ -159,7 +227,7 @@ export const ALIAS_EVENTO: [EventoCategoria, RegExp][] = [
   ["ERROR_IMPRESORA", /(impresora|printer|zebra|bc_?robo|atasco|jam|sin_papel|paper|ribbon|cinta|error_imp|offline)/],
 ]
 
-/** Devuelve la categoría del evento o null si la fila es normal. */
+/** Devuelve la categoría del evento genérico o null si la fila es normal. */
 export function clasificarEvento(valor: string): EventoCategoria | null {
   const n = normalizar(valor)
   if (EVENTO_NEUTRO.test(n)) return null
@@ -167,12 +235,27 @@ export function clasificarEvento(valor: string): EventoCategoria | null {
   return "OTRO"
 }
 
-const URGENTE_EXACTO = /^(u|s|si|y|yes|1|true|stat|urg|urgente|urgent|alta|high|preferente|vital|emergencia)$/
-/** ¿La prioridad indica urgente? AJUSTAR si el fichero usa otros códigos (p. ej. rango de numeración). */
+/** InLab: estado del tubo -1 = anulado (también texto "anulado"/"cancelado"). */
+export function esAnulado(valor: string): boolean {
+  const v = valor.trim()
+  if (v === "-1") return true
+  return /(anul|cancel)/.test(normalizar(v))
+}
+
+/** Código de incidencia válido (vacío, NULL o 0 = sin incidencia). */
+export function esIncidencia(valor: string): boolean {
+  const v = valor.trim()
+  return v !== "" && v !== "0" && v.toUpperCase() !== "NULL"
+}
+
+const URGENTE_TEXTO = /^(u|s|si|y|yes|true|stat|urg|urgente|urgent|alta|high|preferente|vital|emergencia)$/
+/** ¿La prioridad indica urgente? InLab usa Priority 1 = normal, 2 = urgente. */
 export function esUrgente(valor: string): boolean {
   const n = normalizar(valor)
   if (!n) return false
-  return URGENTE_EXACTO.test(n) || n.includes("urg") || n.includes("stat")
+  if (n === "2") return true
+  if (/^\d+$/.test(n)) return false
+  return URGENTE_TEXTO.test(n) || n.includes("urg") || n.includes("stat")
 }
 
 /** Limpia un texto de dimensión (área, puesto, consumible…) para agrupar. */

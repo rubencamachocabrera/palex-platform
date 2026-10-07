@@ -32,7 +32,7 @@ export interface VistaProps {
 const pct = (a: number, b: number) => (b ? (a / b) * 100 : 0)
 
 const EVENTO_COLOR: Record<EventoCategoria, string> = {
-  REIMPRESION: ORANGE, RECHAZO: "#E11D48", ANULACION: "#6366F1", ERROR_IMPRESORA: "#0EA5E9", OTRO: "#94A3B8",
+  REIMPRESION: ORANGE, RECHAZO: "#E11D48", ANULACION: "#6366F1", ERROR_IMPRESORA: "#0EA5E9", OTRO: "#94A3B8", INCIDENCIA: "#D946EF",
 }
 
 // ─── Resumen ejecutivo ───────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ export function VistaTiempos({ ds, rango, filtros, onFiltro }: VistaProps) {
   const peorArea = porAreaT[0]
 
   if (disponibles.length === 0) {
-    return <Panel titulo="Sin tiempos calculables" texto="Para medir tiempos el fichero necesita al menos dos columnas de fecha/hora emparejadas (p. ej. petición y extracción, o extracción y recepción).">
+    return <Panel titulo="Sin tiempos calculables" texto="Para medir tiempos el fichero necesita al menos dos columnas de fecha/hora emparejadas (p. ej. llegada del paciente y numeración, o numeración y validación).">
       <Nota>Revisa el emparejamiento de columnas en la próxima carga.</Nota>
     </Panel>
   }

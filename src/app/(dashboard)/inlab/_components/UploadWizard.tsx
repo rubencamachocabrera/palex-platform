@@ -20,6 +20,8 @@ import { procesarFichero, ProcesoCancelado, type ProcessOptions, type ProcessRes
 import type { WorkerIn, WorkerOut } from "@/lib/inlab/inlab.worker"
 import { crearWorkerInlab } from "@/lib/inlab/crear-worker"
 import { LIMITES, tamanoPayload } from "@/lib/inlab/types"
+import { detectarExportacionSqlServer, nombreLote, procesarExportacionSqlServer, type ExportacionDetectada } from "@/lib/inlab/sqlserver"
+import { MAPEO_PLANO } from "@/lib/inlab/mapping"
 import { fmtDia, fmtN } from "@/components/inlab/charts"
 
 export interface HospitalOpcion { id: string; nombre: string; ciudad: string }
@@ -51,6 +53,9 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
   const [hospitalId, setHospitalId] = useState(hospitalInicial ?? "")
   const [busqueda, setBusqueda] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  /** Formato B: exportación completa de la BD (varios CSV dbo.*) */
+  const [lote, setLote] = useState<{ files: File[]; det: ExportacionDetectada } | null>(null)
+  const folderRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<Previsualizacion | null>(null)
   const [codificacion, setCodificacion] = useState<Codificacion>("utf-8")
   const [delimitador, setDelimitador] = useState<Delimitador>(";")
@@ -101,9 +106,23 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
     return q ? hospitales.filter(h => `${h.nombre} ${h.ciudad}`.toLowerCase().includes(q)) : hospitales
   }, [hospitales, busqueda])
 
+  /** Varios ficheros o una carpeta: si es la BD InLab completa se procesa como lote. */
+  async function elegirFicheros(lista: FileList | File[] | null | undefined) {
+    const files = Array.from(lista ?? []).filter(f => /\.(csv|txt|tsv)$/i.test(f.name))
+    if (files.length === 0) { setError("No hay ficheros .csv en la selección."); return }
+    if (files.length === 1) { setLote(null); return elegirFichero(files[0]) }
+    const det = detectarExportacionSqlServer(files)
+    if (!det) { setError("Has elegido varios ficheros, pero no parecen la exportación de la base de datos InLab (dbo.LabOrders.csv + dbo.LabOrder_Specimens.csv). Para un CSV único, elige solo ese fichero."); return }
+    if (det.faltan.length) { setError(`Faltan tablas obligatorias de la exportación: ${det.faltan.join(", ")}.`); return }
+    setError(null); setFile(null); setPreview(null)
+    setLote({ files, det })
+    setMapeo(MAPEO_PLANO)
+  }
+
   async function elegirFichero(f: File | undefined | null) {
     if (!f) return
     setError(null)
+    setLote(null)
     if (!/\.(csv|txt|tsv)$/i.test(f.name)) { setError("Formato no admitido. Usa una exportación .csv, .tsv o .txt."); return }
     if (f.size === 0) { setError("El fichero está vacío."); return }
     try {
@@ -138,6 +157,7 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
   }
 
   async function procesar() {
+    if (lote) return procesarLote()
     if (!file || !preview) return
     const err = validarMapeo(mapeo)
     if (err) { setError(err); return }
@@ -163,6 +183,35 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
     } else {
       void procesarEnHilo(opts, terminar, fallar)
     }
+  }
+
+  /** Formato B: la BD completa se cruza y agrega en el Worker (o en el hilo principal como respaldo). */
+  function procesarLote() {
+    if (!lote) return
+    setError(null); setPaso("procesando"); setResultado(null); setCheck(null)
+    cancelRef.current = false
+    setProgreso({ bytes: 0, total: lote.det.bytes, filas: 0, inicio: Date.now() })
+    const terminar = (res: ProcessResult) => { setResultado(res); void comprobar(res) }
+    const fallar = (msg: string) => { setError(msg); setPaso("fichero") }
+    const enHilo = async () => {
+      try {
+        terminar(await procesarExportacionSqlServer(lote.files, ordenFecha, pr => setProgreso(prev => ({ ...prev, ...pr })), () => cancelRef.current))
+      } catch (e) {
+        if (e instanceof ProcesoCancelado) return
+        fallar(e instanceof Error ? e.message : "Error procesando la exportación")
+      }
+    }
+    const worker = crearWorkerInlab()
+    if (!worker) { void enHilo(); return }
+    workerRef.current = worker
+    worker.onmessage = (e: MessageEvent<WorkerOut>) => {
+      const m = e.data
+      if (m.type === "progreso") setProgreso(pr => ({ ...pr, bytes: m.bytes, total: m.total, filas: m.filas }))
+      else if (m.type === "resultado") { worker.terminate(); workerRef.current = null; terminar(m.result) }
+      else if (m.type === "error") { worker.terminate(); workerRef.current = null; fallar(m.message) }
+    }
+    worker.onerror = () => { worker.terminate(); workerRef.current = null; void enHilo() }
+    worker.postMessage({ type: "procesar-bd", files: lote.det ? Object.values(lote.det.ficheros).filter((f): f is File => !!f) : lote.files, ordenFecha } satisfies WorkerIn)
   }
 
   /** Respaldo sin Worker: mismo código en el hilo principal, cediendo el control entre trozos. */
@@ -195,18 +244,20 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
   }
 
   const cuerpo = useMemo(() => {
-    if (!resultado || !file) return null
+    if (!resultado || (!file && !lote)) return null
+    const nombre = lote ? nombreLote(lote.det) : file!.name
+    const tamanoTotal = lote ? lote.det.bytes : file!.size
     return JSON.stringify({
       hospitalId, modo, mapeo, guardarMapeo,
       opciones: { delimitador, codificacion, ordenFecha },
       meta: {
-        fichero: file.name.slice(0, 255), tamanoBytes: file.size, hash: resultado.hash,
+        fichero: nombre.slice(0, 255), tamanoBytes: tamanoTotal, hash: resultado.hash,
         filas: resultado.stats.filas, filasValidas: resultado.stats.filasValidas, filasDescartadas: resultado.stats.filasDescartadas,
         avisos: resultado.stats.avisos.slice(0, 50).map(a => a.slice(0, 400)),
       },
       payload: resultado.payload,
     })
-  }, [resultado, file, hospitalId, modo, mapeo, guardarMapeo, delimitador, codificacion, ordenFecha])
+  }, [resultado, file, lote, hospitalId, modo, mapeo, guardarMapeo, delimitador, codificacion, ordenFecha])
 
   async function guardar() {
     if (!cuerpo) return
@@ -278,23 +329,36 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
                 <div
                   onDragOver={e => { e.preventDefault(); setArrastrando(true) }}
                   onDragLeave={() => setArrastrando(false)}
-                  onDrop={e => { e.preventDefault(); setArrastrando(false); void elegirFichero(e.dataTransfer.files?.[0]) }}
+                  onDrop={e => { e.preventDefault(); setArrastrando(false); void elegirFicheros(e.dataTransfer.files) }}
                   className={`mt-2 flex min-h-[220px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${arrastrando ? "border-teal-400 bg-teal-50/60 dark:bg-teal-950/20" : "border-slate-200 dark:border-slate-700"}`}
                 >
                   <span className="kpi-icon-tile flex h-12 w-12 items-center justify-center rounded-2xl text-white"><IconFileText size={22} /></span>
-                  {file ? (
+                  {lote ? (
+                    <>
+                      <p className="mt-3 text-sm font-extrabold text-gray-900 dark:text-white">Base de datos InLab completa</p>
+                      <p className="mt-1 text-xs text-gray-400">{Object.keys(lote.det.ficheros).length} tablas útiles · {MB(lote.det.bytes)} a procesar</p>
+                      <ul className="mt-2 flex max-w-sm flex-wrap justify-center gap-1">
+                        {Object.values(lote.det.ficheros).map(f => f && <li key={f.name} className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">{f.name.replace(/^dbo\./i, "").replace(/\.csv$/i, "")}</li>)}
+                      </ul>
+                      {lote.det.ignoradas.length > 0 && <p className="mt-2 max-w-sm text-[10px] leading-4 text-gray-400"><IconLock size={10} className="mr-1 inline" />No se abren: {lote.det.ignoradas.join(", ")} (datos personales)</p>}
+                    </>
+                  ) : file ? (
                     <>
                       <p className="mt-3 max-w-full truncate text-sm font-extrabold text-gray-900 dark:text-white">{file.name}</p>
                       <p className="mt-1 text-xs text-gray-400">{MB(file.size)} · {preview?.cabeceras.length} columnas · {preview?.codificacion === "utf-8" ? "UTF-8" : "Latin-1"}</p>
                     </>
                   ) : (
                     <>
-                      <p className="mt-3 text-sm font-extrabold text-gray-800 dark:text-white">Arrastra aquí el CSV de InLab</p>
-                      <p className="mt-1 text-xs text-gray-400">.csv, .tsv o .txt · separador ; , o tabulador · UTF-8 o Latin-1 · cientos de MB</p>
+                      <p className="mt-3 text-sm font-extrabold text-gray-800 dark:text-white">Arrastra aquí el CSV o la carpeta de InLab</p>
+                      <p className="mt-1 max-w-sm text-xs text-gray-400">CSV de la consulta de exportación, o la base de datos completa (dbo.*.csv). Se procesa en tu equipo, aunque ocupe varios GB.</p>
                     </>
                   )}
-                  <button type="button" onClick={() => inputRef.current?.click()} className="mt-4 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800">{file ? "Cambiar fichero" : "Elegir fichero"}</button>
-                  <input ref={inputRef} type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" className="hidden" onChange={e => { void elegirFichero(e.target.files?.[0]); e.target.value = "" }} />
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <button type="button" onClick={() => inputRef.current?.click()} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800">{file || lote ? "Cambiar ficheros" : "Elegir fichero(s)"}</button>
+                    <button type="button" onClick={() => folderRef.current?.click()} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-slate-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800">Elegir carpeta (BD completa)</button>
+                  </div>
+                  <input ref={inputRef} type="file" multiple accept=".csv,.tsv,.txt,text/csv,text/plain" className="hidden" onChange={e => { void elegirFicheros(e.target.files); e.target.value = "" }} />
+                  <input ref={folderRef} type="file" multiple className="hidden" {...({ webkitdirectory: "", directory: "" } as Record<string, string>)} onChange={e => { void elegirFicheros(e.target.files); e.target.value = "" }} />
                 </div>
               </div>
             </div>
@@ -379,7 +443,7 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
 
           {paso === "procesando" && (
             <div className="py-8 text-center">
-              <p className="text-sm font-extrabold text-gray-900 dark:text-white">Procesando {file?.name}</p>
+              <p className="text-sm font-extrabold text-gray-900 dark:text-white">Procesando {lote ? "la base de datos InLab" : file?.name}</p>
               <p className="mt-1 text-xs text-gray-400">Leyendo por trozos y agregando en segundo plano. Puedes seguir usando la página.</p>
               <div className="mx-auto mt-6 max-w-lg">
                 <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
@@ -457,12 +521,12 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
         <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             {paso === "columnas" && <button type="button" onClick={() => setPaso("fichero")} className="min-h-[44px] rounded-xl px-4 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800">Atrás</button>}
-            {paso === "revision" && <button type="button" onClick={() => setPaso("columnas")} className="min-h-[44px] rounded-xl px-4 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800">Cambiar columnas</button>}
+            {paso === "revision" && !lote && <button type="button" onClick={() => setPaso("columnas")} className="min-h-[44px] rounded-xl px-4 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800">Cambiar columnas</button>}
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             {paso !== "hecho" && paso !== "procesando" && <button type="button" onClick={cerrar} className="min-h-[44px] rounded-xl border border-slate-200 px-4 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-800">Cancelar</button>}
-            {paso === "procesando" && <button type="button" onClick={() => { cancelar(); setPaso("columnas") }} className="min-h-[44px] rounded-xl border border-rose-200 px-4 text-sm font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30">Cancelar procesado</button>}
-            {paso === "fichero" && <button type="button" disabled={!hospitalId || !file} onClick={() => setPaso("columnas")} className="btn-teal min-h-[44px] rounded-xl px-5 text-sm font-bold text-white disabled:opacity-40" style={{ backgroundColor: TEAL }}>{!hospitalId ? "Elige un hospital" : !file ? "Elige un fichero" : "Continuar"}</button>}
+            {paso === "procesando" && <button type="button" onClick={() => { cancelar(); setPaso(lote ? "fichero" : "columnas") }} className="min-h-[44px] rounded-xl border border-rose-200 px-4 text-sm font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30">Cancelar procesado</button>}
+            {paso === "fichero" && <button type="button" disabled={!hospitalId || (!file && !lote)} onClick={() => (lote ? procesarLote() : setPaso("columnas"))} className="btn-teal min-h-[44px] rounded-xl px-5 text-sm font-bold text-white disabled:opacity-40" style={{ backgroundColor: TEAL }}>{!hospitalId ? "Elige un hospital" : !file && !lote ? "Elige un fichero" : lote ? "Procesar base de datos" : "Continuar"}</button>}
             {paso === "columnas" && <button type="button" onClick={() => void procesar()} className="btn-teal min-h-[44px] rounded-xl px-5 text-sm font-bold text-white" style={{ backgroundColor: TEAL }}>Procesar fichero</button>}
             {paso === "revision" && <button type="button" disabled={!!bloqueante || demasiadoGrande || !check || guardando} onClick={() => void guardar()} className="btn-teal min-h-[44px] rounded-xl px-5 text-sm font-bold text-white disabled:opacity-40" style={{ backgroundColor: TEAL }}>{guardando ? "Guardando…" : modo === "SUSTITUIR" ? "Sustituir y guardar" : "Guardar agregados"}</button>}
             {paso === "hecho" && <button type="button" onClick={onCerrar} className="btn-teal min-h-[44px] rounded-xl px-5 text-sm font-bold text-white" style={{ backgroundColor: TEAL }}>Ver dashboard</button>}

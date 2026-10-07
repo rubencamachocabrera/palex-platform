@@ -7,7 +7,7 @@ import { parseFecha, type FechaParseada, type OrdenFecha } from "./dates"
 import { bucketIndex, emptyHist, MAX_DURACION_MIN, toSparse } from "./histogram"
 import {
   CAMPOS, PRIORIDAD_FECHA_REFERENCIA, EVENTO_CATEGORIAS, SIN_AREA, SIN_CONSUMIBLE, SIN_PUESTO,
-  clasificarEvento, esUrgente, limpiarDimension, type CampoKey, type Mapeo,
+  clasificarEvento, esAnulado, esIncidencia, esUrgente, limpiarDimension, type CampoKey, type EventoCategoria, type Mapeo,
 } from "./mapping"
 import { LIMITES, type InlabPayload } from "./types"
 
@@ -48,6 +48,8 @@ export class InlabAggregator {
   private puestos = new Map<number, number[]>()
   private actividad = new Map<number, number[]>()
   private ordenes = new Map<number, Set<string>>()
+  /** Pedidos ya vistos: los datos de nivel pedido (tiempos, incidencia del pedido) cuentan una vez. */
+  private pedidosVistos = new Set<string>()
   private tiempos = new Map<number, TiempoAcc>()
   private eventos = new Map<number, number[]>()
   // Cachés por valor crudo: las filas de una misma orden repiten valores consecutivos
@@ -130,11 +132,14 @@ export class InlabAggregator {
   add(row: string[]) {
     const s = this.stats
     s.filas++
-    const fPet = this.fecha(row, "fechaPeticion")
-    const fExt = this.fecha(row, "fechaExtraccion")
-    const fRec = this.fecha(row, "fechaRecepcion")
-    const fVal = this.fecha(row, "fechaValidacion")
-    const porCampo: Partial<Record<CampoKey, FechaParseada | null>> = { fechaPeticion: fPet, fechaExtraccion: fExt, fechaRecepcion: fRec, fechaValidacion: fVal }
+    const porCampo: Partial<Record<CampoKey, FechaParseada | null>> = {
+      fechaPeticion: this.fecha(row, "fechaPeticion"),
+      fechaLlegada: this.fecha(row, "fechaLlegada"),
+      fechaNumeracion: this.fecha(row, "fechaNumeracion"),
+      fechaValidacion: this.fecha(row, "fechaValidacion"),
+      fechaImpresion: this.fecha(row, "fechaImpresion"),
+      fechaValidacionTubo: this.fecha(row, "fechaValidacionTubo"),
+    }
     let ref: FechaParseada | null = null
     for (const k of PRIORIDAD_FECHA_REFERENCIA) { const f = porCampo[k]; if (f) { ref = f; break } }
     if (!ref) { s.sinFecha++; s.filasDescartadas++; return }
@@ -159,12 +164,13 @@ export class InlabAggregator {
       if (u === undefined) { u = esUrgente(rawPrio) ? 1 : 0; if (this.cacheUrg.size < 5000) this.cacheUrg.set(rawPrio, u) }
       urg = u
     }
-    const rawEv = this.val(row, "evento")
-    let cat: ReturnType<typeof clasificarEvento> = null
-    if (rawEv !== undefined && rawEv !== "") {
-      const c = this.cacheEv.get(rawEv)
-      if (c !== undefined) cat = c
-      else { cat = clasificarEvento(rawEv); if (this.cacheEv.size < 5000) this.cacheEv.set(rawEv, cat) }
+
+    // ¿Primera fila de este pedido? (sin columna de pedido, cada fila cuenta como pedido)
+    const ord = this.val(row, "idOrden")?.trim() ?? ""
+    let primeraDelPedido = true
+    if (ord) {
+      if (this.pedidosVistos.has(ord)) primeraDelPedido = false
+      else this.pedidosVistos.add(ord)
     }
 
     // Consumo
@@ -178,12 +184,32 @@ export class InlabAggregator {
     let ra = this.actividad.get(ka)
     if (!ra) { ra = [d, a, 0, 0, 0, -1, ...new Array(24).fill(0)]; this.actividad.set(ka, ra) }
     ra[2]++; ra[3] += cant; ra[4] += urg; ra[6 + ref.hora]++
-    const ord = this.val(row, "idOrden")
-    if (ord !== undefined && ord.trim() !== "") {
+    if (ord) {
       let set = this.ordenes.get(ka)
       if (!set) { set = new Set(); this.ordenes.set(ka, set) }
-      set.add(ord.trim())
+      set.add(ord)
     }
+
+    // Eventos de calidad de la fila
+    const evs: [EventoCategoria, string, number][] = []
+    const rawImp = this.val(row, "impresiones")
+    if (rawImp !== undefined && rawImp.trim() !== "") {
+      const n = Number(rawImp.trim())
+      if (Number.isFinite(n) && n > 1) evs.push(["REIMPRESION", "", Math.min(Math.round(n) - 1, 1000)])
+    }
+    const rawEst = this.val(row, "estadoTubo")
+    if (rawEst !== undefined && rawEst !== "" && esAnulado(rawEst)) evs.push(["ANULACION", "", 1])
+    const rawIncT = this.val(row, "incidenciaTubo")
+    if (rawIncT !== undefined && esIncidencia(rawIncT)) evs.push(["INCIDENCIA", rawIncT, 1])
+    const rawIncP = this.val(row, "incidenciaPedido")
+    if (primeraDelPedido && rawIncP !== undefined && esIncidencia(rawIncP)) evs.push(["INCIDENCIA", rawIncP, 1])
+    const rawEv = this.val(row, "evento")
+    if (rawEv !== undefined && rawEv !== "") {
+      let cat = this.cacheEv.get(rawEv)
+      if (cat === undefined) { cat = clasificarEvento(rawEv); if (this.cacheEv.size < 5000) this.cacheEv.set(rawEv, cat) }
+      if (cat) evs.push([cat, rawEv, 1])
+    }
+    const totalEventos = evs.reduce((n, e) => n + e[2], 0)
 
     // Puesto (solo si la columna está emparejada)
     let p = -1
@@ -192,28 +218,30 @@ export class InlabAggregator {
       const kp = (d * 256 + a) * 2048 + p
       let rp = this.puestos.get(kp)
       if (!rp) { rp = [d, a, p, 0, 0, 0, 0]; this.puestos.set(kp, rp) }
-      rp[3]++; rp[4] += cant; rp[5] += urg
-      if (cat) rp[6]++
+      rp[3]++; rp[4] += cant; rp[5] += urg; rp[6] += totalEventos
     }
 
-    // Eventos del fichero
-    if (cat) {
+    if (evs.length) {
       const imp = this.idx.impresora >= 0 ? this.dim("impresoras", "impresora", row, "Sin impresora") : -1
-      const det = this.detalleEvento(rawEv ?? "")
-      const ci = EVENTO_CATEGORIAS.indexOf(cat)
-      const ke = ((((d * 256 + a) * 2048 + (p + 1)) * 512 + (imp + 1)) * 8 + ci) * 256 + (det + 1)
-      let re = this.eventos.get(ke)
-      if (!re) { re = [d, a, p, imp, ci, det, 0]; this.eventos.set(ke, re) }
-      re[6]++
+      for (const [cat, detalle, qty] of evs) {
+        const det = detalle ? this.detalleEvento(detalle) : -1
+        const ci = EVENTO_CATEGORIAS.indexOf(cat)
+        const ke = ((((d * 256 + a) * 2048 + (p + 1)) * 512 + (imp + 1)) * 8 + ci) * 256 + (det + 1)
+        let re = this.eventos.get(ke)
+        if (!re) { re = [d, a, p, imp, ci, det, 0]; this.eventos.set(ke, re) }
+        re[6] += qty
+      }
     }
 
-    // Tiempos entre hitos
-    this.tiempo(d, a, urg, 0, fPet, fExt)
-    this.tiempo(d, a, urg, 1, fExt, fRec)
-    this.tiempo(d, a, urg, 2, fRec, fVal)
-    const inicio = fPet ?? fExt ?? fRec
-    const fin = fVal ?? fRec ?? fExt
-    if (inicio && fin && inicio !== fin) this.tiempo(d, a, urg, 3, inicio, fin)
+    // Tiempos entre hitos: los de pedido una vez por pedido, el del tubo por fila
+    const fLle = porCampo.fechaLlegada ?? null, fNum = porCampo.fechaNumeracion ?? null, fVal = porCampo.fechaValidacion ?? null
+    if (primeraDelPedido) {
+      this.tiempo(d, a, urg, 0, fLle, fNum)
+      this.tiempo(d, a, urg, 1, fNum, fVal)
+      const inicio = fLle ?? fNum ?? porCampo.fechaPeticion ?? null
+      if (inicio && fVal && inicio !== fVal) this.tiempo(d, a, urg, 3, inicio, fVal)
+    }
+    this.tiempo(d, a, urg, 2, porCampo.fechaImpresion ?? null, porCampo.fechaValidacionTubo ?? null)
   }
 
   /** Solo códigos cortos sin secuencias numéricas largas (evita filtrar texto libre o identificadores). */
@@ -249,6 +277,7 @@ export class InlabAggregator {
       if (set) r[5] = set.size
     }
     this.ordenes.clear()
+    this.pedidosVistos.clear()
 
     const tiempos: number[][] = []
     for (const acc of this.tiempos.values()) {

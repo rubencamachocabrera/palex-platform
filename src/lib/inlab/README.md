@@ -51,7 +51,35 @@ Ejemplo sintético y generador: `docs/inlab/ejemplo-inlab-sintetico.csv`,
 `docs/inlab/generar-csv-sintetico.mjs` (sirve también para pruebas de rendimiento:
 ~226 MB / 1,5 M filas se procesan en ~9 s en Node).
 
-## Cuando llegue el CSV real — checklist
+## Formatos admitidos (verificado con la BD real de Gómez Ulla, oct-2026)
+
+InLab corre sobre **SQL Server** (tablas `dbo.*`). El asistente acepta:
+
+- **A · CSV plano** generado con `docs/inlab/exportacion-inlab.sql`: una fila por
+  tubo/etiqueta, cabeceras `CABECERAS_PLANAS` (`mapping.ts`). Se reconoce solo y no
+  hay que emparejar columnas. Es el formato recomendado para cargas periódicas
+  (~70 MB/año, sin datos de pacientes).
+- **B · BD completa** (un CSV por tabla, botón «Elegir carpeta»): `sqlserver.ts`
+  lee los catálogos `Cfg_*`, indexa `dbo.LabOrders` (descartando `HL7Received`,
+  ~99 % del tamaño, con mensajes HL7 que contienen datos del paciente) y recorre
+  `dbo.LabOrder_Specimens` generando filas del formato A. Nunca abre `LabPatients`,
+  usuarios, logins ni auditoría. Relación clave: `LabOrder_Specimens.LabOrderNumber
+  = LabOrders.Id`.
+- Cualquier otro CSV, emparejando columnas a mano.
+
+Semántica (ver `mapping.ts` y `types.ts`):
+- Tramos: **ESPERA** llegada → numeración (por pedido), **EXTRACCION** numeración →
+  validación (por pedido), **TUBO** impresión → validación del tubo, **TOTAL**.
+- Prioridad 1 = normal, 2 = urgente. Tubo `State` -1 = anulado. `NumPrinted` > 1 =
+  reimpresiones (cuenta n-1). Incidencias de extracción = `Cfg_Lab_Incidences`.
+- Los datos de nivel pedido se cuentan una vez por pedido (`idOrden`).
+
+Pendiente de confirmar con el equipo de InLab: significado de `LabOrders.State`
+(0, 1, 2, 4, 5, 7, 9). El log de impresión (`LogsPrint`) solo guarda ~1 semana, por
+eso aún no se usa para errores de impresora.
+
+## Historial: checklist original (antes de tener el fichero real)
+
 
 1. **Cargarlo en el asistente** (`/inlab` → «Cargar fichero») y mirar qué columnas
    autodetecta. No hace falta tocar código para un emparejamiento puntual: se
