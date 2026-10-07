@@ -35,7 +35,12 @@ export function useToast() {
 
 function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
   const [exiting, setExiting] = useState(false)
+  const [paused, setPaused] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Tiempo restante y momento en que se (re)lanzó el temporizador: permiten pausar
+  // al pasar el ratón / enfocar / ocultar la pestaña (WCAG 2.2.1) y reanudar sin reiniciar.
+  const remainingRef = useRef(t.duration ?? 4000)
+  const startedAtRef = useRef(0)
 
   const dismiss = useCallback(() => {
     setExiting(true)
@@ -43,10 +48,21 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
   }, [t.id, onRemove])
 
   useEffect(() => {
-    const duration = t.duration ?? 4000
-    timerRef.current = setTimeout(dismiss, duration)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [dismiss, t.duration])
+    if (paused || exiting) return
+    startedAtRef.current = Date.now()
+    timerRef.current = setTimeout(dismiss, remainingRef.current)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAtRef.current))
+    }
+  }, [dismiss, paused, exiting])
+
+  // Pausa también mientras la pestaña está oculta
+  useEffect(() => {
+    const onVis = () => setPaused(document.visibilityState === "hidden")
+    document.addEventListener("visibilitychange", onVis)
+    return () => document.removeEventListener("visibilitychange", onVis)
+  }, [])
 
   const STYLES: Record<ToastType, { tile: string; icon: string; bar: string }> = {
     success: { tile: "bg-emerald-50 text-emerald-600", icon: checkIcon, bar: "#10b981" },
@@ -67,6 +83,10 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
         min-w-[280px] max-w-[380px] cursor-pointer select-none
       `}
       onClick={dismiss}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false) }}
     >
       <span className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${s.tile}`} dangerouslySetInnerHTML={{ __html: s.icon }} />
       <p className="text-sm font-medium text-gray-800 flex-1 leading-snug">{t.message}</p>
@@ -80,7 +100,7 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: (id: string
       <span
         aria-hidden="true"
         className="toast-timer absolute left-0 bottom-0 h-[2px] w-full"
-        style={{ backgroundColor: s.bar, animationDuration: `${t.duration ?? 4000}ms` }}
+        style={{ backgroundColor: s.bar, animationDuration: `${t.duration ?? 4000}ms`, animationPlayState: paused ? "paused" : "running" }}
       />
     </div>
   )

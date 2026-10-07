@@ -15,7 +15,7 @@ interface Action {
   color?: string
 }
 
-function getContextActions(pathname: string, incidenciasActivo: boolean): Action[] {
+function getContextActions(pathname: string, incidenciasActivo: boolean, analiticaActivo: boolean): Action[] {
   if (pathname.startsWith("/hospitales/") && pathname.split("/").length > 2) {
     const id = pathname.split("/")[2]
     return [
@@ -57,7 +57,7 @@ function getContextActions(pathname: string, incidenciasActivo: boolean): Action
   if (pathname === "/notas") return [
     { label: "Nueva nota", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:nueva-nota") } },
   ]
-  if (pathname === "/inlab") return [
+  if (pathname === "/inlab" && analiticaActivo) return [
     { label: "Cargar fichero InLab", icon: <IcoPlusDoc />, onClick: () => { dispatchFabAction("fab:inlab-cargar") } },
   ]
   // Rutas sin acciones específicas
@@ -72,8 +72,8 @@ export function QuickActionsFAB() {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const { incidenciasActivo } = useConfigApp()
-  const actions = getContextActions(pathname, incidenciasActivo)
+  const { incidenciasActivo, analiticaActivo } = useConfigApp()
+  const actions = getContextActions(pathname, incidenciasActivo, analiticaActivo)
   // Visibilidad derivada (antes un estado sincronizado en un efecto: el FAB
   // aparecía un frame tarde y mostraba las acciones de la ruta anterior).
   const visible = actions.length > 0

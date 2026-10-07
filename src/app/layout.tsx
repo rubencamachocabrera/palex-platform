@@ -29,6 +29,9 @@ export const viewport: Viewport = {
   themeColor: "#00A99D",
   width: "device-width",
   initialScale: 1,
+  // cover: env(safe-area-inset-*) deja de valer 0 en iOS (notch / barra de inicio).
+  // El shell ya reserva esas zonas: dock, FAB, toasts y padding inferior del main.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

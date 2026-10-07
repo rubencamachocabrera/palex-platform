@@ -1954,3 +1954,12 @@ body:has(.nx-fab) .toast-region { bottom: calc(env(safe-area-inset-bottom, 0px) 
   .app-main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem); }
   body:has(.nx-fab) .app-main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10.5rem); }
 }
+
+/* ─── Zonas seguras iOS (viewportFit: cover) ─────────────────────────────────
+   El shell no invade notch ni esquinas: arriba (PWA/landscape) y a los lados.
+   El dock, el FAB, los toasts y el padding inferior del main ya suman el inset inferior. */
+.app-shell {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}

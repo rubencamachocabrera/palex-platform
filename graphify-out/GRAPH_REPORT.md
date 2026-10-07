@@ -1,16 +1,16 @@
 # Graph Report - palex-platform  (2026-10-07)
 
 ## Corpus Check
-- 327 files · ~312,435 words
+- 373 files · ~348,596 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2557 nodes · 4623 edges · 241 communities (158 shown, 83 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 279 edges (avg confidence: 0.78)
+- 2919 nodes · 5766 edges · 245 communities (164 shown, 81 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 299 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `44ba9986`
+- Built from commit: `f9833c7e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -242,18 +242,22 @@
 - [[_COMMUNITY_Community 238|Community 238]]
 - [[_COMMUNITY_Community 239|Community 239]]
 - [[_COMMUNITY_Community 240|Community 240]]
+- [[_COMMUNITY_Community 241|Community 241]]
+- [[_COMMUNITY_Community 242|Community 242]]
+- [[_COMMUNITY_Community 243|Community 243]]
+- [[_COMMUNITY_Community 244|Community 244]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `checkRateLimit()` - 253 edges
-2. `db (Prisma client singleton, adapter-pg)` - 106 edges
-3. `NextAuth server instance (auth/handlers/signIn/signOut)` - 101 edges
-4. `useToast()` - 64 edges
-5. `parseBody()` - 52 edges
+1. `checkRateLimit()` - 281 edges
+2. `db (Prisma client singleton, adapter-pg)` - 122 edges
+3. `NextAuth server instance (auth/handlers/signIn/signOut)` - 103 edges
+4. `useToast()` - 72 edges
+5. `parseBody()` - 62 edges
 6. `usePerfil()` - 37 edges
-7. `useModalA11y()` - 31 edges
-8. `types.ts (datos)` - 27 edges
-9. `PageHeader()` - 25 edges
-10. `useFabAction()` - 24 edges
+7. `useModalA11y()` - 35 edges
+8. `logActividad()` - 33 edges
+9. `requireInlabUser()` - 27 edges
+10. `types.ts (datos)` - 27 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Documento Tecnico HTML (export imprimible)` --semantically_similar_to--> `Documento Tecnico — Plataforma de Gestion de Proyectos Hospitalarios`  [INFERRED] [semantically similar]
@@ -314,19 +318,19 @@
 - **visitas/[id] code-split module (types+helpers+_components)** — id_page_visitapage, id_types_formreducer, id_helpers_calcprogress, _components_vistaresumen_vistaresumen [EXTRACTED 0.95]
 - **DELETE 500->409 SQLSTATE 23001 fix across hospitales/usuarios** — id_route_delete_hospital, id_route_delete_usuario, sqlstate_23001_bugfix [EXTRACTED 0.95]
 
-## Communities (241 total, 83 thin omitted)
+## Communities (245 total, 81 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.04
-Nodes (70): GET(), POST(), DELETE(), GET(), POST /api/hospitales/[id]/contactos, GET(), POST(), PATCH() (+62 more)
+Nodes (75): GET(), POST(), DELETE(), GET(), POST /api/hospitales/[id]/contactos, GET(), POST(), PATCH() (+67 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
-Nodes (52): DELETE(), GET(), GET(), POST(), DELETE(), GET(), GET(), POST() (+44 more)
+Nodes (53): DELETE(), GET(), GET(), POST(), DELETE(), GET(), GET(), GET() (+45 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.06
-Nodes (47): ALL_TIPOS, CATEGORIAS, dateGroupLabel(), EQUIPOS, ESTADOS, Evento, formatDate(), getEstadoStyle() (+39 more)
+Cohesion: 0.07
+Nodes (29): ALL_TIPOS, CATEGORIAS, dateGroupLabel(), EQUIPOS, ESTADOS, Evento, formatDate(), getEstadoStyle() (+21 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.18
@@ -334,39 +338,39 @@ Nodes (11): getIncidencias() (transporte), getRutas(), generarIncidenciasTranspo
 
 ### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (16): AlertasTab(), AsignarUnidadModal(), CAT_FORM_EMPTY, CatTiposModal(), HardwareCatalogo, HardwareUnidad, HW_ESTADO, MatSortKey (+8 more)
+Nodes (19): CAT_FORM_EMPTY, diasDesde(), EditUnidadDrawer(), fmtAntiguedad(), HardwareCatalogo, HardwareUnidad, HW_ESTADO, InstalacionesTab() (+11 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (24): GET(), GET(), PATCH(), GET(), GET(), GET(), NextAuth server instance (auth/handlers/signIn/signOut), authConfig (Edge-compatible NextAuth config) (+16 more)
+Cohesion: 0.06
+Nodes (35): cerrarSesion(), GET(), GET(), distanciaKm(), GET(), PATCH(), GET(), POST() (+27 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.06
-Nodes (37): POST(), POST(), POST(), canAccessVisita(), DELETE /api/incidencias/[id], generarCodigo(), GET(), POST() (+29 more)
+Cohesion: 0.08
+Nodes (29): POST(), POST(), POST(), canAccessVisita(), DELETE /api/incidencias/[id], globalForPrisma, logActividad(), DELETE /api/llamadas/[id] (+21 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.10
-Nodes (36): getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria(), getIndicadores(), CAUSAS, DESCS, ESTADOS_LIST (+28 more)
+Cohesion: 0.08
+Nodes (41): DIAS, MESES, Props, getConsumoMensual(), getCorrelaciones(), getDiaSemana(), getForecast(), getFranjaHoraria() (+33 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.05
 Nodes (18): AuthLayout(), LINKS, NODES, CalendarioError(), DashboardError(), ModuleError(), Props, HardwareError() (+10 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.09
-Nodes (28): Config, ConfiguracionPage(), ModuloItem, NIVEL_COLOR, NIVEL_LABEL, PlantillasSection(), REGLA_LABEL, ScoringSection() (+20 more)
+Cohesion: 0.07
+Nodes (35): Config, ConfiguracionPage(), ModuloItem, ModulosInlabSection(), NIVEL_COLOR, NIVEL_LABEL, PlantillasSection(), REGLA_LABEL (+27 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.12
-Nodes (30): useToast(), ModulosInlabSection(), TiposModal(), UnidadesModal(), useModalA11y(), HospitalesAdminPage(), ProyectoDetalle(), Proyecto (+22 more)
+Cohesion: 0.07
+Nodes (37): GeolocationCheckin(), Toast, ToastContext, ToastContextValue, ToastItem(), ToastType, useToast(), AlertasTab() (+29 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.07
-Nodes (12): CatalogoCard(), CatalogoItem, CatalogoTab(), COLORES_PRESET, ESTADO_INFO, FORM_EMPTY, ringStyle, UnidadItem (+4 more)
+Cohesion: 0.06
+Nodes (17): CatalogoCard(), CatalogoItem, COLORES_PRESET, ESTADO_INFO, FORM_EMPTY, ringStyle, TiposModal(), UnidadesModal() (+9 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.10
-Nodes (35): Adjunto, Contacto, ContactoPivot, EntradaTimeline, Fase, FASE_ESTADO_COLOR, fmtFecha(), HardwareCatalogo (+27 more)
+Cohesion: 0.11
+Nodes (32): Adjunto, Contacto, ContactoPivot, EntradaTimeline, Fase, FASE_ESTADO_COLOR, fmtFecha(), FormAction (+24 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.32
@@ -389,24 +393,24 @@ Cohesion: 0.27
 Nodes (10): graphify slash-command trigger (.claude/CLAUDE.md), graphify add <url> ingestion, github-and-merge.md clone/merge flow, hooks.md post-commit hook and CLAUDE.md integration, query.md BFS/DFS traversal, path, explain, graphify fast-path query (existing graph.json), graphify full extraction pipeline, transcribe.md video/audio Whisper transcription (+2 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.12
-Nodes (17): GET(), rangoAnterior(), checkRateLimitByKey(), lastCleanup, maybePurge(), memIncrement(), memStore, RateLimitEntry (+9 more)
+Cohesion: 0.13
+Nodes (15): computeHospitalScore(), HospitalScore, checkRateLimitByKey(), getClientIp(), lastCleanup, maybePurge(), memIncrement(), memStore (+7 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.09
 Nodes (25): CalendarioIncidenciasPage, slaEstadoDe() / slaRestanteMs(), IncidenciaDetallePage, slaInfo(), CATEGORIAS, EQUIPOS, EQUIPOS_MAP, ESTADOS (+17 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.09
-Nodes (16): cerrarSesion(), distanciaKm(), GET(), GET(), NotaPatch, activeCache, { auth, handlers, signIn, signOut }, getClientIp() (+8 more)
+Cohesion: 0.29
+Nodes (6): canAccessVisita(), NotaPatch, DELETE(), PATCH(), GET(), POST()
 
 ### Community 21 - "Community 21"
-Cohesion: 0.17
-Nodes (8): CargaData, CargaTrabajoPage(), diasEnMes(), MESES, ROL_COLOR, ROL_LABEL, UsuarioCarga, Perfil
+Cohesion: 0.11
+Nodes (13): ModuleError(), Props, AdminLayout(), AdminLoading(), CargaData, CargaTrabajoPage(), diasEnMes(), MESES (+5 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.06
-Nodes (29): AreaChart(), TuboKey, DIAS, MESES, Props, Props, Props, TuboKey (+21 more)
+Cohesion: 0.10
+Nodes (14): AreaChart(), DonutChart(), TuboKey, Props, TuboKey, PAGE_SIZES, Props, SortDir (+6 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.09
@@ -417,39 +421,39 @@ Cohesion: 0.08
 Nodes (24): dependencies, @auth/prisma-adapter, bcryptjs, @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, next, next-auth (+16 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.09
-Nodes (10): IconProps, isRol(), Rol, ROL_CONFIG, RolConfig, ROLES, RolPill(), RolPillProps (+2 more)
+Cohesion: 0.07
+Nodes (17): HospitalesAdminPage(), adapter, db, main(), avatarColor(), IconProps, isRol(), Rol (+9 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.09
-Nodes (36): CampoField(), FotosSeccion(), SaveIndicator(), SECTION_ICON, SectionNav(), TagSelector(), useOfflineSync(), exportarJSON() (+28 more)
+Cohesion: 0.10
+Nodes (30): CampoField(), FotosSeccion(), SaveIndicator(), SECTION_ICON, SectionNav(), TagSelector(), ComentariosPanel, PrintView (+22 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.06
-Nodes (26): delta(), AlertaItem, AlertasPanel(), IncSla, PRIO_COLOR, SlaAlertasWidget(), agruparPorMes(), agruparPrevisionPorMes() (+18 more)
+Cohesion: 0.10
+Nodes (10): ESTADO_COLOR, ESTADO_LABEL, ESTADO_MOD_COLOR, ESTADO_MOD_LABEL, ETAPA_BAR_COLOR, ETAPA_COLOR, ETAPA_LABEL, MESES (+2 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.19
-Nodes (8): VisitaLoading(), cn(), Skeleton(), SkeletonCard(), SkeletonFormSection(), SkeletonKPI(), SkeletonProps, SkeletonRow()
+Cohesion: 0.13
+Nodes (10): VisitaLoading(), cn(), NexusLoader(), Skeleton(), SkeletonCard(), SkeletonFormSection(), SkeletonHeader(), SkeletonKPI() (+2 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.13
-Nodes (12): GET(), getOrCreateConfig(), PATCH(), GET(), secretsMatch(), globalForPrisma, computeHospitalScore(), HospitalScore (+4 more)
+Cohesion: 0.16
+Nodes (15): GET(), rangoAnterior(), GET(), getOrCreateConfig(), PATCH(), GET(), secretsMatch(), generarCodigo() (+7 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.11
-Nodes (9): Contacto, FILTROS_FECHA, formatDuration(), Hospital, Llamada, RESULTADOS, IconChevronDown(), IconPhone() (+1 more)
+Cohesion: 0.12
+Nodes (7): Contacto, FILTROS_FECHA, Hospital, Llamada, RESULTADOS, IconChevronDown(), IconPhone()
 
 ### Community 31 - "Community 31"
 Cohesion: 0.14
-Nodes (25): DonutChart(), ForecastChart(), TabAlertas, TabAnalitica(), calcR2(), EJE_CONFIG, EjeX, ScatterPlot() (+17 more)
+Nodes (23): ForecastChart(), TabAlertas, TabAnalitica(), calcR2(), EJE_CONFIG, EjeX, ScatterPlot(), TabCorrelaciones() (+15 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (13): geoDist(), getCoords(), HospitalMapa, MapaLeaflet(), nearestNeighbor(), TIPO_LABELS, ZONE_PALETTE, CoordHospital (+5 more)
 
 ### Community 34 - "Community 34"
@@ -457,24 +461,24 @@ Cohesion: 0.22
 Nodes (7): ESTADO_PARADA_COLOR, ESTADO_PARADA_LABEL, ESTADO_RUTA_COLOR, ESTADO_RUTA_LABEL, TransporteMapaLeaflet(), LABORATORIO, EstadoParada
 
 ### Community 35 - "Community 35"
-Cohesion: 0.10
-Nodes (11): KpiCard (transporte dashboard), ESTADO_COLOR, ESTADO_LABEL, ESTADOS, FaseResumen, Hospital, KanbanView, KpiCard() (+3 more)
+Cohesion: 0.09
+Nodes (14): KpiCard (transporte dashboard), TipoFavorito, useFavoritos(), ESTADO_COLOR, ESTADO_LABEL, ESTADOS, FaseResumen, Hospital (+6 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.15
-Nodes (8): Modulo, fmt, fmtHora, LiveStamp(), BreadcrumbItem, PageHeader(), PageHeaderProps, Zona
+Cohesion: 0.06
+Nodes (62): Share, ShareModal(), Carga, ESTADO, VistaCargas(), Fila, formato(), Metrica (+54 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.24
 Nodes (7): ESTADO_FASE, ESTADO_PROY, fmtFecha(), PRIORIDAD_COLOR, progreso(), SlideKPIs(), SlidePortada()
 
 ### Community 38 - "Community 38"
-Cohesion: 0.13
-Nodes (20): PipelineLoading, DraggableCard(), DroppableColumn(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, fmtEuros() (+12 more)
+Cohesion: 0.14
+Nodes (19): PipelineLoading, DraggableCard(), DroppableColumn(), Etapa, ETAPA_COLOR, ETAPA_LABEL, ETAPAS, fmtEuros() (+11 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.15
-Nodes (16): CampoField, CheckPills, RadioPills, RatingField, FotosSeccion, SaveIndicator, SECTION_ICON, SectionNav (+8 more)
+Cohesion: 0.14
+Nodes (19): CampoField, CheckPills, RadioPills, RatingField, FotosSeccion, InlineFieldEditor, SaveIndicator, SECTION_ICON (+11 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.19
@@ -485,8 +489,8 @@ Cohesion: 0.11
 Nodes (4): ADMIN_STEPS, FINAL_STEP, GENERAL_STEPS, Step
 
 ### Community 42 - "Community 42"
-Cohesion: 0.13
-Nodes (10): TipoFavorito, useFavoritos(), TIPO_ICON, Vista, Hospital, TIPO_LABELS, IconActivity(), IconBuilding() (+2 more)
+Cohesion: 0.09
+Nodes (25): TIPO_ICON, Vista, Hospital, TIPO_LABELS, IconActivity(), IconAlertCircle(), IconAlertTriangle(), IconAward() (+17 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.13
@@ -497,8 +501,8 @@ Cohesion: 0.13
 Nodes (15): GET(), GET /api/incidencias/[id], PATCH /api/incidencias/[id], GET(), DELETE(), GET(), POST(), PostSchema (+7 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.10
-Nodes (16): GeolocationCheckin(), Toast, ToastContext, ToastContextValue, ToastItem(), ToastType, TabAdjuntos, TabCockpit (+8 more)
+Cohesion: 0.12
+Nodes (15): TabAdjuntos, TabCockpit, TabContactos, TabInfo, TabMateriales, TabModulos, TabResumen, TabTareas (+7 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.12
@@ -509,16 +513,16 @@ Cohesion: 0.15
 Nodes (11): CalendarioIncidenciasPage(), Incidencia, SLA_COLOR, SlaEstado, slaEstadoDe(), slaRestanteMs(), DIAS_SEMANA, diasEnMes() (+3 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.15
-Nodes (10): ComparadorData, ComparadorPage(), DeltaBadge(), fmtNum(), MetricCard(), PERIODOS, PeriodStats, Sparkline() (+2 more)
+Cohesion: 0.13
+Nodes (12): ComparadorData, ComparadorPage(), delta(), DeltaBadge(), fmtNum(), MetricCard(), PERIODOS, PeriodStats (+4 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.05
 Nodes (41): 1. Accessibility (CRITICAL), 2. Touch & Interaction (CRITICAL), 3. Performance (HIGH), 4. Layout & Responsive (HIGH), 5. Typography & Color (MEDIUM), 6. Animation (MEDIUM), 7. Style Selection (MEDIUM), 8. Charts & Data (LOW) (+33 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.11
-Nodes (7): dispatchFabAction(), PendingWindow, isHoy(), isVencido(), PersonCombobox(), Recordatorio, UsuarioMini
+Cohesion: 0.09
+Nodes (18): QuickActionsFAB, HardwarePage(), dispatchFabAction(), PendingWindow, useFabAction(), usePerfil(), HospitalDetailPage, HospitalesPage() (+10 more)
 
 ### Community 51 - "Community 51"
 Cohesion: 0.16
@@ -538,11 +542,11 @@ Nodes (24): TempChart(), TendenciaChart(), ESTADO_COLOR, ESTADO_LABEL, TabFlota(
 
 ### Community 55 - "Community 55"
 Cohesion: 0.12
-Nodes (23): InlineFieldEditor, VistaResumen, InlineFieldEditor(), calcProgress(), fmtResumenValue(), shouldShowField(), ESTADO_COLOR, FotosMap (+15 more)
+Nodes (22): InlineFieldEditor(), exportarJSON(), fmtResumenValue(), shouldShowField(), FotosMap, VisitaData, FieldType, FORM_SCHEMA (+14 more)
 
 ### Community 56 - "Community 56"
-Cohesion: 0.14
-Nodes (4): Action, QuickActionsFAB(), useContextActions(), Icons SVG library
+Cohesion: 0.12
+Nodes (7): Action, getContextActions(), QuickActionsFAB(), useContextActions(), ConfigFlags, useConfigApp(), Icons SVG library
 
 ### Community 57 - "Community 57"
 Cohesion: 0.07
@@ -561,8 +565,8 @@ Cohesion: 0.10
 Nodes (15): TagItem, TagPills(), TagSelectorProps, abrirModal() (nueva visita quick-create), crearVisita(), ESTADO, fechaRelativa(), Hospital (+7 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.17
-Nodes (9): ACCION_CFG, ActividadPage(), ALL_ENTIDADES, DayGroup, ENTIDAD_CFG, ENTIDAD_ICONS, groupByDay(), LogEntry (+1 more)
+Cohesion: 0.08
+Nodes (21): ACCION_CFG, ActividadPage(), ALL_ENTIDADES, DayGroup, ENTIDAD_CFG, ENTIDAD_ICONS, groupByDay(), LogEntry (+13 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.15
@@ -589,16 +593,16 @@ Cohesion: 0.24
 Nodes (11): detect_domain(), _load_csv(), Load CSV and return list of dicts, Core search function using BM25, Auto-detect the most relevant domain from query, Main search function with auto-domain detection, Search stack-specific guidelines, search() (+3 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.12
+Cohesion: 0.11
 Nodes (15): Icons, NAV_GROUPS, NAV_GROUPS_ADMIN, NAV_GROUPS_PROYECTOS, NAV_GROUPS_VENTAS, NavGroup, NavItem, Props (+7 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.06
-Nodes (30): 10. Patrones y convenciones de codigo, 11. Nomenclatura hardware Palex, 12. Deploy a produccion, 13. Reglas del asistente, 1. Stack tecnico (NO cambiar sin justificacion), 2. Reglas criticas — romper esto causa bugs en produccion, 3. Modulos desactivados, 4. Estructura de ficheros (+22 more)
+Nodes (32): 10. Patrones y convenciones de codigo, 11. Nomenclatura hardware Palex, 12. Deploy a produccion, 13. Reglas del asistente, 1. Stack tecnico (NO cambiar sin justificacion), 2. Reglas criticas — romper esto causa bugs en produccion, 3. Modulos desactivados, 4. Estructura de ficheros (+24 more)
 
 ### Community 70 - "Community 70"
 Cohesion: 0.08
-Nodes (16): CONSUMIBLES, ConsumibleTipo, Consumo(), DateRange, FilterBar(), fmt(), humanDate(), LAST_90_DAYS (+8 more)
+Nodes (17): HospitalOpcion, Cobertura, CONSUMIBLES, ConsumibleTipo, Consumo(), DateRange, DemoGulla, FilterBar() (+9 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.18
@@ -621,16 +625,16 @@ Cohesion: 0.13
 Nodes (15): 7.10 Busqueda y navegacion, 7.11 Modo campo movil, 7.12 Onboarding, 7.13 Notificaciones, 7.14 Calendario iCal, 7.1 Hospitales, 7.2 Visitas tecnicas, 7.3 Proyectos (+7 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.20
-Nodes (7): EQUIPOS, ESTADO_EQUIPO, EstadoEquipo, Props, SEV_CONFIG, TipoAlerta, TIPO_ICON
+Cohesion: 0.09
+Nodes (19): EQUIPOS, ESTADO_EQUIPO, EstadoEquipo, Props, SEV_CONFIG, Props, Props, ESTADO_ORDER (+11 more)
 
 ### Community 77 - "Community 77"
 Cohesion: 0.21
 Nodes (14): Credentials authorize() callback, getActiveUsers(), heartbeat(), lastCleanup, leave(), maybePurge(), memStore, PresenceEntry (+6 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.09
-Nodes (16): AgendaPage(), DIAS_SEMANA, fechaKey(), fmtISO(), Item, TIPO_META, ACCION_ICON, ENTIDAD_LABEL (+8 more)
+Cohesion: 0.12
+Nodes (10): DIAS_SEMANA, fechaKey(), fmtISO(), Item, TIPO_META, EmptyState(), EmptyStateAction, EmptyStateProps (+2 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.21
@@ -641,8 +645,8 @@ Cohesion: 0.17
 Nodes (11): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, PowerShell 5.1: Vertical scrolling stops working (+3 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.18
-Nodes (6): fmtFechaInput(), ComentariosPanel, TabInfo(), TabTareas(), TAREA_PRIO, TareasQFProps
+Cohesion: 0.07
+Nodes (56): GET(), GET(), POST(), POST(), GET(), Ctx, GET(), PUT() (+48 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.28
@@ -661,8 +665,8 @@ Cohesion: 0.18
 Nodes (10): 1. Que es el proyecto, 2. Stack tecnico, 3. Estructura de archivos clave, 4. Roles del sistema, 5. Base de datos — Prisma 7, 6. API Routes principales, 7. URL routing — CRITICO, 8. UI/UX — Reglas criticas (+2 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.31
-Nodes (11): QuickActionsFAB, HardwarePage(), useFabAction(), usePerfil(), HospitalDetailPage, HospitalesPage(), InlabPage(), LlamadasPage() (+3 more)
+Cohesion: 0.06
+Nodes (48): CheckResult, MB(), Paso, PASOS, UploadWizard(), AggregatorStats, DicKey, MAX_DISTINTOS (+40 more)
 
 ### Community 87 - "Community 87"
 Cohesion: 0.38
@@ -676,8 +680,12 @@ Nodes (7): engines, node, name, prisma, seed, private, version
 Cohesion: 0.29
 Nodes (7): Roadmap corporativo Fases 1-9 (seguridad/BD/Redis/paginacion/Zod/code-splitting/JWT), Auditoria profunda — Sprint 20 (2026-07-09), Hardcoded TEAL/ORANGE hex consolidated into brand.ts imports, IDOR sin filtro de zona en score/relaciones de incidencias, PageHeader migrated into 12 additional pages, checkRateLimit/checkRateLimitByKey migrated to real Redis (async), $transaction Serializable added to relaciones POST + SLA-pause PATCH
 
+### Community 90 - "Community 90"
+Cohesion: 0.10
+Nodes (42): delta(), Desglose, ejeTemporal(), enRango(), eventosPor(), facturacion(), FilaActividad, FilaConsumo (+34 more)
+
 ### Community 91 - "Community 91"
-Cohesion: 0.20
+Cohesion: 0.22
 Nodes (7): getTendencias(), ResumenCard, TabTendencias (transporte), TransportePage(), TabKeyTransporte (type), UnauthorizedPage(), VentasLayout()
 
 ### Community 92 - "Community 92"
@@ -765,8 +773,8 @@ Cohesion: 0.50
 Nodes (4): GET /api/checkin, PATCH /api/checkin/[id] (check-out), POST /api/checkin (check-in, transaccion Serializable), POST /api/favoritos (toggle create/delete)
 
 ### Community 115 - "Community 115"
-Cohesion: 0.29
-Nodes (5): ModuleError(), Props, AdminLayout(), AdminLoading(), EquipoPage()
+Cohesion: 0.08
+Nodes (16): CONSUMIBLES, ConsumibleTipo, Consumo(), DateRange, FilterBar(), fmt(), humanDate(), LAST_90_DAYS (+8 more)
 
 ### Community 116 - "Community 116"
 Cohesion: 0.50
@@ -789,8 +797,8 @@ Cohesion: 0.50
 Nodes (4): search.py --design-system command, --persist Master + page-overrides pattern, UI/UX Pre-Delivery Checklist, UI/UX Pro Max design intelligence skill
 
 ### Community 121 - "Community 121"
-Cohesion: 0.50
-Nodes (3): GET /api/usuarios/menciones, GET(), POST()
+Cohesion: 0.19
+Nodes (13): AREAS, [dias = "30", ordenesDia = "100", salida = "docs/inlab/ejemplo-inlab-sintetico.csv", desde = "2026-06-01"], fmt(), inicio, logNormal(), N_DIAS, N_ORD, out (+5 more)
 
 ### Community 124 - "Community 124"
 Cohesion: 0.67
@@ -816,6 +824,10 @@ Nodes (3): DELETE /api/modulos-inlab/[id], GET /api/modulos-inlab, POST /api/mod
 Cohesion: 0.67
 Nodes (3): HardwarePassportPage, ShareProyectoPage, ShareMapaPage
 
+### Community 162 - "Community 162"
+Cohesion: 0.14
+Nodes (12): campoKeys, dia, dic, InlabCargaCheck, InlabMapeoSchema, InlabMapeoUpsert, InlabOpcionesSchema, InlabPayloadSchema (+4 more)
+
 ### Community 215 - "Community 215"
 Cohesion: 0.29
 Nodes (7): extraction-spec.md subagent prompt template, graphify confidence_score rubric (EXTRACTED/INFERRED/AMBIGUOUS), graphify node ID normalization rule, Part B - parallel semantic-extraction subagents, Step 1 - detect/install graphify Python interpreter, Step 2 - detect corpus files, Step 3 - extract entities and relationships (AST + semantic)
@@ -829,8 +841,8 @@ Cohesion: 0.33
 Nodes (5): Auditoria profunda — Sprint 20 (2026-07-09), Logica de negocio / Prisma, Prioridad de ejecucion aplicada este sprint, Seguridad API, UX / consistencia frontend
 
 ### Community 218 - "Community 218"
-Cohesion: 0.40
-Nodes (5): EditUnidadDrawer(), InstalacionesTab(), MaterialesTab(), ModelCard(), fmtEuros()
+Cohesion: 0.36
+Nodes (3): InlabAggregator, FechaParseada, CampoKey
 
 ### Community 219 - "Community 219"
 Cohesion: 0.40
@@ -865,16 +877,16 @@ Cohesion: 0.50
 Nodes (3): Deploy on Vercel, Getting Started, Learn More
 
 ### Community 227 - "Community 227"
-Cohesion: 0.83
-Nodes (3): canAccessVisita(), GET(), POST()
+Cohesion: 0.31
+Nodes (10): AgendaPage(), agruparPorMes(), agruparPrevisionPorMes(), DashboardAdmin(), DashboardPage(), DashboardProyectos(), DashboardVentas(), fmtEuros() (+2 more)
 
 ### Community 228 - "Community 228"
 Cohesion: 0.50
 Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
 
 ### Community 229 - "Community 229"
-Cohesion: 0.50
-Nodes (3): adapter, db, MODULOS
+Cohesion: 0.44
+Nodes (5): ComparadorLayout(), IncidenciasLayout(), InlabLayout(), seccionActiva(), SeccionDesactivada()
 
 ### Community 230 - "Community 230"
 Cohesion: 0.50
@@ -891,6 +903,22 @@ Nodes (4): 2. Stack tecnico, Dependencias clave, Dependencias de desarrollo, Tec
 ### Community 233 - "Community 233"
 Cohesion: 0.50
 Nodes (4): 8. Frontend — Componentes y patrones, Componentes clave, Hooks custom, Patrones de UI
+
+### Community 236 - "Community 236"
+Cohesion: 0.29
+Nodes (6): RecordatorioCreate, DELETE /api/recordatorios/[id], PATCH /api/recordatorios/[id], GET(), POST(), SELECT
+
+### Community 240 - "Community 240"
+Cohesion: 0.33
+Nodes (3): IncSla, PRIO_COLOR, SlaAlertasWidget()
+
+### Community 241 - "Community 241"
+Cohesion: 0.33
+Nodes (5): Cuando llegue el CSV real — checklist, Ficheros, Inteligencia InLab — módulo de cargas y analítica, Preguntas abiertas (dependen del fichero real), Principio: los datos crudos no salen del navegador
+
+### Community 243 - "Community 243"
+Cohesion: 0.33
+Nodes (5): formatDuration(), AudioNota, RecordState, VoiceNotes(), VoiceNotesProps
 
 ## Ambiguous Edges - Review These
 - `IncidenciasPage()` → `QuickActionsFAB`  [AMBIGUOUS]
@@ -915,9 +943,9 @@ Nodes (4): 8. Frontend — Componentes y patrones, Componentes clave, Hooks cust
   design-system/palex-platform/MASTER.md · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **940 isolated node(s):** `SessionStart`, `PreToolUse`, `allow`, `bool`, `{ auth }` (+935 more)
+- **1015 isolated node(s):** `SessionStart`, `PreToolUse`, `allow`, `bool`, `[dias = "30", ordenesDia = "100", salida = "docs/inlab/ejemplo-inlab-sintetico.csv", desde = "2026-06-01"]` (+1010 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **83 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **81 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
