@@ -35,7 +35,7 @@ export function InformeInlab({ hospital, rango, ds, tarifas, interactivo = true,
 }) {
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales ?? FILTROS_VACIOS)
   const onFiltro = interactivo ? (p: Partial<Filtros>) => setFiltros(f => ({ ...f, ...p })) : undefined
-  const activos = [filtros.areas.length > 0 && `Áreas: ${filtros.areas.join(", ")}`, filtros.consumible && `Consumible: ${filtros.consumible}`, filtros.puesto && `Puesto: ${filtros.puesto}`, filtros.urgencia !== "todas" && `Prioridad: ${filtros.urgencia}`].filter(Boolean) as string[]
+  const activos = [filtros.areas.length > 0 && `Áreas: ${filtros.areas.join(", ")}`, filtros.consumible && `Tubo o etiqueta: ${filtros.consumible}`, filtros.puesto && `Puesto: ${filtros.puesto}`, filtros.urgencia !== "todas" && `Prioridad: ${filtros.urgencia}`].filter(Boolean) as string[]
   const props = { ds, rango, filtros, onFiltro }
 
   return (

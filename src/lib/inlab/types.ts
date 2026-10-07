@@ -22,13 +22,40 @@
 export const TRAMOS = ["ESPERA", "EXTRACCION", "TUBO", "TOTAL"] as const
 export type Tramo = typeof TRAMOS[number]
 
-export const TRAMO_LABEL: Record<Tramo, string> = {
-  ESPERA: "Espera (llegada → numeración)",
-  EXTRACCION: "Extracción (numeración → validación)",
-  TUBO: "Tubo (impresión → validación)",
-  // Aplica a todas las áreas: en urgencias/plantas no suele haber llegada y el ciclo = numeración → validación
-  TOTAL: "Ciclo completo (llegada o numeración → validación)",
+/** Nombre corto del tramo, en lenguaje llano (pestañas, tarjetas). */
+export const TRAMO_CORTO: Record<Tramo, string> = {
+  ESPERA: "Espera en sala",
+  EXTRACCION: "Extracción",
+  TUBO: "Cada tubo",
+  TOTAL: "Circuito completo",
 }
+
+/** Desde qué hito hasta cuál se mide cada tramo. */
+export const TRAMO_HITOS: Record<Tramo, string> = {
+  ESPERA: "llegada del paciente → numeración",
+  EXTRACCION: "numeración → validación",
+  TUBO: "impresión del tubo → validación del tubo",
+  // Aplica a todas las áreas: en urgencias/plantas no suele haber llegada y el circuito = numeración → validación
+  TOTAL: "llegada (o numeración) → validación",
+}
+
+/** Qué significa cada tramo para alguien que no conoce InLab. */
+export const TRAMO_AYUDA: Record<Tramo, string> = {
+  ESPERA: "Lo que espera el paciente desde que saca el ticket hasta que le numeran la petición e imprimen las etiquetas.",
+  EXTRACCION: "Desde que se imprimen las etiquetas hasta que se valida la extracción: llamar al paciente, pinchar y llenar los tubos.",
+  TUBO: "Desde que se imprime cada tubo hasta que se valida ese tubo.",
+  TOTAL: "Todo el recorrido de la petición, de la llegada del paciente (o la numeración, si no hay llegada) a la validación.",
+}
+
+export const TRAMO_LABEL: Record<Tramo, string> = {
+  ESPERA: `${TRAMO_CORTO.ESPERA} (${TRAMO_HITOS.ESPERA})`,
+  EXTRACCION: `${TRAMO_CORTO.EXTRACCION} (${TRAMO_HITOS.EXTRACCION})`,
+  TUBO: `${TRAMO_CORTO.TUBO} (${TRAMO_HITOS.TUBO})`,
+  TOTAL: `${TRAMO_CORTO.TOTAL} (${TRAMO_HITOS.TOTAL})`,
+}
+
+/** Qué se cuenta en cada tramo: los de pedido una vez por petición, TUBO por tubo. */
+export const TRAMO_UNIDAD: Record<Tramo, "peticiones" | "tubos"> = { ESPERA: "peticiones", EXTRACCION: "peticiones", TUBO: "tubos", TOTAL: "peticiones" }
 
 export interface InlabDiccionario {
   areas: string[]

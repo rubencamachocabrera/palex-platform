@@ -13,21 +13,24 @@ interface Fila {
   p50Total: number | null; p90Total: number | null
 }
 
-type Metrica = "volumenDia" | "porCama" | "urgentes" | "tasa" | "p50"
+type Metrica = "volumenDia" | "tubosDia" | "porCama" | "urgentes" | "tasa" | "p50"
 
+// `registros` del benchmark = filas = tubos y etiquetas; `ordenes` = peticiones (pedidos distintos)
 const METRICAS: { value: Metrica; label: string; desc: string }[] = [
-  { value: "volumenDia", label: "Registros/día", desc: "Volumen medio diario (normaliza periodos de distinta duración)." },
-  { value: "porCama", label: "Por cama", desc: "Registros por cama y día (solo hospitales con nº de camas informado)." },
-  { value: "urgentes", label: "% urgente", desc: "Porcentaje de actividad urgente." },
-  { value: "tasa", label: "Incidencias ‰", desc: "Eventos del fichero por cada 1.000 registros." },
-  { value: "p50", label: "Ciclo (mediana)", desc: "Mediana del ciclo completo (primer → último hito disponible)." },
+  { value: "volumenDia", label: "Peticiones/día", desc: "Peticiones de media por día con datos (cada petición cuenta una vez)." },
+  { value: "tubosDia", label: "Tubos/día", desc: "Tubos y etiquetas impresos de media por día con datos." },
+  { value: "porCama", label: "Por cama", desc: "Peticiones por cama y día (solo hospitales con nº de camas informado)." },
+  { value: "urgentes", label: "% urgente", desc: "Porcentaje de tubos y etiquetas de peticiones urgentes." },
+  { value: "tasa", label: "Eventos ‰", desc: "Eventos de calidad (reimpresiones, anulaciones, incidencias) por cada 1.000 tubos y etiquetas." },
+  { value: "p50", label: "Circuito", desc: "Tiempo en que se completa la mitad de las peticiones (mediana del circuito completo, todas las áreas: mezcla Extracciones con Urgencias y plantas, donde se valida sin circuito)." },
 ]
 
 function valor(f: Fila, m: Metrica): number | null {
   if (!f.dias) return null
   switch (m) {
-    case "volumenDia": return f.registros / f.dias
-    case "porCama": return f.camas ? f.registros / f.dias / f.camas : null
+    case "volumenDia": return f.ordenes === null ? null : f.ordenes / f.dias
+    case "tubosDia": return f.registros / f.dias
+    case "porCama": return f.camas && f.ordenes !== null ? f.ordenes / f.dias / f.camas : null
     case "urgentes": return f.registros ? (f.urgentes / f.registros) * 100 : null
     case "tasa": return f.registros ? (f.eventos / f.registros) * 1000 : null
     case "p50": return f.p50Total
@@ -83,12 +86,13 @@ export function VistaComparar({ rango, seleccionados }: { rango: Rango; seleccio
               <tr>
                 <th scope="col" className="py-2 pr-3">Hospital</th>
                 <th scope="col" className="px-2 py-2 text-right">Días</th>
-                <th scope="col" className="px-2 py-2 text-right">Registros/día</th>
+                <th scope="col" className="px-2 py-2 text-right">Peticiones/día</th>
+                <th scope="col" className="px-2 py-2 text-right">Tubos/día</th>
                 <th scope="col" className="px-2 py-2 text-right">Por cama/día</th>
                 <th scope="col" className="px-2 py-2 text-right">% urgente</th>
-                <th scope="col" className="px-2 py-2 text-right">Incid. ‰</th>
-                <th scope="col" className="px-2 py-2 text-right">Ciclo P50</th>
-                <th scope="col" className="px-2 py-2 text-right">Ciclo P90</th>
+                <th scope="col" className="px-2 py-2 text-right">Eventos ‰</th>
+                <th scope="col" className="px-2 py-2 text-right"><abbr title="La mitad de las peticiones completa el circuito en menos de">Circuito, mitad</abbr></th>
+                <th scope="col" className="px-2 py-2 text-right"><abbr title="9 de cada 10 peticiones completan el circuito en menos de (P90)">Circuito, 9 de 10</abbr></th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +101,7 @@ export function VistaComparar({ rango, seleccionados }: { rango: Rango; seleccio
                   <td className="py-2 pr-3 font-semibold text-gray-800 dark:text-gray-100">{f.nombre}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtN(f.dias)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtN(valor(f, "volumenDia"))}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{fmtN(valor(f, "tubosDia"))}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtN(valor(f, "porCama"), 2)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtN(valor(f, "urgentes"), 1)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtN(valor(f, "tasa"), 2)}</td>
@@ -104,7 +109,7 @@ export function VistaComparar({ rango, seleccionados }: { rango: Rango; seleccio
                   <td className="px-2 py-2 text-right tabular-nums">{fmtMin(f.p90Total)}</td>
                 </tr>
               ))}
-              {filas.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-gray-400">Sin hospitales con datos en el periodo</td></tr>}
+              {filas.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-gray-400">Sin hospitales con datos en el periodo</td></tr>}
             </tbody>
           </table>
         </div>

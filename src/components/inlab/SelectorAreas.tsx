@@ -7,11 +7,18 @@
  *   · clic en un área       → la añade o la quita de la selección
  *   · doble clic / "solo"   → deja solo esa área
  *   · atajos de grupo       → Extracciones, Urgencias, Plantas…
+ *
+ * Cada chip muestra las peticiones del área (o tubos y etiquetas si hay filtro de
+ * prioridad, porque las peticiones no se desglosan por prioridad) y un aviso ámbar si el
+ * área tiene validaciones sospechosamente rápidas (ver VALIDACION_RAPIDA en analytics.ts).
  */
 import { useMemo } from "react"
-import { alternarArea, etiquetaArea, grupoArea, volumenPorArea, type Dataset, type Filtros, type GrupoArea, type Rango } from "@/lib/inlab/analytics"
+import {
+  alternarArea, esSospechosa, etiquetaArea, grupoArea, validacionesRapidas, volumenPorArea, VALIDACION_RAPIDA,
+  type Dataset, type Filtros, type GrupoArea, type Rango,
+} from "@/lib/inlab/analytics"
 import { fmtN } from "@/components/inlab/charts"
-import { IconCheck, IconRefreshCw } from "@/components/ui/Icons"
+import { IconAlertTriangle, IconCheck, IconRefreshCw } from "@/components/ui/Icons"
 
 const fmtK = (n: number) => (n >= 10000 ? `${fmtN(n / 1000, n >= 100000 ? 0 : 1)} k` : fmtN(n))
 const ORDEN_GRUPOS: GrupoArea[] = ["Extracciones", "Urgencias", "Plantas", "Laboratorio", "Otras"]
@@ -23,10 +30,15 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
   onChange: (areas: string[]) => void
 }) {
   const vol = useMemo(() => volumenPorArea(ds, rango, filtros), [ds, rango, filtros])
-  const total = useMemo(() => [...vol.values()].reduce((n, v) => n + v.registros, 0), [vol])
+  // Peticiones si existen y no hay filtro de prioridad (no se desglosan por prioridad); si no, tubos y etiquetas
+  const conPet = filtros.urgencia === "todas" && ds.actividad.some(a => a.ordenes !== null)
+  const medida = conPet ? "peticiones" : "tubos y etiquetas"
+  const valorDe = useMemo(() => (a: string) => { const x = vol.get(a); return x ? (conPet ? x.ordenes : x.registros) : 0 }, [vol, conPet])
+  const total = useMemo(() => ds.areas.reduce((n, a) => n + valorDe(a), 0), [ds.areas, valorDe])
+  const avisos = useMemo(() => new Map(validacionesRapidas(ds, rango, filtros, true).areas.filter(esSospechosa).map(v => [v.clave, v])), [ds, rango, filtros])
   const areas = useMemo(
-    () => [...ds.areas].sort((a, b) => (vol.get(b)?.registros ?? 0) - (vol.get(a)?.registros ?? 0) || a.localeCompare(b, "es")),
-    [ds.areas, vol],
+    () => [...ds.areas].sort((a, b) => valorDe(b) - valorDe(a) || a.localeCompare(b, "es")),
+    [ds.areas, valorDe],
   )
   const grupos = useMemo(() => {
     const m = new Map<GrupoArea, string[]>()
@@ -38,7 +50,7 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
   const todas = sel.length === 0
   const grupoActivo = (lista: string[]) => !todas && lista.length === sel.length && lista.every(a => sel.includes(a))
   const resumen = todas ? `Todas (${ds.areas.length})` : `${sel.length} de ${ds.areas.length}`
-  const volSel = todas ? total : sel.reduce((n, a) => n + (vol.get(a)?.registros ?? 0), 0)
+  const volSel = todas ? total : sel.reduce((n, a) => n + valorDe(a), 0)
 
   return (
     <section aria-label="Work areas" className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">
@@ -46,7 +58,7 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
         <div className="flex items-baseline gap-2">
           <span className="kpi-label text-gray-500">Work areas</span>
           <span className="text-xs font-extrabold text-gray-800 dark:text-white">{resumen}</span>
-          <span className="text-[11px] text-gray-400">· {fmtN(volSel)} registros{total ? ` (${fmtN((volSel / total) * 100, 1)} %)` : ""}</span>
+          <span className="text-[11px] text-gray-400">· {fmtN(volSel)} {medida}{total ? ` (${fmtN((volSel / total) * 100, 1)} %)` : ""}</span>
         </div>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Atajos de selección">
           <button type="button" onClick={() => onChange([])} aria-pressed={todas}
@@ -71,7 +83,8 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
 
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Áreas (clic para añadir o quitar, doble clic para dejar solo una)">
         {areas.map(a => {
-          const v = vol.get(a)?.registros ?? 0
+          const v = valorDe(a)
+          const av = avisos.get(a)
           const activa = !todas && sel.includes(a)
           const incluida = todas || activa
           return (
@@ -81,7 +94,7 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
               aria-pressed={activa}
               onClick={e => onChange(e.altKey ? [a] : alternarArea(sel, a, ds.areas))}
               onDoubleClick={() => onChange([a])}
-              title={`${a}: ${fmtN(v)} registros${total ? ` (${fmtN((v / total) * 100, 1)} %)` : ""}. Clic: ${activa ? "quitar" : "añadir"} · doble clic: solo esta`}
+              title={`${etiquetaArea(a)}: ${fmtN(v)} ${medida}${total ? ` (${fmtN((v / total) * 100, 1)} %)` : ""}.${av ? ` Aviso: el ${fmtN(av.pct, 1)} % de sus peticiones se valida en menos de ${VALIDACION_RAPIDA.umbralMin} min (sin extracción real)${av.nivel === "sinCircuito" ? "; sus tiempos no miden la extracción" : ""}.` : ""} Clic: ${activa ? "quitar" : "añadir"} · doble clic: solo esta`}
               className={`group inline-flex min-h-[36px] items-center gap-2 rounded-xl border px-2.5 text-left transition-all ${activa
                 ? "border-teal-500 bg-teal-50 text-teal-900 shadow-[0_0_0_1px_rgba(0,169,157,.25)] dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-100"
                 : todas
@@ -93,6 +106,7 @@ export function SelectorAreas({ ds, rango, filtros, onChange }: {
               </span>
               <span className="text-xs font-bold">{etiquetaArea(a)}</span>
               <span className="text-[10px] tabular-nums text-gray-400">{fmtK(v)}</span>
+              {av && <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9.5px] font-extrabold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"><IconAlertTriangle size={10} />{fmtN(av.pct, 0)} %<span className="sr-only"> de validaciones en menos de {VALIDACION_RAPIDA.umbralMin} min</span></span>}
             </button>
           )
         })}
