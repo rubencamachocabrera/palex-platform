@@ -5,7 +5,7 @@
 import { db } from "@/lib/db"
 import { dateToDia, diaToDate } from "./dates"
 import { EVENTO_CATEGORIAS } from "./mapping"
-import { addHist, emptyHist, percentile, toSparse } from "./histogram"
+import { addHist, emptyHist, normalizarHist, percentile, toSparse } from "./histogram"
 import { payloadVacio, TRAMOS, type InlabPayload } from "./types"
 
 class Dic {
@@ -57,7 +57,7 @@ export async function cargarDataset(hospitalIds: string[], desde: string, hasta:
     const d = D(r.fecha); if (d < 0) continue
     const t = (TRAMOS as readonly string[]).indexOf(r.tramo)
     if (t < 0) continue
-    out.tiempos.push([d, areas.idx(r.area), r.urgente ? 1 : 0, t, r.n, r.sumaMin, r.maxMin, ...toSparse(r.histograma)])
+    out.tiempos.push([d, areas.idx(r.area), r.urgente ? 1 : 0, t, r.n, r.sumaMin, r.maxMin, ...toSparse(normalizarHist(r.histograma))])
   }
   for (const r of eventos) {
     const d = D(r.fecha); if (d < 0) continue
@@ -120,16 +120,18 @@ export async function benchmark(hospitalIds: string[], desde: string, hasta: str
     db.inlabActividadDiaria.groupBy({ by: ["hospitalId"], where, _sum: { registros: true, unidades: true, urgentes: true, ordenes: true }, _count: { ordenes: true } }),
     db.inlabActividadDiaria.groupBy({ by: ["hospitalId", "fecha"], where }),
     db.inlabEventoDiario.groupBy({ by: ["hospitalId"], where, _sum: { cantidad: true } }),
-    db.inlabTiempoDiario.findMany({ where: { ...where, tramo: "TOTAL" }, select: { hospitalId: true, histograma: true } }),
+    db.inlabTiempoDiario.findMany({ where: { ...where, tramo: "TOTAL" }, select: { hospitalId: true, histograma: true, maxMin: true } }),
   ])
   const nDias = new Map<string, number>()
   for (const r of diasH) nDias.set(r.hospitalId, (nDias.get(r.hospitalId) ?? 0) + 1)
   const evMap = new Map(ev.map(e => [e.hospitalId, e._sum.cantidad ?? 0]))
   const hists = new Map<string, number[]>()
+  const maximos = new Map<string, number>()
   for (const t of tiempos) {
     let h = hists.get(t.hospitalId)
     if (!h) { h = emptyHist(); hists.set(t.hospitalId, h) }
-    addHist(h, t.histograma)
+    addHist(h, normalizarHist(t.histograma))
+    maximos.set(t.hospitalId, Math.max(maximos.get(t.hospitalId) ?? 0, t.maxMin))
   }
   return act.map(a => {
     const h = hists.get(a.hospitalId)
@@ -141,8 +143,8 @@ export async function benchmark(hospitalIds: string[], desde: string, hasta: str
       urgentes: a._sum.urgentes ?? 0,
       ordenes: a._count.ordenes > 0 ? (a._sum.ordenes ?? 0) : null,
       eventos: evMap.get(a.hospitalId) ?? 0,
-      p50Total: h ? percentile(h, 0.5) : null,
-      p90Total: h ? percentile(h, 0.9) : null,
+      p50Total: h ? percentile(h, 0.5, maximos.get(a.hospitalId)) : null,
+      p90Total: h ? percentile(h, 0.9, maximos.get(a.hospitalId)) : null,
     }
   })
 }

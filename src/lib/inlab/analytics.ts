@@ -110,15 +110,116 @@ export function periodoAnterior(r: Rango): Rango {
   return { desde: addDias(r.desde, -n), hasta: addDias(r.desde, -1) }
 }
 
+/** Días con datos cargados (cualquier área) dentro del rango. */
+export function diasConDatos(ds: Dataset, r: Rango): number {
+  let n = 0
+  for (const d of ds.dias) if (enRango(d, r)) n++
+  return n
+}
+
+/**
+ * Cobertura mínima (días con datos / días naturales) de CADA periodo para mostrar
+ * tendencias. Por debajo la comparación desvirtúa (p. ej. febrero 2026 frente a un
+ * enero con 8 días cargados daba +192 % de registros cuando por día era +17 %).
+ */
+export const COBERTURA_MIN_TENDENCIA = 0.8
+
+export interface Comparacion {
+  actual: Rango
+  /** periodo inmediatamente anterior de la misma duración */
+  anterior: Rango
+  diasNaturales: number
+  diasActual: number
+  diasAnterior: number
+  /** true si ambos periodos tienen cobertura ≥ COBERTURA_MIN_TENDENCIA */
+  comparable: boolean
+  /** explicación cuando no es comparable */
+  motivo: string | null
+}
+
+export function comparacion(ds: Dataset, r: Rango): Comparacion {
+  const anterior = periodoAnterior(r)
+  const diasNaturales = diffDias(r.desde, r.hasta) + 1
+  const diasActual = diasConDatos(ds, r), diasAnterior = diasConDatos(ds, anterior)
+  const minimo = diasNaturales * COBERTURA_MIN_TENDENCIA
+  let motivo: string | null = null
+  if (diasAnterior === 0) motivo = "No hay datos cargados del periodo anterior."
+  else if (diasAnterior < minimo || diasActual < minimo)
+    motivo = `Cobertura no comparable: ${diasActual} de ${diasNaturales} días con datos en el periodo y ${diasAnterior} de ${diasNaturales} en el anterior (mínimo ${Math.round(COBERTURA_MIN_TENDENCIA * 100)} %).`
+  return { actual: r, anterior, diasNaturales, diasActual, diasAnterior, comparable: motivo === null, motivo }
+}
+
+export interface Tendencias {
+  cmp: Comparacion
+  /** Variaciones en % (null = no mostrar). Los volúmenes se comparan por día con datos. */
+  registros: number | null
+  unidades: number | null
+  eventos: number | null
+  tasaEventos: number | null
+  p50Total: number | null
+}
+
+/**
+ * Tendencias frente al periodo anterior, solo si la cobertura es comparable. Los
+ * volúmenes se normalizan por días con datos cargados (con huecos distintos en cada
+ * periodo, comparar totales mide huecos, no actividad); tasas y medianas no dependen
+ * del nº de días.
+ */
+export function tendencias(ds: Dataset, r: Rango, f: Filtros): Tendencias {
+  const { cmp, k, kp } = kpisComparables(ds, r, f)
+  if (!kp) return { cmp, registros: null, unidades: null, eventos: null, tasaEventos: null, p50Total: null }
+  // kp ya está escalado a los días con datos del periodo actual: delta de totales = delta por día
+  return {
+    cmp,
+    registros: delta(k.registros, kp.registros),
+    unidades: delta(k.unidades, kp.unidades),
+    eventos: delta(k.eventos, kp.eventos),
+    tasaEventos: delta(k.tasaEventos, kp.tasaEventos),
+    p50Total: delta(k.p50Total, kp.p50Total),
+  }
+}
+
+/**
+ * KPIs del periodo y del anterior listos para comparar. `kp` es null si la cobertura no
+ * es comparable; si lo es, sus volúmenes (registros, unidades, urgentes, órdenes, eventos)
+ * se escalan a los días con datos del periodo actual, de modo que `delta(k.x, kp.x)` es la
+ * variación por día con datos. Tasas y percentiles no se escalan.
+ */
+export function kpisComparables(ds: Dataset, r: Rango, f: Filtros): { cmp: Comparacion; k: Kpis; kp: Kpis | null } {
+  const cmp = comparacion(ds, r)
+  const k = kpis(ds, r, f)
+  if (!cmp.comparable) return { cmp, k, kp: null }
+  const p = kpis(ds, cmp.anterior, f)
+  const esc = p.dias ? k.dias / p.dias : 0
+  return {
+    cmp, k,
+    kp: {
+      ...p,
+      registros: p.registros * esc, unidades: p.unidades * esc, urgentes: p.urgentes * esc, eventos: p.eventos * esc,
+      registrosBaseEventos: p.registrosBaseEventos * esc, ordenes: p.ordenes === null ? null : p.ordenes * esc,
+    },
+  }
+}
+
 // ─── KPIs ────────────────────────────────────────────────────────────────────
 
 export interface Kpis {
+  /** Días con datos cargados en el rango (de cualquier área: un día sin actividad en el área filtrada es un 0 real). */
   dias: number
   registros: number
   unidades: number
   urgentes: number
   ordenes: number | null
   eventos: number
+  /**
+   * Registros con los que se normalizan los eventos. Los eventos no tienen dimensión de
+   * urgencia ni de consumible, así que la tasa usa todos los registros de las áreas (y del
+   * puesto) seleccionados. Antes se dividía por los registros filtrados por urgencia y,
+   * con «urgente», la tasa salía inflada (todos los eventos / solo tubos urgentes).
+   */
+  registrosBaseEventos: number
+  /** Eventos por 1.000 registrosBaseEventos (null si no hay registros). */
+  tasaEventos: number | null
   p50Total: number | null
   p90Total: number | null
   tiemposN: number
@@ -130,12 +231,10 @@ export interface Kpis {
  */
 export function kpis(ds: Dataset, r: Rango, f: Filtros): Kpis {
   let registros = 0, unidades = 0, urgentes = 0, eventos = 0, ordenes = 0, hayOrdenes = false
-  const dias = new Set<string>()
   for (const c of ds.consumo) {
     if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     registros += c.registros; unidades += c.unidades
     if (c.urg) urgentes += c.registros
-    dias.add(c.d)
   }
   if (!f.consumible && f.urgencia === "todas") {
     for (const a of ds.actividad) {
@@ -147,19 +246,40 @@ export function kpis(ds: Dataset, r: Rango, f: Filtros): Kpis {
     if (!enRango(e.d, r) || !okArea(e.area, f) || (f.puesto && e.puesto !== f.puesto)) continue
     eventos += e.cantidad
   }
+  const registrosBaseEventos = registrosBase(ds, r, f)
   const h = emptyHist()
-  let n = 0
+  let n = 0, max = 0
   for (const t of ds.tiempos) {
     if (t.tramo !== "TOTAL" || !enRango(t.d, r) || !okArea(t.area, f) || !okUrg(t.urg, f)) continue
-    addHist(h, t.hist); n += t.n
+    addHist(h, t.hist); n += t.n; if (t.max > max) max = t.max
   }
   return {
-    dias: dias.size, registros, unidades, urgentes, eventos,
+    dias: diasConDatos(ds, r), registros, unidades, urgentes, eventos,
+    registrosBaseEventos,
+    tasaEventos: registrosBaseEventos ? (eventos / registrosBaseEventos) * 1000 : null,
     ordenes: hayOrdenes ? ordenes : null,
-    p50Total: n ? percentile(h, 0.5) : null,
-    p90Total: n ? percentile(h, 0.9) : null,
+    p50Total: n ? percentile(h, 0.5, max) : null,
+    p90Total: n ? percentile(h, 0.9, max) : null,
     tiemposN: n,
   }
+}
+
+/**
+ * Registros de las áreas (y del puesto, si hay filtro) del rango, sin filtro de urgencia
+ * ni de consumible: denominador de las tasas de eventos. Si se pasa `acc`, acumula por clave(día).
+ */
+function registrosBase(ds: Dataset, r: Rango, f: Filtros, acc?: { clave: (d: string) => string; m: Map<string, number> }): number {
+  let total = 0
+  const sumar = (d: string, v: number) => {
+    total += v
+    if (acc) { const k = acc.clave(d); acc.m.set(k, (acc.m.get(k) ?? 0) + v) }
+  }
+  if (f.puesto) {
+    for (const p of ds.puestos) if (enRango(p.d, r) && okArea(p.area, f) && p.puesto === f.puesto) sumar(p.d, p.registros)
+  } else {
+    for (const a of ds.actividad) if (enRango(a.d, r) && okArea(a.area, f)) sumar(a.d, a.registros)
+  }
+  return total
 }
 
 export function delta(actual: number | null, previo: number | null): number | null {
@@ -205,8 +325,10 @@ export function serieVolumen(ds: Dataset, r: Rango, f: Filtros, campo: "registro
 }
 
 /**
- * Previsión simple de las próximas 4 semanas: regresión lineal sobre los
- * totales semanales completos (máx. 12) del periodo. Solo orientativa.
+ * Previsión simple de las próximas 4 semanas: regresión lineal sobre los totales de
+ * semanas COMPLETAS (7 días cargados, máx. 12) del periodo. Solo orientativa.
+ * Antes se admitían semanas con ≥5 días escaladas ×7/días; como los días que faltan
+ * suelen ser fines de semana (poco volumen), eso inflaba las semanas incompletas.
  */
 export function prevision(ds: Dataset, r: Rango, f: Filtros): { semanas: Punto[]; pendiente: number } | null {
   const sem = new Map<string, { v: number; dias: number }>()
@@ -216,9 +338,9 @@ export function prevision(ds: Dataset, r: Rango, f: Filtros): { semanas: Punto[]
     if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     const s = sem.get(inicioSemana(c.d)); if (s) s.v += c.registros
   }
-  const completas = [...sem.entries()].filter(([, s]) => s.dias >= 5).sort(([a], [b]) => a.localeCompare(b)).slice(-12)
+  const completas = [...sem.entries()].filter(([, s]) => s.dias === 7).sort(([a], [b]) => a.localeCompare(b)).slice(-12)
   if (completas.length < 4) return null
-  const ys = completas.map(([, s]) => (s.v / s.dias) * 7)
+  const ys = completas.map(([, s]) => s.v)
   const n = ys.length
   const xm = (n - 1) / 2, ym = ys.reduce((a, b) => a + b, 0) / n
   let num = 0, den = 0
@@ -273,74 +395,93 @@ export function porPuesto(ds: Dataset, r: Rango, f: Filtros): Desglose[] {
   return [...m.values()].sort((a, b) => b.registros - a.registros)
 }
 
-/** Matriz 7 (lunes..domingo) × 24 horas de registros (media por día de ese tipo). */
-export function heatmapSemanaHora(ds: Dataset, r: Rango, f: Filtros): { m: number[][]; max: number } {
+/** Nº de días con datos cargados de cada día de la semana (0 = lunes) dentro del rango. */
+function diasCargadosPorDow(ds: Dataset, r: Rango): number[] {
+  const n = new Array(7).fill(0)
+  for (const d of ds.dias) if (enRango(d, r)) n[diaSemana(d)]++
+  return n
+}
+
+/**
+ * Matriz 7 (lunes..domingo) × 24 horas de registros (media por día CARGADO de ese tipo).
+ * Antes se dividía por los días en que el área filtrada tuvo actividad: un festivo sin
+ * extracciones no contaba y la media salía inflada. La actividad horaria no está
+ * desglosada por urgencia ni consumible: `ignoraFiltros` avisa de que no se aplican.
+ */
+export function heatmapSemanaHora(ds: Dataset, r: Rango, f: Filtros): { m: number[][]; max: number; ignoraFiltros: boolean } {
   const suma = Array.from({ length: 7 }, () => new Array(24).fill(0))
-  const diasPorDow = new Array(7).fill(0)
-  const vistos = new Set<string>()
+  const diasPorDow = diasCargadosPorDow(ds, r)
   for (const a of ds.actividad) {
     if (!enRango(a.d, r) || !okArea(a.area, f)) continue
     const dow = diaSemana(a.d)
-    if (!vistos.has(a.d)) { vistos.add(a.d); diasPorDow[dow]++ }
     for (let h = 0; h < 24; h++) suma[dow][h] += a.porHora[h] ?? 0
   }
   let max = 0
   const m = suma.map((fila, dow) => fila.map(v => { const x = diasPorDow[dow] ? v / diasPorDow[dow] : 0; if (x > max) max = x; return x }))
-  return { m, max }
+  return { m, max, ignoraFiltros: f.urgencia !== "todas" || !!f.consumible }
 }
 
-/** Media de registros por día de la semana. */
+/**
+ * Media de registros por día de la semana (por día cargado). Sale de "consumo", así que
+ * respeta urgencia y consumible (antes salía del mapa de calor y los ignoraba).
+ */
 export function porDiaSemana(ds: Dataset, r: Rango, f: Filtros): number[] {
-  const { m } = heatmapSemanaHora(ds, r, f)
-  return m.map(fila => fila.reduce((a, b) => a + b, 0))
+  const suma = new Array(7).fill(0)
+  const diasPorDow = diasCargadosPorDow(ds, r)
+  for (const c of ds.consumo) {
+    if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
+    suma[diaSemana(c.d)] += c.registros
+  }
+  return suma.map((v, i) => (diasPorDow[i] ? v / diasPorDow[i] : 0))
 }
 
 // ─── Tiempos ─────────────────────────────────────────────────────────────────
 
 export interface StatTiempo { clave: string; n: number; p50: number | null; p90: number | null; media: number | null; hist: number[] }
 
-function stat(clave: string, n: number, suma: number, hist: number[]): StatTiempo {
-  return { clave, n, p50: n ? percentile(hist, 0.5) : null, p90: n ? percentile(hist, 0.9) : null, media: n ? suma / n : null, hist }
+function stat(clave: string, n: number, suma: number, hist: number[], max: number): StatTiempo {
+  return { clave, n, p50: n ? percentile(hist, 0.5, max) : null, p90: n ? percentile(hist, 0.9, max) : null, media: n ? suma / n : null, hist }
 }
 
 export function tiemposPorTramo(ds: Dataset, r: Rango, f: Filtros): StatTiempo[] {
   return TRAMOS.map(t => {
-    const h = emptyHist(); let n = 0, s = 0
+    const h = emptyHist(); let n = 0, s = 0, max = 0
     for (const x of ds.tiempos) {
       if (x.tramo !== t || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
-      addHist(h, x.hist); n += x.n; s += x.suma
+      addHist(h, x.hist); n += x.n; s += x.suma; if (x.max > max) max = x.max
     }
-    return stat(t, n, s, h)
+    return stat(t, n, s, h, max)
   })
 }
 
 /** Por área (o por urgencia) para un tramo. */
 export function tiemposPor(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo, dim: "area" | "urgencia"): StatTiempo[] {
-  const m = new Map<string, { h: number[]; n: number; s: number }>()
+  const m = new Map<string, { h: number[]; n: number; s: number; max: number }>()
   for (const x of ds.tiempos) {
     if (x.tramo !== tramo || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
     const k = dim === "area" ? x.area : x.urg ? "Urgente" : "Normal"
-    const acc = m.get(k) ?? { h: emptyHist(), n: 0, s: 0 }
-    addHist(acc.h, x.hist); acc.n += x.n; acc.s += x.suma
+    const acc = m.get(k) ?? { h: emptyHist(), n: 0, s: 0, max: 0 }
+    addHist(acc.h, x.hist); acc.n += x.n; acc.s += x.suma; if (x.max > acc.max) acc.max = x.max
     m.set(k, acc)
   }
-  return [...m.entries()].map(([k, a]) => stat(k, a.n, a.s, a.h)).sort((a, b) => (b.p90 ?? 0) - (a.p90 ?? 0))
+  return [...m.entries()].map(([k, a]) => stat(k, a.n, a.s, a.h, a.max)).sort((a, b) => (b.p90 ?? 0) - (a.p90 ?? 0))
 }
 
 /** Evolución de la mediana de un tramo (diaria o semanal). */
 export function serieMediana(ds: Dataset, r: Rango, f: Filtros, tramo: Tramo): { p50: Punto[]; p90: Punto[] } {
   const g = granularidad(r)
   const eje = ejeTemporal(r, g)
-  const m = new Map<string, number[]>()
+  const m = new Map<string, { h: number[]; max: number }>()
   for (const x of ds.tiempos) {
     if (x.tramo !== tramo || !enRango(x.d, r) || !okArea(x.area, f) || !okUrg(x.urg, f)) continue
     const k = g === "semana" ? inicioSemana(x.d) : x.d
-    let h = m.get(k); if (!h) { h = emptyHist(); m.set(k, h) }
-    addHist(h, x.hist)
+    let acc = m.get(k); if (!acc) { acc = { h: emptyHist(), max: 0 }; m.set(k, acc) }
+    addHist(acc.h, x.hist); if (x.max > acc.max) acc.max = x.max
   }
+  const v = (x: string, p: number) => { const a = m.get(x); return a ? percentile(a.h, p, a.max) : null }
   return {
-    p50: eje.map(x => ({ x, v: m.has(x) ? percentile(m.get(x)!, 0.5) : null })),
-    p90: eje.map(x => ({ x, v: m.has(x) ? percentile(m.get(x)!, 0.9) : null })),
+    p50: eje.map(x => ({ x, v: v(x, 0.5) })),
+    p90: eje.map(x => ({ x, v: v(x, 0.9) })),
   }
 }
 
@@ -356,7 +497,7 @@ export function eventosPor(ds: Dataset, r: Rango, f: Filtros, dim: "tipo" | "imp
   return [...m.entries()].map(([clave, cantidad]) => ({ clave, cantidad })).sort((a, b) => b.cantidad - a.cantidad)
 }
 
-/** Tasa de eventos por 1.000 registros, por periodo (día/semana). */
+/** Tasa de eventos por 1.000 registros, por periodo (día/semana). Mismo denominador que `kpis().tasaEventos`. */
 export function serieTasaEventos(ds: Dataset, r: Rango, f: Filtros): Punto[] {
   const g = granularidad(r)
   const eje = ejeTemporal(r, g)
@@ -366,10 +507,7 @@ export function serieTasaEventos(ds: Dataset, r: Rango, f: Filtros): Punto[] {
     if (!enRango(e.d, r) || !okArea(e.area, f) || (f.puesto && e.puesto !== f.puesto)) continue
     ev.set(key(e.d), (ev.get(key(e.d)) ?? 0) + e.cantidad)
   }
-  for (const a of ds.actividad) {
-    if (!enRango(a.d, r) || !okArea(a.area, f)) continue
-    vol.set(key(a.d), (vol.get(key(a.d)) ?? 0) + a.registros)
-  }
+  registrosBase(ds, r, f, { clave: key, m: vol })
   return eje.map(x => { const v = vol.get(x); return { x, v: v ? ((ev.get(x) ?? 0) / v) * 1000 : null } })
 }
 
@@ -384,20 +522,32 @@ function tarifaPara(tarifas: Tarifa[], consumible: string, dia: string): Tarifa 
   return tarifas.find(t => t.consumible === consumible && vigente(t)) ?? tarifas.find(t => t.consumible === "*" && vigente(t)) ?? null
 }
 
-/** Consumo × tarifa vigente el día de consumo, agrupado por mes y consumible. */
+/**
+ * Consumo × tarifa vigente el día de consumo, agrupado por mes, consumible y precio.
+ * Si la tarifa cambia a mitad de mes salen dos líneas (antes se mezclaban en una con el
+ * último precio y unidades × precio no cuadraba con el importe). El importe de cada
+ * línea se redondea a céntimos y el total es la suma de líneas, como en una factura.
+ */
 export function facturacion(ds: Dataset, r: Rango, f: Filtros, tarifas: Tarifa[]): LineaFactura[] {
   const m = new Map<string, LineaFactura>()
   for (const c of ds.consumo) {
     if (!enRango(c.d, r) || !okArea(c.area, f) || (f.consumible && c.consumible !== f.consumible) || !okUrg(c.urg, f)) continue
     const mes = c.d.slice(0, 7)
     const t = tarifaPara(tarifas, c.consumible, c.d)
-    const k = `${mes}|${c.consumible}`
-    const l = m.get(k) ?? { mes, consumible: c.consumible, unidades: 0, precio: t?.precio ?? null, importe: t ? 0 : null }
+    // Prisma Decimal llega como string en JSON: se fuerza a número
+    const precio = t ? Number(t.precio) : null
+    const k = `${mes}|${c.consumible}|${precio ?? ""}`
+    const l = m.get(k) ?? { mes, consumible: c.consumible, unidades: 0, precio, importe: null }
     l.unidades += c.unidades
-    if (t) { l.importe = (l.importe ?? 0) + c.unidades * t.precio; l.precio = t.precio }
     m.set(k, l)
   }
-  return [...m.values()].sort((a, b) => a.mes.localeCompare(b.mes) || b.unidades - a.unidades)
+  for (const l of m.values()) l.importe = l.precio === null ? null : Math.round(l.unidades * l.precio * 100) / 100
+  return [...m.values()].sort((a, b) => a.mes.localeCompare(b.mes) || b.unidades - a.unidades || (a.precio ?? 0) - (b.precio ?? 0))
+}
+
+/** Total de una factura: suma de líneas en céntimos enteros (sin error de coma flotante). */
+export function totalImporte(lineas: LineaFactura[]): number {
+  return lineas.reduce((s, l) => s + Math.round((l.importe ?? 0) * 100), 0) / 100
 }
 
 // ─── Cobertura ───────────────────────────────────────────────────────────────

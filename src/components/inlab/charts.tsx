@@ -19,10 +19,19 @@ export const fmtCompacto = (v: number) =>
     : Math.abs(v) >= 10_000 ? `${(v / 1000).toLocaleString("es-ES", { maximumFractionDigits: 1 })} k`
       : fmtN(v)
 
+/**
+ * Duración legible. Por debajo de 10 min con un decimal ("3,8 min"): en extracciones la
+ * mayoría de medianas están entre 0,5 y 6 min y redondear a minutos enteros hacía que
+ * áreas distintas mostraran el mismo "2 min". Se redondea primero para no mostrar
+ * "60 min" ni "1 h 60 min".
+ */
 export function fmtMin(min: number | null | undefined): string {
   if (min === null || min === undefined || !isFinite(min)) return "—"
-  if (min < 60) return `${Math.round(min)} min`
-  if (min < 1440) { const h = Math.floor(min / 60), m = Math.round(min % 60); return m ? `${h} h ${m} min` : `${h} h` }
+  const d1 = Math.round(min * 10) / 10
+  if (d1 < 10) return `${d1.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} min`
+  const r = Math.round(min)
+  if (r < 60) return `${r} min`
+  if (r < 1440) { const h = Math.floor(r / 60), m = r % 60; return m ? `${h} h ${m} min` : `${h} h` }
   return `${(min / 1440).toLocaleString("es-ES", { maximumFractionDigits: 1 })} d`
 }
 

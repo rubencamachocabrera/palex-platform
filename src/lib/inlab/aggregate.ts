@@ -1,7 +1,7 @@
 /**
  * Agregador de filas InLab → InlabPayload. Se ejecuta en el navegador (Web Worker).
  * Las filas crudas se descartan en cuanto se suman; los nº de orden solo viven en
- * memoria (Set por día y área) para contar órdenes distintas.
+ * memoria (Set de pedidos ya vistos) para contar cada pedido una sola vez.
  */
 import { parseFecha, type FechaParseada, type OrdenFecha } from "./dates"
 import { bucketIndex, emptyHist, MAX_DURACION_MIN, toSparse } from "./histogram"
@@ -47,7 +47,6 @@ export class InlabAggregator {
   private consumo = new Map<number, number[]>()
   private puestos = new Map<number, number[]>()
   private actividad = new Map<number, number[]>()
-  private ordenes = new Map<number, Set<string>>()
   /** Pedidos ya vistos: los datos de nivel pedido (tiempos, incidencia del pedido) cuentan una vez. */
   private pedidosVistos = new Set<string>()
   private tiempos = new Map<number, TiempoAcc>()
@@ -182,13 +181,11 @@ export class InlabAggregator {
     // Actividad por día × área
     const ka = d * 256 + a
     let ra = this.actividad.get(ka)
-    if (!ra) { ra = [d, a, 0, 0, 0, -1, ...new Array(24).fill(0)]; this.actividad.set(ka, ra) }
+    if (!ra) { ra = [d, a, 0, 0, 0, this.idx.idOrden >= 0 ? 0 : -1, ...new Array(24).fill(0)]; this.actividad.set(ka, ra) }
     ra[2]++; ra[3] += cant; ra[4] += urg; ra[6 + ref.hora]++
-    if (ord) {
-      let set = this.ordenes.get(ka)
-      if (!set) { set = new Set(); this.ordenes.set(ka, set) }
-      set.add(ord)
-    }
+    // Cada pedido cuenta una vez, en el día/área de su primer tubo: antes se contaban
+    // pedidos distintos por día × área y un pedido con tubos en dos días sumaba dos veces.
+    if (ord && primeraDelPedido) ra[5]++
 
     // Eventos de calidad de la fila
     const evs: [EventoCategoria, string, number][] = []
@@ -272,11 +269,6 @@ export class InlabAggregator {
     const rd = (r: number[]) => { r[0] = remap.get(r[0])!; return r }
     const keys = (m: Map<string, number>) => { const arr: string[] = []; for (const [k, i] of m) arr[i] = k; return arr }
 
-    for (const [k, r] of this.actividad) {
-      const set = this.ordenes.get(k)
-      if (set) r[5] = set.size
-    }
-    this.ordenes.clear()
     this.pedidosVistos.clear()
 
     const tiempos: number[][] = []
@@ -300,7 +292,7 @@ export class InlabAggregator {
 
     return {
       payload: {
-        v: 1,
+        v: 2,
         dic: {
           areas: keys(this.dics.areas),
           puestos: keys(this.dics.puestos),

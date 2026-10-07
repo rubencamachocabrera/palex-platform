@@ -10,8 +10,8 @@ import {
   IconActivity, IconAlertTriangle, IconClock, IconDroplet, IconFileText, IconPrinter, IconTrendingUp, IconZap,
 } from "@/components/ui/Icons"
 import {
-  delta, eventosPor, granularidad, facturacion, heatmapSemanaHora, kpis, periodoAnterior, porArea, porConsumible, porDiaSemana,
-  porPuesto, prevision, serieMediana, serieTasaEventos, serieVolumen, tiemposPor, tiemposPorTramo,
+  delta, eventosPor, granularidad, facturacion, heatmapSemanaHora, kpisComparables, porArea, porConsumible, porDiaSemana,
+  porPuesto, prevision, serieMediana, serieTasaEventos, serieVolumen, tiemposPor, tiemposPorTramo, totalImporte,
   type Dataset, type Filtros, type Rango, type Tarifa, alternarArea, etiquetaArea,
 } from "@/lib/inlab/analytics"
 import { EVENTO_LABEL, type EventoCategoria } from "@/lib/inlab/mapping"
@@ -38,14 +38,19 @@ const EVENTO_COLOR: Record<EventoCategoria, string> = {
 // ─── Resumen ejecutivo ───────────────────────────────────────────────────────
 
 export function VistaResumen({ ds, rango, filtros, onFiltro }: VistaProps) {
-  const prev = periodoAnterior(rango)
-  const k = useMemo(() => kpis(ds, rango, filtros), [ds, rango, filtros])
-  const kp = useMemo(() => kpis(ds, prev, filtros), [ds, prev, filtros])
+  // Tendencias solo con cobertura comparable; kp viene escalado a los días con datos del
+  // periodo actual (si no es comparable, dias = 0 → sin tendencias). Ver kpisComparables().
+  const comp = useMemo(() => kpisComparables(ds, rango, filtros), [ds, rango, filtros])
+  const { k, cmp } = comp
+  const prev = cmp.anterior
+  const kp = comp.kp ?? { ...k, dias: 0 }
   const serie = useMemo(() => serieVolumen(ds, rango, filtros), [ds, rango, filtros])
   const cons = useMemo(() => porConsumible(ds, rango, filtros).slice(0, 6), [ds, rango, filtros])
-  const areas = useMemo(() => porArea(ds, rango, filtros), [ds, rango, filtros])
-  const tasa = k.registros ? (k.eventos / k.registros) * 1000 : 0
-  const tasaPrev = kp.registros ? (kp.eventos / kp.registros) * 1000 : null
+  // porArea no filtra por área (sirve para los gráficos clicables): aquí solo las seleccionadas,
+  // si no "X concentra el N %" podía referirse a un área no seleccionada y superar el 100 %
+  const areas = useMemo(() => porArea(ds, rango, filtros).filter(a => !filtros.areas.length || filtros.areas.includes(a.clave)), [ds, rango, filtros])
+  const tasa = k.tasaEventos ?? 0
+  const tasaPrev = kp.tasaEventos
   const hayPrevio = kp.dias > 0
   const d = (a: number | null, b: number | null) => (hayPrevio ? delta(a, b) : null)
   const mediaDia = k.dias ? k.registros / k.dias : 0
@@ -61,7 +66,7 @@ export function VistaResumen({ ds, rango, filtros, onFiltro }: VistaProps) {
         <Kpi label="Ciclo completo · mediana" valor={fmtMin(k.p50Total)} detalle={k.tiemposN ? `P90 ${fmtMin(k.p90Total)} · ${fmtN(k.tiemposN)} mediciones` : "Sin hitos suficientes"} delta={d(k.p50Total, kp.p50Total)} mejorSiBaja icono={<IconClock size={20} />} color="#6366F1" />
         <Kpi label="Incidencias / 1.000" valor={fmtN(tasa, 1)} detalle={`${fmtN(k.eventos)} eventos · ${fmtN(pct(k.urgentes, k.registros), 1)} % urgentes`} delta={d(tasa, tasaPrev)} mejorSiBaja icono={<IconAlertTriangle size={20} />} color="#E11D48" />
       </div>
-      {!hayPrevio && <Nota>No hay datos del periodo anterior ({fmtDia(prev.desde)} – {fmtDia(prev.hasta)}) para calcular tendencias.</Nota>}
+      {!hayPrevio && <Nota>Sin tendencias frente al periodo anterior ({fmtDia(prev.desde)} – {fmtDia(prev.hasta)}): {cmp.motivo}</Nota>}
 
       <section className="relative overflow-hidden rounded-2xl bg-[#102a43] p-5 text-white shadow-[0_20px_60px_-30px_rgba(15,42,67,.9)] sm:p-7">
         <div className="absolute -right-10 -top-16 h-64 w-64 rounded-full border border-teal-300/20" />
@@ -78,7 +83,7 @@ export function VistaResumen({ ds, rango, filtros, onFiltro }: VistaProps) {
               <li>• Se registraron <strong className="text-white">{fmtN(k.registros)}</strong> movimientos{hayPrevio && d(k.registros, kp.registros) !== null ? <> ({(d(k.registros, kp.registros) ?? 0) >= 0 ? "+" : ""}{fmtN(d(k.registros, kp.registros), 1)} % vs. periodo anterior)</> : null}.</li>
               {topArea && <li>• <strong className="text-white">{topArea.clave}</strong> concentra el {fmtN(pct(topArea.registros, k.registros || 1), 1)} % de la actividad.</li>}
               {cuello && <li>• El tramo con mayor cola (P90) es <strong className="text-white">{TRAMO_LABEL[cuello.clave as Tramo]}</strong>: {fmtMin(cuello.p90)}.</li>}
-              {k.eventos > 0 && <li>• {fmtN(k.eventos)} incidencias del sistema ({fmtN(tasa, 1)} por cada 1.000 registros).</li>}
+              {k.eventos > 0 && <li>• {fmtN(k.eventos)} eventos de calidad: reimpresiones, anulaciones e incidencias ({fmtN(tasa, 1)} por cada 1.000 registros{filtros.urgencia !== "todas" || filtros.consumible ? ", sin filtro de prioridad ni consumible" : ""}).</li>}
             </ul>
           </div>
           <div className="grid grid-cols-2 gap-3 self-start">
@@ -152,7 +157,7 @@ export function VistaConsumo({ ds, rango, filtros, onFiltro }: VistaProps) {
       </Panel>
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_.6fr]">
-        <Panel eyebrow="Demanda horaria" titulo="Mapa de calor: día de la semana × hora" texto="Media de registros por día de cada tipo. Ayuda a dimensionar puestos y turnos.">
+        <Panel eyebrow="Demanda horaria" titulo="Mapa de calor: día de la semana × hora" texto={`Media de registros por día cargado de cada tipo. Ayuda a dimensionar puestos y turnos.${heat.ignoraFiltros ? " La actividad por hora no distingue prioridad ni consumible: aquí se muestran todos." : ""}`}>
           <HeatmapSemana m={heat.m} max={heat.max} />
         </Panel>
         <Panel eyebrow="Patrón semanal" titulo="Media por día de la semana">
@@ -225,7 +230,7 @@ export function VistaTiempos({ ds, rango, filtros, onFiltro }: VistaProps) {
         <TimeChart series={[{ nombre: "Mediana", color: "#6366F1", puntos: serie.p50 }, { nombre: "P90", color: "#A5B4FC", puntos: serie.p90, discontinua: true }]} formato={v => fmtMin(v)} />
         <div className="mt-3"><Leyenda items={[{ nombre: "Mediana", color: "#6366F1" }, { nombre: "P90", color: "#A5B4FC", discontinua: true }]} /></div>
       </Panel>
-      <Nota>Los percentiles se calculan sumando histogramas diarios con intervalos fijos (precisión de 2 min por debajo de 30 min, más amplia en tiempos largos). Se excluyen duraciones negativas o superiores a 7 días.</Nota>
+      <Nota>Los percentiles se calculan sumando histogramas diarios con intervalos fijos e interpolando dentro de cada intervalo: 5 s por debajo de 2 min, 15 s hasta 10 min, 30 s hasta 30 min, 1 min hasta 1 h y más amplios en tiempos largos (verificado frente a los valores exactos de Gómez Ulla: error típico &lt;0,05 min en tramos cortos). Con pocas mediciones el percentil puede caer en un hueco entre valores observados. Se excluyen duraciones negativas o superiores a 7 días.</Nota>
     </div>
   )
 }
@@ -233,15 +238,17 @@ export function VistaTiempos({ ds, rango, filtros, onFiltro }: VistaProps) {
 // ─── Incidencias y calidad ───────────────────────────────────────────────────
 
 export function VistaCalidad({ ds, rango, filtros, onFiltro }: VistaProps) {
-  const k = useMemo(() => kpis(ds, rango, filtros), [ds, rango, filtros])
-  const kp = useMemo(() => kpis(ds, periodoAnterior(rango), filtros), [ds, rango, filtros])
+  // kp escalado a días con datos del periodo actual; dias = 0 si la cobertura no es comparable
+  const comp = useMemo(() => kpisComparables(ds, rango, filtros), [ds, rango, filtros])
+  const k = comp.k
+  const kp = comp.kp ?? { ...k, dias: 0 }
   const porTipo = useMemo(() => eventosPor(ds, rango, filtros, "tipo"), [ds, rango, filtros])
   const porImp = useMemo(() => eventosPor(ds, rango, filtros, "impresora"), [ds, rango, filtros])
   const porPues = useMemo(() => eventosPor(ds, rango, filtros, "puesto"), [ds, rango, filtros])
   const porDet = useMemo(() => eventosPor(ds, rango, filtros, "detalle"), [ds, rango, filtros])
   const serie = useMemo(() => serieTasaEventos(ds, rango, filtros), [ds, rango, filtros])
-  const tasa = k.registros ? (k.eventos / k.registros) * 1000 : 0
-  const tasaPrev = kp.registros ? (kp.eventos / kp.registros) * 1000 : null
+  const tasa = k.tasaEventos ?? 0
+  const tasaPrev = kp.tasaEventos
 
   if (ds.eventos.length === 0) {
     return <Panel titulo="Sin eventos de calidad" texto="El fichero no tenía columna de eventos emparejada o no contiene reimpresiones, rechazos, anulaciones ni errores de impresora en este periodo.">
@@ -282,10 +289,10 @@ export function VistaCalidad({ ds, rango, filtros, onFiltro }: VistaProps) {
 export function TablaFacturacion({ ds, rango, filtros, tarifas }: VistaProps & { tarifas: Tarifa[] }) {
   const lineas = useMemo(() => facturacion(ds, rango, filtros, tarifas), [ds, rango, filtros, tarifas])
   const moneda = tarifas[0]?.moneda ?? "EUR"
-  const total = lineas.reduce((s, l) => s + (l.importe ?? 0), 0)
+  const total = totalImporte(lineas)
   const sinTarifa = [...new Set(lineas.filter(l => l.importe === null).map(l => l.consumible))]
   const meses = [...new Set(lineas.map(l => l.mes))]
-  const porMes = meses.map(m => ({ mes: m, importe: lineas.filter(l => l.mes === m).reduce((s, l) => s + (l.importe ?? 0), 0), unidades: lineas.filter(l => l.mes === m).reduce((s, l) => s + l.unidades, 0) }))
+  const porMes = meses.map(m => ({ mes: m, importe: totalImporte(lineas.filter(l => l.mes === m)), unidades: lineas.filter(l => l.mes === m).reduce((s, l) => s + l.unidades, 0) }))
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">

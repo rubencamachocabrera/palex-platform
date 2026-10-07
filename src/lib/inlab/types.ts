@@ -1,9 +1,12 @@
 /**
- * Formato compacto de agregados InLab (v1).
+ * Formato compacto de agregados InLab (v2).
  *
  * Se usa en los dos sentidos:
  *   navegador → POST /api/inlab/cargas      (resultado del parseo del CSV)
  *   servidor  → GET  /api/inlab/datos       (agregados de un rango para el dashboard)
+ *
+ * v2: buckets de histograma más finos (histogram.ts). Un navegador con el código v1
+ * en caché enviaría índices de bucket antiguos: el servidor lo rechaza por la versión.
  *
  * Las cadenas van en diccionarios y las filas son tuplas de números para que
  * el payload sea pequeño. NO contiene filas crudas ni identificadores de órdenes.
@@ -14,7 +17,7 @@
  *   ESPERA     llegada del paciente → numeración del pedido   (por pedido)
  *   EXTRACCION numeración → validación de la extracción       (por pedido)
  *   TUBO       impresión del tubo → validación del tubo       (por tubo)
- *   TOTAL      llegada (o numeración) → validación            (por pedido)
+ *   TOTAL      llegada (o numeración, o petición) → validación (por pedido)
  */
 export const TRAMOS = ["ESPERA", "EXTRACCION", "TUBO", "TOTAL"] as const
 export type Tramo = typeof TRAMOS[number]
@@ -23,7 +26,8 @@ export const TRAMO_LABEL: Record<Tramo, string> = {
   ESPERA: "Espera (llegada → numeración)",
   EXTRACCION: "Extracción (numeración → validación)",
   TUBO: "Tubo (impresión → validación)",
-  TOTAL: "Ciclo completo en extracciones",
+  // Aplica a todas las áreas: en urgencias/plantas no suele haber llegada y el ciclo = numeración → validación
+  TOTAL: "Ciclo completo (llegada o numeración → validación)",
 }
 
 export interface InlabDiccionario {
@@ -36,7 +40,7 @@ export interface InlabDiccionario {
 }
 
 export interface InlabPayload {
-  v: 1
+  v: 2
   dic: InlabDiccionario
   /** días presentes (YYYY-MM-DD), ordenados */
   dias: string[]
@@ -44,7 +48,11 @@ export interface InlabPayload {
   consumo: number[][]
   /** [dia, area, puesto, registros, unidades, urgentes, eventos] */
   puestos: number[][]
-  /** [dia, area, registros, unidades, urgentes, ordenes(-1 = sin dato), h0..h23] */
+  /**
+   * [dia, area, registros, unidades, urgentes, ordenes(-1 = sin dato), h0..h23]
+   * `ordenes` = pedidos cuyo primer tubo cae ese día (cada pedido se cuenta una sola vez,
+   * así la suma sobre cualquier rango = pedidos distintos).
+   */
   actividad: number[][]
   /** [dia, area, urgente(0|1), tramo(idx TRAMOS), n, sumaMin, maxMin, ...pares (bucket, cuenta)] */
   tiempos: number[][]
@@ -65,7 +73,7 @@ export interface InlabResumenCarga {
 }
 
 export function payloadVacio(): InlabPayload {
-  return { v: 1, dic: { areas: [], puestos: [], consumibles: [], impresoras: [], eventos: [] }, dias: [], consumo: [], puestos: [], actividad: [], tiempos: [], eventos: [] }
+  return { v: 2, dic: { areas: [], puestos: [], consumibles: [], impresoras: [], eventos: [] }, dias: [], consumo: [], puestos: [], actividad: [], tiempos: [], eventos: [] }
 }
 
 /** Número de filas agregadas (para mostrar y para límites). */
