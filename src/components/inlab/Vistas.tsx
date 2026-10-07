@@ -20,7 +20,7 @@ import {
   BarList, Columnas, Donut, HeatmapSemana, Leyenda, RangoTiempos, SERIE, TimeChart, colorConsumible,
   fmtCompacto, fmtDia, fmtEur, fmtMin, fmtN,
 } from "./charts"
-import { Kpi, Nota, Panel, Segmentado } from "./ui"
+import { Kpi, Nota, NotaComparacion, Panel, Segmentado } from "./ui"
 
 export interface VistaProps {
   ds: Dataset
@@ -48,6 +48,7 @@ export function VistaResumen({ ds, rango, filtros, onFiltro }: VistaProps) {
   const tasaPrev = kp.registros ? (kp.eventos / kp.registros) * 1000 : null
   const hayPrevio = kp.dias > 0
   const d = (a: number | null, b: number | null) => (hayPrevio ? delta(a, b) : null)
+  const vs = `vs ${fmtDia(prev.desde)} – ${fmtDia(prev.hasta)}`
   const mediaDia = k.dias ? k.registros / k.dias : 0
   const tramos = tiemposPorTramo(ds, rango, filtros).filter(t => t.n > 0 && t.clave !== "TOTAL")
   const cuello = tramos.reduce<typeof tramos[number] | null>((m, t) => (!m || (t.p90 ?? 0) > (m.p90 ?? 0) ? t : m), null)
@@ -56,12 +57,14 @@ export function VistaResumen({ ds, rango, filtros, onFiltro }: VistaProps) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <Kpi label="Registros" valor={fmtCompacto(k.registros)} detalle={`${fmtN(mediaDia)} / día · ${fmtN(k.dias)} días con datos`} delta={d(k.registros, kp.registros)} icono={<IconFileText size={20} />} color={TEAL} />
-        <Kpi label="Unidades consumidas" valor={fmtCompacto(k.unidades)} detalle={k.ordenes !== null ? `${fmtN(k.ordenes)} órdenes · ${fmtN(k.ordenes ? k.unidades / k.ordenes : 0, 2)} uds/orden` : "Tubos y etiquetas"} delta={d(k.unidades, kp.unidades)} icono={<IconDroplet size={20} />} color={ORANGE} />
-        <Kpi label="Ciclo completo · mediana" valor={fmtMin(k.p50Total)} detalle={k.tiemposN ? `P90 ${fmtMin(k.p90Total)} · ${fmtN(k.tiemposN)} mediciones` : "Sin hitos suficientes"} delta={d(k.p50Total, kp.p50Total)} mejorSiBaja icono={<IconClock size={20} />} color="#6366F1" />
-        <Kpi label="Incidencias / 1.000" valor={fmtN(tasa, 1)} detalle={`${fmtN(k.eventos)} eventos · ${fmtN(pct(k.urgentes, k.registros), 1)} % urgentes`} delta={d(tasa, tasaPrev)} mejorSiBaja icono={<IconAlertTriangle size={20} />} color="#E11D48" />
+        <Kpi label="Registros" valor={fmtCompacto(k.registros)} detalle={`${fmtN(mediaDia)} / día · ${fmtN(k.dias)} días con datos`} delta={d(k.registros, kp.registros)} comparadoCon={vs} icono={<IconFileText size={20} />} color={TEAL} />
+        <Kpi label="Unidades consumidas" valor={fmtCompacto(k.unidades)} detalle={k.ordenes !== null ? `${fmtN(k.ordenes)} órdenes · ${fmtN(k.ordenes ? k.unidades / k.ordenes : 0, 2)} uds/orden` : "Tubos y etiquetas"} delta={d(k.unidades, kp.unidades)} comparadoCon={vs} icono={<IconDroplet size={20} />} color={ORANGE} />
+        <Kpi label="Ciclo completo · mediana" valor={fmtMin(k.p50Total)} detalle={k.tiemposN ? `P90 ${fmtMin(k.p90Total)} · ${fmtN(k.tiemposN)} mediciones` : "Sin hitos suficientes"} delta={d(k.p50Total, kp.p50Total)} comparadoCon={vs} mejorSiBaja icono={<IconClock size={20} />} color="#6366F1" />
+        <Kpi label="Incidencias / 1.000" valor={fmtN(tasa, 1)} detalle={`${fmtN(k.eventos)} eventos · ${fmtN(pct(k.urgentes, k.registros), 1)} % urgentes`} delta={d(tasa, tasaPrev)} comparadoCon={vs} mejorSiBaja icono={<IconAlertTriangle size={20} />} color="#E11D48" />
       </div>
-      {!hayPrevio && <Nota>No hay datos del periodo anterior ({fmtDia(prev.desde)} – {fmtDia(prev.hasta)}) para calcular tendencias.</Nota>}
+      {!hayPrevio
+        ? <Nota>No hay datos del periodo anterior ({fmtDia(prev.desde)} – {fmtDia(prev.hasta)}) para calcular tendencias.</Nota>
+        : <NotaComparacion actual={rango} anterior={prev} diasActual={k.dias} diasAnterior={kp.dias} fmt={x => fmtDia(x, { day: "numeric", month: "short", year: "numeric" })} />}
 
       <section className="relative overflow-hidden rounded-2xl bg-[#102a43] p-5 text-white shadow-[0_20px_60px_-30px_rgba(15,42,67,.9)] sm:p-7">
         <div className="absolute -right-10 -top-16 h-64 w-64 rounded-full border border-teal-300/20" />
@@ -252,8 +255,8 @@ export function VistaCalidad({ ds, rango, filtros, onFiltro }: VistaProps) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <Kpi label="Eventos" valor={fmtN(k.eventos)} detalle="Del fichero InLab" delta={kp.dias ? delta(k.eventos, kp.eventos) : null} mejorSiBaja icono={<IconAlertTriangle size={20} />} color="#E11D48" />
-        <Kpi label="Tasa / 1.000 registros" valor={fmtN(tasa, 2)} detalle="Normalizada por volumen" delta={kp.dias ? delta(tasa, tasaPrev) : null} mejorSiBaja icono={<IconTrendingUp size={20} />} color={ORANGE} />
+        <Kpi label="Eventos" valor={fmtN(k.eventos)} detalle="Del fichero InLab" delta={kp.dias ? delta(k.eventos, kp.eventos) : null} comparadoCon={`vs ${fmtDia(periodoAnterior(rango).desde)} – ${fmtDia(periodoAnterior(rango).hasta)}`} mejorSiBaja icono={<IconAlertTriangle size={20} />} color="#E11D48" />
+        <Kpi label="Tasa / 1.000 registros" valor={fmtN(tasa, 2)} detalle="Normalizada por volumen" delta={kp.dias ? delta(tasa, tasaPrev) : null} comparadoCon={`vs ${fmtDia(periodoAnterior(rango).desde)} – ${fmtDia(periodoAnterior(rango).hasta)}`} mejorSiBaja icono={<IconTrendingUp size={20} />} color={ORANGE} />
         <Kpi label="Reimpresiones" valor={fmtN(porTipo.find(t => t.clave === "REIMPRESION")?.cantidad ?? 0)} detalle="Etiquetas impresas de nuevo" icono={<IconPrinter size={20} />} color="#6366F1" />
         <Kpi label="Rechazos" valor={fmtN(porTipo.find(t => t.clave === "RECHAZO")?.cantidad ?? 0)} detalle="Tubos rechazados" icono={<IconDroplet size={20} />} color={TEAL} />
       </div>

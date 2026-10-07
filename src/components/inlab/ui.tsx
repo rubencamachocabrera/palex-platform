@@ -25,8 +25,10 @@ export function Panel({ eyebrow, titulo, texto, accion, children, className = ""
  * KPI con tendencia frente al periodo anterior.
  * `mejorSiBaja` invierte el color (p. ej. tiempos o incidencias: bajar es bueno).
  */
-export function Kpi({ label, valor, detalle, delta, mejorSiBaja = false, icono, color }: {
+export function Kpi({ label, valor, detalle, delta, mejorSiBaja = false, icono, color, comparadoCon }: {
   label: string; valor: string; detalle?: string; delta?: number | null; mejorSiBaja?: boolean; icono: React.ReactNode; color: string
+  /** Periodo de referencia de la variación, p. ej. "vs 1 mar – 29 may" */
+  comparadoCon?: string
 }) {
   const hayDelta = delta !== null && delta !== undefined && isFinite(delta)
   const bueno = hayDelta && (mejorSiBaja ? delta! < 0 : delta! > 0)
@@ -38,12 +40,15 @@ export function Kpi({ label, valor, detalle, delta, mejorSiBaja = false, icono, 
       <div className="mb-4 flex items-start justify-between gap-2">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ color, background: `${color}16` }}>{icono}</span>
         {hayDelta && (
+          <span className="flex flex-col items-end gap-1">
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold tabular-nums ${neutro ? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200" : bueno ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"}`}
-            title="Variación frente al periodo anterior de la misma duración"
+            title={`Variación frente al periodo anterior de la misma duración${comparadoCon ? ` (${comparadoCon.replace(/^vs /, "")})` : ""}`}
           >
             {delta! >= 0 ? <IconTrendingUp size={12} /> : <IconTrendingDown size={12} />}
             {delta! >= 0 ? "+" : ""}{delta!.toLocaleString("es-ES", { maximumFractionDigits: 1 })} %
+          </span>
+          {comparadoCon && <span className="text-[9.5px] font-semibold text-gray-400 dark:text-slate-400">{comparadoCon}</span>}
           </span>
         )}
       </div>
@@ -78,6 +83,28 @@ export function Nota({ children, tono = "info" }: { children: React.ReactNode; t
   return (
     <p className={`rounded-xl px-3 py-2 text-[11px] leading-relaxed ${tono === "aviso" ? "bg-amber-50 text-amber-800 dark:bg-amber-950/25 dark:text-amber-200" : "bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300"}`}>
       {children}
+    </p>
+  )
+}
+
+/**
+ * Explica contra qué se comparan las variaciones (%) de las tarjetas: periodo anterior de la
+ * misma duración, días con datos en cada periodo y aviso si la cobertura no es comparable.
+ */
+export function NotaComparacion({ actual, anterior, diasActual, diasAnterior, fmt }: {
+  actual: { desde: string; hasta: string }
+  anterior: { desde: string; hasta: string }
+  diasActual: number
+  diasAnterior: number
+  fmt: (d: string) => string
+}) {
+  const largo = (r: { desde: string; hasta: string }) => Math.round((Date.parse(r.hasta) - Date.parse(r.desde)) / 86400000) + 1
+  const desigual = diasAnterior > 0 && Math.abs(diasActual - diasAnterior) / Math.max(diasActual, diasAnterior) > 0.1
+  return (
+    <p className="rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2 text-[11px] leading-5 text-gray-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+      <strong className="text-gray-700 dark:text-gray-100">Variaciones (%):</strong> comparan con el periodo anterior de la misma duración, con los mismos filtros (work areas y prioridad).
+      Actual <strong>{fmt(actual.desde)} – {fmt(actual.hasta)}</strong> ({largo(actual)} días, {diasActual} con datos) frente a <strong>{fmt(anterior.desde)} – {fmt(anterior.hasta)}</strong> ({largo(anterior)} días, {diasAnterior} con datos).
+      {desigual && <span className="mt-1 block font-semibold text-amber-700 dark:text-amber-300">⚠ Los dos periodos no tienen la misma cobertura de datos ({diasActual} frente a {diasAnterior} días con datos): las variaciones de totales no son comparables; fíjate mejor en medias por día, tasas y tiempos.</span>}
     </p>
   )
 }
