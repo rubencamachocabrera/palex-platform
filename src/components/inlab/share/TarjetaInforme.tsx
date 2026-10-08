@@ -37,10 +37,10 @@ export function TarjetaInforme({ hospital, periodo, alcance, caducidad, kpis, es
 }) {
   const e = ESTADO[estado]
   const items = kpis ? [
-    { label: "Peticiones", valor: fmtCompacto(kpis.registros) },
+    { label: "Peticiones", valor: kpis.ordenes === null ? "—" : fmtCompacto(kpis.ordenes) },
     { label: "Tubos y etiquetas", valor: fmtCompacto(kpis.unidades) },
-    { label: "Ciclo · mediana", valor: fmtMin(kpis.p50Total) },
-    { label: "Eventos / 1.000", valor: fmtN(kpis.tasaEventos, 1) },
+    { label: "Circuito · mitad en", valor: fmtMin(kpis.p50Total) },
+    { label: "Eventos / 1.000 tubos", valor: fmtN(kpis.tasaEventos, 1) },
   ] : null
 
   return (

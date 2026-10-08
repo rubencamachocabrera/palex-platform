@@ -176,11 +176,14 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   const caducidad = datos.expiraEn ? `Enlace válido hasta el ${new Date(datos.expiraEn).toLocaleDateString("es-ES", LARGO)}` : "Enlace sin caducidad"
   const urgente = k.registros ? (k.urgentes / k.registros) * 100 : 0
 
+  // Mismas métricas que el dashboard (Sprint 26): Peticiones = pedidos distintos (k.ordenes),
+  // Tubos y etiquetas = cada tubo/etiqueta impresa (k.unidades). k.ordenes es null con filtros
+  // que el payload no desglosa por petición (prioridad/consumible) → se muestra «—».
   const cifras = [
-    { etiqueta: "Peticiones", valor: k.registros, fmt: (v: number | null) => fmtN(v), detalle: `${fmtN(k.dias ? k.registros / k.dias : 0)} / día · ${fmtN(k.dias)} días con datos`, color: "#00A99D" },
-    { etiqueta: "Tubos y etiquetas", valor: k.unidades, fmt: (v: number | null) => fmtN(v), detalle: k.ordenes !== null ? `${fmtN(k.ordenes)} órdenes` : `${fmtN(urgente, 1)} % urgentes`, color: "#F7941D" },
-    { etiqueta: "Ciclo · mediana", valor: k.p50Total, fmt: (v: number | null) => fmtMin(v), detalle: k.tiemposN ? `P90 ${fmtMin(k.p90Total)} · ${fmtN(k.tiemposN)} mediciones` : "Sin hitos suficientes", color: "#818CF8" },
-    { etiqueta: "Eventos / 1.000", valor: k.tasaEventos, fmt: (v: number | null) => fmtN(v, 1), detalle: `${fmtN(k.eventos)} eventos de calidad`, color: "#FB7185" },
+    { etiqueta: "Peticiones", valor: k.ordenes, fmt: (v: number | null) => (v === null ? "—" : fmtN(v)), detalle: k.ordenes !== null ? `${fmtN(k.dias ? k.ordenes / k.dias : 0)} al día · ${fmtN(k.dias)} días con datos` : "No disponible con este filtro de prioridad", color: "#00A99D" },
+    { etiqueta: "Tubos y etiquetas", valor: k.unidades, fmt: (v: number | null) => fmtN(v), detalle: k.ordenes ? `${fmtN(k.unidades / k.ordenes, 2)} por petición` : `${fmtN(urgente, 1)} % de tubos son de peticiones urgentes`, color: "#F7941D" },
+    { etiqueta: "Circuito · la mitad en menos de", valor: k.p50Total, fmt: (v: number | null) => fmtMin(v), detalle: k.tiemposN ? `9 de cada 10 en menos de ${fmtMin(k.p90Total)} · ${fmtN(k.tiemposN)} peticiones medidas` : "Sin hitos suficientes", color: "#818CF8" },
+    { etiqueta: "Eventos por 1.000 tubos", valor: k.tasaEventos, fmt: (v: number | null) => fmtN(v, 1), detalle: `${fmtN(k.eventos)} eventos de calidad`, color: "#FB7185" },
   ]
 
   const portada = (enPresentacion: boolean) => (
