@@ -1,4 +1,4 @@
-# Inteligencia InLab — módulo de cargas y analítica
+# InLab Analytics — módulo de cargas y analítica
 
 Convierte exportaciones CSV de la base de datos MySQL de InLab (una por hospital)
 en agregados diarios que alimentan `/inlab`, el informe público `/share/inlab/[token]`
@@ -83,6 +83,32 @@ no hay desglose por prioridad ni por tipo de tubo, ver `peticionesDisponibles()`
 etiquetas** = campo `unidades` (en InLab = filas). Nunca «registros» ni «unidades» en pantalla.
 Validaciones sospechosamente rápidas (extracción < 1 min, sin ver al paciente): umbrales en
 `VALIDACION_RAPIDA` (`analytics.ts`), recuento exacto con `cuentaBajo()` (`histogram.ts`).
+
+## Pruebas de laboratorio (Sprint 27)
+
+Qué pruebas piden las peticiones (`pruebas.ts`, `pruebas-analytics.ts`, pestaña «Pruebas»).
+
+- **Origen:** `dbo.LabOrder_Tests` (solo `LabOrderId` y `CodeTest`; `TestResult` = resultados
+  clínicos, nunca se lee). Nombre: `CodeTest = Cfg_Lab_Tests.CodeAliasTest` (**no** `CodeTest`:
+  por `CodeTest` solo casa el 54 % y los nombres salen cambiados). Sección:
+  `Cfg_Lab_Tests.CodeTest → Cfg_Lab_TestsTubes.InfoExtraPrint`, normalizada en `seccionLegible()`.
+  En el CSV plano, columna `Pruebas` (`Sección~Nombre|…`) solo en el primer tubo de cada pedido.
+- **Medida:** peticiones que incluyen la prueba. Cada prueba cuenta **una vez por petición**
+  (InLab duplica filas: el Colesterol aparece dos veces en 12.784 pedidos de Gómez Ulla; contar
+  filas inflaba un 57 %), en el día/área/prioridad del primer tubo de la petición (igual que
+  «Peticiones»). Pruebas de pedidos sin tubos y filas de sección Error/Visita no cuentan (aviso).
+- **Perfiles** (`PERFILES`, por nombre normalizado, portables entre hospitales): Hemograma
+  (23 parámetros en Gómez Ulla, incl. fórmula), Estudio de coagulación, Sistemático de orina,
+  Proteinograma. Lo que el médico pide suelto (colesterol, glucosa, TSH…) no se agrupa.
+- **Almacenamiento:** `inlab_prueba_diaria` (día × área × urgente × prueba; la fila con
+  `prueba = ""` guarda las peticiones con pruebas). Lectura aparte en `GET /api/inlab/pruebas`
+  (~80.000 filas/año, ~1,3 MB): el dashboard solo la pide al abrir la pestaña.
+- **Informes públicos:** opción «Incluir pruebas» del enlace (`InlabShare.incluirPruebas`);
+  `filtrarPruebasParaShare` recorta a las áreas del enlace y oculta pruebas con menos de
+  `MIN_PETICIONES_PRUEBA_SHARE` (5) peticiones en el periodo.
+- **Verificación:** referencia Python independiente sobre la BD real de Gómez Ulla — 770
+  pruebas, 11 áreas, 211 días, prioridad y peticiones con pruebas idénticos (1.043.841
+  pruebas en 59.185 peticiones). Casos sintéticos en `docs/inlab/verificar-estadistica.ts` §4.
 
 Pendiente de confirmar con el equipo de InLab: significado de `LabOrders.State`
 (0, 1, 2, 4, 5, 7, 9). El log de impresión (`LogsPrint`) solo guarda ~1 semana, por

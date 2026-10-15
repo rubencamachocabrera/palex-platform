@@ -52,7 +52,7 @@ export function TarjetaInforme({ hospital, periodo, alcance, caducidad, kpis, es
       </div>
 
       <div key={`cab-${claveAnimacion}`} className={`${s.swap} mt-5`}>
-        <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-teal-200">Informe Inteligencia InLab</p>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-teal-200">Informe InLab Analytics</p>
         <h3 className="mt-1 text-lg font-extrabold leading-tight tracking-[-.02em]">{hospital}</h3>
         <p className="mt-1 text-xs text-slate-300">{periodo}</p>
         <p className="mt-0.5 text-[11px] text-slate-400">{alcance}</p>

@@ -1,5 +1,5 @@
 /**
- * Consultas de servidor de Inteligencia InLab: reconstruye el formato compacto
+ * Consultas de servidor de InLab Analytics: reconstruye el formato compacto
  * (InlabPayload) a partir de los agregados diarios de uno o varios hospitales.
  */
 import { Prisma } from "@prisma/client"
@@ -7,7 +7,7 @@ import { db } from "@/lib/db"
 import { dateToDia, diaToDate } from "./dates"
 import { EVENTO_CATEGORIAS } from "./mapping"
 import { addHist, emptyHist, N_BUCKETS, N_BUCKETS_V1, normalizarHist, percentile, toSparse } from "./histogram"
-import { payloadVacio, TRAMOS, type InlabPayload } from "./types"
+import { payloadVacio, TRAMOS, type InlabPayload, type InlabPruebasPayload } from "./types"
 
 class Dic {
   private m = new Map<string, number>()
@@ -126,6 +126,41 @@ export async function cargarDataset(hospitalIds: string[], desde?: string, hasta
   out.dias = dias
   out.dic = { areas: areas.list, puestos: pues.list, consumibles: cons.list, impresoras: imps.list, eventos: evs.list }
   return out
+}
+
+/**
+ * Pruebas pedidas de uno o varios hospitales (formato compacto InlabPruebasPayload). Va aparte
+ * de cargarDataset: son ~5× más filas que el resto de agregados y solo hacen falta al abrir la
+ * pestaña «Pruebas» (o en un informe compartido que las incluya).
+ */
+export async function cargarPruebas(hospitalIds: string[], desde?: string, hasta?: string): Promise<InlabPruebasPayload> {
+  const vacio: InlabPruebasPayload = { dias: [], areas: [], pruebas: { nombres: [], secciones: [], info: [], filas: [], peticiones: [] } }
+  if (hospitalIds.length === 0) return vacio
+  const filas = await db.$queryRaw<{ fecha: Date; area: string; urgente: boolean; prueba: string; seccion: string; parametros: number; peticiones: number }[]>`
+    SELECT fecha, area, urgente, prueba, seccion, parametros, peticiones
+    FROM inlab_prueba_diaria
+    WHERE ${whereSql(hospitalIds, desde, hasta)}`
+  if (filas.length === 0) return vacio
+
+  const dias = [...new Set(filas.map(r => dateToDia(r.fecha)))].sort()
+  const diaIdx = new Map(dias.map((d, i) => [d, i]))
+  const areas = new Dic(), nombres = new Dic(), secciones = new Dic()
+  const info: number[][] = []
+  const out = vacio.pruebas
+  for (const r of filas) {
+    const d = diaIdx.get(dateToDia(r.fecha))!
+    const a = areas.idx(r.area), u = r.urgente ? 1 : 0
+    if (r.prueba === "") { out.peticiones.push([d, a, u, r.peticiones]); continue }
+    const p = nombres.idx(r.prueba)
+    // Varias cargas/hospitales: la sección de la primera fila y el mayor nº de parámetros
+    if (!info[p]) info[p] = [secciones.idx(r.seccion), r.parametros]
+    else if (r.parametros > info[p][1]) info[p][1] = r.parametros
+    out.filas.push([d, a, u, p, r.peticiones])
+  }
+  out.nombres = nombres.list
+  out.secciones = secciones.list
+  out.info = info
+  return { dias, areas: areas.list, pruebas: out }
 }
 
 export interface CoberturaHospital {

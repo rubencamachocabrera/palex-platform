@@ -22,7 +22,7 @@ import { TarjetaInforme } from "@/components/inlab/share/TarjetaInforme"
 import { descargarBlob, nombreFichero, pngTarjeta, svgCompleto } from "@/components/inlab/share/qr"
 
 interface Share {
-  id: string; token: string; desde: string | null; hasta: string | null; incluirFacturacion: boolean; areas?: string[]
+  id: string; token: string; desde: string | null; hasta: string | null; incluirFacturacion: boolean; incluirPruebas?: boolean; areas?: string[]
   expiraEn: string | null; revocado: boolean; vistas: number; ultimaVista: string | null; creadoEn: string; creadoPor?: { nombre: string }
 }
 
@@ -62,6 +62,7 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
   const [periodo, setPeriodo] = useState<"rango" | "todo">("rango")
   const [areas, setAreas] = useState<string[]>([])
   const [facturacion, setFacturacion] = useState(false)
+  const [pruebas, setPruebas] = useState(true)
   const [expira, setExpira] = useState<number | null>(30)
   const [creando, setCreando] = useState(false)
   const [activoId, setActivoId] = useState<string | null>(null)
@@ -98,12 +99,12 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
 
   // Lo que muestra la tarjeta: el enlace seleccionado o el borrador de la configuración
   const vista = useMemo(() => {
-    if (activo) return { desde: activo.desde, hasta: activo.hasta, areas: activo.areas ?? [], facturacion: activo.incluirFacturacion, expiraEn: activo.expiraEn, estado: estadoShare(activo, ahora) as EstadoShare }
+    if (activo) return { desde: activo.desde, hasta: activo.hasta, areas: activo.areas ?? [], facturacion: activo.incluirFacturacion, pruebas: !!activo.incluirPruebas, expiraEn: activo.expiraEn, estado: estadoShare(activo, ahora) as EstadoShare }
     return {
-      desde: periodo === "rango" ? rango.desde : null, hasta: periodo === "rango" ? rango.hasta : null, areas, facturacion: facturacion && puedeFacturacion,
+      desde: periodo === "rango" ? rango.desde : null, hasta: periodo === "rango" ? rango.hasta : null, areas, facturacion: facturacion && puedeFacturacion, pruebas,
       expiraEn: null, estado: null,
     }
-  }, [activo, ahora, periodo, rango, areas, facturacion, puedeFacturacion])
+  }, [activo, ahora, periodo, rango, areas, facturacion, pruebas, puedeFacturacion])
 
   // Vista previa con las mismas funciones del dashboard, solo si el periodo está dentro de lo cargado
   const preview = useMemo(() => {
@@ -111,7 +112,7 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
     return kpis(ds, { desde: vista.desde, hasta: vista.hasta }, { ...FILTROS_VACIOS, areas: vista.areas })
   }, [ds, vista, rango])
 
-  const alcance = `${etiquetaAreasShare(vista.areas)}${vista.facturacion ? " · con facturación" : ""}`
+  const alcance = `${etiquetaAreasShare(vista.areas)}${vista.pruebas ? " · con pruebas" : ""}${vista.facturacion ? " · con facturación" : ""}`
   const periodoTxt = textoPeriodo(vista.desde, vista.hasta)
 
   function editar<T>(set: (v: T) => void) {
@@ -129,7 +130,7 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hospitalId, desde: periodo === "rango" ? rango.desde : null, hasta: periodo === "rango" ? rango.hasta : null,
-          incluirFacturacion: facturacion && puedeFacturacion, areas, expiraDias: expira,
+          incluirFacturacion: facturacion && puedeFacturacion, incluirPruebas: pruebas, areas, expiraDias: expira,
         }),
       })
       const d = await r.json().catch(() => null)
@@ -158,10 +159,10 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
     } catch { toast.error("No se pudo generar la imagen") } finally { setDescargando(null) }
   }
 
-  const asunto = `Informe Inteligencia InLab · ${hospitalNombre}`
+  const asunto = `Informe InLab Analytics · ${hospitalNombre}`
   const cuerpo = (u: string) => [
     "Hola,", "",
-    `Te comparto el informe de Inteligencia InLab de ${hospitalNombre} (${periodoTxt}).`, "",
+    `Te comparto el informe de InLab Analytics de ${hospitalNombre} (${periodoTxt}).`, "",
     u, "",
     `Es un enlace de solo lectura (${textoCaducidad(activo?.expiraEn ?? null).toLowerCase()}). Incluye: ${alcance.toLowerCase()}. Puedes filtrar por periodo y work area, imprimirlo o verlo en modo presentación. No contiene datos de pacientes.`, "",
     "Un saludo",
@@ -188,6 +189,7 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
             <span className="block font-bold text-gray-800 dark:text-white">{textoPeriodo(s.desde, s.hasta)}</span>
             <span className="mt-1 flex flex-wrap gap-1">
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{etiquetaAreasShare(s.areas ?? [])}</span>
+              {s.incluirPruebas && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-800 dark:bg-violet-950/30 dark:text-violet-200">Con pruebas</span>}
               {s.incluirFacturacion && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Con facturación</span>}
             </span>
             <span className="mt-1 block text-[11px] text-gray-500 dark:text-slate-400">
@@ -274,6 +276,12 @@ export function ShareModal({ abierto, onCerrar, hospitalId, hospitalNombre, rang
                 ))}
               </div>
             </fieldset>
+
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-slate-200 px-3.5 py-3 dark:border-slate-700">
+              <span className="text-sm text-gray-700 dark:text-gray-200"><span className="font-bold">Incluir pruebas de laboratorio</span><span className="block text-[11px] text-gray-500 dark:text-slate-400">Qué pruebas se piden y cómo evolucionan. Se ocultan las que tienen menos de 5 peticiones en el periodo.</span></span>
+              <input type="checkbox" role="switch" checked={pruebas} onChange={e => editar(setPruebas)(e.target.checked)} className="peer sr-only" />
+              <span aria-hidden="true" className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-slate-300 transition peer-checked:bg-teal-600 peer-focus-visible:ring-2 peer-focus-visible:ring-teal-400 dark:bg-slate-600 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-[#fff] after:shadow after:transition peer-checked:after:translate-x-5" />
+            </label>
 
             {puedeFacturacion && (
               <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-slate-200 px-3.5 py-3 dark:border-slate-700">

@@ -1,5 +1,5 @@
 /**
- * Zod schemas del módulo Inteligencia InLab (re-exportados desde @/lib/schemas).
+ * Zod schemas del módulo InLab Analytics (re-exportados desde @/lib/schemas).
  */
 import { z } from "zod"
 import { CAMPOS } from "./mapping"
@@ -24,6 +24,13 @@ export const InlabPayloadSchema = z.object({
   actividad: filas(30),
   tiempos: filas(7),
   eventos: filas(7),
+  pruebas: z.object({
+    nombres: dic,
+    secciones: z.array(texto).max(200),
+    info: z.array(z.array(nat).length(2)).max(LIMITES.maxDiccionario),
+    filas: filas(5),
+    peticiones: filas(4),
+  }).optional(),
 })
 
 const campoKeys = CAMPOS.map(c => c.key) as [string, ...string[]]
@@ -83,6 +90,8 @@ export const InlabShareCreate = z.object({
   incluirFacturacion: z.boolean().optional(),
   /** Work areas incluidas; vacío/ausente = todas */
   areas: z.array(z.string().trim().min(1).max(LIMITES.maxTextoDimension)).max(500).optional(),
+  /** Incluir las pruebas de laboratorio pedidas (por defecto sí) */
+  incluirPruebas: z.boolean().optional(),
   expiraDias: z.number().int().min(1).max(365).optional().nullable(),
 })
 
@@ -97,6 +106,13 @@ export function validarIndicesPayload(p: z.infer<typeof InlabPayloadSchema>): st
   for (const r of p.tiempos) {
     if (!ok(r[0], nd) || !ok(r[1], areas.length) || !ok(r[3], TRAMOS.length) || (r.length - 7) % 2 !== 0) return "tiempos: fila inválida"
     for (let i = 7; i < r.length; i += 2) if (!ok(r[i], N_BUCKETS)) return "tiempos: bucket inválido"
+  }
+  if (p.pruebas) {
+    const { nombres, secciones, info, filas: fp, peticiones } = p.pruebas
+    if (info.length !== nombres.length) return "pruebas: catálogo incompleto"
+    for (const r of info) if (!ok(r[0], secciones.length) || r[1] < 1) return "pruebas: sección inválida"
+    for (const r of fp) if (r.length !== 5 || !ok(r[0], nd) || !ok(r[1], areas.length) || (r[2] !== 0 && r[2] !== 1) || !ok(r[3], nombres.length) || !Number.isInteger(r[4]) || r[4] < 0) return "pruebas: fila inválida"
+    for (const r of peticiones) if (r.length !== 4 || !ok(r[0], nd) || !ok(r[1], areas.length) || (r[2] !== 0 && r[2] !== 1) || !Number.isInteger(r[3]) || r[3] < 0) return "pruebas: fila de peticiones inválida"
   }
   for (const r of p.eventos) if (!ok(r[0], nd) || !ok(r[1], areas.length) || !ok(r[2], puestos.length, true) || !ok(r[3], impresoras.length, true) || !ok(r[4], EVENTO_CATEGORIAS.length) || !ok(r[5], eventos.length, true)) return "eventos: índice fuera de rango"
   return null

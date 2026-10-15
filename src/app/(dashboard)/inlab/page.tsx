@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Inteligencia InLab — dashboard sobre agregados cargados desde exportaciones InLab.
+ * InLab Analytics — dashboard sobre agregados cargados desde exportaciones InLab.
  * Ver src/lib/inlab/README.md para el flujo completo y la adaptación al CSV real.
  */
 import { Activity, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
@@ -19,12 +19,14 @@ import { INLAB_ROLES_VER } from "@/lib/inlab/roles"
 import { decodificar, FILTROS_VACIOS, type Dataset, type Filtros, type Rango, type Urgencia } from "@/lib/inlab/analytics"
 import { recortar, ventanaDatos } from "@/lib/inlab/recorte"
 import { addDias } from "@/lib/inlab/dates"
-import type { InlabPayload } from "@/lib/inlab/types"
+import type { InlabPayload, InlabPruebasPayload } from "@/lib/inlab/types"
+import { decodificarPruebas, recortarPruebas, type DatasetPruebas } from "@/lib/inlab/pruebas-analytics"
 import { EsqueletoVista } from "./_components/EsqueletoVista"
 import { fmtDia } from "@/components/inlab/charts"
 import { Segmentado } from "@/components/inlab/ui"
 import { SelectorAreas } from "@/components/inlab/SelectorAreas"
 import { VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
+import { VistaPruebas } from "@/components/inlab/VistaPruebas"
 import { UploadWizard, type HospitalOpcion } from "./_components/UploadWizard"
 import { VistaCargas } from "./_components/VistaCargas"
 import { VistaComparar } from "./_components/VistaComparar"
@@ -34,7 +36,7 @@ import { ShareModal } from "./_components/ShareModal"
 const DemoGulla = dynamic(() => import("./_demo/DemoGulla").then(m => m.DemoGulla), { ssr: false, loading: () => <EsqueletoVista tipo="resumen" /> })
 const InformeInlab = dynamic(() => import("@/components/inlab/InformeInlab").then(m => m.InformeInlab), { ssr: false })
 
-type Tab = "resumen" | "consumo" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
+type Tab = "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
 type Preset = "30d" | "90d" | "12m" | "todo" | "custom"
 
 interface Cobertura { hospitalId: string; desde: string; hasta: string; dias: number; cargas: number; ultimaCarga: string | null }
@@ -43,6 +45,7 @@ interface InfoHospitales { todos: (HospitalOpcion & { camas: number | null })[];
 const TABS: { key: Tab; label: string; color: string; facturacion?: boolean }[] = [
   { key: "resumen", label: "Resumen ejecutivo", color: TEAL },
   { key: "consumo", label: "Consumo & demanda", color: ORANGE },
+  { key: "pruebas", label: "Pruebas", color: "#7C3AED" },
   { key: "tiempos", label: "Flujo & tiempos", color: "#6366f1" },
   { key: "calidad", label: "Incidencias & calidad", color: "#E11D48" },
   { key: "comparar", label: "Comparar hospitales", color: "#0EA5E9" },
@@ -74,12 +77,21 @@ async function fetcherDatos([url]: ClaveDatos): Promise<Dataset> {
   return decodificar(d as InlabPayload)
 }
 
+// Pruebas pedidas: aparte y solo al abrir su pestaña (~5× más filas que el resto de agregados)
+const urlPruebas = (ids: string[]) => `/api/inlab/pruebas?hospitalIds=${[...ids].sort().join(",")}`
+async function fetcherPruebas([url]: ClaveDatos): Promise<DatasetPruebas> {
+  const r = await fetch(url)
+  const d = await r.json().catch(() => null)
+  if (!r.ok) throw new Error(d?.error ?? "No se pudieron cargar las pruebas")
+  return decodificarPruebas(d as InlabPruebasPayload)
+}
+
 const OPCIONES_DATOS = { revalidateOnFocus: false, revalidateIfStale: false, keepPreviousData: true, dedupingInterval: 60_000 } as const
 
 const SIN_DIAS: string[] = []
 
 /** Vistas analíticas que se mantienen montadas al cambiar de pestaña (<Activity>). */
-const TABS_PERSISTENTES = new Set<Tab>(["resumen", "consumo", "tiempos", "calidad"])
+const TABS_PERSISTENTES = new Set<Tab>(["resumen", "consumo", "pruebas", "tiempos", "calidad"])
 
 export default function InlabPage() {
   const { rol, isLoading: cargandoPerfil } = usePerfil()
@@ -176,6 +188,8 @@ export default function InlabPage() {
   const claveDatos: ClaveDatos | null = seleccion.length > 0 && cobertura ? [urlDatos(seleccion), version] : null
   const { data: dsCompleto, error: errorSwr, isLoading: cargandoDatos } = useSWR(claveDatos, fetcherDatos, OPCIONES_DATOS)
   const errorDatos = errorSwr ? (errorSwr instanceof Error ? errorSwr.message : "Error de red") : null
+  const clavePruebas: ClaveDatos | null = claveDatos && visitadas.has("pruebas") ? [urlPruebas(seleccion), version] : null
+  const { data: dpCompleto, error: errorPruebasSwr } = useSWR(clavePruebas, fetcherPruebas, OPCIONES_DATOS)
 
   // Ventana = rango + periodo anterior (tendencias). `recortar` da exactamente el Dataset que
   // devolvía antes el servidor para esa ventana (incl. `areas`/`consumibles`), en milisegundos.
@@ -190,7 +204,8 @@ export default function InlabPage() {
   }, [ds, filtros])
   // Las vistas reciben estos valores con prioridad baja (useDeferredValue): los controles
   // (periodo, prioridad, áreas) responden al instante y el recálculo es interrumpible.
-  const vista = useMemo(() => (ds && rango ? { ds, rango, filtros: filtrosEf } : null), [ds, rango, filtrosEf])
+  const dp = useMemo(() => (dpCompleto && vDesde && vHasta ? recortarPruebas(dpCompleto, { desde: vDesde, hasta: vHasta }) : null), [dpCompleto, vDesde, vHasta])
+  const vista = useMemo(() => (ds && rango ? { ds, rango, filtros: filtrosEf, dp } : null), [ds, rango, filtrosEf, dp])
   const vistaDiferida = useDeferredValue(vista)
   const recalculando = vista !== vistaDiferida || tab !== tabContenido
   // Días con datos para "Cargas & cobertura": toda la cobertura (ya está en el Dataset completo)
@@ -215,16 +230,21 @@ export default function InlabPage() {
   ].filter(Boolean) as { k: "consumible" | "puesto"; label: string }[]
 
   if (!cargandoPerfil && rol && !(INLAB_ROLES_VER as readonly string[]).includes(rol)) {
-    return <div className="py-24 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-slate-800"><IconMicroscope size={24} /></span><h1 className="mt-5 text-lg font-extrabold text-gray-900 dark:text-white">Acceso restringido</h1><p className="mt-2 text-sm text-gray-400">Inteligencia InLab está disponible para perfiles autorizados.</p></div>
+    return <div className="py-24 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-slate-800"><IconMicroscope size={24} /></span><h1 className="mt-5 text-lg font-extrabold text-gray-900 dark:text-white">Acceso restringido</h1><p className="mt-2 text-sm text-gray-400">InLab Analytics está disponible para perfiles autorizados.</p></div>
   }
 
   const hayDatos = (info?.conDatos.length ?? 0) > 0
-  const props = vistaDiferida ? { ...vistaDiferida, onFiltro } : null
+  const props = vistaDiferida ? { ds: vistaDiferida.ds, rango: vistaDiferida.rango, filtros: vistaDiferida.filtros, onFiltro } : null
+  const dpDiferido = vistaDiferida?.dp ?? null
   const renderVista = (t: Tab) => {
     if (!props) return null
     switch (t) {
       case "resumen": return <VistaResumen {...props} />
       case "consumo": return <VistaConsumo {...props} />
+      case "pruebas": return dpDiferido
+        ? <VistaPruebas dp={dpDiferido} rango={props.rango} filtros={props.filtros} onFiltro={onFiltro} areas={props.ds.areas} />
+        : errorPruebasSwr ? <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{errorPruebasSwr instanceof Error ? errorPruebasSwr.message : "Error de red"}</p>
+          : <EsqueletoVista tipo="pruebas" etiqueta="Cargando pruebas" />
       case "tiempos": return <VistaTiempos {...props} />
       case "calidad": return <VistaCalidad {...props} />
       default: return null
@@ -234,7 +254,7 @@ export default function InlabPage() {
   return (
     <div className="mx-auto max-w-7xl pb-10">
       <PageHeader
-        title="Inteligencia InLab"
+        title="InLab Analytics"
         icon={<IconMicroscope size={19} />}
         subtitle="Actividad, consumo, tiempos y calidad de la preanalítica de cada hospital a partir de las exportaciones de InLab."
         actions={
@@ -332,7 +352,7 @@ export default function InlabPage() {
         </div>
       ) : (
         <>
-          <div className="mb-5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800/80" role="tablist" aria-label="Secciones de Inteligencia InLab">
+          <div className="mb-5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800/80" role="tablist" aria-label="Secciones de InLab Analytics">
             <div className="flex min-w-max gap-1">
               {tabs.map(t => (
                 <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => cambiarTab(t.key)}className="relative min-h-[40px] rounded-xl px-4 py-2.5 text-xs font-extrabold transition-all" style={tab === t.key ? { color: t.color, background: `${t.color}12`, boxShadow: `inset 0 0 0 1px ${t.color}22` } : { color: "#64748b" }}>

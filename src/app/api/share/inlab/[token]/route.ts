@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { cargarDataset, coberturaHospitales } from "@/lib/inlab/queries"
+import { cargarDataset, cargarPruebas, coberturaHospitales } from "@/lib/inlab/queries"
 import { dateToDia } from "@/lib/inlab/dates"
-import { filtrarPayloadPorAreas } from "@/lib/inlab/share"
+import { filtrarPayloadPorAreas, filtrarPruebasParaShare } from "@/lib/inlab/share"
 
 // Tokens generados con randomBytes(24).toString("base64url") → 32 caracteres
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,100}$/
@@ -13,7 +13,7 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{16,100}$/
  *
  * El token es la única credencial. Solo devuelve agregados diarios del periodo y de las
  * work areas del enlace (recortados aquí, no en el cliente); tarifas solo si el enlace
- * incluye facturación y solo de los consumibles presentes. Nunca devuelve ids internos.
+ * incluye facturación y solo de los consumibles presentes; pruebas solo si las incluye. Nunca devuelve ids internos.
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const share = await db.inlabShare.findUnique({
       where: { token },
       select: {
-        id: true, hospitalId: true, desde: true, hasta: true, incluirFacturacion: true, areas: true, expiraEn: true, revocado: true, creadoEn: true,
+        id: true, hospitalId: true, desde: true, hasta: true, incluirFacturacion: true, incluirPruebas: true, areas: true, expiraEn: true, revocado: true, creadoEn: true,
         hospital: { select: { nombre: true, ciudad: true, provincia: true, camas: true } },
       },
     })
@@ -41,9 +41,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const desde = share.desde ? dateToDia(share.desde) : cob.desde
     const hasta = share.hasta ? dateToDia(share.hasta) : cob.hasta
 
-    const [completo, tarifas] = await Promise.all([
+    const [completo, tarifas, pruebas] = await Promise.all([
       cargarDataset([share.hospitalId], desde, hasta),
       share.incluirFacturacion ? db.inlabTarifa.findMany({ where: { hospitalId: share.hospitalId } }) : Promise.resolve([]),
+      share.incluirPruebas ? cargarPruebas([share.hospitalId], desde, hasta) : Promise.resolve(null),
     ])
     const dataset = filtrarPayloadPorAreas(completo, share.areas)
     const consumibles = new Set(dataset.dic.consumibles)
@@ -63,6 +64,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
         vigenteDesde: t.vigenteDesde ? dateToDia(t.vigenteDesde) : null, vigenteHasta: t.vigenteHasta ? dateToDia(t.vigenteHasta) : null,
       })),
       incluirFacturacion: share.incluirFacturacion,
+      // Recortadas a las áreas del enlace y sin pruebas poco frecuentes (filtrarPruebasParaShare)
+      pruebas: pruebas ? filtrarPruebasParaShare(pruebas, share.areas) : null,
     }, { headers: { "Cache-Control": "private, max-age=60", "X-Robots-Tag": "noindex, nofollow" } })
   } catch (err) {
     console.error("[GET share/inlab/[token]]", err)

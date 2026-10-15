@@ -1,5 +1,5 @@
 /**
- * Verificación estadística reproducible de Inteligencia InLab (sin datos reales).
+ * Verificación estadística reproducible de InLab Analytics (sin datos reales).
  *
  *   npx tsx docs/inlab/verificar-estadistica.ts [docs/inlab/ejemplo-inlab-sintetico.csv]
  *
@@ -13,6 +13,10 @@
  * 3. Sprint 26 (contenido): «Peticiones» = pedidos distintos en series, áreas y días de la
  *    semana; validaciones sospechosamente rápidas (extracción < VALIDACION_RAPIDA.umbralMin)
  *    contadas EXACTAS frente a las filas, mediana sin ellas y tendencia neutra.
+ * 4. Pruebas pedidas: una vez por petición, en el día/área/prioridad de su primer tubo, perfiles
+ *    agrupados, filas de error excluidas, KPIs/ranking/áreas y recorte de informes públicos.
+ *    (Verificado además contra la BD real de Gómez Ulla con una referencia Python independiente:
+ *    770 pruebas, 11 áreas, 211 días, prioridad y peticiones idénticos.)
  * Sale con código 1 si algo no cuadra. Auditoría Sprint 25b / 26 (AGENTS.md §7).
  */
 import { readFileSync } from "node:fs"
@@ -25,6 +29,9 @@ import {
 } from "../../src/lib/inlab/analytics"
 import { bucketIndex, cuentaBajo, emptyHist, esLimiteBucket, percentile } from "../../src/lib/inlab/histogram"
 import { fmtMin } from "../../src/components/inlab/charts"
+import { decodificarPruebas, kpisPruebas, pruebaPorArea, rankingPruebas } from "../../src/lib/inlab/pruebas-analytics"
+import { filtrarPruebasParaShare, MIN_PETICIONES_PRUEBA_SHARE } from "../../src/lib/inlab/share"
+import type { InlabPruebasPayload } from "../../src/lib/inlab/types"
 
 let fallos = 0
 function ok(cond: boolean, msg: string) {
@@ -211,6 +218,42 @@ ok(fmtMin(2.4) === "2,4 min" && fmtMin(0.55) === "0,6 min" && fmtMin(59.7) === "
   const e50 = Math.abs(percentile(h, 0.5, max)! - exacto(v, 0.5)!), e90 = Math.abs(percentile(h, 0.9, max)! - exacto(v, 0.9)!)
   ok(e50 < 0.05, `mediana de duraciones cortas: error ${e50.toFixed(3)} min`)
   ok(e90 < 0.3, `P90: error ${e90.toFixed(3)} min`)
+}
+
+// ─── 4. Pruebas pedidas ──────────────────────────────────────────────────────
+console.log("Pruebas")
+{
+  const a = new InlabAggregator([...CABECERAS_PLANAS], MAPEO_PLANO, "DMY")
+  // P1: extracciones, normal, 1-mar; repite Colesterol y trae 3 parámetros del hemograma + un error
+  a.add(fila({ TuboId: "1", PedidoId: "P1", Area: "EXTRACCIONES", Prioridad: "1", FechaImpresion: "2026-03-01 08:00:00",
+    Pruebas: "Bioquimica~Colesterol|Bioquimica~Colesterol|Hematologia~Leucocitos|Hematologia~Hemoglobina|Hematologia~Hematíes|Error~error indeterminado" }))
+  a.add(fila({ TuboId: "2", PedidoId: "P1", Area: "EXTRACCIONES", Prioridad: "1", FechaImpresion: "2026-03-02 08:00:00", Pruebas: "Bioquimica~Glucosa" }))
+  // P2: urgencias, urgente, 1-mar
+  a.add(fila({ TuboId: "3", PedidoId: "P2", Area: "URGENCIAS", Prioridad: "2", FechaImpresion: "2026-03-01 09:00:00", Pruebas: "Hematologia~Plaquetas .|Bioquimica 60~Colesterol" }))
+  // Formato B: pruebas sueltas por pedido (P2 repetida, P9 sin tubos)
+  a.addPrueba("P2", "Colesterol", "Bioquimica")
+  a.addPrueba("P9", "TSH", "Bioquimica")
+  const { payload, stats } = a.build()
+  const pp: InlabPruebasPayload = { dias: payload.dias, areas: payload.dic.areas, pruebas: payload.pruebas! }
+  const dp = decodificarPruebas(pp)
+  const r: Rango = { desde: "2026-03-01", hasta: "2026-03-02" }
+  const k = kpisPruebas(dp, r, FILTROS_VACIOS)
+  const rk = rankingPruebas(dp, r, FILTROS_VACIOS)
+  const n = (p: string) => rk.find(x => x.prueba === p)?.n ?? 0
+  ok(n("Colesterol") === 2, `Colesterol: una vez por petición (${n("Colesterol")} de 2 peticiones)`)
+  ok(n("Hemograma") === 2 && rk.find(x => x.prueba === "Hemograma")!.parametros === 4, "Hemograma agrupa sus parámetros («Plaquetas .» incluido) y cuenta 1 por petición")
+  ok(!rk.some(x => /error/i.test(x.prueba)) && stats.avisos.some(t => t.includes("no son pruebas")), "las filas de error no cuentan y se avisa")
+  ok(n("TSH") === 0 && stats.avisos.some(t => t.includes("sin tubos")), "prueba de una petición sin tubos no cuenta y se avisa")
+  ok(dp.filas.filter(x => x.prueba === "Glucosa").every(x => x.d === "2026-03-01"), "pruebas en el día del PRIMER tubo de la petición")
+  ok(k.peticiones === 2 && k.solicitadas === 5 && k.porPeticion === 2.5, `KPIs: 2 peticiones, 5 pruebas, 2,5 por petición (${k.peticiones}, ${k.solicitadas}, ${k.porPeticion})`)
+  const ku = kpisPruebas(dp, r, { ...FILTROS_VACIOS, urgencia: "urgente" })
+  ok(ku.peticiones === 1 && ku.solicitadas === 2, "filtro de prioridad: prioridad de la petición")
+  ok(rankingPruebas(dp, r, { ...FILTROS_VACIOS, areas: ["URGENCIAS"] }).length === 2, "filtro de área")
+  const pa = pruebaPorArea(dp, r, FILTROS_VACIOS, "Glucosa")
+  ok(pa.length === 1 && pa[0].area === "EXTRACCIONES" && pa[0].pct === 100, "prueba por área con % de peticiones del área")
+  const sh = filtrarPruebasParaShare(pp, ["URGENCIAS"])
+  ok(sh.pruebas.filas.length === 0 && sh.pruebas.nombres.length === 0 && sh.areas.length === 1,
+    `informe público: fuera las áreas no incluidas y las pruebas con < ${MIN_PETICIONES_PRUEBA_SHARE} peticiones (sin nombres)`)
 }
 
 console.log(fallos ? `\n${fallos} comprobaciones fallidas` : "\nTodas las comprobaciones correctas")

@@ -921,8 +921,8 @@ export default function ConfiguracionPage() {
               }
             />
             <ModuleCard
-              title="Analítica (Inteligencia InLab y Comparador)"
-              description="Sección «Analítica» del menú: Inteligencia InLab y comparador de periodos."
+              title="Analítica (InLab Analytics y Comparador)"
+              description="Sección «Analítica» del menú: InLab Analytics y comparador de periodos."
               activo={config?.analiticaActivo ?? true}
               onToggle={(v) => toggleModule("analiticaActivo", v)}
               saving={saving}

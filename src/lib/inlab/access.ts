@@ -1,5 +1,5 @@
 /**
- * Control de acceso de Inteligencia InLab (solo servidor).
+ * Control de acceso de InLab Analytics (solo servidor).
  * Mismo patrón IDOR que hospitales/visitas: ADMIN ve todo; el resto solo
  * hospitales activos de sus zonas.
  */
@@ -44,7 +44,7 @@ export async function requireInlabUser(opts: { facturacion?: boolean } = {}): Pr
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const user: SesionUsuario = { id: session.user.id, role: session.user.role }
-  if (!puedeVerInlab(user)) return NextResponse.json({ error: "Sin acceso a Inteligencia InLab" }, { status: 403 })
+  if (!puedeVerInlab(user)) return NextResponse.json({ error: "Sin acceso a InLab Analytics" }, { status: 403 })
   if (opts.facturacion && !puedeFacturacion(user)) return NextResponse.json({ error: "Sin acceso a facturación" }, { status: 403 })
   return user
 }

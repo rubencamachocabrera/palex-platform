@@ -1,5 +1,5 @@
 /**
- * Inteligencia InLab — módulo de ADAPTACIÓN a la exportación real.
+ * InLab Analytics — módulo de ADAPTACIÓN a la exportación real.
  *
  * InLab corre sobre SQL Server (tablas dbo.*). Se admiten dos formatos:
  *   A) CSV plano generado con la consulta de docs/inlab/exportacion-inlab.sql
@@ -34,6 +34,7 @@ export type CampoKey =
   | "incidenciaPedido"
   | "incidenciaTubo"
   | "evento"
+  | "pruebas"
 
 export type CampoTipo = "texto" | "fecha" | "numero"
 
@@ -66,6 +67,7 @@ export const CAMPOS: CampoDef[] = [
   { key: "incidenciaTubo",      label: "Incidencia del tubo",    tipo: "texto",  grupo: "Calidad", ayuda: "Código de incidencia en el tubo (Cfg_Lab_Incidences)." },
   { key: "incidenciaPedido",    label: "Incidencia del pedido",  tipo: "texto",  grupo: "Calidad", nivelPedido: true, ayuda: "Código de incidencia de extracción del pedido (no acude, no ayunas…)." },
   { key: "evento",              label: "Otro evento",            tipo: "texto",  grupo: "Calidad", ayuda: "Columna genérica de eventos (reimpresión, rechazo, error de impresora…)." },
+  { key: "pruebas",             label: "Pruebas de la petición", tipo: "texto",  grupo: "Qué",   nivelPedido: true, ayuda: "Pruebas pedidas, separadas por «|» (Sección~Nombre o solo el nombre). Requiere el nº de pedido." },
 ]
 
 export const CAMPOS_FECHA: CampoKey[] = ["fechaLlegada", "fechaNumeracion", "fechaValidacion", "fechaImpresion", "fechaValidacionTubo", "fechaPeticion"]
@@ -84,7 +86,7 @@ export const CABECERAS_PLANAS = [
   "TuboId", "PedidoId", "Area", "Puesto", "Impresora", "Consumible", "Seccion", "Prioridad",
   "UnidadReceptora", "EstadoPedido", "EstadoTubo", "Impresiones", "IncidenciaPedido", "IncidenciaTubo",
   "FechaPeticion", "FechaLlegada", "FechaNumeracion", "FechaImpresion", "FechaValidacionTubo", "FechaValidacionPedido",
-  "NumPruebasPedido",
+  "NumPruebasPedido", "Pruebas",
 ] as const
 
 /** Emparejamiento fijo del formato plano. */
@@ -107,6 +109,7 @@ export const MAPEO_PLANO: Mapeo = {
   incidenciaPedido: "IncidenciaPedido",
   incidenciaTubo: "IncidenciaTubo",
   evento: null,
+  pruebas: "Pruebas",
 }
 
 /** ¿Las cabeceras son las del formato plano? (todas las imprescindibles presentes) */
@@ -139,6 +142,7 @@ export const ALIAS_CABECERA: Record<CampoKey, string[]> = {
   incidenciaPedido: ["incidenciapedido", "incidencia_pedido", "order_incidence"],
   incidenciaTubo: ["incidenciatubo", "incidencia_tubo", "incidencia", "codeincidence", "incidence"],
   evento: ["evento", "tipo_evento", "event", "event_type", "accion", "motivo"],
+  pruebas: ["pruebas", "pruebas_pedido", "tests", "determinaciones", "lista_pruebas"],
 }
 
 /** Normaliza una cabecera o valor para comparar: minúsculas, sin acentos, solo [a-z0-9_]. */
@@ -175,7 +179,8 @@ export function autodetectarMapeo(cabeceras: string[]): Mapeo {
     if (idx >= 0) asignar(campo.key, idx)
   }
   for (const campo of CAMPOS) {
-    if (mapeo[campo.key]) continue
+    // "pruebas" solo por coincidencia exacta: "NumPruebasPedido" (un número) también contiene el alias
+    if (mapeo[campo.key] || campo.key === "pruebas") continue
     const alias = ALIAS_CABECERA[campo.key].map(normalizar).filter(a => a.length >= 5)
     const idx = norm.findIndex((h, i) => !usadas.has(i) && alias.some(a => h.includes(a)))
     if (idx >= 0) asignar(campo.key, idx)

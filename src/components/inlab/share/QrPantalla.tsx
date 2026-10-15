@@ -54,7 +54,7 @@ export function QrPantalla({ g, url, hospital, periodo, alcance, onCerrar }: {
       </button>
       <div className={s.rise}><BrandLockup size="lg" /></div>
       <div className={`${s.rise} text-center`} style={{ ["--d" as string]: "80ms" }}>
-        <p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-teal-200">Informe Inteligencia InLab</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-teal-200">Informe InLab Analytics</p>
         <h2 className="mt-2 text-2xl font-extrabold tracking-[-.02em] sm:text-4xl">{hospital}</h2>
         <p className="mt-1 text-sm text-slate-300 sm:text-base">{periodo} · {alcance}</p>
       </div>

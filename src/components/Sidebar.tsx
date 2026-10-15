@@ -273,7 +273,7 @@ const NAV_GROUPS_ADMIN: NavGroup[] = [
   {
     label: "Analítica",
     items: [
-      { href: "/inlab",       label: "Inteligencia InLab",    icon: "Datos",      analiticaOnly: true },
+      { href: "/inlab",       label: "InLab Analytics",    icon: "Datos",      analiticaOnly: true },
       { href: "/comparador",  label: "Comparador",             icon: "Comparador", analiticaOnly: true },
       { href: "/transporte",  label: "Transporte de muestras", icon: "Transporte" },
     ],
@@ -314,7 +314,7 @@ const NAV_GROUPS_VENTAS: NavGroup[] = [
     label: "Analítica",
     analiticaOnly: true,
     items: [
-      { href: "/inlab",      label: "Inteligencia InLab",   icon: "Datos" },
+      { href: "/inlab",      label: "InLab Analytics",   icon: "Datos" },
       { href: "/comparador", label: "Comparador",            icon: "Comparador" },
     ],
   },
@@ -357,7 +357,7 @@ const NAV_GROUPS_PROYECTOS: NavGroup[] = [
     label: "Analítica",
     analiticaOnly: true,
     items: [
-      { href: "/inlab",      label: "Inteligencia InLab",   icon: "Datos" },
+      { href: "/inlab",      label: "InLab Analytics",   icon: "Datos" },
       { href: "/comparador", label: "Comparador",            icon: "Comparador" },
     ],
   },

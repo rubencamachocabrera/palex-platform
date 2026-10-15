@@ -111,7 +111,7 @@ export function periodoAnterior(r: Rango): Rango {
 }
 
 /** Días con datos cargados (cualquier área) dentro del rango. */
-export function diasConDatos(ds: Dataset, r: Rango): number {
+export function diasConDatos(ds: Pick<Dataset, "dias">, r: Rango): number {
   let n = 0
   for (const d of ds.dias) if (enRango(d, r)) n++
   return n
@@ -137,7 +137,7 @@ export interface Comparacion {
   motivo: string | null
 }
 
-export function comparacion(ds: Dataset, r: Rango): Comparacion {
+export function comparacion(ds: Pick<Dataset, "dias">, r: Rango): Comparacion {
   const anterior = periodoAnterior(r)
   const diasNaturales = diffDias(r.desde, r.hasta) + 1
   const diasActual = diasConDatos(ds, r), diasAnterior = diasConDatos(ds, anterior)
@@ -310,7 +310,7 @@ export function granularidad(r: Rango): "dia" | "semana" {
   return diffDias(r.desde, r.hasta) > 120 ? "semana" : "dia"
 }
 
-function ejeTemporal(r: Rango, g: "dia" | "semana"): string[] {
+export function ejeTemporal(r: Rango, g: "dia" | "semana"): string[] {
   const out: string[] = []
   let d = g === "semana" ? inicioSemana(r.desde) : r.desde
   while (d <= r.hasta) { out.push(d); d = addDias(d, g === "semana" ? 7 : 1) }

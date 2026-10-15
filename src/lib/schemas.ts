@@ -254,5 +254,5 @@ export function parseBody<T>(schema: z.ZodType<T>, data: unknown):
   return { success: false, error: msg }
 }
 
-// Inteligencia InLab — schemas del módulo (src/lib/inlab/schemas.ts)
+// InLab Analytics — schemas del módulo (src/lib/inlab/schemas.ts)
 export * from "./inlab/schemas"

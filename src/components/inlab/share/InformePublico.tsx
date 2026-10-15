@@ -18,6 +18,9 @@ import { Panel, Segmentado } from "@/components/inlab/ui"
 import { SelectorAreas } from "@/components/inlab/SelectorAreas"
 import { TablaFacturacion, VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
 import { PRINT_CSS } from "@/components/inlab/InformeInlab"
+import { VistaPruebas } from "@/components/inlab/VistaPruebas"
+import { decodificarPruebas } from "@/lib/inlab/pruebas-analytics"
+import type { InlabPruebasPayload } from "@/lib/inlab/types"
 import { useToast } from "@/components/Toast"
 import { ModoPresentacion, type Diapositiva } from "./ModoPresentacion"
 import s from "./share.module.css"
@@ -32,6 +35,8 @@ export interface DatosInformePublico {
   generado: string
   tarifas: Tarifa[]
   incluirFacturacion: boolean
+  /** Pruebas pedidas (solo si el enlace las incluye; ya recortadas por el servidor) */
+  pruebas?: InlabPruebasPayload | null
 }
 
 const LARGO: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" }
@@ -114,14 +119,19 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   const tarifas = datos.incluirFacturacion && datos.tarifas.length > 0 ? datos.tarifas : null
   const props = { ds, rango, filtros, onFiltro }
   const k = useMemo(() => kpis(ds, rango, filtros), [ds, rango, filtros])
+  const dp = useMemo(() => (datos.pruebas && datos.pruebas.dias.length ? decodificarPruebas(datos.pruebas) : null), [datos.pruebas])
+  const vistaPruebas = dp ? <VistaPruebas dp={dp} rango={rango} filtros={filtros} onFiltro={onFiltro} areas={ds.areas} /> : null
+  // Numeración de secciones: "Pruebas" (si está) va tras Consumo
+  const n = (base: number) => String(base + (dp && base >= 3 ? 1 : 0)).padStart(2, "0")
 
   const secciones = useMemo(() => [
     { id: "resumen", label: "Resumen" },
     { id: "consumo", label: "Consumo" },
+    ...(dp ? [{ id: "pruebas", label: "Pruebas" }] : []),
     { id: "tiempos", label: "Tiempos" },
     { id: "calidad", label: "Calidad" },
     ...(tarifas ? [{ id: "facturacion", label: "Facturación" }] : []),
-  ], [tarifas])
+  ], [tarifas, dp])
 
   // Periodos rápidos dentro del rango compartido
   const nTotal = diffDias(total.desde, total.hasta) + 1
@@ -189,7 +199,7 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   const portada = (enPresentacion: boolean) => (
     <div className={enPresentacion ? "py-6 sm:py-12" : ""}>
       <div className={s.rise}><BrandLockup size="lg" /></div>
-      <p className={`${s.rise} mt-8 text-[11px] font-extrabold uppercase tracking-[.22em] text-teal-200`} style={{ ["--d" as string]: "60ms" }}>Informe Inteligencia InLab</p>
+      <p className={`${s.rise} mt-8 text-[11px] font-extrabold uppercase tracking-[.22em] text-teal-200`} style={{ ["--d" as string]: "60ms" }}>Informe InLab Analytics</p>
       <h1 className={`${s.rise} mt-2 max-w-3xl text-3xl font-extrabold leading-[1.05] tracking-[-.035em] text-white sm:text-5xl`} style={{ ["--d" as string]: "120ms" }}>{datos.hospital.nombre}</h1>
       <p className={`${s.rise} mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-300`} style={{ ["--d" as string]: "180ms" }}>
         <span className="inline-flex items-center gap-1.5"><IconCalendar size={15} className="text-teal-300" />{periodoLargo}</span>
@@ -211,9 +221,10 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
     { id: "portada", titulo: "Portada", contenido: portada(true) },
     { id: "resumen", eyebrow: "01 · Resumen ejecutivo", titulo: "Lectura del periodo", contenido: <VistaResumen {...props} /> },
     { id: "consumo", eyebrow: "02 · Consumo y demanda", titulo: "Qué se consume y cuándo", contenido: <VistaConsumo {...props} /> },
-    { id: "tiempos", eyebrow: "03 · Flujo y tiempos", titulo: "Cuánto tarda cada tramo", contenido: <VistaTiempos {...props} /> },
-    { id: "calidad", eyebrow: "04 · Incidencias y calidad", titulo: "Eventos de calidad", contenido: <VistaCalidad {...props} /> },
-    ...(tarifas ? [{ id: "facturacion", eyebrow: "05 · Modelo comercial", titulo: "Consumo facturable", contenido: <div className="card p-5"><TablaFacturacion {...props} tarifas={tarifas} /></div> }] : []),
+    ...(vistaPruebas ? [{ id: "pruebas", eyebrow: "03 · Pruebas de laboratorio", titulo: "Qué pruebas se piden", contenido: vistaPruebas }] : []),
+    { id: "tiempos", eyebrow: `${n(3)} · Flujo y tiempos`, titulo: "Cuánto tarda cada tramo", contenido: <VistaTiempos {...props} /> },
+    { id: "calidad", eyebrow: `${n(4)} · Incidencias y calidad`, titulo: "Eventos de calidad", contenido: <VistaCalidad {...props} /> },
+    ...(tarifas ? [{ id: "facturacion", eyebrow: `${n(5)} · Modelo comercial`, titulo: "Consumo facturable", contenido: <div className="card p-5"><TablaFacturacion {...props} tarifas={tarifas} /></div> }] : []),
   ]
 
   const chip = (on: boolean) => `min-h-[36px] shrink-0 rounded-full px-3 text-[11px] font-extrabold transition ${on ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`
@@ -295,10 +306,11 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
         )}
         <Seccion id="resumen" numero="01" titulo="Resumen ejecutivo" texto={`${fmtDia(rango.desde, CORTO)} – ${fmtDia(rango.hasta, CORTO)} · actividad, tiempos y calidad de un vistazo`}><VistaResumen {...props} /></Seccion>
         <Seccion id="consumo" numero="02" titulo="Consumo y demanda" texto="Qué se consume, dónde y en qué franjas"><VistaConsumo {...props} /></Seccion>
-        <Seccion id="tiempos" numero="03" titulo="Flujo y tiempos" texto="Medianas y colas (P90) de cada tramo del flujo"><VistaTiempos {...props} /></Seccion>
-        <Seccion id="calidad" numero="04" titulo="Incidencias y calidad" texto="Reimpresiones, anulaciones e incidencias registradas en InLab"><VistaCalidad {...props} /></Seccion>
+        {vistaPruebas && <Seccion id="pruebas" numero="03" titulo="Pruebas de laboratorio" texto="Qué pruebas piden las peticiones, cuánto y dónde">{vistaPruebas}</Seccion>}
+        <Seccion id="tiempos" numero={n(3)} titulo="Flujo y tiempos" texto="Medianas y colas (P90) de cada tramo del flujo"><VistaTiempos {...props} /></Seccion>
+        <Seccion id="calidad" numero={n(4)} titulo="Incidencias y calidad" texto="Reimpresiones, anulaciones e incidencias registradas en InLab"><VistaCalidad {...props} /></Seccion>
         {tarifas && (
-          <Seccion id="facturacion" numero="05" titulo="Modelo comercial" texto="Consumo facturable según las tarifas vigentes">
+          <Seccion id="facturacion" numero={n(5)} titulo="Modelo comercial" texto="Consumo facturable según las tarifas vigentes">
             <Panel eyebrow="Modelo comercial" titulo="Consumo facturable"><TablaFacturacion {...props} tarifas={tarifas} /></Panel>
           </Seccion>
         )}

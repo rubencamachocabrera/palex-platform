@@ -1,13 +1,13 @@
 "use client"
 
 /**
- * Esqueletos de Inteligencia InLab con la silueta de cada vista (mismas rejillas y alturas
+ * Esqueletos de InLab Analytics con la silueta de cada vista (mismas rejillas y alturas
  * que Vistas.tsx): al entrar los datos no salta el layout. Entrada escalonada suave y un
  * NexusLoader discreto que solo aparece si la carga pasa de ~400 ms (CSS, sin JS).
  */
 import { NexusLoader } from "@/components/ui/Skeleton"
 
-type Tipo = "resumen" | "consumo" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
+type Tipo = "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
 
 const Bloque = ({ className = "" }: { className?: string }) => <div aria-hidden="true" className={`skeleton-shimmer rounded-md ${className}`} />
 
@@ -53,6 +53,14 @@ export function EsqueletoVista({ tipo, etiqueta }: { tipo: Tipo; etiqueta?: stri
         <KpisEsq />
         <div className="grid gap-5 lg:grid-cols-2"><PanelEsq alto={0} lineas={5} /><PanelEsq alto={0} lineas={2} /></div>
         <PanelEsq alto={220} />
+      </>
+      break
+    case "pruebas":
+      cuerpo = <>
+        <KpisEsq />
+        <Bloque className="h-12 w-full rounded-xl" />
+        <div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]"><PanelEsq alto={0} lineas={8} /><PanelEsq alto={260} /></div>
+        <div className="grid gap-5 lg:grid-cols-[1.3fr_.7fr]"><PanelEsq alto={220} /><PanelEsq alto={0} lineas={4} /></div>
       </>
       break
     case "calidad":

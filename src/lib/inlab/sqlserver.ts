@@ -16,6 +16,10 @@
  *   WorkStations.PrinterDefaultId     → Cfg_Center_WorkArea_Printers.Id (Code)
  *   Specimens.CfgLabTubesId           → Cfg_Lab_Tubes.Id (SpecimenCode)
  *   *.CfgLabIncidenceId               → Cfg_Lab_Incidences.Id (CodeIncidence)
+ *   LabOrder_Tests.LabOrderId         → LabOrders.Id
+ *   LabOrder_Tests.CodeTest           → Cfg_Lab_Tests.CodeAliasTest (¡no CodeTest!) (Description)
+ *   Cfg_Lab_Tests.CodeTest            → Cfg_Lab_TestsTubes.CodeTest (InfoExtraPrint = sección)
+ * De LabOrder_Tests solo se leen LabOrderId y CodeTest: TestResult (resultados) nunca.
  */
 import { InlabAggregator } from "./aggregate"
 import { CsvStreamParser, detectarCodificacion, detectarDelimitador } from "./csv"
@@ -34,6 +38,9 @@ const TABLAS = {
   impresoras: "cfg_center_workarea_printers",
   consumibles: "cfg_lab_tubes",
   incidencias: "cfg_lab_incidences",
+  pruebas: "laborder_tests",
+  catPruebas: "cfg_lab_tests",
+  pruebasTubos: "cfg_lab_teststubes",
 } as const
 type TablaKey = keyof typeof TABLAS
 const OBLIGATORIAS: TablaKey[] = ["pedidos", "tubos"]
@@ -245,6 +252,42 @@ export async function procesarExportacionSqlServer(
     }
   })
   pedidos.clear()
+
+  // ── Pruebas pedidas (opcional) ─────────────────────────────────────────────
+  if (F.pruebas) {
+    const seccionPorCodigo = new Map<string, string>()
+    if (F.pruebasTubos) await leerTabla(F.pruebasTubos, lector, cab => {
+      const ix = indices(cab, ["CodeTest", "InfoExtraPrint", "Active"] as const)
+      return row => {
+        const sec = limpio(v(row, ix.InfoExtraPrint)), cod = v(row, ix.CodeTest)
+        // Primera sección no vacía del test (un test puede ir en varios tubos)
+        if (sec && !seccionPorCodigo.has(cod)) seccionPorCodigo.set(cod, sec)
+      }
+    })
+    const catalogo = new Map<string, { nombre: string; seccion: string }>()
+    if (F.catPruebas) await leerTabla(F.catPruebas, lector, cab => {
+      const ix = indices(cab, ["CodeTest", "CodeAliasTest", "Description"] as const)
+      return row => {
+        const alias = v(row, ix.CodeAliasTest) || v(row, ix.CodeTest)
+        if (!catalogo.has(alias)) catalogo.set(alias, { nombre: v(row, ix.Description), seccion: seccionPorCodigo.get(v(row, ix.CodeTest)) ?? "" })
+      }
+    })
+    let sinCatalogo = 0
+    await leerTabla(F.pruebas, lector, cab => {
+      const ix = indices(cab, ["LabOrderId", "CodeTest"] as const)
+      if (ix.LabOrderId < 0 || ix.CodeTest < 0) throw new Error("dbo.LabOrder_Tests.csv no tiene las columnas esperadas (LabOrderId, CodeTest).")
+      return row => {
+        const codigo = v(row, ix.CodeTest)
+        const c = catalogo.get(codigo)
+        if (!c) sinCatalogo++
+        agg.addPrueba(v(row, ix.LabOrderId), c?.nombre || `Prueba ${codigo}`, c?.seccion ?? "")
+      }
+    })
+    if (!F.catPruebas) avisos.push("Falta dbo.Cfg_Lab_Tests.csv: las pruebas se muestran por código, sin nombre.")
+    else if (sinCatalogo > 0) avisos.push(`${sinCatalogo.toLocaleString("es-ES")} pruebas pedidas no están en el catálogo dbo.Cfg_Lab_Tests: se muestran por código.`)
+  } else {
+    avisos.push("Sin dbo.LabOrder_Tests.csv: esta carga no incluye las pruebas pedidas.")
+  }
 
   const { payload, stats } = agg.build()
   if (sinPedido > 0) avisos.push(`${sinPedido.toLocaleString("es-ES")} tubos sin pedido asociado en dbo.LabOrders: cuentan como consumo pero sin área ni tiempos.`)

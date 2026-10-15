@@ -85,6 +85,32 @@ export interface InlabPayload {
   tiempos: number[][]
   /** [dia, area, puesto(-1), impresora(-1), categoria(idx EVENTO_CATEGORIAS), detalle(-1), cantidad] */
   eventos: number[][]
+  /** Pruebas de laboratorio pedidas (opcional: solo si la exportación las trae). Ver lib/inlab/pruebas.ts */
+  pruebas?: InlabPruebas
+}
+
+/**
+ * Pruebas pedidas, agregadas por día × área × prioridad. Los índices de día y área son los
+ * del objeto que lo contiene (InlabPayload al subir, InlabPruebasPayload al leer).
+ */
+export interface InlabPruebas {
+  /** nombre de cada prueba o perfil (Hemograma, Colesterol…) */
+  nombres: string[]
+  secciones: string[]
+  /** por prueba: [seccion (idx secciones), parametros (1 = prueba suelta; n = perfil con n parámetros distintos)] */
+  info: number[][]
+  /** [dia, area, urgente(0|1), prueba, peticiones que la incluyen] */
+  filas: number[][]
+  /** [dia, area, urgente(0|1), peticiones con al menos una prueba] */
+  peticiones: number[][]
+}
+
+/** Respuesta de GET /api/inlab/pruebas: pruebas de toda la cobertura de los hospitales. */
+export interface InlabPruebasPayload {
+  /** días con pruebas cargadas, ordenados */
+  dias: string[]
+  areas: string[]
+  pruebas: InlabPruebas
 }
 
 export interface InlabResumenCarga {
@@ -105,7 +131,7 @@ export function payloadVacio(): InlabPayload {
 
 /** Número de filas agregadas (para mostrar y para límites). */
 export function tamanoPayload(p: InlabPayload): number {
-  return p.consumo.length + p.puestos.length + p.actividad.length + p.tiempos.length + p.eventos.length
+  return p.consumo.length + p.puestos.length + p.actividad.length + p.tiempos.length + p.eventos.length + (p.pruebas?.filas.length ?? 0)
 }
 
 // ─── Límites (compartidos cliente/servidor) ──────────────────────────────────

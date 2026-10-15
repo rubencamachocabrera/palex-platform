@@ -1965,7 +1965,7 @@ body:has(.nx-fab) .toast-region { bottom: calc(env(safe-area-inset-bottom, 0px) 
 }
 
 /* ═══ InLab — movimiento ═════════════════════════════════════════════════════
-   Inteligencia InLab (/inlab, Sprint 26). Reglas: solo opacity/transform (compositor),
+   InLab Analytics (/inlab, Sprint 26). Reglas: solo opacity/transform (compositor),
    animation-fill-mode backwards (nunca both/forwards con transform: Chrome conserva el
    transform y recorta los modales fixed), sin bloquear la interacción y anuladas con
    prefers-reduced-motion (regla global + la del final de esta sección). */

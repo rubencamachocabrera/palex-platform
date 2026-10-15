@@ -45,7 +45,7 @@ export function InformeInlab({ hospital, rango, ds, tarifas, interactivo = true,
         <div className="flex items-center gap-4">
           <BrandLockup />
           <div className="border-l border-slate-200 pl-4 dark:border-slate-700">
-            <p className="kpi-label text-teal-700 dark:text-teal-400">Informe Inteligencia InLab</p>
+            <p className="kpi-label text-teal-700 dark:text-teal-400">Informe InLab Analytics</p>
             <h1 className="text-lg font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">{hospital.nombre}</h1>
             <p className="text-xs text-gray-400">{hospital.ciudad ? `${hospital.ciudad} · ` : ""}{fmtDia(rango.desde, { day: "numeric", month: "long", year: "numeric" })} — {fmtDia(rango.hasta, { day: "numeric", month: "long", year: "numeric" })}</p>
           </div>

@@ -6,7 +6,7 @@
  * servidor (filtrarPayloadPorAreas) — el navegador del cliente nunca recibe
  * filas ni nombres de puestos/consumibles/impresoras de áreas no incluidas.
  */
-import type { InlabPayload } from "./types"
+import type { InlabPayload, InlabPruebasPayload } from "./types"
 import { etiquetaArea } from "./analytics"
 
 /** Caducidades ofrecidas al crear un enlace (días; null = sin caducidad). */
@@ -76,6 +76,36 @@ export function filtrarPayloadPorAreas(p: InlabPayload, areas: string[]): InlabP
     dias: p.dias,
     consumo, puestos, actividad, tiempos, eventos,
   }
+}
+
+/**
+ * Mínimo de peticiones de una prueba en todo el periodo compartido para que salga en un
+ * informe público: una prueba poco frecuente (VIH, tóxicos…) con 1–4 peticiones, cruzada con
+ * día y área, podría señalar a un paciente concreto.
+ */
+export const MIN_PETICIONES_PRUEBA_SHARE = 5
+
+/**
+ * Pruebas de un informe público: solo las work areas del enlace (vacío = todas) y sin las
+ * pruebas con menos de MIN_PETICIONES_PRUEBA_SHARE peticiones en el periodo (de esas áreas).
+ * Diccionarios reindexados: no salen nombres de pruebas excluidas.
+ */
+export function filtrarPruebasParaShare(p: InlabPruebasPayload, areas: string[]): InlabPruebasPayload {
+  const permitidas = new Set(areas)
+  const okArea = p.areas.map(a => !areas.length || permitidas.has(a))
+  const totales = new Map<number, number>()
+  for (const r of p.pruebas.filas) if (okArea[r[1]]) totales.set(r[3], (totales.get(r[3]) ?? 0) + r[4])
+  const A = new Reindexador(p.areas), N = new Reindexador(p.pruebas.nombres), S = new Reindexador(p.pruebas.secciones)
+  const info: number[][] = []
+  const filas = p.pruebas.filas
+    .filter(r => okArea[r[1]] && (totales.get(r[3]) ?? 0) >= MIN_PETICIONES_PRUEBA_SHARE)
+    .map(r => {
+      const n = N.idx(r[3])
+      if (!info[n]) { const [s, par] = p.pruebas.info[r[3]]; info[n] = [S.idx(s), par] }
+      return [r[0], A.idx(r[1]), r[2], n, r[4]]
+    })
+  const peticiones = p.pruebas.peticiones.filter(r => okArea[r[1]]).map(r => [r[0], A.idx(r[1]), r[2], r[3]])
+  return { dias: p.dias, areas: A.salida, pruebas: { nombres: N.salida, secciones: S.salida, info, filas, peticiones } }
 }
 
 /** Texto corto del alcance de áreas de un enlace. */

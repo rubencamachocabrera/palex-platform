@@ -82,6 +82,7 @@ export async function persistirCarga(input: PersistirInput) {
       await tx.inlabActividadDiaria.deleteMany({ where: whereDias })
       await tx.inlabTiempoDiario.deleteMany({ where: whereDias })
       await tx.inlabEventoDiario.deleteMany({ where: whereDias })
+      await tx.inlabPruebaDiaria.deleteMany({ where: whereDias })
     }
 
     const carga = await tx.inlabCarga.create({
@@ -138,6 +139,20 @@ export async function persistirCarga(input: PersistirInput) {
       puesto: r[2] >= 0 ? D.puestos[r[2]] ?? "" : "", impresora: r[3] >= 0 ? D.impresoras[r[3]] ?? "" : "",
       tipo: EVENTO_CATEGORIAS[r[4]] ?? "OTRO", detalle: r[5] >= 0 ? D.eventos[r[5]] ?? "" : "", cantidad: Math.round(r[6]),
     })), data => tx.inlabEventoDiario.createMany({ data }))
+
+    if (p.pruebas) {
+      const P = p.pruebas
+      // Fila con prueba "" = peticiones con al menos una prueba (denominador)
+      await insert([
+        ...P.peticiones.filter(keep).map(r => ({
+          ...base, fecha: fechaDe[r[0]], area: D.areas[r[1]] ?? "", urgente: r[2] === 1, prueba: "", seccion: "", parametros: 1, peticiones: Math.round(r[3]),
+        })),
+        ...P.filas.filter(keep).map(r => ({
+          ...base, fecha: fechaDe[r[0]], area: D.areas[r[1]] ?? "", urgente: r[2] === 1, prueba: P.nombres[r[3]] ?? "",
+          seccion: P.secciones[P.info[r[3]]?.[0] ?? -1] ?? "", parametros: P.info[r[3]]?.[1] ?? 1, peticiones: Math.round(r[4]),
+        })),
+      ], data => tx.inlabPruebaDiaria.createMany({ data }))
+    }
 
     // Marca las cargas anteriores que han perdido días al sustituir
     for (const id of afectadas) {

@@ -5,6 +5,6 @@ import { SeccionDesactivada } from "@/components/ui/SeccionDesactivada"
 // Toggle ConfigApp.analiticaActivo (Admin → Configuracion).
 export default async function InlabLayout({ children }: { children: React.ReactNode }) {
   await connection()
-  if (!(await seccionActiva("analitica"))) return <SeccionDesactivada titulo="Inteligencia InLab" />
+  if (!(await seccionActiva("analitica"))) return <SeccionDesactivada titulo="InLab Analytics" />
   return <>{children}</>
 }

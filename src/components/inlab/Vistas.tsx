@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Vistas analíticas de Inteligencia InLab, compartidas entre el dashboard interno
+ * Vistas analíticas de InLab Analytics, compartidas entre el dashboard interno
  * (/inlab) y el informe público (/share/inlab/[token]).
  *
  * Lenguaje (Sprint 26): solo dos volúmenes visibles —

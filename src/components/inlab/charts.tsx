@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Gráficos SVG propios de Inteligencia InLab (sin dependencias).
+ * Gráficos SVG propios de InLab Analytics (sin dependencias).
  * Reglas: un único eje Y, marcas finas con extremos redondeados, tooltip en hover,
  * colores por entidad (nunca por ranking) y texto siempre en tinta neutra.
  */

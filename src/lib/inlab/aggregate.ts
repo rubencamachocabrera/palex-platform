@@ -1,7 +1,7 @@
 /**
  * Agregador de filas InLab → InlabPayload. Se ejecuta en el navegador (Web Worker).
  * Las filas crudas se descartan en cuanto se suman; los nº de orden solo viven en
- * memoria (Set de pedidos ya vistos) para contar cada pedido una sola vez.
+ * memoria (pedidos ya vistos) para contar cada pedido una sola vez y asignar sus pruebas.
  */
 import { parseFecha, type FechaParseada, type OrdenFecha } from "./dates"
 import { bucketIndex, emptyHist, MAX_DURACION_MIN, toSparse } from "./histogram"
@@ -9,12 +9,13 @@ import {
   CAMPOS, PRIORIDAD_FECHA_REFERENCIA, EVENTO_CATEGORIAS, SIN_AREA, SIN_CONSUMIBLE, SIN_PUESTO,
   clasificarEvento, esAnulado, esIncidencia, esUrgente, limpiarDimension, type CampoKey, type EventoCategoria, type Mapeo,
 } from "./mapping"
-import { LIMITES, type InlabPayload } from "./types"
+import { clasificarPrueba, normalizarPrueba, parsearCeldaPruebas, type PruebaClasificada } from "./pruebas"
+import { LIMITES, type InlabPayload, type InlabPruebas } from "./types"
 
 const MAX_DIAS = LIMITES.maxDias
 
 /** Máximo de valores distintos por dimensión: más suele indicar una columna mal emparejada (p. ej. un nombre). */
-export const MAX_DISTINTOS = { areas: 200, puestos: 1500, consumibles: 500, impresoras: 500, eventos: 150 }
+export const MAX_DISTINTOS = { areas: 200, puestos: 1500, consumibles: 500, impresoras: 500, eventos: 150, pruebas: 3000 }
 const OTROS = "Otros (exceso de valores)"
 
 type DicKey = keyof typeof MAX_DISTINTOS
@@ -38,7 +39,7 @@ interface TiempoAcc { d: number; a: number; u: number; t: number; n: number; sum
 export class InlabAggregator {
   private idx: Record<CampoKey, number>
   private dics: Record<DicKey, Map<string, number>> = {
-    areas: new Map(), puestos: new Map(), consumibles: new Map(), impresoras: new Map(), eventos: new Map(),
+    areas: new Map(), puestos: new Map(), consumibles: new Map(), impresoras: new Map(), eventos: new Map(), pruebas: new Map(),
   }
   private excedidas = new Set<DicKey>()
   private dias = new Map<string, number>()
@@ -47,8 +48,19 @@ export class InlabAggregator {
   private consumo = new Map<number, number[]>()
   private puestos = new Map<number, number[]>()
   private actividad = new Map<number, number[]>()
-  /** Pedidos ya vistos: los datos de nivel pedido (tiempos, incidencia del pedido) cuentan una vez. */
-  private pedidosVistos = new Set<string>()
+  /**
+   * Pedidos ya vistos → (día, área, urgente) de su primer tubo, empaquetado. Los datos de nivel
+   * pedido (tiempos, incidencia, pruebas) cuentan una vez y en ese día/área.
+   */
+  private pedidosVistos = new Map<string, number>()
+  // Pruebas: por pedido, los índices de prueba ya contados (como caracteres: compacto y sin Sets)
+  private pruebasDePedido = new Map<string, string>()
+  private pruebas = new Map<number, number[]>()
+  private peticionesConPruebas = new Map<number, number[]>()
+  /** por índice de prueba: sección y parámetros originales distintos (perfiles) */
+  private infoPruebas: { seccion: string; parametros: Set<string> }[] = []
+  private cachePrueba = new Map<string, PruebaClasificada | null>()
+  private statsPruebas = { leidas: 0, sinPedido: 0, excluidas: 0, repetidas: 0 }
   private tiempos = new Map<number, TiempoAcc>()
   private eventos = new Map<number, number[]>()
   // Cachés por valor crudo: las filas de una misma orden repiten valores consecutivos
@@ -169,7 +181,9 @@ export class InlabAggregator {
     let primeraDelPedido = true
     if (ord) {
       if (this.pedidosVistos.has(ord)) primeraDelPedido = false
-      else this.pedidosVistos.add(ord)
+      else this.pedidosVistos.set(ord, (d * 256 + a) * 2 + urg)
+      const celda = this.val(row, "pruebas")
+      if (celda) for (const p of parsearCeldaPruebas(celda)) this.addPrueba(ord, p.nombre, p.seccion)
     }
 
     // Consumo
@@ -241,6 +255,40 @@ export class InlabAggregator {
     this.tiempo(d, a, urg, 2, porCampo.fechaImpresion ?? null, porCampo.fechaValidacionTubo ?? null)
   }
 
+  /**
+   * Prueba pedida en un pedido (formato B: una fila de dbo.LabOrder_Tests; formato A: cada
+   * elemento de la celda «Pruebas»). Se cuenta una vez por pedido, en el día/área/prioridad
+   * del primer tubo del pedido; si el pedido no tiene tubos, no se cuenta.
+   */
+  addPrueba(orden: string, nombre: string, seccion: string) {
+    const sp = this.statsPruebas
+    sp.leidas++
+    const clave = `${seccion}~${nombre}`
+    let c = this.cachePrueba.get(clave)
+    if (c === undefined) { c = clasificarPrueba(nombre, seccion); this.cachePrueba.set(clave, c) }
+    if (!c) { sp.excluidas++; return }
+    const pk = this.pedidosVistos.get(orden)
+    if (pk === undefined) { sp.sinPedido++; return }
+    const i = this.dic("pruebas", c.prueba)
+    let info = this.infoPruebas[i]
+    if (!info) { info = { seccion: c.seccion, parametros: new Set() }; this.infoPruebas[i] = info }
+    // Parámetros distintos del perfil ("Leucocitos" y "Leucocitos ." son el mismo)
+    if (info.parametros.size < 100) info.parametros.add(normalizarPrueba(c.original))
+    const ch = String.fromCharCode(i + 1)
+    const ya = this.pruebasDePedido.get(orden)
+    if (ya !== undefined && ya.includes(ch)) { sp.repetidas++; return }
+    this.pruebasDePedido.set(orden, ya === undefined ? ch : ya + ch)
+    const kp = pk * 4096 + i
+    let r = this.pruebas.get(kp)
+    if (!r) { r = [Math.floor(pk / 512), (pk >> 1) & 255, pk & 1, i, 0]; this.pruebas.set(kp, r) }
+    r[4]++
+    if (ya === undefined) {
+      let q = this.peticionesConPruebas.get(pk)
+      if (!q) { q = [Math.floor(pk / 512), (pk >> 1) & 255, pk & 1, 0]; this.peticionesConPruebas.set(pk, q) }
+      q[3]++
+    }
+  }
+
   /** Solo códigos cortos sin secuencias numéricas largas (evita filtrar texto libre o identificadores). */
   private detalleEvento(raw: string): number {
     const v = raw.trim().replace(/\s+/g, " ")
@@ -261,6 +309,21 @@ export class InlabAggregator {
     acc.hist[bucketIndex(min)]++
   }
 
+  private buildPruebas(rd: (r: number[]) => number[]): InlabPruebas {
+    const secciones: string[] = []
+    const secIdx = new Map<string, number>()
+    const nombres: string[] = []
+    for (const [k, i] of this.dics.pruebas) nombres[i] = k
+    const info = nombres.map((_, i) => {
+      const inf = this.infoPruebas[i]
+      const sec = inf?.seccion ?? ""
+      let si = secIdx.get(sec)
+      if (si === undefined) { si = secciones.length; secciones.push(sec); secIdx.set(sec, si) }
+      return [si, Math.max(1, inf?.parametros.size ?? 1)]
+    })
+    return { nombres, secciones, info, filas: [...this.pruebas.values()].map(rd), peticiones: [...this.peticionesConPruebas.values()].map(rd) }
+  }
+
   build(): { payload: InlabPayload; stats: AggregatorStats } {
     // Reordenar días cronológicamente y remapear índices
     const diasOrden = [...this.dias.keys()].sort()
@@ -270,6 +333,7 @@ export class InlabAggregator {
     const keys = (m: Map<string, number>) => { const arr: string[] = []; for (const [k, i] of m) arr[i] = k; return arr }
 
     this.pedidosVistos.clear()
+    this.pruebasDePedido.clear()
 
     const tiempos: number[][] = []
     for (const acc of this.tiempos.values()) {
@@ -286,6 +350,9 @@ export class InlabAggregator {
     if (s.fueraDeLimite > 0) s.avisos.push(`${s.fueraDeLimite.toLocaleString("es-ES")} filas descartadas: el fichero supera ${MAX_DIAS} días distintos. Divide la exportación.`)
     if (s.tiemposDescartados > 0) s.avisos.push(`${s.tiemposDescartados.toLocaleString("es-ES")} tiempos negativos o superiores a 7 días se han excluido del análisis de flujo.`)
     for (const k of s.dimensionesExcedidas) s.avisos.push(`La columna de ${k} tiene más de ${MAX_DISTINTOS[k]} valores distintos: revisa el emparejamiento (podría contener texto libre o datos personales).`)
+    const sp = this.statsPruebas
+    if (sp.sinPedido > 0) s.avisos.push(`${sp.sinPedido.toLocaleString("es-ES")} pruebas de peticiones sin tubos en el fichero no se cuentan.`)
+    if (sp.excluidas > 0) s.avisos.push(`${sp.excluidas.toLocaleString("es-ES")} filas de pruebas que no son pruebas (códigos de error o de visita) no se cuentan.`)
     if (diasOrden.length > 1) {
       s.avisos.push(`El primer y el último día (${diasOrden[0]} y ${diasOrden[diasOrden.length - 1]}) pueden estar incompletos si la exportación no empieza y termina a medianoche.`)
     }
@@ -306,6 +373,7 @@ export class InlabAggregator {
         actividad: [...this.actividad.values()].map(rd),
         tiempos,
         eventos: [...this.eventos.values()].map(rd),
+        ...(this.pruebas.size ? { pruebas: this.buildPruebas(rd) } : {}),
       },
       stats: s,
     }

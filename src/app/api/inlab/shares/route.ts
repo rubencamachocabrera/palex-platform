@@ -7,7 +7,7 @@ import { parseBody, InlabShareCreate } from "@/lib/schemas"
 import { requireInlabUser, puedeAccederHospital, puedeFacturacion } from "@/lib/inlab/access"
 import { dateToDia, diaToDate } from "@/lib/inlab/dates"
 
-type ShareRow = { id: string; token: string; hospitalId: string; desde: Date | null; hasta: Date | null; incluirFacturacion: boolean; areas: string[]; expiraEn: Date | null; revocado: boolean; vistas: number; ultimaVista: Date | null; creadoEn: Date; creadoPor?: { nombre: string } }
+type ShareRow = { id: string; token: string; hospitalId: string; desde: Date | null; hasta: Date | null; incluirFacturacion: boolean; incluirPruebas: boolean; areas: string[]; expiraEn: Date | null; revocado: boolean; vistas: number; ultimaVista: Date | null; creadoEn: Date; creadoPor?: { nombre: string } }
 const serializar = (s: ShareRow) => ({
   ...s,
   desde: s.desde ? dateToDia(s.desde) : null,
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     const parsed = parseBody(InlabShareCreate, await req.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
     const { hospitalId, desde, hasta, incluirFacturacion, expiraDias } = parsed.data
+    const incluirPruebas = parsed.data.incluirPruebas ?? true
     // Vacío = todas las áreas (también las de cargas futuras)
     const areas = [...new Set(parsed.data.areas ?? [])].sort((a, b) => a.localeCompare(b, "es"))
     if (!(await puedeAccederHospital(user, hospitalId))) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
@@ -63,12 +64,13 @@ export async function POST(req: NextRequest) {
         desde: desde ? diaToDate(desde) : null,
         hasta: hasta ? diaToDate(hasta) : null,
         incluirFacturacion: !!incluirFacturacion,
+        incluirPruebas,
         areas,
         expiraEn: expiraDias ? new Date(Date.now() + expiraDias * 86_400_000) : null,
       },
       include: { creadoPor: { select: { nombre: true } } },
     })
-    await logActividad(user.id, "CREAR", "InlabShare", share.id, `Enlace público InLab ${desde ?? "inicio"} → ${hasta ?? "fin"} · ${areas.length ? `${areas.length} áreas` : "todas las áreas"}${incluirFacturacion ? " · con facturación" : ""}`)
+    await logActividad(user.id, "CREAR", "InlabShare", share.id, `Enlace público InLab ${desde ?? "inicio"} → ${hasta ?? "fin"} · ${areas.length ? `${areas.length} áreas` : "todas las áreas"}${incluirFacturacion ? " · con facturación" : ""}${incluirPruebas ? " · con pruebas" : ""}`)
     return NextResponse.json(serializar(share), { status: 201 })
   } catch (err) {
     console.error("[POST inlab/shares]", err)

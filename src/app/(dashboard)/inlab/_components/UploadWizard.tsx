@@ -290,7 +290,7 @@ export function UploadWizard({ onCerrar, hospitales, hospitalInicial, onCompleta
         {/* Cabecera */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:px-6">
           <div className="min-w-0">
-            <p className="kpi-label flex items-center gap-2 text-teal-700 dark:text-teal-400"><span className="section-title-mark" />Inteligencia InLab</p>
+            <p className="kpi-label flex items-center gap-2 text-teal-700 dark:text-teal-400"><span className="section-title-mark" />InLab Analytics</p>
             <h2 id="inlab-wizard-titulo" className="mt-1 text-lg font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">Cargar exportación InLab</h2>
             <ol className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Pasos">
               {PASOS.map((p, i) => (

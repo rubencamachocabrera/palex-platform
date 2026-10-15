@@ -1022,6 +1022,7 @@ model InlabCarga {
   actividad InlabActividadDiaria[]
   tiempos   InlabTiempoDiario[]
   eventos   InlabEventoDiario[]
+  pruebas   InlabPruebaDiaria[]
 
   @@index([hospitalId, creadoEn])
   @@index([hospitalId, hash])
@@ -1130,6 +1131,29 @@ model InlabEventoDiario {
   @@map("inlab_evento_diario")
 }
 
+// Pruebas de laboratorio pedidas por día × área × urgencia × prueba (src/lib/inlab/pruebas.ts).
+// `peticiones` = peticiones que incluyen la prueba (cada una cuenta una vez). La fila con
+// prueba "" guarda las peticiones con al menos una prueba (denominador de "pruebas por petición").
+// `parametros` > 1 = perfil que agrupa ese nº de parámetros (Hemograma, Coagulación…).
+model InlabPruebaDiaria {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  fecha      DateTime @db.Date
+  area       String   @default("")
+  urgente    Boolean  @default(false)
+  prueba     String   @default("")
+  seccion    String   @default("")
+  parametros Int      @default(1)
+  peticiones Int      @default(0)
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, fecha])
+  @@index([cargaId])
+  @@map("inlab_prueba_diaria")
+}
+
 // Emparejamiento de columnas guardado por hospital (cabecera CSV → campo canónico)
 model InlabMapeo {
   id         String   @id @default(cuid())
@@ -1175,6 +1199,8 @@ model InlabShare {
   incluirFacturacion Boolean   @default(false) @map("incluir_facturacion")
   // Work areas incluidas (vacío = todas, también las que aparezcan en cargas futuras)
   areas              String[]  @default([])
+  // Pruebas de laboratorio pedidas en el informe (los enlaces anteriores a la sección, sin ellas)
+  incluirPruebas     Boolean   @default(false) @map("incluir_pruebas")
   expiraEn           DateTime? @map("expira_en")
   revocado           Boolean   @default(false)
   vistas             Int       @default(0)

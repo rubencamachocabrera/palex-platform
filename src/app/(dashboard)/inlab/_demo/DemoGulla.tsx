@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Datos de DEMOSTRACIÓN de Inteligencia InLab: perfil agregado estático de
+ * Datos de DEMOSTRACIÓN de InLab Analytics: perfil agregado estático de
  * InLabDB GULLA (Hospital Central de la Defensa Gómez Ulla), anterior al módulo
  * de cargas. Se mantiene como referencia de métricas hasta que haya cargas reales.
  */

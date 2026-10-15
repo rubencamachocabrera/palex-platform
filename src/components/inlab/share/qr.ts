@@ -127,7 +127,7 @@ export async function pngTarjeta(g: QrGeometria, info: { hospital: string; perio
 
   ctx.textBaseline = "alphabetic"
   ctx.fillStyle = "#5ff2e4"; ctx.font = `700 26px ${fuente}`
-  ctx.fillText("PALEX MEDICAL  ·  INTELIGENCIA INLAB", 80, 92)
+  ctx.fillText("PALEX MEDICAL  ·  INLAB ANALYTICS", 80, 92)
   ctx.fillStyle = "#ffffff"; ctx.font = `800 54px ${fuente}`
   ctx.fillText(textoAjustado(ctx, info.hospital, W - 160), 80, 168)
   ctx.fillStyle = "#cbd5e1"; ctx.font = `500 30px ${fuente}`

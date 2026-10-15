@@ -1,5 +1,5 @@
 /*
-  Exportación InLab para Inteligencia InLab (Palex) — FORMATO PLANO (A)
+  Exportación InLab para InLab Analytics (Palex) — FORMATO PLANO (A)
   ----------------------------------------------------------------------
   Ejecutar en el SQL Server de InLab del hospital (base de datos de InLab) y
   guardar el resultado como CSV con cabecera (SSMS: Resultados → clic derecho →
@@ -14,10 +14,34 @@
 
   Relaciones verificadas: LabOrder_Specimens.LabOrderNumber = LabOrders.Id.
   La impresora se aproxima con la impresora por defecto del puesto que validó el tubo.
+
+  Pruebas (columna «Pruebas», solo en el PRIMER tubo de cada pedido): lista
+  "Sección~Prueba|Sección~Prueba|…" de dbo.LabOrder_Tests cruzada con el catálogo por
+  LabOrder_Tests.CodeTest = Cfg_Lab_Tests.CodeAliasTest (¡no CodeTest!). La sección es el
+  InfoExtraPrint del tubo de la prueba (Cfg_Lab_TestsTubes). No se usa TestResult.
+  Añade ~45 MB por año en Gómez Ulla; poner @IncluirPruebas = 0 para no exportarlas.
+  STRING_AGG requiere SQL Server 2017 o posterior.
 */
 SET NOCOUNT ON;
 DECLARE @Desde datetime = '2026-01-01';
 DECLARE @Hasta datetime = '2026-09-01';
+DECLARE @IncluirPruebas bit = 1;
+
+WITH Seccion AS (
+  SELECT CodeTest, MIN(NULLIF(LTRIM(RTRIM(InfoExtraPrint)), '')) AS Seccion
+  FROM dbo.Cfg_Lab_TestsTubes GROUP BY CodeTest
+), Catalogo AS (
+  SELECT CodeAliasTest, MIN(Description) AS Nombre, MIN(sc.Seccion) AS Seccion
+  FROM dbo.Cfg_Lab_Tests ct LEFT JOIN Seccion sc ON sc.CodeTest = ct.CodeTest
+  GROUP BY CodeAliasTest
+), PruebasPedido AS (
+  SELECT d.LabOrderId,
+         STRING_AGG(CAST(CONCAT(ISNULL(d.Seccion, ''), '~', REPLACE(REPLACE(d.Nombre, '|', '/'), '~', '-')) AS nvarchar(max)), '|') AS Pruebas
+  FROM (SELECT DISTINCT lt.LabOrderId, COALESCE(c.Nombre, CONCAT('Prueba ', lt.CodeTest)) AS Nombre, c.Seccion
+        FROM dbo.LabOrder_Tests lt LEFT JOIN Catalogo c ON c.CodeAliasTest = lt.CodeTest
+        WHERE @IncluirPruebas = 1) d
+  GROUP BY d.LabOrderId
+)
 
 SELECT
   s.Id                                                         AS TuboId,
@@ -41,7 +65,9 @@ SELECT
   CONVERT(varchar(23), s.DatetimeCreated, 121)                 AS FechaImpresion,
   CONVERT(varchar(23), s.DatetimeValidated, 121)               AS FechaValidacionTubo,
   CONVERT(varchar(23), o.DateTimeValidated, 121)               AS FechaValidacionPedido,
-  (SELECT COUNT(*) FROM dbo.LabOrder_Tests lt WHERE lt.LabOrderId = o.Id) AS NumPruebasPedido
+  (SELECT COUNT(*) FROM dbo.LabOrder_Tests lt WHERE lt.LabOrderId = o.Id) AS NumPruebasPedido,
+  CASE WHEN ROW_NUMBER() OVER (PARTITION BY s.LabOrderNumber ORDER BY s.DatetimeCreated, s.Id) = 1
+       THEN pp.Pruebas END                                    AS Pruebas
 FROM dbo.LabOrder_Specimens s
 LEFT JOIN dbo.LabOrders o                          ON o.Id  = s.LabOrderNumber
 LEFT JOIN dbo.Cfg_Center_WorkArea wa               ON wa.Id = o.CenterWorkAreaId
@@ -51,5 +77,6 @@ LEFT JOIN dbo.Cfg_Lab_Tubes t                      ON t.Id  = s.CfgLabTubesId
 LEFT JOIN (SELECT SpecimenCode, COUNT(*) AS n FROM dbo.Cfg_Lab_Tubes GROUP BY SpecimenCode) dup ON dup.SpecimenCode = t.SpecimenCode
 LEFT JOIN dbo.Cfg_Lab_Incidences oi                ON oi.Id = o.CfgLabIncidenceId
 LEFT JOIN dbo.Cfg_Lab_Incidences si                ON si.Id = s.CfgLabIncidenceId
+LEFT JOIN PruebasPedido pp                         ON pp.LabOrderId = o.Id
 WHERE s.DatetimeCreated >= @Desde AND s.DatetimeCreated < @Hasta
 ORDER BY s.DatetimeCreated;
