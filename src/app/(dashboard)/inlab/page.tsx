@@ -27,6 +27,8 @@ import { Segmentado } from "@/components/inlab/ui"
 import { SelectorAreas } from "@/components/inlab/SelectorAreas"
 import { VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
 import { VistaPruebas } from "@/components/inlab/VistaPruebas"
+import { VistaPulso } from "@/components/inlab/pulso/VistaPulso"
+import type { DestinoHallazgo } from "@/lib/inlab/hallazgos"
 import { UploadWizard, type HospitalOpcion } from "./_components/UploadWizard"
 import { VistaCargas } from "./_components/VistaCargas"
 import { VistaComparar } from "./_components/VistaComparar"
@@ -36,13 +38,14 @@ import { ShareModal } from "./_components/ShareModal"
 const DemoGulla = dynamic(() => import("./_demo/DemoGulla").then(m => m.DemoGulla), { ssr: false, loading: () => <EsqueletoVista tipo="resumen" /> })
 const InformeInlab = dynamic(() => import("@/components/inlab/InformeInlab").then(m => m.InformeInlab), { ssr: false })
 
-type Tab = "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
+type Tab = "pulso" | "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
 type Preset = "30d" | "90d" | "12m" | "todo" | "custom"
 
 interface Cobertura { hospitalId: string; desde: string; hasta: string; dias: number; cargas: number; ultimaCarga: string | null }
 interface InfoHospitales { todos: (HospitalOpcion & { camas: number | null })[]; conDatos: Cobertura[]; puedeFacturacion: boolean }
 
 const TABS: { key: Tab; label: string; color: string; facturacion?: boolean }[] = [
+  { key: "pulso", label: "Pulso", color: "#0891B2" },
   { key: "resumen", label: "Resumen ejecutivo", color: TEAL },
   { key: "consumo", label: "Consumo & demanda", color: ORANGE },
   { key: "pruebas", label: "Pruebas", color: "#7C3AED" },
@@ -91,7 +94,7 @@ const OPCIONES_DATOS = { revalidateOnFocus: false, revalidateIfStale: false, kee
 const SIN_DIAS: string[] = []
 
 /** Vistas analíticas que se mantienen montadas al cambiar de pestaña (<Activity>). */
-const TABS_PERSISTENTES = new Set<Tab>(["resumen", "consumo", "pruebas", "tiempos", "calidad"])
+const TABS_PERSISTENTES = new Set<Tab>(["pulso", "resumen", "consumo", "pruebas", "tiempos", "calidad"])
 
 export default function InlabPage() {
   const { rol, isLoading: cargandoPerfil } = usePerfil()
@@ -110,9 +113,9 @@ export default function InlabPage() {
     try { const v = JSON.parse(localStorage.getItem(claveAreas) ?? "[]"); if (Array.isArray(v)) guardadas = v.filter((x): x is string => typeof x === "string") } catch { /* sin almacenamiento */ }
     setFiltros(f => ({ ...f, areas: guardadas, puesto: null }))
   }
-  const [tab, setTab] = useState<Tab>("resumen")
+  const [tab, setTab] = useState<Tab>("pulso")
   // Pestañas analíticas ya abiertas: se quedan montadas (ocultas) para volver al instante
-  const [visitadas, setVisitadas] = useState<ReadonlySet<Tab>>(() => new Set<Tab>(["resumen"]))
+  const [visitadas, setVisitadas] = useState<ReadonlySet<Tab>>(() => new Set<Tab>(["pulso"]))
   // El contenido sigue a la pestaña con prioridad baja: la barra responde al momento y, si la
   // vista es nueva, se monta sin bloquear (mientras, sigue visible la anterior)
   const tabContenido = useDeferredValue(tab)
@@ -188,8 +191,9 @@ export default function InlabPage() {
   const claveDatos: ClaveDatos | null = seleccion.length > 0 && cobertura ? [urlDatos(seleccion), version] : null
   const { data: dsCompleto, error: errorSwr, isLoading: cargandoDatos } = useSWR(claveDatos, fetcherDatos, OPCIONES_DATOS)
   const errorDatos = errorSwr ? (errorSwr instanceof Error ? errorSwr.message : "Error de red") : null
-  const clavePruebas: ClaveDatos | null = claveDatos && visitadas.has("pruebas") ? [urlPruebas(seleccion), version] : null
-  const { data: dpCompleto, error: errorPruebasSwr } = useSWR(clavePruebas, fetcherPruebas, OPCIONES_DATOS)
+  // Las pruebas las usan su pestaña y el Pulso (el río, los hallazgos)
+  const clavePruebas: ClaveDatos | null = claveDatos && (visitadas.has("pruebas") || visitadas.has("pulso")) ? [urlPruebas(seleccion), version] : null
+  const { data: dpCompleto, error: errorPruebasSwr, isLoading: cargandoPruebas } = useSWR(clavePruebas, fetcherPruebas, OPCIONES_DATOS)
 
   // Ventana = rango + periodo anterior (tendencias). `recortar` da exactamente el Dataset que
   // devolvía antes el servidor para esa ventana (incl. `areas`/`consumibles`), en milisegundos.
@@ -215,6 +219,15 @@ export default function InlabPage() {
     setFiltros(f => ({ ...f, ...p }))
     if (p.areas) { try { localStorage.setItem(claveAreas, JSON.stringify(p.areas)) } catch { /* sin almacenamiento */ } }
   }, [claveAreas])
+  // «Ver …» desde un hallazgo o desde el río del Pulso: pestaña + filtro de áreas + prueba
+  const [pruebaFoco, setPruebaFoco] = useState<{ nombre: string; n: number } | null>(null)
+  const onIr = useCallback((d: DestinoHallazgo) => {
+    if ("dia" in d) return
+    if (d.areas) onFiltro({ areas: d.areas, puesto: null })
+    if (d.prueba) setPruebaFoco(f => ({ nombre: d.prueba!, n: (f?.n ?? 0) + 1 }))
+    cambiarTab(d.tab)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [onFiltro, cambiarTab])
   const onCompletado = useCallback((hospitalId: string) => {
     setDemo(false)
     setVersion(v => v + 1)
@@ -239,10 +252,14 @@ export default function InlabPage() {
   const renderVista = (t: Tab) => {
     if (!props) return null
     switch (t) {
+      case "pulso": return dsCompleto
+        ? <VistaPulso {...props} dsTodo={dsCompleto} dp={dpDiferido} dpTodo={dpCompleto ?? null} cargandoPruebas={cargandoPruebas || (!dpCompleto && !errorPruebasSwr)}
+            hospitalIds={seleccion} hospitalNombre={unico ? nombre(unico) : `${seleccion.length} hospitales`} onIr={onIr} />
+        : null
       case "resumen": return <VistaResumen {...props} />
       case "consumo": return <VistaConsumo {...props} />
       case "pruebas": return dpDiferido
-        ? <VistaPruebas dp={dpDiferido} rango={props.rango} filtros={props.filtros} onFiltro={onFiltro} areas={props.ds.areas} />
+        ? <VistaPruebas dp={dpDiferido} rango={props.rango} filtros={props.filtros} onFiltro={onFiltro} areas={props.ds.areas} pruebaFoco={pruebaFoco} juntasHospitalIds={seleccion} />
         : errorPruebasSwr ? <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{errorPruebasSwr instanceof Error ? errorPruebasSwr.message : "Error de red"}</p>
           : <EsqueletoVista tipo="pruebas" etiqueta="Cargando pruebas" />
       case "tiempos": return <VistaTiempos {...props} />

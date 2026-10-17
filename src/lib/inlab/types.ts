@@ -103,7 +103,27 @@ export interface InlabPruebas {
   filas: number[][]
   /** [dia, area, urgente(0|1), peticiones con al menos una prueba] */
   peticiones: number[][]
+  /** Pruebas que se piden juntas (opcional; solo al subir, se leen aparte). Ver PARES_* */
+  pares?: InlabPares
 }
+
+/**
+ * Pruebas que se piden juntas en la misma petición, por mes × área (sin prioridad). Cada
+ * pareja (a < b, índices de `nombres`) cuenta las peticiones que incluyen las dos. Solo se
+ * guardan las celdas con al menos `minimo` peticiones (PARES_MINIMO, o más si hace falta para
+ * no pasar de PARES_MAX_FILAS): así se descartan combinaciones raras, que además podrían
+ * acercarse a casos concretos. En Gómez Ulla se conserva ~98 % de las parejas con mínimo 3.
+ */
+export interface InlabPares {
+  /** meses "YYYY-MM" */
+  meses: string[]
+  minimo: number
+  /** [mes, area, pruebaA, pruebaB, peticiones con ambas] */
+  filas: number[][]
+}
+
+export const PARES_MINIMO = 3
+export const PARES_MAX_FILAS = 200_000
 
 /** Respuesta de GET /api/inlab/pruebas: pruebas de toda la cobertura de los hospitales. */
 export interface InlabPruebasPayload {
@@ -131,7 +151,7 @@ export function payloadVacio(): InlabPayload {
 
 /** Número de filas agregadas (para mostrar y para límites). */
 export function tamanoPayload(p: InlabPayload): number {
-  return p.consumo.length + p.puestos.length + p.actividad.length + p.tiempos.length + p.eventos.length + (p.pruebas?.filas.length ?? 0)
+  return p.consumo.length + p.puestos.length + p.actividad.length + p.tiempos.length + p.eventos.length + (p.pruebas?.filas.length ?? 0) + (p.pruebas?.pares?.filas.length ?? 0)
 }
 
 // ─── Límites (compartidos cliente/servidor) ──────────────────────────────────

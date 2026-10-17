@@ -17,6 +17,11 @@
  *    agrupados, filas de error excluidas, KPIs/ranking/áreas y recorte de informes públicos.
  *    (Verificado además contra la BD real de Gómez Ulla con una referencia Python independiente:
  *    770 pruebas, 11 áreas, 211 días, prioridad y peticiones idénticos.)
+ * 5. Sprint 28 (Pulso + pruebas que se piden juntas): parejas por mes × área (una vez por
+ *    petición, mínimo PARES_MINIMO, mes del primer tubo), calcularJuntas (% y lift), reloj de
+ *    24 h (= suma de la actividad por hora), río (cubo = pruebas solicitadas), calendario y
+ *    hallazgos. (Parejas verificadas además contra la BD real de Gómez Ulla con Python:
+ *    176.559 celdas mes × área idénticas.)
  * Sale con código 1 si algo no cuadra. Auditoría Sprint 25b / 26 (AGENTS.md §7).
  */
 import { readFileSync } from "node:fs"
@@ -31,7 +36,11 @@ import { bucketIndex, cuentaBajo, emptyHist, esLimiteBucket, percentile } from "
 import { fmtMin } from "../../src/components/inlab/charts"
 import { decodificarPruebas, kpisPruebas, pruebaPorArea, rankingPruebas } from "../../src/lib/inlab/pruebas-analytics"
 import { filtrarPruebasParaShare, MIN_PETICIONES_PRUEBA_SHARE } from "../../src/lib/inlab/share"
-import type { InlabPruebasPayload } from "../../src/lib/inlab/types"
+import { PARES_MINIMO, type InlabPruebasPayload } from "../../src/lib/inlab/types"
+import { calcularJuntas } from "../../src/lib/inlab/juntas-calculo"
+import { actividadPorDia, flujoPruebas, nivelDe, nivelesCalendario, rankingAreas, relojDia, resumenDia } from "../../src/lib/inlab/pulso"
+import { hallazgos } from "../../src/lib/inlab/hallazgos"
+import { diaSemana } from "../../src/lib/inlab/dates"
 
 let fallos = 0
 function ok(cond: boolean, msg: string) {
@@ -254,6 +263,81 @@ console.log("Pruebas")
   const sh = filtrarPruebasParaShare(pp, ["URGENCIAS"])
   ok(sh.pruebas.filas.length === 0 && sh.pruebas.nombres.length === 0 && sh.areas.length === 1,
     `informe público: fuera las áreas no incluidas y las pruebas con < ${MIN_PETICIONES_PRUEBA_SHARE} peticiones (sin nombres)`)
+}
+
+// ─── 5. Pulso y pruebas que se piden juntas ──────────────────────────────────
+console.log("Pruebas que se piden juntas")
+{
+  const a = new InlabAggregator([...CABECERAS_PLANAS], MAPEO_PLANO, "DMY")
+  const t = (id: string, ped: string, area: string, fecha: string, pruebas: string) =>
+    a.add(fila({ TuboId: id, PedidoId: ped, Area: area, Prioridad: "1", FechaImpresion: fecha, Pruebas: pruebas }))
+  // P1–P4: A+B+C en extracciones (marzo); P5: A+B (+ A repetida); P6: A+B en urgencias (1 sola → bajo el mínimo)
+  for (const p of ["P1", "P2", "P3", "P4"]) t(`t${p}`, p, "EXTRACCIONES", "2026-03-10 08:00:00", "Bioquimica~A|Bioquimica~B|Bioquimica~C")
+  t("t5", "P5", "EXTRACCIONES", "2026-03-11 08:00:00", "Bioquimica~A|Bioquimica~B|Bioquimica~A")
+  t("t6", "P6", "URGENCIAS", "2026-03-11 09:00:00", "Bioquimica~A|Bioquimica~B")
+  // P7: primer tubo el 31-mar y otro el 1-abr → sus parejas van a marzo
+  t("t7a", "P7", "EXTRACCIONES", "2026-03-31 23:50:00", "Bioquimica~B|Bioquimica~C")
+  t("t7b", "P7", "EXTRACCIONES", "2026-04-01 00:10:00", "")
+  const { payload } = a.build()
+  const P = payload.pruebas!, Q = P.pares!
+  const celda = (mes: string, area: string, x: string, y: string) => {
+    const ix = P.nombres.indexOf(x), iy = P.nombres.indexOf(y)
+    return Q.filas.find(r => Q.meses[r[0]] === mes && payload.dic.areas[r[1]] === area && ((r[2] === ix && r[3] === iy) || (r[2] === iy && r[3] === ix)))?.[4] ?? 0
+  }
+  ok(Q.minimo === PARES_MINIMO && Q.filas.every(r => r[2] < r[3] && r[4] >= PARES_MINIMO), `celdas con a < b y al menos ${PARES_MINIMO} peticiones`)
+  ok(celda("2026-03", "EXTRACCIONES", "A", "B") === 5, `A+B = 5 peticiones (la A repetida en P5 no cuenta doble) (${celda("2026-03", "EXTRACCIONES", "A", "B")})`)
+  ok(celda("2026-03", "EXTRACCIONES", "B", "C") === 5 && celda("2026-03", "EXTRACCIONES", "A", "C") === 4, "B+C incluye la petición que cruza de mes (en el mes de su primer tubo)")
+  ok(celda("2026-03", "URGENCIAS", "A", "B") === 0 && !Q.meses.includes("2026-04"), "celdas por debajo del mínimo fuera; abril sin parejas")
+
+  const totales = new Map([["A", { n: 50, seccion: "Bioquímica" }], ["B", { n: 40, seccion: "Bioquímica" }], ["C", { n: 10, seccion: "Hormonas" }]])
+  const j = calcularJuntas({ meses: ["2026-03"], peticiones: 100, totales, parejas: [{ a: "A", b: "B", n: 30 }, { a: "B", b: "C", n: 9 }], deLaPrueba: { nombre: "A", filas: [{ otra: "A", n: 50 }, { otra: "B", n: 30 }] } })
+  const cB = j.prueba!.companeras[0]
+  ok(j.prueba!.n === 50 && cB.prueba === "B" && cB.pct === 60 && cB.pctInversa === 75 && cB.lift === 1.5, `compañera: 60 % de A lleva B, 75 % de B lleva A, ×1,5 (${cB.pct}, ${cB.pctInversa}, ${cB.lift})`)
+  const bc = j.frecuentes.find(p => p.a === "C")!
+  ok(!!bc && bc.b === "B" && bc.pctAB === 90 && bc.lift === 2.25, "pareja leída desde la prueba menos frecuente (C → B: 90 %, ×2,25)")
+  ok(j.afines.length === 0, "afines: exige al menos 20 peticiones y ×2 (B+C tiene 9)")
+}
+
+console.log("Pulso")
+{
+  const r = rango, f = FILTROS_VACIOS
+  const rk = rankingAreas(ds, r, f).map(x => x.area)
+  const rel = relojDia(ds, r, f, { tipo: "laborable" }, rk)
+  let suma = 0, dias = 0
+  for (const d of ds.dias) if (diaSemana(d) < 5) dias++
+  for (const x of ds.actividad) if (diaSemana(x.d) < 5) suma += x.porHora.reduce((s, v) => s + v, 0)
+  ok(rel.dias === dias && Math.abs(rel.total - suma / dias) < 1e-6, `reloj: día laborable medio = actividad por hora / días laborables cargados (${rel.total.toFixed(1)})`)
+  ok(Math.abs(rel.horas.reduce((s, h) => s + h.v.reduce((x, y) => x + y, 0), 0) - rel.total) < 1e-6, "reloj: las áreas suman el total de cada hora")
+  ok(rel.mitadA !== null && rel.inicio! <= rel.mitadA && rel.mitadA <= rel.fin!, "reloj: inicio ≤ mitad del día ≤ fin")
+  const d0 = ds.dias[3]
+  const relD = relojDia(ds, r, f, { tipo: "dia", d: d0 }, rk)
+  const tubosD = ds.actividad.filter(x => x.d === d0).reduce((s, x) => s + x.porHora.reduce((a, b) => a + b, 0), 0)
+  ok(relD.dias === 1 && Math.abs(relD.total - tubosD) < 1e-6, "reloj de un día concreto = sus tubos por hora")
+  const cal = actividadPorDia(ds, f)
+  const um = nivelesCalendario([...cal.values()].map(x => x.peticiones ?? x.tubos))
+  ok(cal.size === ds.dias.length && um.every((u, i) => i === 0 || u >= um[i - 1]) && nivelDe(0, um) === 0 && nivelDe(Infinity, um) === 5, "calendario: un día por día cargado, niveles crecientes")
+  const rd = resumenDia(ds, null, d0, f)
+  ok(rd.peticiones === kpis(ds, { desde: d0, hasta: d0 }, f).ordenes, "resumen del día = peticiones del día")
+  const hs = hallazgos({ ds, dp: null, rango: r, filtros: f })
+  ok(hs.length > 0 && hs.every((h, i) => i === 0 || h.peso <= hs[i - 1].peso), `hallazgos ordenados por peso (${hs.map(h => h.id).join(", ")})`)
+  const hp = hs.find(h => h.id === "hora-punta")
+  ok(!hp || hp.titulo.includes(`${rel.ventanaPico!.desde}:00`), "hallazgo de hora punta = ventana de 2 h del reloj")
+}
+{
+  // Río: el cubo área × sección × prueba suma las pruebas solicitadas
+  const a = new InlabAggregator([...CABECERAS_PLANAS], MAPEO_PLANO, "DMY")
+  const areas = ["EXTRACCIONES", "URGENCIAS", "PLANTA1", "PLANTA2", "PLANTA3", "PLANTA4", "PLANTA5", "PLANTA6", "PLANTA7"]
+  let id = 0
+  for (const [i, ar] of areas.entries()) for (let k = 0; k <= i; k++)
+    a.add(fila({ TuboId: String(++id), PedidoId: `R${id}`, Area: ar, FechaImpresion: "2026-03-02 08:00:00", Pruebas: `Bioquimica~P${k}|Hormonas~H${i}|Orina~O${k % 2}` }))
+  const { payload } = a.build()
+  const dp = decodificarPruebas({ dias: payload.dias, areas: payload.dic.areas, pruebas: payload.pruebas! })
+  const rr: Rango = { desde: "2026-03-02", hasta: "2026-03-02" }
+  const fl = flujoPruebas(dp, rr, FILTROS_VACIOS, { maxAreas: 4, maxSecciones: 2, maxPruebas: 5 })
+  const tot = kpisPruebas(dp, rr, FILTROS_VACIOS).solicitadas
+  const cubo = fl.cubo.flat(2).reduce((s, v) => s + v, 0)
+  ok(cubo === tot && fl.total === tot && fl.areas.reduce((s, n) => s + n.v, 0) === tot && fl.pruebas.reduce((s, n) => s + n.v, 0) === tot, `río: cubo = nodos = pruebas solicitadas (${cubo})`)
+  ok(fl.areas.length === 5 && fl.areas[4].agrupa === 5 && (fl.pruebas[fl.pruebas.length - 1].agrupa ?? 0) > 0, "río: «otras» agrupa el resto en cada columna")
 }
 
 console.log(fallos ? `\n${fallos} comprobaciones fallidas` : "\nTodas las comprobaciones correctas")

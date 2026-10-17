@@ -3,7 +3,7 @@
  */
 import { z } from "zod"
 import { CAMPOS } from "./mapping"
-import { LIMITES, TRAMOS } from "./types"
+import { LIMITES, PARES_MAX_FILAS, PARES_MINIMO, TRAMOS } from "./types"
 import { N_BUCKETS } from "./histogram"
 import { EVENTO_CATEGORIAS } from "./mapping"
 import { esDiaValido } from "./dates"
@@ -30,6 +30,11 @@ export const InlabPayloadSchema = z.object({
     info: z.array(z.array(nat).length(2)).max(LIMITES.maxDiccionario),
     filas: filas(5),
     peticiones: filas(4),
+    pares: z.object({
+      meses: z.array(z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)).max(Math.ceil(LIMITES.maxDias / 28) + 1),
+      minimo: z.number().int().min(PARES_MINIMO),
+      filas: z.array(z.array(num).length(5)).max(PARES_MAX_FILAS),
+    }).optional(),
   }).optional(),
 })
 
@@ -113,6 +118,13 @@ export function validarIndicesPayload(p: z.infer<typeof InlabPayloadSchema>): st
     for (const r of info) if (!ok(r[0], secciones.length) || r[1] < 1) return "pruebas: sección inválida"
     for (const r of fp) if (r.length !== 5 || !ok(r[0], nd) || !ok(r[1], areas.length) || (r[2] !== 0 && r[2] !== 1) || !ok(r[3], nombres.length) || !Number.isInteger(r[4]) || r[4] < 0) return "pruebas: fila inválida"
     for (const r of peticiones) if (r.length !== 4 || !ok(r[0], nd) || !ok(r[1], areas.length) || (r[2] !== 0 && r[2] !== 1) || !Number.isInteger(r[3]) || r[3] < 0) return "pruebas: fila de peticiones inválida"
+    if (p.pruebas.pares) {
+      const { meses, minimo, filas: pf } = p.pruebas.pares
+      const mesesDias = new Set(p.dias.map(d => d.slice(0, 7)))
+      if (meses.some(m => !mesesDias.has(m))) return "pares: mes sin días cargados"
+      // Las celdas por debajo del mínimo no se aceptan (combinaciones raras, posible caso concreto)
+      for (const r of pf) if (!ok(r[0], meses.length) || !ok(r[1], areas.length) || !ok(r[2], nombres.length) || !ok(r[3], nombres.length) || r[2] >= r[3] || !Number.isInteger(r[4]) || r[4] < minimo) return "pares: fila inválida"
+    }
   }
   for (const r of p.eventos) if (!ok(r[0], nd) || !ok(r[1], areas.length) || !ok(r[2], puestos.length, true) || !ok(r[3], impresoras.length, true) || !ok(r[4], EVENTO_CATEGORIAS.length) || !ok(r[5], eventos.length, true)) return "eventos: índice fuera de rango"
   return null

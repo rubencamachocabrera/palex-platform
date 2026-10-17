@@ -7,7 +7,7 @@
  */
 import { NexusLoader } from "@/components/ui/Skeleton"
 
-type Tipo = "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
+type Tipo = "pulso" | "resumen" | "consumo" | "pruebas" | "tiempos" | "calidad" | "comparar" | "facturacion" | "cargas"
 
 const Bloque = ({ className = "" }: { className?: string }) => <div aria-hidden="true" className={`skeleton-shimmer rounded-md ${className}`} />
 
@@ -68,6 +68,15 @@ export function EsqueletoVista({ tipo, etiqueta }: { tipo: Tipo; etiqueta?: stri
         <KpisEsq />
         <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr]"><PanelEsq alto={170} /><PanelEsq alto={220} /></div>
         <div className="grid gap-5 lg:grid-cols-3"><PanelEsq alto={0} lineas={4} /><PanelEsq alto={0} lineas={4} /><PanelEsq alto={0} lineas={4} /></div>
+      </>
+      break
+    case "pulso":
+      cuerpo = <>
+        <div aria-hidden="true" className="pulso-hero relative h-[620px] overflow-hidden rounded-3xl p-6 sm:p-7">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{Array.from({ length: 5 }, (_, i) => <div key={i} className="h-36 rounded-2xl bg-white/[.06]" />)}</div>
+          <div className="mx-auto mt-8 h-72 w-72 rounded-full border-[40px] border-white/[.06]" />
+        </div>
+        <PanelEsq alto={380} />
       </>
       break
     case "facturacion":

@@ -1023,6 +1023,7 @@ model InlabCarga {
   tiempos   InlabTiempoDiario[]
   eventos   InlabEventoDiario[]
   pruebas   InlabPruebaDiaria[]
+  pares     InlabPruebaPar[]
 
   @@index([hospitalId, creadoEn])
   @@index([hospitalId, hash])
@@ -1152,6 +1153,28 @@ model InlabPruebaDiaria {
   @@index([hospitalId, fecha])
   @@index([cargaId])
   @@map("inlab_prueba_diaria")
+}
+
+// Pruebas que se piden juntas en la misma petición, por mes × área (sin prioridad). prueba_a <
+// prueba_b (orden del diccionario de la carga, no alfabético). Solo celdas con al menos
+// InlabPares.minimo peticiones (3 por defecto). Ver src/lib/inlab/types.ts (InlabPares).
+model InlabPruebaPar {
+  id         Int      @id @default(autoincrement())
+  cargaId    String   @map("carga_id")
+  hospitalId String   @map("hospital_id")
+  mes        DateTime @db.Date
+  area       String   @default("")
+  pruebaA    String   @default("") @map("prueba_a")
+  pruebaB    String   @default("") @map("prueba_b")
+  peticiones Int      @default(0)
+
+  carga InlabCarga @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, mes])
+  @@index([hospitalId, pruebaA])
+  @@index([hospitalId, pruebaB])
+  @@index([cargaId])
+  @@map("inlab_prueba_par")
 }
 
 // Emparejamiento de columnas guardado por hospital (cabecera CSV → campo canónico)

@@ -49,6 +49,10 @@ suele indicar que se ha emparejado una columna de texto libre o con nombres.
 | `cache-datos.ts` | Caché en memoria + ETag de `/api/inlab/datos` (clave por huella de cargas) |
 | `recorte.ts` | `recortar(ds, ventana)`: el cliente pide toda la cobertura una vez y deriva cada periodo |
 | `analytics.ts` | KPIs, series, desgloses, previsión, facturación (puro, cliente) |
+| `pruebas.ts` / `pruebas-analytics.ts` | Pruebas pedidas: clasificación y perfiles / KPIs, ranking, secciones, series |
+| `pulso.ts` | Pantalla «Pulso»: reloj de 24 h, calendario, resumen de un día, río áreas → secciones → pruebas |
+| `hallazgos.ts` | «Lo que dicen los datos»: frases con reglas fijas (umbrales en `HALLAZGOS`) |
+| `juntas-calculo.ts` / `juntas.ts` | Pruebas que se piden juntas: cálculo puro / lectura de BD (servidor) |
 
 Verificación estadística reproducible (sin datos reales): `npx tsx docs/inlab/verificar-estadistica.ts`.
 Ejemplo sintético y generador: `docs/inlab/ejemplo-inlab-sintetico.csv`,
@@ -109,6 +113,35 @@ Qué pruebas piden las peticiones (`pruebas.ts`, `pruebas-analytics.ts`, pestañ
 - **Verificación:** referencia Python independiente sobre la BD real de Gómez Ulla — 770
   pruebas, 11 áreas, 211 días, prioridad y peticiones con pruebas idénticos (1.043.841
   pruebas en 59.185 peticiones). Casos sintéticos en `docs/inlab/verificar-estadistica.ts` §4.
+
+## Pulso y pruebas que se piden juntas (Sprint 28)
+
+**Pulso** (`components/inlab/pulso/`, pestaña de entrada del dashboard y sección 01 del informe
+público): cifras vivas con sparkline, reloj de 24 h (`relojDia`: tubos por hora de un día
+laborable medio, de fin de semana o de un día concreto, apilado por área; radio ∝ √valor;
+«Reproducir el día»), río Sankey (`flujoPruebas`: áreas → secciones → pruebas, con cubo
+área × sección × prueba para resaltar recorridos completos), calendario de toda la cobertura
+(`actividadPorDia`, intensidad por cuantiles, días sin datos rayados) con detalle y mini reloj
+del día, hallazgos (`hallazgos.ts`) y **modo pantalla** (`PulsoTV`: escenas que rotan cada
+15 s, Wake Lock, cursor oculto). Sin datos nuevos: lee el Dataset y el DatasetPruebas.
+El tiempo de extracción del Pulso, sin filtro de áreas, es el de las áreas de Extracciones
+(con todas, urgencias y plantas lo hunden a < 1 min).
+
+**Pruebas que se piden juntas** (`InlabPares` en `types.ts`): al cerrar la carga, el agregador
+recorre las pruebas ya deduplicadas de cada petición y cuenta todas sus parejas (a < b) por
+**mes × área** del primer tubo. Solo celdas con ≥ `PARES_MINIMO` (3) peticiones — combinaciones
+raras fuera — y, si pasan de `PARES_MAX_FILAS` (200.000), se sube el mínimo (aviso en la carga).
+Gómez Ulla: 15,4 M parejas → 176.559 celdas con mínimo 3 (98,4 % de la masa), 2,7 MB más de
+subida, ~2 s en el Worker. Tabla `inlab_prueba_par`; al **sustituir** días se borran las parejas
+de los meses afectados, al **omitir** días no se insertan los meses que los contienen.
+`GET /api/inlab/pruebas/juntas` (sin `prueba`: afines y frecuentes; con `prueba`: compañeras)
+amplía el periodo a meses completos y usa como denominadores `inlab_prueba_diaria` **solo de
+los meses con parejas** (las cargas anteriores no las tienen). Métricas: % de las peticiones
+con X que incluyen Y, y lift (veces más de lo esperado si fueran independientes). Afines =
+≥ 20 peticiones y lift ≥ 2, ordenadas por el menor de los dos %. Sin prioridad. No sale en
+informes públicos. Verificado: celdas idénticas a una referencia Python sobre la BD real.
+Perfil nuevo: **Espermiograma** (17 parámetros en Gómez Ulla; regla `espermi` por las erratas
+del catálogo).
 
 Pendiente de confirmar con el equipo de InLab: significado de `LabOrders.State`
 (0, 1, 2, 4, 5, 7, 9). El log de impresión (`LogsPrint`) solo guarda ~1 semana, por

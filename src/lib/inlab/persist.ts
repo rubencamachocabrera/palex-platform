@@ -83,6 +83,10 @@ export async function persistirCarga(input: PersistirInput) {
       await tx.inlabTiempoDiario.deleteMany({ where: whereDias })
       await tx.inlabEventoDiario.deleteMany({ where: whereDias })
       await tx.inlabPruebaDiaria.deleteMany({ where: whereDias })
+      // Las parejas van por mes: se sustituyen los meses que tocan los días sustituidos
+      // (si la carga nueva no cubre el mes entero, ese mes queda solo con sus días)
+      const mesesSol = [...new Set(solapados.map(d => `${d.slice(0, 7)}-01`))]
+      await tx.inlabPruebaPar.deleteMany({ where: { hospitalId, mes: { in: mesesSol.map(diaToDate) } } })
     }
 
     const carga = await tx.inlabCarga.create({
@@ -152,6 +156,17 @@ export async function persistirCarga(input: PersistirInput) {
           seccion: P.secciones[P.info[r[3]]?.[0] ?? -1] ?? "", parametros: P.info[r[3]]?.[1] ?? 1, peticiones: Math.round(r[4]),
         })),
       ], data => tx.inlabPruebaDiaria.createMany({ data }))
+
+      if (P.pares) {
+        // Al omitir días ya cargados, los meses que los contienen no se añaden: sus parejas
+        // incluyen esos días y se contarían dos veces (el mes queda con las de la carga previa)
+        const mesesOmitidos = new Set([...omitir].map(d => d.slice(0, 7)))
+        const { meses } = P.pares
+        await insert(P.pares.filas.filter(r => !mesesOmitidos.has(meses[r[0]])).map(r => ({
+          ...base, mes: diaToDate(`${meses[r[0]]}-01`), area: D.areas[r[1]] ?? "",
+          pruebaA: P.nombres[r[2]] ?? "", pruebaB: P.nombres[r[3]] ?? "", peticiones: Math.round(r[4]),
+        })), data => tx.inlabPruebaPar.createMany({ data }))
+      }
     }
 
     // Marca las cargas anteriores que han perdido días al sustituir

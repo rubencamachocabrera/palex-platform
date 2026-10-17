@@ -65,6 +65,13 @@ export const PERFILES: PerfilDef[] = [
     seccion: "Bioquímica",
     re: /^(alfa ?1 ?%|alfa ?2 ?%|beta ?1 ?%|beta ?2 ?%|gamma ?%|eef suero|proteinograma)$/,
   },
+  {
+    // 17 parámetros en Gómez Ulla («Vol Espermiograma», «Viscosidad Espermigrama», «Movil
+    // Espermiopgrama»…: el catálogo trae erratas, por eso basta con «espermi»)
+    nombre: "Espermiograma",
+    seccion: "Otras",
+    re: /espermi/,
+  },
 ]
 
 /** Secciones (normalizadas) que no son pruebas: códigos de error y marcas de visita. */

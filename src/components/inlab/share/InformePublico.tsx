@@ -19,6 +19,8 @@ import { SelectorAreas } from "@/components/inlab/SelectorAreas"
 import { TablaFacturacion, VistaCalidad, VistaConsumo, VistaResumen, VistaTiempos } from "@/components/inlab/Vistas"
 import { PRINT_CSS } from "@/components/inlab/InformeInlab"
 import { VistaPruebas } from "@/components/inlab/VistaPruebas"
+import { VistaPulso } from "@/components/inlab/pulso/VistaPulso"
+import type { DestinoHallazgo } from "@/lib/inlab/hallazgos"
 import { decodificarPruebas } from "@/lib/inlab/pruebas-analytics"
 import type { InlabPruebasPayload } from "@/lib/inlab/types"
 import { useToast } from "@/components/Toast"
@@ -112,7 +114,7 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
   const [verAreas, setVerAreas] = useState(false)
   const [presentando, setPresentando] = useState(false)
-  const [activa, setActiva] = useState("resumen")
+  const [activa, setActiva] = useState("pulso")
   const [puedeCompartir] = useState(() => typeof navigator !== "undefined" && typeof navigator.share === "function")
   const onFiltro = (p: Partial<Filtros>) => setFiltros(f => ({ ...f, ...p }))
 
@@ -121,10 +123,12 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   const k = useMemo(() => kpis(ds, rango, filtros), [ds, rango, filtros])
   const dp = useMemo(() => (datos.pruebas && datos.pruebas.dias.length ? decodificarPruebas(datos.pruebas) : null), [datos.pruebas])
   const vistaPruebas = dp ? <VistaPruebas dp={dp} rango={rango} filtros={filtros} onFiltro={onFiltro} areas={ds.areas} /> : null
-  // Numeración de secciones: "Pruebas" (si está) va tras Consumo
-  const n = (base: number) => String(base + (dp && base >= 3 ? 1 : 0)).padStart(2, "0")
+  // Numeración de secciones: 01 = Pulso; "Pruebas" (si está) va tras Consumo
+  const n = (base: number) => String(base + 1 + (dp && base >= 3 ? 1 : 0)).padStart(2, "0")
+  const nPruebas = "04"
 
   const secciones = useMemo(() => [
+    { id: "pulso", label: "Pulso" },
     { id: "resumen", label: "Resumen" },
     { id: "consumo", label: "Consumo" },
     ...(dp ? [{ id: "pruebas", label: "Pruebas" }] : []),
@@ -163,7 +167,7 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return
     const io = new IntersectionObserver(es => {
-      for (const e of es) if (e.isIntersecting) setActiva((e.target as HTMLElement).dataset.seccion ?? "resumen")
+      for (const e of es) if (e.isIntersecting) setActiva((e.target as HTMLElement).dataset.seccion ?? "pulso")
     }, { rootMargin: "-35% 0px -60% 0px" })
     document.querySelectorAll("[data-seccion]").forEach(el => io.observe(el))
     return () => io.disconnect()
@@ -217,11 +221,21 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
     </div>
   )
 
+  // «Ver …» de los hallazgos del Pulso: a la sección del informe (con su filtro de áreas)
+  const irDesdePulso = (d: DestinoHallazgo) => {
+    if ("dia" in d) return
+    if (d.areas) onFiltro({ areas: d.areas.filter(a => ds.areas.includes(a)) })
+    if (d.tab === "pruebas" && !dp) return
+    ir(d.tab)
+  }
+  const vistaPulso = <VistaPulso {...props} dsTodo={ds} dp={dp} dpTodo={dp} hospitalIds={[]} hospitalNombre={datos.hospital.nombre} onIr={irDesdePulso} />
+
   const diapositivas: Diapositiva[] = [
     { id: "portada", titulo: "Portada", contenido: portada(true) },
-    { id: "resumen", eyebrow: "01 · Resumen ejecutivo", titulo: "Lectura del periodo", contenido: <VistaResumen {...props} /> },
-    { id: "consumo", eyebrow: "02 · Consumo y demanda", titulo: "Qué se consume y cuándo", contenido: <VistaConsumo {...props} /> },
-    ...(vistaPruebas ? [{ id: "pruebas", eyebrow: "03 · Pruebas de laboratorio", titulo: "Qué pruebas se piden", contenido: vistaPruebas }] : []),
+    { id: "pulso", eyebrow: "01 · Pulso del laboratorio", titulo: "El laboratorio de un vistazo", contenido: vistaPulso },
+    { id: "resumen", eyebrow: `${n(1)} · Resumen ejecutivo`, titulo: "Lectura del periodo", contenido: <VistaResumen {...props} /> },
+    { id: "consumo", eyebrow: `${n(2)} · Consumo y demanda`, titulo: "Qué se consume y cuándo", contenido: <VistaConsumo {...props} /> },
+    ...(vistaPruebas ? [{ id: "pruebas", eyebrow: `${nPruebas} · Pruebas de laboratorio`, titulo: "Qué pruebas se piden", contenido: vistaPruebas }] : []),
     { id: "tiempos", eyebrow: `${n(3)} · Flujo y tiempos`, titulo: "Cuánto tarda cada tramo", contenido: <VistaTiempos {...props} /> },
     { id: "calidad", eyebrow: `${n(4)} · Incidencias y calidad`, titulo: "Eventos de calidad", contenido: <VistaCalidad {...props} /> },
     ...(tarifas ? [{ id: "facturacion", eyebrow: `${n(5)} · Modelo comercial`, titulo: "Consumo facturable", contenido: <div className="card p-5"><TablaFacturacion {...props} tarifas={tarifas} /></div> }] : []),
@@ -304,9 +318,10 @@ export function InformePublico({ datos, ds }: { datos: DatosInformePublico; ds: 
             <strong className="text-gray-700 dark:text-slate-200">Alcance del informe:</strong> {datos.areas.map(etiquetaArea).join(" · ")}.
           </p>
         )}
-        <Seccion id="resumen" numero="01" titulo="Resumen ejecutivo" texto={`${fmtDia(rango.desde, CORTO)} – ${fmtDia(rango.hasta, CORTO)} · actividad, tiempos y calidad de un vistazo`}><VistaResumen {...props} /></Seccion>
-        <Seccion id="consumo" numero="02" titulo="Consumo y demanda" texto="Qué se consume, dónde y en qué franjas"><VistaConsumo {...props} /></Seccion>
-        {vistaPruebas && <Seccion id="pruebas" numero="03" titulo="Pruebas de laboratorio" texto="Qué pruebas piden las peticiones, cuánto y dónde">{vistaPruebas}</Seccion>}
+        <Seccion id="pulso" numero="01" titulo="Pulso del laboratorio" texto="El día hora a hora, de dónde viene el trabajo y adónde va, el periodo día a día y lo que dicen los datos">{vistaPulso}</Seccion>
+        <Seccion id="resumen" numero={n(1)} titulo="Resumen ejecutivo" texto={`${fmtDia(rango.desde, CORTO)} – ${fmtDia(rango.hasta, CORTO)} · actividad, tiempos y calidad de un vistazo`}><VistaResumen {...props} /></Seccion>
+        <Seccion id="consumo" numero={n(2)} titulo="Consumo y demanda" texto="Qué se consume, dónde y en qué franjas"><VistaConsumo {...props} /></Seccion>
+        {vistaPruebas && <Seccion id="pruebas" numero={nPruebas} titulo="Pruebas de laboratorio" texto="Qué pruebas piden las peticiones, cuánto y dónde">{vistaPruebas}</Seccion>}
         <Seccion id="tiempos" numero={n(3)} titulo="Flujo y tiempos" texto="Medianas y colas (P90) de cada tramo del flujo"><VistaTiempos {...props} /></Seccion>
         <Seccion id="calidad" numero={n(4)} titulo="Incidencias y calidad" texto="Reimpresiones, anulaciones e incidencias registradas en InLab"><VistaCalidad {...props} /></Seccion>
         {tarifas && (

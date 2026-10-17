@@ -607,3 +607,28 @@ export function IconMonitorShare({ size = 20, className = "" }: IconProps) {
     </svg>
   )
 }
+
+export function IconPlay({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M7 4.5v15l12-7.5z"/>
+    </svg>
+  )
+}
+
+export function IconPause({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
+      <rect x="6" y="4.5" width="4" height="15" rx="1"/>
+      <rect x="14" y="4.5" width="4" height="15" rx="1"/>
+    </svg>
+  )
+}
+
+export function IconChevronLeft({ size = 20, className = "" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  )
+}

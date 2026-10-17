@@ -15,7 +15,9 @@ import {
   cambiosPruebas, kpisPruebas, porSeccion, pruebaPorArea, rankingPruebas, seriePrueba, tendenciasPruebas,
   type DatasetPruebas, type ItemPrueba,
 } from "@/lib/inlab/pruebas-analytics"
-import { BarList, Donut, GRIS, TimeChart, fmtCompacto, fmtDia, fmtN } from "./charts"
+import { BarList, Donut, TimeChart, fmtCompacto, fmtDia, fmtN } from "./charts"
+import { colorSeccion } from "./colores"
+import { PanelJuntas } from "./PanelJuntas"
 import { Kpi, Nota, Panel } from "./ui"
 
 export interface VistaPruebasProps {
@@ -25,24 +27,12 @@ export interface VistaPruebasProps {
   onFiltro?: (patch: Partial<Filtros>) => void
   /** Áreas del Dataset principal (para alternar la selección al hacer clic en un área) */
   areas?: string[]
+  /** Prueba a seleccionar desde fuera (hallazgos del Pulso); `n` cambia en cada petición */
+  pruebaFoco?: { nombre: string; n: number } | null
+  /** Hospitales para «Se piden juntas» (solo en el dashboard; el informe público no lo lleva) */
+  juntasHospitalIds?: string[]
 }
 
-/** Color fijo por sección (el mismo en el donut, el ranking y la leyenda). */
-const COLOR_SECCION: Record<string, string> = {
-  "Bioquímica": TEAL,
-  "Hematología": "#E11D48",
-  "Hemostasia": "#7C3AED",
-  "Banco de sangre": "#BE123C",
-  "Orina": "#CA8A04",
-  "Inmunología": "#6366F1",
-  "Serología": "#0EA5E9",
-  "Microbiología": "#16A34A",
-  "Urgencias": ORANGE,
-  "Hormonas": "#DB2777",
-  "Fármacos y tóxicos": "#A16207",
-  "Genética y molecular": "#0891B2",
-}
-const colorSeccion = (s: string) => COLOR_SECCION[s] ?? GRIS
 const MAX_DONUT = 5
 
 function Variacion({ v }: { v: number | null }) {
@@ -85,7 +75,7 @@ function FilaRanking({ it, max, activa, onClick, pos }: { it: ItemPrueba; max: n
   )
 }
 
-export function VistaPruebas({ dp, rango, filtros, onFiltro, areas = [] }: VistaPruebasProps) {
+export function VistaPruebas({ dp, rango, filtros, onFiltro, areas = [], pruebaFoco = null, juntasHospitalIds }: VistaPruebasProps) {
   const k = useMemo(() => kpisPruebas(dp, rango, filtros), [dp, rango, filtros])
   const t = useMemo(() => tendenciasPruebas(dp, rango, filtros), [dp, rango, filtros])
   const ranking = useMemo(() => rankingPruebas(dp, rango, filtros), [dp, rango, filtros])
@@ -96,7 +86,15 @@ export function VistaPruebas({ dp, rango, filtros, onFiltro, areas = [] }: Vista
   const busq = useDeferredValue(busqueda.trim().toLocaleLowerCase("es"))
   const [seccion, setSeccion] = useState<string | null>(null)
   const [todas, setTodas] = useState(false)
-  const [elegida, setElegida] = useState<string | null>(null)
+  const [elegida, setElegida] = useState<string | null>(pruebaFoco?.nombre ?? null)
+  // Selección pedida desde fuera (p. ej. «Ver» en un hallazgo del Pulso)
+  const [focoPrevio, setFocoPrevio] = useState(pruebaFoco?.n ?? 0)
+  if (pruebaFoco && pruebaFoco.n !== focoPrevio) {
+    setFocoPrevio(pruebaFoco.n)
+    setElegida(pruebaFoco.nombre)
+    setBusqueda("")
+    setSeccion(null)
+  }
   // Si la prueba elegida no está en el periodo/filtro, se vuelve al total
   const prueba = elegida && ranking.some(r => r.prueba === elegida) ? elegida : null
 
@@ -256,6 +254,10 @@ export function VistaPruebas({ dp, rango, filtros, onFiltro, areas = [] }: Vista
             : <p className="py-8 text-center text-xs text-gray-400">Elige una prueba en el ranking para ver en qué áreas se pide.</p>}
         </Panel>
       </div>
+
+      {juntasHospitalIds && juntasHospitalIds.length > 0 && (
+        <PanelJuntas hospitalIds={juntasHospitalIds} rango={rango} filtros={filtros} prueba={prueba} onElegir={p => setElegida(p)} />
+      )}
     </div>
   )
 }

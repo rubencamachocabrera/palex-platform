@@ -13,7 +13,7 @@ const aNumero = (s: string) => parseFloat(s.replace(",", "."))
  * "1 h 5 min") salta directamente. El último fotograma es siempre el texto exacto recibido:
  * la animación nunca altera la cifra final. Respeta prefers-reduced-motion.
  */
-function ValorAnimado({ valor }: { valor: string }) {
+export function ValorAnimado({ valor }: { valor: string }) {
   const [anim, setAnim] = useState<string | null>(null)
   const previo = useRef<string | null>(null)
   useEffect(() => {

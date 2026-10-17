@@ -10,7 +10,7 @@ import {
   clasificarEvento, esAnulado, esIncidencia, esUrgente, limpiarDimension, type CampoKey, type EventoCategoria, type Mapeo,
 } from "./mapping"
 import { clasificarPrueba, normalizarPrueba, parsearCeldaPruebas, type PruebaClasificada } from "./pruebas"
-import { LIMITES, type InlabPayload, type InlabPruebas } from "./types"
+import { LIMITES, PARES_MAX_FILAS, PARES_MINIMO, type InlabPares, type InlabPayload, type InlabPruebas } from "./types"
 
 const MAX_DIAS = LIMITES.maxDias
 
@@ -60,7 +60,7 @@ export class InlabAggregator {
   /** por índice de prueba: sección y parámetros originales distintos (perfiles) */
   private infoPruebas: { seccion: string; parametros: Set<string> }[] = []
   private cachePrueba = new Map<string, PruebaClasificada | null>()
-  private statsPruebas = { leidas: 0, sinPedido: 0, excluidas: 0, repetidas: 0 }
+  private statsPruebas: { leidas: number; sinPedido: number; excluidas: number; repetidas: number; pares?: { celdas: number; guardadas: number; minimo: number } } = { leidas: 0, sinPedido: 0, excluidas: 0, repetidas: 0 }
   private tiempos = new Map<number, TiempoAcc>()
   private eventos = new Map<number, number[]>()
   // Cachés por valor crudo: las filas de una misma orden repiten valores consecutivos
@@ -309,6 +309,60 @@ export class InlabAggregator {
     acc.hist[bucketIndex(min)]++
   }
 
+  /**
+   * Pruebas que se piden juntas: por cada pedido con pruebas, todas sus parejas (a < b), por
+   * mes × área del primer tubo. Se calcula al final con las pruebas ya deduplicadas por pedido
+   * (~240 parejas por petición en Gómez Ulla: 15 M incrementos, 1–3 s en el Worker).
+   */
+  private buildPares(): InlabPares | undefined {
+    if (this.pruebasDePedido.size === 0) return undefined
+    const diaDe: string[] = []
+    for (const [d, i] of this.dias) diaDe[i] = d
+    const mesIdx = new Map<string, number>()
+    const meses: string[] = []
+    const cuentas = new Map<number, number>()
+    const idx: number[] = []
+    for (const [orden, s] of this.pruebasDePedido) {
+      if (s.length < 2) continue
+      const pk = this.pedidosVistos.get(orden)
+      if (pk === undefined) continue
+      const mes = diaDe[Math.floor(pk / 512)].slice(0, 7)
+      let m = mesIdx.get(mes)
+      if (m === undefined) { m = meses.length; meses.push(mes); mesIdx.set(mes, m) }
+      const base = (m * 256 + ((pk >> 1) & 255)) * 4096
+      idx.length = 0
+      for (let i = 0; i < s.length; i++) idx.push(s.charCodeAt(i) - 1)
+      idx.sort((x, y) => x - y)
+      for (let i = 0; i < idx.length; i++) {
+        const ka = (base + idx[i]) * 4096
+        for (let j = i + 1; j < idx.length; j++) {
+          const k = ka + idx[j]
+          cuentas.set(k, (cuentas.get(k) ?? 0) + 1)
+        }
+      }
+    }
+    // Mínimo adaptativo: PARES_MINIMO o el menor que deje como mucho PARES_MAX_FILAS celdas
+    const porValor = new Map<number, number>()
+    for (const n of cuentas.values()) porValor.set(n, (porValor.get(n) ?? 0) + 1)
+    let minimo = PARES_MINIMO
+    let quedan = 0
+    for (const [n, c] of porValor) if (n >= minimo) quedan += c
+    while (quedan > PARES_MAX_FILAS) { quedan -= porValor.get(minimo) ?? 0; minimo++ }
+    // Meses en orden cronológico
+    const orden = [...meses].sort()
+    const remapMes = meses.map(m => orden.indexOf(m))
+    const filas: number[][] = []
+    for (const [k, n] of cuentas) {
+      if (n < minimo) continue
+      const b = k % 4096, r1 = (k - b) / 4096
+      const a = r1 % 4096, r2 = (r1 - a) / 4096
+      const area = r2 % 256, m = (r2 - area) / 256
+      filas.push([remapMes[m], area, a, b, n])
+    }
+    this.statsPruebas.pares = { celdas: cuentas.size, guardadas: filas.length, minimo }
+    return { meses: orden, minimo, filas }
+  }
+
   private buildPruebas(rd: (r: number[]) => number[]): InlabPruebas {
     const secciones: string[] = []
     const secIdx = new Map<string, number>()
@@ -332,6 +386,7 @@ export class InlabAggregator {
     const rd = (r: number[]) => { r[0] = remap.get(r[0])!; return r }
     const keys = (m: Map<string, number>) => { const arr: string[] = []; for (const [k, i] of m) arr[i] = k; return arr }
 
+    const pares = this.pruebas.size ? this.buildPares() : undefined
     this.pedidosVistos.clear()
     this.pruebasDePedido.clear()
 
@@ -352,6 +407,7 @@ export class InlabAggregator {
     for (const k of s.dimensionesExcedidas) s.avisos.push(`La columna de ${k} tiene más de ${MAX_DISTINTOS[k]} valores distintos: revisa el emparejamiento (podría contener texto libre o datos personales).`)
     const sp = this.statsPruebas
     if (sp.sinPedido > 0) s.avisos.push(`${sp.sinPedido.toLocaleString("es-ES")} pruebas de peticiones sin tubos en el fichero no se cuentan.`)
+    if (sp.pares && sp.pares.minimo > PARES_MINIMO) s.avisos.push(`Pruebas que se piden juntas: solo combinaciones con al menos ${sp.pares.minimo} peticiones en un mes y área (${sp.pares.guardadas.toLocaleString("es-ES")} de ${sp.pares.celdas.toLocaleString("es-ES")}), para no superar el límite de tamaño.`)
     if (sp.excluidas > 0) s.avisos.push(`${sp.excluidas.toLocaleString("es-ES")} filas de pruebas que no son pruebas (códigos de error o de visita) no se cuentan.`)
     if (diasOrden.length > 1) {
       s.avisos.push(`El primer y el último día (${diasOrden[0]} y ${diasOrden[diasOrden.length - 1]}) pueden estar incompletos si la exportación no empieza y termina a medianoche.`)
@@ -373,7 +429,7 @@ export class InlabAggregator {
         actividad: [...this.actividad.values()].map(rd),
         tiempos,
         eventos: [...this.eventos.values()].map(rd),
-        ...(this.pruebas.size ? { pruebas: this.buildPruebas(rd) } : {}),
+        ...(this.pruebas.size ? { pruebas: { ...this.buildPruebas(rd), ...(pares && pares.filas.length ? { pares } : {}) } } : {}),
       },
       stats: s,
     }

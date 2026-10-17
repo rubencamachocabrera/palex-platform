@@ -2029,6 +2029,64 @@ body:has(.nx-fab) .toast-region { bottom: calc(env(safe-area-inset-bottom, 0px) 
 .inlab-donut { animation: inlabPop 600ms var(--ease-out-expo) backwards; }
 .inlab-celda { animation: inlabFade 380ms ease backwards; }
 
+/* ═══ InLab — Pulso (Sprint 28) ══════════════════════════════════════════════
+   Pantalla de entrada de InLab Analytics (components/inlab/pulso). Misma regla: solo
+   opacity/transform, `backwards`, todo anulado con prefers-reduced-motion. */
+.pulso-hero {
+  isolation: isolate;
+  background:
+    radial-gradient(110% 80% at 0% 0%, rgba(0, 169, 157, .28), transparent 55%),
+    radial-gradient(80% 70% at 100% 100%, rgba(247, 148, 29, .14), transparent 55%),
+    linear-gradient(160deg, var(--ink-800), var(--ink-950));
+  box-shadow: 0 30px 80px -40px rgba(4, 13, 24, .9), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.pulso-aurora {
+  position: absolute; inset: -30% -10% auto auto; width: 520px; height: 520px; z-index: -1;
+  border-radius: 9999px; background: radial-gradient(circle, rgba(94, 234, 212, .16), transparent 65%);
+  filter: blur(10px); animation: pulsoDeriva 18s ease-in-out infinite alternate;
+}
+.pulso-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, .7), transparent 75%);
+}
+@keyframes pulsoDeriva { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-120px, 80px, 0); } }
+.pulso-latido { position: relative; display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #5eead4; }
+.pulso-latido::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #5eead4; animation: pulsoLatido 1.8s var(--ease-out-expo) infinite; }
+@keyframes pulsoLatido { from { transform: scale(1); opacity: .7; } to { transform: scale(3.2); opacity: 0; } }
+.pulso-cifra { animation: inlabFadeUp 560ms var(--ease-out-expo) backwards; transition: border-color 200ms ease, background-color 200ms ease; }
+.pulso-cifra:hover { border-color: rgba(255, 255, 255, .2); background-color: rgba(255, 255, 255, .08); }
+.pulso-cifra:nth-child(2) { animation-delay: 60ms; } .pulso-cifra:nth-child(3) { animation-delay: 120ms; }
+.pulso-cifra:nth-child(4) { animation-delay: 180ms; } .pulso-cifra:nth-child(5) { animation-delay: 240ms; }
+.pulso-aguja { filter: drop-shadow(0 0 6px rgba(94, 234, 212, .8)); }
+/* Segmentado sobre tinta */
+.pulso-segmentado [role="group"] { background: rgba(255, 255, 255, .08); }
+.pulso-segmentado [role="group"] button { color: #cbd5e1; }
+.pulso-segmentado [role="group"] button[aria-pressed="true"] { background: #fff; color: #0f766e; }
+.pulso-rango { accent-color: #5eead4; height: 28px; cursor: pointer; }
+/* Río */
+.pulso-rio-enlace { animation: inlabFade 700ms ease backwards; }
+.pulso-rio-nodo rect:first-child { transform-box: fill-box; transform-origin: center; animation: pulsoNodo 600ms var(--ease-out-expo) backwards; }
+.pulso-rio-nodo:focus-visible { outline: none; }
+.pulso-rio-nodo:focus-visible rect:first-child { stroke: #f7941d; stroke-width: 2px; }
+@keyframes pulsoNodo { from { transform: scaleY(0); } to { transform: none; } }
+.pulso-rio-etiqueta { paint-order: stroke; stroke: #fff; stroke-width: 3.5px; stroke-linejoin: round; }
+.dark .pulso-rio-etiqueta { stroke: #0f172a; }
+/* Calendario y hallazgos */
+.pulso-dia { animation: inlabFade 420ms ease backwards; }
+.pulso-hallazgo { animation: inlabFadeUp 520ms var(--ease-out-expo) backwards; }
+.inlab-constelacion-enlace { animation: inlabFade 800ms ease backwards; }
+/* Modo pantalla */
+.pulso-tv-progreso { width: 0; animation: pulsoProgreso linear forwards; transform-origin: left; }
+@keyframes pulsoProgreso { from { width: 0; } to { width: 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulso-aurora, .pulso-latido::after, .pulso-cifra, .pulso-rio-enlace, .pulso-rio-nodo rect:first-child,
+  .pulso-dia, .pulso-hallazgo, .inlab-constelacion-enlace, .pulso-tv-progreso { animation: none !important; }
+  .pulso-tv-progreso { width: 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .inlab-contenido > * > *, .inlab-contenido > * > .grid > .stat-card, .inlab-esqueleto > *, .inlab-sync, .inlab-sync::before,
   .inlab-linea, .inlab-area, .inlab-barra, .inlab-donut, .inlab-celda { animation: none !important; }
